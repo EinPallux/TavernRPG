@@ -75,6 +75,14 @@ describe('gameStore — hero actions', () => {
     await store().createHero('Kargath', 'warrior');
   });
 
+  it('starts the hero in their kit rather than empty-handed', () => {
+    // Added in Phase 5: an unarmed hero swings for 1–2 and loses their first mission.
+    const hero = store().save!.hero!;
+    expect(hero.equipment.weapon).toBeDefined();
+    expect(hero.equipment.chest).toBeDefined();
+    expect(hero.backpack.filter(Boolean)).toHaveLength(0);
+  });
+
   it('grants an item into the backpack', () => {
     const sword = swordFor();
     store().grantItem(sword);
@@ -83,29 +91,31 @@ describe('gameStore — hero actions', () => {
     expect(store().save?.hero?.backpack[0]?.uid).toBe(sword.uid);
   });
 
-  it('equips from the backpack and frees the slot it came from', () => {
+  it('equips from the backpack, swapping the worn piece back into it', () => {
     const sword = swordFor();
     store().grantItem(sword);
     store().equipItem(sword);
 
     expect(store().save?.hero?.equipment.weapon?.uid).toBe(sword.uid);
-    expect(store().save?.hero?.backpack.filter(Boolean)).toHaveLength(0);
+    // The starter weapon takes the bag slot the new one vacated — a swap, not a duplication.
+    const bagged = store().save!.hero!.backpack.filter(Boolean);
+    expect(bagged).toHaveLength(1);
+    expect(bagged[0]?.uid).not.toBe(sword.uid);
   });
 
   it('refuses to equip another class’s weapon', () => {
+    const starterUid = store().save!.hero!.equipment.weapon?.uid;
     const staff = swordFor('mage');
     store().grantItem(staff);
     store().equipItem(staff);
 
-    expect(store().save?.hero?.equipment.weapon).toBeUndefined();
-    // The item stays in the bag rather than vanishing.
+    // The warrior keeps their own weapon…
+    expect(store().save?.hero?.equipment.weapon?.uid).toBe(starterUid);
+    // …and the staff stays in the bag rather than vanishing.
     expect(store().save?.hero?.backpack.filter(Boolean)).toHaveLength(1);
   });
 
   it('unequips back into the backpack', () => {
-    const sword = swordFor();
-    store().grantItem(sword);
-    store().equipItem(sword);
     store().unequipItem('weapon');
 
     expect(store().save?.hero?.equipment.weapon).toBeUndefined();
@@ -189,5 +199,222 @@ describe('gameStore — battle preferences', () => {
       volume: 0.3,
       battleSpeed: 4,
     });
+  });
+});
+
+describe('gameStore — the core loop', () => {
+  beforeEach(async () => {
+    await store().hydrate(1);
+    await store().createHero('Kargath', 'warrior');
+  });
+
+  const board = () => store().save!.activity.board;
+  const activity = () => store().save!.activity;
+
+  it('lays out a board the moment a hero exists', () => {
+    // Creation ends at the tavern; an empty quest table would be the first thing they saw.
+    expect(board()).toHaveLength(3);
+    expect(activity().boardDay).not.toBeNull();
+    expect(activity().vigor).toBe(100);
+  });
+
+  it('accepts a mission, spending Vigor and starting a timer', () => {
+    const offer = board()[0]!;
+    expect(store().acceptMission(offer.id, 10)).toBeNull();
+
+    expect(activity().vigor).toBe(90);
+    expect(activity().mission?.offer.id).toBe(offer.id);
+    // The taken job leaves the board.
+    expect(board().some((entry) => entry.id === offer.id)).toBe(false);
+  });
+
+  it('refuses a second mission while one runs, and says why', () => {
+    store().acceptMission(board()[0]!.id, 5);
+    expect(store().acceptMission(board()[0]!.id, 5)).toEqual({ kind: 'mission-running' });
+  });
+
+  it('refuses a mission the purse of Vigor cannot cover', () => {
+    // Burn the day down to 5 Vigor.
+    useGameStore.setState({
+      save: { ...store().save!, activity: { ...activity(), vigor: 5 } },
+    });
+
+    expect(store().acceptMission(board()[0]!.id, 20)).toEqual({
+      kind: 'insufficient-vigor',
+      needed: 20,
+      available: 5,
+    });
+  });
+
+  it('survives a reload mid-timer', async () => {
+    const offer = board()[0]!;
+    store().acceptMission(offer.id, 20);
+    const endsAt = activity().mission!.endsAt;
+    await store().flush();
+
+    resetGameStoreForTests();
+    await store().hydrate(1);
+
+    // The timer is two timestamps in the save; there is no in-memory state to lose.
+    expect(activity().mission?.offer.id).toBe(offer.id);
+    expect(activity().mission?.endsAt).toBe(endsAt);
+    expect(activity().vigor).toBe(80);
+  });
+
+  it('lands a finished mission into "waiting to be watched" rather than banking it', () => {
+    store().acceptMission(board()[0]!.id, 5);
+    const goldBefore = store().save!.hero!.gold;
+
+    // Pull the finish line into the past, as a closed tab would.
+    useGameStore.setState({
+      save: {
+        ...store().save!,
+        activity: { ...activity(), mission: { ...activity().mission!, endsAt: 1 } },
+      },
+    });
+    store().landMission();
+
+    expect(activity().mission).toBeNull();
+    expect(activity().pendingMission).not.toBeNull();
+    // Nothing is paid until the fight has been watched.
+    expect(store().save!.hero!.gold).toBe(goldBefore);
+  });
+
+  it('survives a reload with a fight waiting to be watched', async () => {
+    store().acceptMission(board()[0]!.id, 5);
+    useGameStore.setState({
+      save: {
+        ...store().save!,
+        activity: { ...activity(), mission: { ...activity().mission!, endsAt: 1 } },
+      },
+    });
+    store().landMission();
+    await store().flush();
+
+    resetGameStoreForTests();
+    await store().hydrate(1);
+
+    expect(activity().pendingMission).not.toBeNull();
+  });
+
+  it('pays out on claim, and only once', () => {
+    store().acceptMission(board()[0]!.id, 10);
+    useGameStore.setState({
+      save: {
+        ...store().save!,
+        activity: { ...activity(), mission: { ...activity().mission!, endsAt: 1 } },
+      },
+    });
+    store().landMission();
+
+    const pending = activity().pendingMission!;
+    const goldBefore = store().save!.hero!.gold;
+    const result = store().claimMission(pending)!;
+
+    expect(result.spoils.gold).toBeGreaterThan(0);
+    expect(store().save!.hero!.gold).toBe(goldBefore + result.spoils.gold);
+    expect(activity().pendingMission).toBeNull();
+
+    // Claiming again has nothing to claim; the purse must not move.
+    const goldAfter = store().save!.hero!.gold;
+    store().claimMission(pending);
+    expect(store().save!.hero!.gold).toBe(goldAfter);
+  });
+
+  it('puts a dropped item in the bags and reports the same one to the result screen', () => {
+    // Run missions until one drops something — the 25% table makes this quick.
+    for (let i = 0; i < 40; i += 1) {
+      const offer = board()[0];
+      if (!offer) break;
+      if (store().acceptMission(offer.id, 20) !== null) break;
+
+      useGameStore.setState({
+        save: {
+          ...store().save!,
+          activity: { ...activity(), mission: { ...activity().mission!, endsAt: 1 } },
+        },
+      });
+      store().landMission();
+
+      const before = store().save!.hero!.backpack.filter(Boolean).length;
+      const result = store().claimMission(activity().pendingMission!)!;
+
+      if (result.item) {
+        expect(store().save!.hero!.backpack.filter(Boolean).length).toBe(before + 1);
+        expect(
+          store().save!.hero!.backpack.find((entry) => entry?.uid === result.item!.uid),
+        ).toBeDefined();
+        return;
+      }
+
+      // Refill Vigor and redraw so the loop can continue.
+      useGameStore.setState({
+        save: {
+          ...store().save!,
+          activity: { ...activity(), vigor: 100, boardDay: null, board: [] },
+        },
+      });
+      store().refreshDay();
+    }
+  });
+
+  it('rerolls the board free once, then charges a die', () => {
+    const first = board().map((entry) => entry.id);
+
+    expect(store().rerollBoard()).toBeNull();
+    expect(board().map((entry) => entry.id)).not.toEqual(first);
+    expect(store().save!.hero!.dice).toBe(0);
+
+    // Second reroll wants a die the hero does not have.
+    expect(store().rerollBoard()).toEqual({ kind: 'insufficient-dice', needed: 1 });
+  });
+
+  it('skips the wait for a Golden Die', () => {
+    store().acceptMission(board()[0]!.id, 20);
+    expect(store().skipMissionTimer()).toEqual({ kind: 'insufficient-dice', needed: 1 });
+
+    useGameStore.setState({
+      save: { ...store().save!, hero: { ...store().save!.hero!, dice: 2 } },
+    });
+    expect(store().skipMissionTimer()).toBeNull();
+    expect(store().save!.hero!.dice).toBe(1);
+
+    // The hero is home: landing works immediately.
+    store().landMission();
+    expect(activity().pendingMission).not.toBeNull();
+  });
+
+  it('sells Ale for a die and caps drinking at three a day', () => {
+    useGameStore.setState({
+      save: { ...store().save!, hero: { ...store().save!.hero!, dice: 5 } },
+    });
+
+    for (let i = 0; i < 3; i += 1) {
+      expect(store().buyAle(), `buy ${i}`).toBeNull();
+      expect(store().drinkAle(), `drink ${i}`).toBeNull();
+    }
+
+    expect(activity().alesToday).toBe(3);
+    expect(store().buyAle()).toEqual({ kind: 'ale-cap-reached' });
+  });
+
+  it('raises the Vigor ceiling with Ale rather than overflowing it', () => {
+    useGameStore.setState({
+      save: {
+        ...store().save!,
+        hero: { ...store().save!.hero!, dice: 3 },
+        activity: { ...activity(), vigor: 100 },
+      },
+    });
+
+    store().buyAle();
+    store().drinkAle();
+
+    // 100 was already the cap; Ale lifts the cap to 120 and the drink fills to it.
+    expect(activity().vigor).toBe(120);
+  });
+
+  it('refuses to drink Ale nobody is holding', () => {
+    expect(store().drinkAle()).toEqual({ kind: 'no-ale-held' });
   });
 });

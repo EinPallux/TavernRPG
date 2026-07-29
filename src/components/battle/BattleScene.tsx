@@ -125,7 +125,9 @@ export function BattleScene({
         style={{ x: shake, y: shake * 0.45 }}
         data-testid="battle-shake-layer"
       >
-        <div className="absolute inset-0 flex items-center justify-between gap-8 px-[6%] pb-16">
+        {/* Capped width, centred: on a wide stage the fighters would otherwise stand at
+            opposite ends of the landscape and the duel would read as two separate portraits. */}
+        <div className="absolute inset-0 mx-auto flex max-w-5xl items-center justify-between gap-6 px-6 pb-16">
           <BattleFighter
             card={cards.a}
             side="a"

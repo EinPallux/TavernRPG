@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 4,
+  "savedAt": 1785926400000,
+  "slot": 2,
+  "worldSeed": 733198461,
+  "clock": {
+    "lastSeen": 1785926400000,
+    "clampCount": 0
+  },
+  "settings": {
+    "navCollapsed": true,
+    "motion": "system",
+    "sfxEnabled": true,
+    "musicEnabled": false,
+    "volume": 0.55,
+    "battleSpeed": 4,
+    "battleSkipDefault": true
+  },
+  "hero": {
+    "name": "Bram Halloway",
+    "classId": "swashbuckler",
+    "level": 27,
+    "xp": 61200,
+    "trained": {
+      "str": 0,
+      "dex": 40,
+      "int": 0,
+      "con": 18,
+      "lck": 0
+    },
+    "gold": 35581,
+    "dice": 11,
+    "equipment": {
+      "weapon": {
+        "uid": "itm-4lq3k-63p0k",
+        "slot": "weapon",
+        "rarity": "epic",
+        "level": 27,
+        "classLock": "swashbuckler",
+        "name": "Starmetal Rapier of Quick Hands",
+        "iconId": "rapier",
+        "baseId": "s-rapier",
+        "attrs": {
+          "dex": 25,
+          "con": 11,
+          "lck": 13
+        },
+        "weapon": {
+          "min": 68,
+          "max": 102
+        },
+        "value": 6161,
+        "scrapYield": {
+          "scrap": 0,
+          "essence": 13,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      "chest": {
+        "uid": "itm-249hd-2zxdy",
+        "slot": "chest",
+        "rarity": "rare",
+        "level": 27,
+        "name": "Emberforged Jerkin of Stout Heart",
+        "iconId": "chestplate",
+        "baseId": "g-jerkin",
+        "attrs": {
+          "con": 23,
+          "int": 10
+        },
+        "armour": 284,
+        "value": 2567,
+        "scrapYield": {
+          "scrap": 0,
+          "essence": 5,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      "offhand": {
+        "uid": "itm-5food-1vdw6",
+        "slot": "offhand",
+        "rarity": "rare",
+        "level": 27,
+        "classLock": "swashbuckler",
+        "name": "Emberforged Parry Dagger of Fool’s Grace",
+        "iconId": "dagger",
+        "baseId": "o-parrydagger",
+        "attrs": {
+          "lck": 22,
+          "str": 8
+        },
+        "armour": 113,
+        "value": 2567,
+        "scrapYield": {
+          "scrap": 0,
+          "essence": 6,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      "helmet": {
+        "uid": "itm-34xmf-4ij3t",
+        "slot": "helmet",
+        "rarity": "uncommon",
+        "level": 27,
+        "name": "Fine Barbute of the Falcon",
+        "iconId": "helm",
+        "baseId": "g-barbute",
+        "attrs": {
+          "dex": 23
+        },
+        "armour": 128,
+        "value": 1130,
+        "scrapYield": {
+          "scrap": 7,
+          "essence": 0,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      "boots": {
+        "uid": "itm-ysm-4lw2h",
+        "slot": "boots",
+        "rarity": "uncommon",
+        "level": 27,
+        "name": "Keen Striders of Fool’s Grace",
+        "iconId": "boots",
+        "baseId": "g-striders",
+        "attrs": {
+          "lck": 23
+        },
+        "armour": 99,
+        "value": 1130,
+        "scrapYield": {
+          "scrap": 8,
+          "essence": 0,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      "ring": {
+        "uid": "itm-7q26f-1fbsn",
+        "slot": "ring",
+        "rarity": "rare",
+        "level": 27,
+        "name": "Emberforged Band of Fortune",
+        "iconId": "ring",
+        "baseId": "g-band",
+        "attrs": {
+          "lck": 21,
+          "dex": 6
+        },
+        "value": 2567,
+        "scrapYield": {
+          "scrap": 0,
+          "essence": 4,
+          "starmetal": 0
+        },
+        "locked": false
+      }
+    },
+    "backpack": [
+      {
+        "uid": "itm-4kzl8-8074j",
+        "slot": "weapon",
+        "rarity": "common",
+        "level": 1,
+        "classLock": "swashbuckler",
+        "name": "Worn Rapier",
+        "iconId": "rapier",
+        "baseId": "s-rapier",
+        "attrs": {
+          "con": 2
+        },
+        "weapon": {
+          "min": 3,
+          "max": 4
+        },
+        "value": 6,
+        "scrapYield": {
+          "scrap": 4,
+          "essence": 0,
+          "starmetal": 0
+        },
+        "locked": true
+      },
+      {
+        "uid": "itm-3iyvc-4t0fi",
+        "slot": "chest",
+        "rarity": "common",
+        "level": 1,
+        "name": "Rough Breastplate",
+        "iconId": "chestplate",
+        "baseId": "g-breastplate",
+        "attrs": {
+          "int": 2
+        },
+        "armour": 6,
+        "value": 6,
+        "scrapYield": {
+          "scrap": 4,
+          "essence": 0,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      {
+        "uid": "itm-1y4de-9ziuf",
+        "slot": "gloves",
+        "rarity": "rare",
+        "level": 26,
+        "name": "Emberforged Gloves of the Ox",
+        "iconId": "gloves",
+        "baseId": "g-gloves",
+        "attrs": {
+          "str": 21,
+          "con": 8
+        },
+        "armour": 127,
+        "value": 2440,
+        "scrapYield": {
+          "scrap": 0,
+          "essence": 5,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      {
+        "uid": "itm-25vo-343b4",
+        "slot": "amulet",
+        "rarity": "common",
+        "level": 26,
+        "name": "Chipped Amulet",
+        "iconId": "amulet",
+        "baseId": "g-amulet",
+        "attrs": {
+          "con": 15
+        },
+        "value": 488,
+        "scrapYield": {
+          "scrap": 3,
+          "essence": 0,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "satchel": [],
+    "createdAt": 1785926400000
+  }
+}

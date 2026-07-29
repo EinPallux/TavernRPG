@@ -67,6 +67,29 @@ Backdrop: `patrol_background.png`. Guard-captain **Hildy** hosts.
 - 3 missions/board are guaranteed ≥2 zones for variety; a pity rule guarantees ≥1 item-drop mission
   (20-min card) per board.
 
+## 6b. As built (Phase 5)
+
+- **The board is drawn lazily**, on the first read of the day rather than at midnight, so a
+  player who never opens the tavern never has a stale board to explain. Seeded from
+  `(worldSeed, dayKey, rerollCount)`, which is what makes a refresh free and a reroll not.
+- **The ≥2-zone guarantee is enforced, not hoped for**: the third card is forced onto an unused
+  zone when the first two collide. It leans on `zonesForLevel` returning "band ± neighbours" —
+  strict in-band selection leaves a level-50 hero with exactly one zone and the guarantee
+  unsatisfiable.
+- **Vigor is spent at accept**, which is why a mission signed at 23:58 is untouched by the
+  midnight reset four minutes later.
+- **The taken job leaves the board**; the other two stay. Accepting is the commitment, so the
+  card it came from should not still be sitting there offering itself.
+- **Rewards are banked when the fight *finishes*, not when it is opened.** Claiming on the way in
+  lights up the HUD with the gold before the first sword is drawn, which spoils the scene. Nothing
+  is at risk in waiting: the mission stays `pendingMission` until claimed, so closing the tab
+  mid-battle leaves it waiting to be watched again.
+- **A brand-new hero is given a kit** (`engine/items/starterKit.ts`) and meets no monster above
+  their own level until level 5. Without either, the first mission is a coin flip; with both it is
+  ~99% (balancing §5).
+- Insufficient Vigor **disables the accept button with a reason on it** rather than failing on
+  click — style guide §8. The shorter durations stay live, so the card is never a dead end.
+
 ## 7. Data hooks
 
 `MissionOffer` {id, zoneId, blurbId, monsterId, seed, durations, rewardsPreview},

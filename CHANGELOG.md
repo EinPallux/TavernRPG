@@ -7,6 +7,55 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 5: Tavern & Missions (the core loop)
+- **The loop is playable**: accept a job → wait out a real timer → watch the fight → take the
+  loot → spend it on training → go again. The Gilded Tankard is a real screen now, not a dressed
+  placeholder.
+- **The quest table**: three seeded jobs a day, each with its zone art, a posting written by
+  somebody in the world, the foe, a length picker (5/10/15/20 min) that moves the rewards as you
+  choose it, and the **drop odds printed on the card** — read from the same table the roll obeys,
+  so they cannot drift apart.
+- **Vigor** (100/day) with a real tankard in the HUD, Ale from Marla (3/day cap, raises the
+  ceiling rather than overflowing it), and a mission timer chip that becomes "your hero is back".
+- **Missions never auto-resolve.** A timer that expires while the tab is closed leaves the fight
+  waiting at the door — the battle is the payoff, and resolving it in the background would hand
+  the player a result they never got to watch.
+- **The outcome is committed at accept.** Reloading mid-timer, closing the tab for a day, or
+  rewatching cannot change what a mission pays. The timer is two timestamps in the save.
+- **The Reset Engine** owns every daily boundary in one place — no feature checks the clock
+  itself. Missed days are walked in order (nine days away is nine boundaries but still one day of
+  Vigor), and day *keys* are compared rather than elapsed hours, so DST is a non-event.
+- **Content**: 10 zones with overlapping level bands, 64 mission monsters (full rosters for the
+  bands this phase ships, levels 1–36), 24 parameterised mission blurbs, and Marla's barks.
+- **Save schema v5** adds the activity slice, with a migration and a captured v4 fixture.
+- Golden Dice sinks arrive with their faucets: board reroll (free once daily, then a die) and
+  calling the hero back early.
+
+### Changed — Phase 5
+- **New heroes start in a kit.** `createHero` granted nothing at all, which was invisible while
+  there was nothing to fight and fatal the moment there was: an unarmed hero swings for 1–2 and
+  loses to the gentlest thing in the woods. A seeded common weapon and chest now go straight onto
+  the body.
+- **Monster level jitter no longer rounds upward below level 5.** Plus-two levels is a rounding
+  error at 40 and a different game at 1; a brand-new hero was losing about a fifth of their first
+  missions. Measured: the opening hours went from ~80% to ~99%, with nothing past level 5 touched.
+- **Zone backdrops were remapped to the art that actually depicts them.** The content-plan table
+  numbered the files sight unseen, which put a tropical shipwreck behind "Whispering Woods" and a
+  flower meadow behind the marsh.
+- **Rewards are banked when the fight ends, not when it starts.** Claiming on the way in lit up
+  the HUD with the gold before the first sword was drawn, spoiling the scene it exists to tell.
+  Nothing is lost by waiting: the mission stays pending until claimed.
+- Battle fighters are laid out within a capped width so they read as a duel rather than as two
+  portraits at opposite ends of a landscape, and a monster without art now shows a lit archetype
+  card instead of a near-black hole.
+- `goldPerVigor`'s worked examples in balancing §2 were wrong (L25 said 311; it is 278) and are
+  now asserted by tests.
+
+### Fixed — Phase 5
+- `claimMission` paid out again if called twice with the same mission — a double-clicked Continue
+  button, or a component mounting twice, would have paid the player twice. It now refuses
+  anything that is not the currently pending mission.
+
 ### Added — Phase 4: Battle Scene
 - **The battle scene** (`src/components/battle/`) — the Phase 3 log, choreographed. Fighters slide
   in behind a backdrop push-in, attackers lunge, hits throw Kenney particles from a pooled canvas,

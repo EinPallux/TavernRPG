@@ -9,16 +9,24 @@
 
 | Zone | Level band | Backdrop file(s) | Monster families |
 |---|---|---|---|
-| Whispering Woods | 1–8 | mission_background_1 | Forest beasts, bandits |
-| Miller's Fields | 5–14 | mission_background_2 | Vermin, scarecrows, brigands |
-| Old King's Road | 10–20 | mission_background_3, _4 | Highwaymen, wargs, restless dead |
-| Fogmoor Marsh | 16–28 | mission_background_5 | Bog creatures, witches' servants |
-| Thornhill Ruins | 24–36 | mission_background_6, _7 | Cultists, animated armor, gargoyles |
-| Silverpine Pass | 32–46 | mission_background_8 | Mountain clans, harpies, ice wolves |
-| Ember Caves | 42–58 | mission_background_9, _10 | Kobolds, magma beasts, salamanders |
-| Gloomhollow | 54–72 | mission_background_11 | Shades, night hags, spiders |
-| Sunken Chapel | 68–88 | mission_background_12, _13 | Drowned dead, deep cult, reliquary guardians |
-| Frostfell Ridge | 84–110+ | mission_background_14 | Frost giants' kin, wraiths, rocs |
+| Whispering Woods | 1–8 | mission_background_13, _10 | Forest beasts, bandits |
+| Miller's Fields | 5–14 | mission_background_11, _12 | Vermin, scarecrows, brigands |
+| Old King's Road | 10–20 | mission_background_3, _5 | Highwaymen, wargs, restless dead |
+| Fogmoor Marsh | 16–28 | mission_background_2 | Bog creatures, witches' servants |
+| Thornhill Ruins | 24–36 | mission_background_4 | Cultists, animated armor, gargoyles |
+| Silverpine Pass | 32–46 | mission_background_9 | Mountain clans, harpies, ice wolves |
+| Ember Caves | 42–58 | mission_background_6 | Kobolds, magma beasts, salamanders |
+| Gloomhollow | 54–72 | mission_background_8 | Shades, night hags, spiders |
+| Sunken Chapel | 68–88 | mission_background_1, _14 | Drowned dead, deep cult, reliquary guardians |
+| Frostfell Ridge | 84–110+ | mission_background_7 | Frost giants' kin, wraiths, rocs |
+
+> **Corrected in Phase 5.** The original table numbered the backdrops sequentially, sight
+> unseen, which put a tropical shipwreck behind "Whispering Woods" and a flower meadow behind
+> the marsh. The mapping above is what the files actually depict: 13/10 are deep forest, 11/12
+> are farmland, 3/5 are road-and-watchtower, 6 is a volcano, 7 is frozen peaks, 1/14 are
+> coastal. Two zones have no matching art in the pack (Fogmoor Marsh, Gloomhollow) and lean on
+> their `tint` until the content pass commissions art — which drops in via the override
+> manifest with no code change (`asset-pipeline.md` §3).
 
 Zone selection follows player level (current band ± neighbors). Zones are flavor + monster pool +
 backdrop; rewards depend only on level & duration (`balancing-formulas.md` §1–2).

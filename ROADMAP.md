@@ -101,7 +101,7 @@ Two things the phase forced that were not in the plan:
 Also shipped: save schema **v4** (persisted battle speed + skip preference) with migration and a
 captured v3 fixture.
 
-## Phase 5 — Tavern & Missions (L) 🔲
+## Phase 5 — Tavern & Missions (L) ✅
 Tavern screen (ambient, Marla, quest table), Vigor system + HUD tankard, mission offers
 (zones/monsters/blurbs data for bands 1–30 initially), duration picker, real-time timers
 (+offline completion), fight-at-return via engine+scene, rewards & drop tables, reroll/skip dice
@@ -109,6 +109,26 @@ sinks, Ale (barkeep). Mission backgrounds wired for zones 1–4.
 **Accept:** full core loop playable (accept → wait → fight → loot → train); Vigor resets at
 midnight via Reset Engine v1 (day-key logic + missed-day processing); drop rates match tables
 (seeded batch tests); mission state survives reload mid-timer and mid-"return".
+
+**Delivered.** The loop is playable end to end. 10 zones and 64 monsters as data; `board.ts`
+draws a stable seeded board; `lifecycle.ts` runs accept → wait → resolve with the outcome
+committed at accept; `resetEngine.ts` owns every daily boundary; `drops.ts` holds the §7 tables
+that both the roll *and* the printed odds read from. Save schema **v5** carries the activity
+slice, so a mission is two timestamps in the save and survives anything.
+
+Four things the phase forced that were not in the plan:
+- **New heroes owned nothing.** Fatal once there was something to fight — an unarmed hero swings
+  for 1–2. `createHero` now grants a seeded starter kit.
+- **Level-1 heroes met level-3 monsters** and lost a fifth of their first missions. The jitter no
+  longer rounds upward below level 5; opening hours went ~80% → ~99%.
+- **Zone backdrops did not match their zones.** The content-plan table was numbered sight unseen
+  and put a tropical shipwreck behind "Whispering Woods". Remapped to what the art depicts.
+- **Rewards were banked before the fight played,** so the HUD lit up with the gold before the
+  first sword was drawn. Claiming now happens when the fight ends; nothing is lost, because the
+  mission stays pending until claimed.
+
+Also fixed: `claimMission` would pay twice if called twice (a double-clicked Continue). It now
+refuses anything that is not the pending mission.
 
 ## Phase 6 — Patrol & Economy Pass 1 (S) 🔲
 Patrol screen (Hildy, shift slider, offline accrual, cancel pro-rating, shift report), mission↔

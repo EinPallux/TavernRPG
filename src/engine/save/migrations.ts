@@ -8,7 +8,13 @@
  * Pure module: no DOM, no storage.
  */
 
-import { CURRENT_SCHEMA_VERSION, DEFAULT_SETTINGS, saveFileSchema, type SaveFile } from './schema';
+import {
+  CURRENT_SCHEMA_VERSION,
+  DEFAULT_ACTIVITY,
+  DEFAULT_SETTINGS,
+  saveFileSchema,
+  type SaveFile,
+} from './schema';
 
 export interface Migration {
   /** Schema version this migration reads. */
@@ -61,6 +67,16 @@ export const MIGRATIONS: readonly Migration[] = [
           battleSkipDefault: DEFAULT_SETTINGS.battleSkipDefault,
         },
       };
+    },
+  },
+  {
+    from: 4,
+    to: 5,
+    describe: 'Phase 5: add the activity slice (Vigor, mission board, active mission)',
+    migrate: (data) => {
+      // Purely additive. An existing hero wakes up with a full day of Vigor and an empty
+      // board, which redraws on first read — exactly what they would get after a reset.
+      return { ...data, activity: { ...DEFAULT_ACTIVITY } };
     },
   },
 ];

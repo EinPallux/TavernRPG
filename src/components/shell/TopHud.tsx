@@ -21,6 +21,7 @@ import { useShellStore } from '@/state/shellStore';
 import { useGameStore } from '@/state/gameStore';
 import { classDef } from '@/data/classes';
 import { xpNeeded } from '@/engine/progression/xp';
+import { vigorCeiling } from '@/engine/reset/resetEngine';
 import { snappy } from '@/styles/motion';
 
 function CurrencyChip({
@@ -55,10 +56,11 @@ function CurrencyChip({
 export function TopHud() {
   const preview = useShellStore((state) => state.preview);
   const hero = useGameStore((state) => state.save?.hero ?? null);
+  const activity = useGameStore((state) => state.save?.activity ?? null);
 
   /**
-   * The hero is authoritative wherever it exists. Vigor and activity timers are still preview
-   * values because their systems arrive in Phases 5–6; everything else is now real.
+   * The hero and their day are authoritative wherever they exist. Only the mount timer is
+   * still a preview value; its system arrives with the Stables in Phase 9.
    */
   const level = hero?.level ?? preview.level;
   const xp = hero?.xp ?? preview.xp;
@@ -70,7 +72,14 @@ export function TopHud() {
     ? `${hero.name} — level ${hero.level} ${classDef(hero.classId).name}`
     : 'Your hero';
 
-  const vigorRatio = preview.vigorMax > 0 ? preview.vigor / preview.vigorMax : 0;
+  // Vigor and the mission timer are real as of Phase 5.
+  const vigor = activity ? Math.floor(activity.vigor) : preview.vigor;
+  const vigorMax = activity ? vigorCeiling(activity.alesToday) : preview.vigorMax;
+  const vigorRatio = vigorMax > 0 ? Math.min(1, vigor / vigorMax) : 0;
+
+  // A landed mission has no countdown left to show — it shows a "go and see" chip instead.
+  const missionEndsAt = activity?.mission?.endsAt ?? null;
+  const missionWaiting = Boolean(activity?.pendingMission);
 
   return (
     <header className="surface-timber bg-wood-800/95 relative z-30 flex h-[72px] items-center gap-6 border-b border-amber-500/20 px-5">
@@ -137,26 +146,38 @@ export function TopHud() {
       {/* Vigor: the tankard *is* the meter. */}
       <div
         className="flex items-center gap-2"
-        title={`Vigor ${preview.vigor}/${preview.vigorMax} — refills at midnight`}
+        title={`Vigor ${vigor}/${vigorMax} — refills at midnight`}
         data-testid="hud-vigor"
       >
         <span className="text-ember-600">
           <VigorTankard size={26} ratio={vigorRatio} />
         </span>
         <span className="text-parchment-300 text-sm">
-          {preview.vigor}
-          <span className="text-parchment-500/45">/{preview.vigorMax}</span>
+          {vigor}
+          <span className="text-parchment-500/45">/{vigorMax}</span>
         </span>
       </div>
 
       {/* Whatever is currently running. */}
       <div className="flex flex-1 items-center gap-2">
-        {preview.activityEndsAt !== null && (
-          <TimerChip
-            endsAt={preview.activityEndsAt}
-            label={preview.activityLabel}
-            data-testid="hud-activity"
-          />
+        {missionWaiting ? (
+          <Link
+            href="/tavern"
+            className="chamfer-sm font-display animate-pulse border border-amber-500/60 bg-amber-500/15 px-3 py-1.5 text-xs tracking-widest text-amber-400 uppercase"
+            data-testid="hud-mission-waiting"
+          >
+            Your hero is back
+          </Link>
+        ) : missionEndsAt !== null ? (
+          <TimerChip endsAt={missionEndsAt} label="Mission" data-testid="hud-activity" />
+        ) : (
+          preview.activityEndsAt !== null && (
+            <TimerChip
+              endsAt={preview.activityEndsAt}
+              label={preview.activityLabel}
+              data-testid="hud-activity"
+            />
+          )
         )}
         {preview.mountExpiresAt !== null && (
           <TimerChip endsAt={preview.mountExpiresAt} label="Mount" data-testid="hud-mount" />

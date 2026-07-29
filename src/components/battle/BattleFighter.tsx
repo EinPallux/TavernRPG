@@ -137,10 +137,17 @@ export function BattleFighter({
               className="h-full w-full object-cover"
             />
           ) : (
-            // Monsters have no portrait until the art drops in (asset-pipeline §3).
-            <div className="from-wood-700 to-wood-900 grid h-full w-full place-items-center bg-gradient-to-b">
-              <span className="font-display text-parchment-500/40 text-4xl">
+            /**
+             * No art yet, so the archetype carries the identity (asset-pipeline §3: "silhouette
+             * card + zone tint"). Deliberately lit rather than a dark hole — the thing you are
+             * fighting has to be as legible on the stage as the thing you are fighting *with*.
+             */
+            <div className="from-wood-600 via-wood-700 to-wood-900 grid h-full w-full place-content-center gap-1 bg-gradient-to-b text-center">
+              <span className="font-display text-parchment-300/70 text-5xl leading-none font-black">
                 {card.name.charAt(0)}
+              </span>
+              <span className="text-parchment-500/55 text-[9px] tracking-[0.18em] uppercase">
+                {card.kind}
               </span>
             </div>
           )}

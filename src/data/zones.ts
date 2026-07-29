@@ -40,6 +40,15 @@ export interface ZoneDef {
 
 const BG = (name: string) => `/assets/backgrounds/${name}.png`;
 
+/**
+ * Backdrops are matched to what the art actually *depicts*, not to the numbering in
+ * content-plan §1 — that table was written before anyone opened the files, and following it
+ * put a tropical shipwreck behind "Whispering Woods". Where no art quite fits a zone's mood
+ * the closest scene carries it and the zone `tint` does the rest; the content pass (ROADMAP
+ * Phase 15) can commission per-zone art, which drops in through the override manifest with
+ * no code change.
+ */
+
 const ZONE_LIST = [
   {
     id: 'whispering-woods',
@@ -47,8 +56,8 @@ const ZONE_LIST = [
     tagline: 'Close, green, and never quite silent.',
     minLevel: 1,
     maxLevel: 8,
-    backdrops: [BG('mission_background_1')],
-    tint: 'from-wood-900 via-moss-600/25 to-wood-900/50',
+    backdrops: [BG('mission_background_13'), BG('mission_background_10')],
+    tint: 'from-wood-900 via-moss-600/30 to-wood-900/45',
   },
   {
     id: 'millers-fields',
@@ -56,8 +65,8 @@ const ZONE_LIST = [
     tagline: 'Good soil, bad harvest, worse neighbours.',
     minLevel: 5,
     maxLevel: 14,
-    backdrops: [BG('mission_background_2')],
-    tint: 'from-wood-900 via-amber-500/18 to-wood-900/50',
+    backdrops: [BG('mission_background_11'), BG('mission_background_12')],
+    tint: 'from-wood-900 via-amber-500/20 to-wood-900/45',
   },
   {
     id: 'old-kings-road',
@@ -65,8 +74,8 @@ const ZONE_LIST = [
     tagline: 'Paved by a kingdom nobody remembers.',
     minLevel: 10,
     maxLevel: 20,
-    backdrops: [BG('mission_background_3'), BG('mission_background_4')],
-    tint: 'from-wood-900 via-wood-700/40 to-wood-900/50',
+    backdrops: [BG('mission_background_3'), BG('mission_background_5')],
+    tint: 'from-wood-900 via-wood-700/35 to-wood-900/45',
   },
   {
     id: 'fogmoor-marsh',
@@ -74,8 +83,8 @@ const ZONE_LIST = [
     tagline: 'The ground here has opinions about your boots.',
     minLevel: 16,
     maxLevel: 28,
-    backdrops: [BG('mission_background_5')],
-    tint: 'from-wood-900 via-arcane-500/20 to-wood-900/55',
+    backdrops: [BG('mission_background_2')],
+    tint: 'from-wood-900 via-moss-600/35 to-arcane-500/25',
   },
   {
     id: 'thornhill-ruins',
@@ -83,8 +92,8 @@ const ZONE_LIST = [
     tagline: 'Somebody is still lighting the candles.',
     minLevel: 24,
     maxLevel: 36,
-    backdrops: [BG('mission_background_6'), BG('mission_background_7')],
-    tint: 'from-wood-900 via-blood-600/18 to-wood-900/55',
+    backdrops: [BG('mission_background_4')],
+    tint: 'from-wood-900 via-blood-600/22 to-wood-900/55',
   },
   {
     id: 'silverpine-pass',
@@ -92,8 +101,8 @@ const ZONE_LIST = [
     tagline: 'Thin air, thinner hospitality.',
     minLevel: 32,
     maxLevel: 46,
-    backdrops: [BG('mission_background_8')],
-    tint: 'from-wood-900 via-parchment-300/15 to-wood-900/55',
+    backdrops: [BG('mission_background_9')],
+    tint: 'from-wood-900 via-parchment-300/18 to-wood-900/50',
   },
   {
     id: 'ember-caves',
@@ -101,8 +110,8 @@ const ZONE_LIST = [
     tagline: 'Warm rock, warmer residents.',
     minLevel: 42,
     maxLevel: 58,
-    backdrops: [BG('mission_background_9'), BG('mission_background_10')],
-    tint: 'from-wood-900 via-amber-400/22 to-wood-900/55',
+    backdrops: [BG('mission_background_6')],
+    tint: 'from-wood-900 via-amber-400/25 to-wood-900/50',
   },
   {
     id: 'gloomhollow',
@@ -110,8 +119,8 @@ const ZONE_LIST = [
     tagline: 'Bring your own light. Bring a spare.',
     minLevel: 54,
     maxLevel: 72,
-    backdrops: [BG('mission_background_11')],
-    tint: 'from-wood-900 via-arcane-500/25 to-wood-900/65',
+    backdrops: [BG('mission_background_8')],
+    tint: 'from-wood-900 via-arcane-500/30 to-wood-900/70',
   },
   {
     id: 'sunken-chapel',
@@ -119,8 +128,8 @@ const ZONE_LIST = [
     tagline: 'The choir never stopped. It only got wetter.',
     minLevel: 68,
     maxLevel: 88,
-    backdrops: [BG('mission_background_12'), BG('mission_background_13')],
-    tint: 'from-wood-900 via-moss-600/22 to-wood-900/60',
+    backdrops: [BG('mission_background_1'), BG('mission_background_14')],
+    tint: 'from-wood-900 via-moss-600/28 to-wood-900/60',
   },
   {
     id: 'frostfell-ridge',
@@ -129,8 +138,8 @@ const ZONE_LIST = [
     minLevel: 84,
     // The last zone has no upper bound in practice — there is no level cap.
     maxLevel: Number.MAX_SAFE_INTEGER,
-    backdrops: [BG('mission_background_14')],
-    tint: 'from-wood-900 via-parchment-300/12 to-wood-900/60',
+    backdrops: [BG('mission_background_7')],
+    tint: 'from-wood-900 via-parchment-300/15 to-wood-900/55',
   },
 ] as const satisfies readonly ZoneDef[];
 

@@ -13,7 +13,7 @@ import { ICON_IDS } from '@/data/icons';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -123,6 +123,84 @@ export const DEFAULT_SETTINGS: Settings = {
   battleSkipDefault: false,
 };
 
+/** `YYYY-MM-DD`, local. The reset engine compares these rather than elapsed hours. */
+const dayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+export const missionDurationSchema = z.union([
+  z.literal(5),
+  z.literal(10),
+  z.literal(15),
+  z.literal(20),
+]);
+
+/** A job on the board. Persisted so a refresh cannot reshuffle the day's work. */
+export const missionOfferSchema = z.object({
+  id: z.string().min(1),
+  zoneId: z.string().min(1),
+  monsterId: z.string().min(1),
+  blurbId: z.string().min(1),
+  backdropIndex: z.number().int().min(0),
+  /** Committed at draw: the fight and the loot both fork from here. */
+  seed: seedSchema,
+  monsterLevel: z.number().int().min(1),
+});
+
+export const activeMissionSchema = z.object({
+  offer: missionOfferSchema,
+  duration: missionDurationSchema,
+  /** Wall-clock stamps, so the timer keeps running with the tab closed. */
+  startedAt: timestampSchema,
+  endsAt: timestampSchema,
+  vigorSpent: z.number().min(0),
+  /** Level at signing — rewards are priced when the contract is signed, not when it is paid. */
+  heroLevel: z.number().int().min(1),
+});
+
+/**
+ * Everything time-bound about the player's day. Added in schema v5 (Phase 5), when missions
+ * gave the game its first thing that happens while you are not looking.
+ */
+export const activitySchema = z.object({
+  vigor: z.number().min(0),
+  /** Ales drunk today, against the 3/day cap. */
+  alesToday: z.number().int().min(0),
+  /** Free Ales received today, capped at one (balancing §7). */
+  freeAlesToday: z.number().int().min(0),
+  /** Unopened Ales the player is holding. */
+  alesHeld: z.number().int().min(0),
+  /** The day's board, and the day it was drawn for. */
+  board: z.array(missionOfferSchema),
+  boardDay: dayKeySchema.nullable(),
+  boardRerollsToday: z.number().int().min(0),
+  /** The job in progress, if any. Only one at a time (tavern spec §3). */
+  mission: activeMissionSchema.nullable(),
+  /**
+   * A finished mission whose fight has not been watched yet.
+   *
+   * Missions never auto-resolve: the battle is the payoff, so a timer that expired while the
+   * tab was closed leaves the fight waiting here rather than quietly banking the rewards.
+   */
+  pendingMission: activeMissionSchema.nullable(),
+  /** Last day boundary the reset engine processed. */
+  lastProcessedDay: dayKeySchema.nullable(),
+  /** Lifetime counter, for tasks and the "closest moment" flavour. */
+  missionsCompleted: z.number().int().min(0),
+});
+
+export const DEFAULT_ACTIVITY: Activity = {
+  vigor: 100,
+  alesToday: 0,
+  freeAlesToday: 0,
+  alesHeld: 0,
+  board: [],
+  boardDay: null,
+  boardRerollsToday: 0,
+  mission: null,
+  pendingMission: null,
+  lastProcessedDay: null,
+  missionsCompleted: 0,
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -133,11 +211,15 @@ export const saveFileSchema = z.object({
   settings: settingsSchema,
   /** Null until the player finishes creation — that is what routes them to the class picker. */
   hero: heroSchema.nullable(),
+  activity: activitySchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
 export type Settings = z.infer<typeof settingsSchema>;
 export type Hero = z.infer<typeof heroSchema>;
+export type Activity = z.infer<typeof activitySchema>;
+export type StoredMissionOffer = z.infer<typeof missionOfferSchema>;
+export type StoredActiveMission = z.infer<typeof activeMissionSchema>;
 export type SaveFile = z.infer<typeof saveFileSchema>;
 
 export interface NewSaveOptions {
@@ -156,6 +238,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     clock: { lastSeen: now, clampCount: 0 },
     settings: { ...DEFAULT_SETTINGS },
     hero: null,
+    activity: { ...DEFAULT_ACTIVITY },
   };
 }
 

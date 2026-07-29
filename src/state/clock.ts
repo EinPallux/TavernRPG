@@ -35,6 +35,16 @@ export function msUntilMidnight(): number {
   return clock.msUntilNextLocalMidnight();
 }
 
+/**
+ * Every day boundary strictly after `from` and up to `to`.
+ *
+ * Exposed so the reset engine stays pure — it walks whatever list it is handed rather than
+ * owning a calendar of its own (daily-loop spec §4).
+ */
+export function dayKeysBetween(from: string, to: string): readonly string[] {
+  return clock.dayKeysBetween(from, to);
+}
+
 export function resetClockForTests(): void {
   clock = new GameClock();
 }
