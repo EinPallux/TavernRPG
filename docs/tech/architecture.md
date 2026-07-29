@@ -8,7 +8,7 @@
 
 | Layer | Choice | Why |
 |---|---|---|
-| Framework | **Next.js 15 (App Router) + React 19 + TypeScript (strict)** | First-class Vercel target, modern defaults, file-routing for the town's screens; game is client-rendered (`"use client"` shell) with static delivery — no server runtime needed at 1.0 |
+| Framework | **Next.js 16 (App Router, Turbopack) + React 19 + TypeScript (strict)** | First-class Vercel target, modern defaults, file-routing for the town's screens; game is client-rendered (`"use client"` shell) with static delivery — no server runtime needed at 1.0 |
 | Styling | **Tailwind CSS v4** + CSS custom-property design tokens | Token-driven theming (rarity colors, chamfer system) without fighting a component library; zero runtime CSS cost |
 | State | **Zustand** (slice pattern) + **Immer** | Minimal boilerplate for a large mutable game state; selector-based re-render control for 60fps HUD |
 | Persistence | **IndexedDB** via `idb` + **Zod v4** schemas | Structured saves > localStorage limits; Zod validates on load and powers versioned migrations; export/import as compressed JSON file |
@@ -21,6 +21,29 @@
 Explicitly rejected: PixiJS/canvas UI (DOM+Motion suffices for S&F-style scenes and keeps
 accessibility/dev-speed), Redux (ceremony), server DB/auth at 1.0 (Q1 — local-first).
 
+### As-built notes (Phase 0, 2026-07-29)
+
+What the install actually resolved to, and the three places reality differed from the plan:
+
+- **Next.js 16.2.12 / React 19.2 / TypeScript 6.0 / Tailwind 4.3 / Vitest 4.1 / Zod 4.4.**
+  Next 16 was current at scaffold time; the App Router, static export and Turbopack build all
+  behave as planned. Next 16 removed the `eslint` key from `next.config.ts` — linting is its own
+  CI step, which it already was.
+- **ESLint pinned to 9.x, not 10.** `eslint-config-next@16` still bundles an `eslint-plugin-react`
+  that calls APIs removed in ESLint 10 (`context.getFilename`), so `eslint .` crashes on 10.x.
+  Pinned to `eslint@^9` (9.39) until the Next config catches up; revisit when
+  `eslint-config-next` declares ESLint 10 support. The config itself is flat-config native —
+  `eslint-config-next/core-web-vitals` and `/typescript` export `Linter.Config[]` directly, so
+  no `FlatCompat` shim is needed.
+- **Vitest 4 removed `environmentMatchGlobs`.** The default environment is `node` (which is what
+  enforces engine purity — an engine module that touches the DOM fails its own test); UI tests opt
+  into jsdom with a `// @vitest-environment jsdom` docblock at the top of the file.
+- **Transitive advisories pinned up.** `postcss` and `sharp` arrive inside Next's own dependency
+  tree at versions with published advisories; `overrides` in `package.json` pull them to patched
+  releases (npm's suggested "fix" was a downgrade to Next 9, which is not a fix).
+- **Playwright browsers.** CI installs Chromium normally; sandboxes that ship their own browser can
+  point at it with `PLAYWRIGHT_CHROMIUM_PATH=/path/to/chrome npm run test:e2e`.
+
 ## 2. Repository layout (target)
 
 ```
@@ -32,6 +55,7 @@ src/
     items/                # generateItem, budgets, sets, scrapping yields
     progression/          # xp/levels/stat costs
     sim/                  # world generation, bot progression, ticks, ladder, rivals, feed
+    save/                 # save schema (Zod) + migration chain — pure, no storage
     rng.ts                # seeded streams: fork(name) → deterministic sub-streams
     clock.ts              # GameClock — sole reader of wall time
   state/                  # Zustand slices (hero, world, ui, settings) + persistence glue
@@ -46,6 +70,12 @@ docs/                     # this documentation
 
 **The golden rule:** `engine/` and `data/` are importable in Node (tests/sim) with zero DOM.
 React components never compute game math; they call engine functions and render results.
+This is enforced, not merely asked for: an ESLint `no-restricted-imports` block fails the build if
+anything under `src/engine` or `src/data` imports React, Next, Zustand or `idb`.
+
+Built so far (Phase 0): `engine/rng.ts`, `engine/clock.ts`, `engine/save/{schema,migrations}.ts`,
+`state/{persistence,gameStore}.ts`, and the throwaway `components/skeleton/TavernDoor.tsx`
+walking-skeleton screen that Phase 1 replaces with the real app shell.
 
 ## 3. State & persistence
 

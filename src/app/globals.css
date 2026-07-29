@@ -1,0 +1,123 @@
+@import 'tailwindcss';
+
+/**
+ * Design tokens — "weathered oak, wrought brass, faceted light".
+ * The binding definitions live in docs/tech/ui-ux-style-guide.md §4–§7; Phase 1 builds the
+ * full component kit on top of these. Phase 0 seeds only what the walking skeleton needs.
+ */
+@theme {
+  --color-wood-900: #17110c;
+  --color-wood-800: #221913;
+  --color-wood-700: #2e231a;
+  --color-wood-600: #3d3024;
+
+  --color-parchment-500: #e8d9b0;
+  --color-parchment-300: #f2e8cb;
+  --color-ink-900: #241b12;
+
+  --color-amber-500: #e8a33d;
+  --color-amber-400: #f0b862;
+  --color-ember-600: #d96c2f;
+  --color-arcane-500: #3fa7a0;
+  --color-blood-600: #a73a2e;
+  --color-moss-600: #4c7a3f;
+
+  --color-rarity-common: #9a938b;
+  --color-rarity-uncommon: #6fa84e;
+  --color-rarity-rare: #4a8fd4;
+  --color-rarity-epic: #9b5fd0;
+  --color-rarity-set: #e8a33d;
+
+  --font-display: var(--font-alegreya-sans-sc), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/**
+ * Chamfers, not radii (style guide §3 — the hard "no rounded AI-slop" rule).
+ * Corners are cut at 45°; `border-radius` above 4px is banned across the codebase.
+ */
+.chamfer-sm {
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+
+.chamfer-md {
+  clip-path: polygon(
+    10px 0,
+    100% 0,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    0 100%,
+    0 10px
+  );
+}
+
+.chamfer-lg {
+  clip-path: polygon(
+    16px 0,
+    100% 0,
+    100% calc(100% - 16px),
+    calc(100% - 16px) 100%,
+    0 100%,
+    0 16px
+  );
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-wood-900);
+  color: var(--color-parchment-300);
+  font-family: var(--font-body);
+  /* Counters and timers must not jitter as digits change (style guide §5). */
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-amber-500);
+  outline-offset: 2px;
+}
+
+/* Ambient life: a slow hearth pulse behind the stage (style guide §7). */
+@keyframes hearth-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes ember-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-120px) scale(0.4);
+    opacity: 0;
+  }
+}
+
+.animate-hearth {
+  animation: hearth-pulse 6s ease-in-out infinite;
+}
+
+.animate-ember {
+  animation: ember-rise 5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hearth,
+  .animate-ember {
+    animation: none;
+  }
+}
