@@ -255,15 +255,22 @@ describe('derived stats', () => {
     expect(derived.health).toBe(expected);
   });
 
-  it('gives the tankiest class more health than the squishiest at equal constitution', () => {
+  it('ranks classes by toughness the way the fantasy promises', () => {
     const shared = {
       level: 20,
       trained: { str: 0, dex: 0, int: 0, con: 50, lck: 0 },
       equipment: {},
     };
-    const warrior = deriveStats({ ...shared, classId: 'warrior' });
-    const mage = deriveStats({ ...shared, classId: 'mage' });
-    expect(warrior.health).toBeGreaterThan(mage.health * 1.9);
+    const health = (classId: Parameters<typeof deriveStats>[0]['classId']) =>
+      deriveStats({ ...shared, classId }).health;
+
+    // The Warrior is the wall and the Mage is made of paper — but the gap in *raw* health is
+    // deliberately modest after the Phase 3 rebalance. What really separates them is mitigation:
+    // the Warrior shrugs off 35% of every hit and blocks a quarter outright, while the Mage
+    // keeps only 15% off and has no defensive proc at all.
+    expect(health('warrior')).toBeGreaterThan(health('mage'));
+    expect(health('mage')).toBeLessThanOrEqual(Math.min(health('hunter'), health('bard')));
+    expect(classDef('warrior').drCap).toBeGreaterThan(classDef('mage').drCap * 2);
   });
 
   it('adds gear attributes on top of class and trained points', () => {

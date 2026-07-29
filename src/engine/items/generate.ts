@@ -12,6 +12,7 @@
  */
 
 import type { RngStream } from '@/engine/rng';
+import { classDef } from '@/data/classes';
 import {
   ATTRIBUTE_SUFFIXES,
   GENERAL_BASES,
@@ -55,14 +56,21 @@ export function armourValue(level: number, rarity: Rarity, slot: SlotId): number
   return Math.max(1, Math.round(Math.max(1, level) * 7 * RARITY_FACTOR[rarity] * weight * 5));
 }
 
-/** `[TUNE]` balancing §8 — weapon damage band. Mage weapons swing far wider (combat spec §2). */
+/**
+ * `[TUNE]` balancing §8 — weapon damage band.
+ *
+ * The class factor is what pays for the survivability spread (see `ClassDef.weaponDamageFactor`):
+ * a Warrior's one-hander hits softly behind its shield, a Mage's staff hits like a falling tree.
+ */
 export function weaponDamage(
   level: number,
   rarity: Rarity,
   classId: ClassId,
 ): { min: number; max: number } {
-  const average = (4 + 2.4 * Math.max(1, level)) * RARITY_FACTOR[rarity];
-  const spread = classId === 'mage' ? 0.45 : 0.2;
+  const definition = classDef(classId);
+  const average =
+    (4 + 2.4 * Math.max(1, level)) * RARITY_FACTOR[rarity] * definition.weaponDamageFactor;
+  const spread = definition.weaponSpread;
   return {
     min: Math.max(1, Math.round(average * (1 - spread))),
     max: Math.max(2, Math.round(average * (1 + spread))),

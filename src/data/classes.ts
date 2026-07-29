@@ -35,6 +35,17 @@ export interface ClassDef {
   readonly hpFactor: number;
   /** Maximum share of incoming damage armour can absorb (balancing §4). */
   readonly drCap: number;
+  /**
+   * Weapon damage relative to the level baseline (balancing §8).
+   *
+   * This is what pays for the survivability spread: a Warrior swings a one-hander behind a
+   * shield and hits softly; a Mage carries a two-handed staff and hits like a falling tree.
+   * Without it, HP factors of 5.0 versus 2.5 make the tanky classes strictly better —
+   * measured, not guessed (see the balance harness).
+   */
+  readonly weaponDamageFactor: number;
+  /** Spread of the damage band, ±. Mages swing wildest (combat spec §2). */
+  readonly weaponSpread: number;
   readonly proc: ProcDef;
   readonly startingStats: Attributes;
   /** What playing it feels like — the honest pitch on the creation card. */
@@ -53,8 +64,10 @@ export const CLASSES: readonly ClassDef[] = [
     epithet: 'The Wall of Aldenvale',
     portrait: '/assets/classes/Warrior.png',
     mainStat: 'str',
-    hpFactor: 5.0,
-    drCap: 0.5,
+    hpFactor: 4.2,
+    drCap: 0.35,
+    weaponDamageFactor: 0.935,
+    weaponSpread: 0.2,
     proc: {
       kind: 'block',
       name: 'Shield Wall',
@@ -73,8 +86,10 @@ export const CLASSES: readonly ClassDef[] = [
     epithet: 'The Dawnchorus Duelist',
     portrait: '/assets/classes/Bard.png',
     mainStat: 'int',
-    hpFactor: 3.0,
-    drCap: 0.2,
+    hpFactor: 3.6,
+    drCap: 0.22,
+    weaponDamageFactor: 1.382,
+    weaponSpread: 0.25,
     proc: {
       kind: 'verses',
       name: 'Verses',
@@ -93,13 +108,15 @@ export const CLASSES: readonly ClassDef[] = [
     epithet: 'The Emberweaver',
     portrait: '/assets/classes/Mage.png',
     mainStat: 'int',
-    hpFactor: 2.5,
-    drCap: 0.1,
+    hpFactor: 3.4,
+    drCap: 0.15,
+    weaponDamageFactor: 1.99,
+    weaponSpread: 0.45,
     proc: {
       kind: 'arcane-certainty',
       name: 'Arcane Certainty',
       description:
-        'Attacks can never be blocked or dodged — but damage swings wildly from one strike to the next.',
+        'Blocks and dodges work far less well against your magic — but your damage swings wildly from one strike to the next.',
     },
     startingStats: { str: 6, dex: 8, int: 16, con: 8, lck: 10 },
     feel: 'The highest highs and the thinnest skin. Punishes neglected gear hardest.',
@@ -113,13 +130,15 @@ export const CLASSES: readonly ClassDef[] = [
     epithet: 'The Silverpine Shadow',
     portrait: '/assets/classes/Hunter.png',
     mainStat: 'dex',
-    hpFactor: 4.0,
+    hpFactor: 3.6,
     drCap: 0.25,
+    weaponDamageFactor: 1.03,
+    weaponSpread: 0.22,
     proc: {
       kind: 'dodge',
       name: 'Windstep',
-      description: 'Slips 45% of incoming hits entirely. Magic still finds you.',
-      chance: 0.45,
+      description: 'Slips 40% of incoming hits entirely. Magic still finds you.',
+      chance: 0.4,
     },
     startingStats: { str: 8, dex: 15, int: 7, con: 10, lck: 10 },
     feel: 'Death by a thousand misses — theirs. Steady crits, and the odd unlucky streak.',
@@ -133,8 +152,10 @@ export const CLASSES: readonly ClassDef[] = [
     epithet: 'The Corsair of Emberhollow',
     portrait: '/assets/classes/Swashbuckler.png',
     mainStat: 'dex',
-    hpFactor: 4.0,
+    hpFactor: 3.8,
     drCap: 0.25,
+    weaponDamageFactor: 0.918,
+    weaponSpread: 0.2,
     proc: {
       kind: 'double-strike',
       name: 'Flurry',

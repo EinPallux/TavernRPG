@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–2 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–3 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -17,9 +17,16 @@ feedback, edge cases and tests. Deployed on Vercel.
 - **Phase 2:** the five classes as data, hero creation, the character screen (paperdoll,
   attribute training, derived stats, backpack), `generateItem`, and save schema v3 (hero).
 
-170 unit tests + 27 e2e green. Next work: `ROADMAP.md` **Phase 3 (Combat Engine)** — the pure
-`fight()` function, all five class procs, golden-log snapshots and the balance harness. The
-kits it implements are already declared in `src/data/classes.ts`.
+- **Phase 3:** the combat engine — pure `fight()`, all five class procs, monster archetypes,
+  golden logs and the balance harness (plus the rebalance it forced).
+
+212 unit tests + 27 e2e green. Next work: `ROADMAP.md` **Phase 4 (Battle Scene)** — turning the
+battle log into the animated showpiece. The log format is final and fuzz-safe; nothing in
+`src/engine/combat/` should need to change to render it.
+
+**Before touching class constants:** run `npm run balance`. The numbers in `src/data/classes.ts`
+were solved for, not chosen, and the bands in `src/engine/combat/balance.test.ts` will catch a
+regression — but the harness tells you *why*.
 
 ## Where things live (as built)
 

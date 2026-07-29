@@ -51,15 +51,30 @@ Cost of buying the `n`-th point of an attribute (points bought with gold only, `
 
 ## 4. Combat (full spec in `systems/combat.md`)
 
-- `HP = CON · (level + 1) · classHpFactor` (Warrior 5.0, Hunter 4.0, Swashbuckler 4.0, Bard 3.0, Mage 2.5)
+**Tuned in Phase 3 against the simulation harness — these are measured values, not estimates.**
+
+| Class | HP factor | DR cap | Weapon damage ×| Spread | Signature |
+|---|---|---|---|---|---|
+| Warrior | 4.2 | 35% | 0.935 | ±20% | Block 25% |
+| Bard | 3.6 | 22% | 1.382 | ±25% | Verses |
+| Mage | 3.4 | 15% | 1.990 | ±45% | Arcane Certainty (defences at 62%) |
+| Hunter | 3.6 | 25% | 1.030 | ±22% | Dodge 40% |
+| Swashbuckler | 3.8 | 25% | 0.918 | ±20% | Flurry 60% @75% + Parry 15% |
+
+- `HP = CON · (level + 1) · classHpFactor`
 - Hit damage: `roll(weaponMin..weaponMax) · (1 + mainStat/10) · critMult · (1 − armorDR)`
-- `armorDR = min(totalArmor / (attackerLevel · 50), classDRcap)` — caps: Warrior 50%, Hunter 25%,
-  Swashbuckler 25%, Bard 20%, Mage 10%.
+- `armorDR = min(totalArmor / (attackerLevel · 50), classDRcap)`
 - Crit: `critChance = min(luck · 5 / (2 · opponentLevel), 50%)`, `critMult = 2.0`.
-- Class procs: Warrior block 25% · Hunter dodge 45% · Swashbuckler double-strike (2nd hit 60%
-  chance, 75% damage) · Bard Verses (see class doc) · Mage attacks ignore dodge/block, +25% weapon
-  damage spread. `[TUNE]`
+- Weapon damage: `avg = (4 + 2.4·level) · rarityFactor · classWeaponDamageFactor`. The class factor
+  is what pays for the survivability spread — without it, high-HP classes were strictly better
+  (see `systems/characters-and-classes.md` §"Phase 3 rebalance").
+- Initiative: dexterity-weighted, damped toward even (`0.5 + (dexShare − 0.5) · 0.8`).
 - Round cap 100 → higher remaining HP-fraction wins; exact tie → defender wins (attacker risk).
+
+**Measured outcome** (levels 10/25/50/100, thousands of fights each): mirrors 49–52%; per-class
+average across all opponents 49.3–50.6%; worst single matchup 67%; fights 4–16 rounds. A deliberate
+counter triangle exists: Bard > Mage > Hunter > Bard. CI asserts all of it
+(`src/engine/combat/balance.test.ts`).
 
 ## 5. Enemy scaling
 

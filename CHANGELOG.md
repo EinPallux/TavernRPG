@@ -7,6 +7,32 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 3: Combat Engine
+- **`fight()`** — the whole of combat as one pure, seeded function emitting a serializable battle
+  log. Every fight in the game will run through it, so balance lives in exactly one place.
+- **All five class kits implemented**: Shield Wall, Verses (with its three-song state machine),
+  Arcane Certainty, Windstep and Flurry — plus the Swashbuckler's Parry.
+- **Five monster archetypes** (bruiser, skirmisher, caster, tank, swarm) generated from level
+  rather than hand-authored, so 126 monsters stay maintainable and can never drift off-curve.
+- **Balance harness**: thousands of seeded fights per matchup, with CI asserting three bands —
+  mirrors 45–55%, per-class average 45–55%, and any single matchup 30–70%.
+- **Golden battle logs** freeze the engine's exact output; a diff means every committed seed in
+  every save now resolves differently.
+- **`/dev/combat`** viewer shows every roll of a seeded fight, and the win rate over 600 more.
+
+### Changed — the Phase 3 rebalance
+- Measuring the classes as originally specified showed they were badly unbalanced: Warrior beat
+  Bard and Mage 100% of the time, Mage lost to Hunter 0%. Two causes, both fixed:
+  **classes now have a weapon-damage factor** (a Warrior's one-hander hits softly, a Mage's staff
+  hits like a falling tree — this is what pays for the survivability spread), and **the HP/armour
+  spread was narrowed** from ×2.5–5.0 / 10–50% to ×3.4–4.2 / 15–35%, which also brought mirror
+  fights from a 2-to-34-round range into 4–16.
+- **Arcane Certainty softened** from "cannot be blocked or dodged" to "defences work at 62%". The
+  absolute version measured as a 97% hard counter to the Hunter; an arena where your class simply
+  loses is miserable.
+- Hunter dodge 45%→40%; Swashbuckler gained a 15% Parry (it previously had no defence at all).
+- Class specs, the balancing doc and the affected set bonuses were updated to match.
+
 ### Added — Phase 2: Hero Creation & Character Screen
 - **The five classes as data** (`src/data/classes.ts`): main stat, HP factor, armour cap and one
   signature proc each, declared now and implemented by the combat engine in Phase 3. Creation

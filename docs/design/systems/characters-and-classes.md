@@ -36,12 +36,12 @@ Each class = main stat + HP factor + armor cap + **one signature proc** + weapon
 original but tuned to S&F-style archetype clarity (reference doc §4).
 
 ### ⚔️ Warrior — "The Wall of Aldenvale"
-- STR · HP ×5.0 · DR cap 50% · 1H weapon + **Shield** offhand.
-- **Shield Wall:** 25% chance to block an incoming hit (blocked = 0 damage). Cannot block Mage attacks.
+- STR · HP ×4.2 · DR cap 35% · weapon damage ×0.935 · 1H weapon + **Shield** offhand.
+- **Shield Wall:** 25% chance to block an incoming hit (blocked = 0 damage).
 - Feel: slow, unkillable, honest damage. Beginner-friendly (highest mission win-rate stability).
 
 ### 🎵 Bard — "The Dawnchorus Duelist"
-- INT · HP ×3.0 · DR cap 20% · 2H **instrument** (lute/horn/drum) + **Songbook** offhand.
+- INT · HP ×3.6 · DR cap 22% · weapon damage ×1.382 · 2H **instrument** + **Songbook** offhand.
 - **Verses:** opens battle with a random Verse, refreshed every 4th round (seeded):
   - *Battle Hymn* — +25% damage for 3 rounds.
   - *Ironsong* — +25% damage reduction for 3 rounds.
@@ -49,24 +49,55 @@ original but tuned to S&F-style archetype clarity (reference doc §4).
 - Feel: swingy, musical, RNG-flavored support-for-self. Verse banners are big battle-scene moments.
 
 ### 🔮 Mage — "The Emberweaver"
-- INT · HP ×2.5 · DR cap 10% · 2H staff/wand + **Orb** offhand.
-- **Arcane Certainty:** attacks can't be dodged or blocked; weapon damage spread ±45% (glass cannon
-  with spiky rolls; orbs raise the spread floor).
+- INT · HP ×3.4 (lowest) · DR cap 15% · weapon damage ×1.99 · 2H staff/wand + **Orb** offhand.
+- **Arcane Certainty:** blocks and dodges work at **62% of their normal chance** against magic;
+  weapon damage spread ±45% (glass cannon with spiky rolls; orbs raise the spread floor).
+  *Originally "cannot be dodged or blocked" — measured at a 97% hard counter to the Hunter, so
+  it was softened to a strong tilt rather than an auto-win (see §8).*
 - Feel: highest highs, made of paper. Punishes stat neglect hardest.
 
 ### 🏹 Hunter — "The Silverpine Shadow"
-- DEX · HP ×4.0 · DR cap 25% · 2H bow/crossbow + **Quiver** offhand.
-- **Windstep:** 45% chance to fully dodge an incoming hit (not vs Mage). Quivers add +crit damage.
+- DEX · HP ×3.6 · DR cap 25% · weapon damage ×1.03 · 2H bow/crossbow + **Quiver** offhand.
+- **Windstep:** 40% chance to fully dodge an incoming hit (reduced against magic). Quivers add
+  +crit damage.
 - Feel: death by a thousand misses (theirs), steady crits (yours).
 
 ### 🗡️ Swashbuckler — "The Corsair of Emberhollow"
-- DEX · HP ×4.0 · DR cap 25% · 1H saber/rapier + **Parry Dagger** offhand.
+- DEX · HP ×3.8 · DR cap 25% · weapon damage ×0.918 · 1H saber/rapier + **Parry Dagger** offhand.
 - **Flurry:** every attack attempts a second strike — 60% chance, dealing 75% damage. Parry daggers
   boost the follow-up's damage.
+- **Parry:** 15% dodge. Small by design — without it the class was a Hunter with no defence at all.
 - Feel: fast, flashy, consistent DPS pressure; the animation showcase class.
 
-Balance guardrails: mirror-gear win-rates between any two classes stay within 45–55% at equal
-level/budget (Vitest simulation harness asserts this in CI — see `combat.md` §7).
+### Balance policy (measured, not asserted)
+
+The harness in `src/engine/combat/` runs thousands of seeded fights per matchup at levels 10, 25,
+50 and 100. CI enforces three bands:
+
+| Band | Rule | Why |
+|---|---|---|
+| Mirrors | 45–55% | A same-class fight is symmetric; anything else means the *engine* favours a seat |
+| Per-class average | 45–55% | No class may be quietly stronger across the board |
+| Any single matchup | 30–70% | Counters are allowed; walls are not |
+
+Measured at the end of Phase 3: every mirror 49–52%, every class averaging 49.3–50.6%, worst
+single matchup 67%. Individual matchups are *deliberately* uneven — there is a counter triangle,
+**Bard > Mage > Hunter > Bard** — because an arena where every duel is a coin flip has no texture.
+
+### Phase 3 rebalance — what changed, and why
+
+The classes as first specified were unbalanced by a wide margin once measured: Warrior beat Bard
+and Mage 100% of the time, Mage lost to Hunter 0%. Two causes, both fixed:
+
+1. **Every class swung the same weapon.** The design assumed glass cannons compensate with
+   two-handed damage (as in S&F), but nothing expressed that, so HP ×2.5 versus ×5.0 simply made
+   the tanky classes better. Classes now carry a `weaponDamageFactor`, and it applies to real
+   generated gear as well as to the harness.
+2. **The survivability spread was too wide.** HP ×2.5–5.0 with DR caps of 10–50% produced mirror
+   fights ranging from 2 rounds to 34 — bad for balance and unwatchable as an animated scene.
+   Narrowed to ×3.4–4.2 and 15–35%, giving 4–16 round fights. The Mage keeps the lowest
+   health of the five, because a glass cannon that reads as sturdy on the character sheet is a
+   broken promise.
 
 ## 4. Character screen (paperdoll + backpack)
 

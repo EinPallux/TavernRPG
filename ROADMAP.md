@@ -60,12 +60,20 @@ and scrap yield, with class restriction enforced at generation so wrong-class lo
 170 unit + 27 e2e green. Item icons are drawn in-house rather than sourced from game-icons.net —
 that library is unreachable from the build sandbox (see USER_QUESTIONS Q21).
 
-## Phase 3 — Combat Engine (M) 🔲
+## Phase 3 — Combat Engine (M) ✅
 Pure engine: initiative, rounds, procs (all 5 class kits incl. Verses), crit/armor math, battle
 log emission, `buildCombatant` (hero + archetype monsters), golden-log snapshots, 10k-fight
 balance harness with mirror/win-rate assertions (CI). No UI beyond a dev log-viewer.
 **Accept:** harness passes bands (45–55% mirrors at 4 level checkpoints; archetype win-rate
 targets); logs deterministic across Node/browser; engine has zero DOM/state imports (lint rule).
+
+**Delivered:** `fight()` as one pure function emitting a serializable log, all five class procs,
+five monster archetypes, and `buildCombatant` putting heroes and monsters through identical
+formulas. The balance harness measured the classes as originally specified and found them badly
+broken (Warrior beat Mage 100%); the rebalance that followed — class weapon-damage factors and a
+narrower survivability spread — is documented in `systems/characters-and-classes.md`. Final:
+mirrors 49–52%, per-class averages 49–51%, worst matchup 67%, fights 4–16 rounds. Golden logs
+freeze the engine; `/dev/combat` shows every roll. 212 unit + 27 e2e green.
 
 ## Phase 4 — Battle Scene (L) 🔲
 The animated replay: entrances, lunges, particles (Kenney canvas layer), damage numbers, crit
