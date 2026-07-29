@@ -8,13 +8,43 @@ import { expect, test, type Page } from '@playwright/test';
  * respects the OS setting, and the layout still works at the minimum supported size.
  */
 
+/**
+ * The town is only reachable once a hero exists — creation is the game's front door as of
+ * Phase 2 — so shell tests make one first.
+ */
+async function ensureHero(page: Page) {
+  await page.goto('/character');
+
+  // Wait for the save to load and the app to decide which screen it is on — checking
+  // visibility before hydration would always read "not creating" and silently skip.
+  const creation = page.getByTestId('hero-creation');
+  await expect(creation.or(page.getByTestId('paperdoll'))).toBeVisible();
+
+  if (await creation.isVisible()) {
+    await page.getByTestId('class-warrior').click();
+    await page.getByTestId('hero-name').fill('Kargath');
+    await page.getByTestId('confirm-hero').click();
+    await expect(page.getByTestId('paperdoll')).toBeVisible();
+  }
+}
+
 async function gotoTavern(page: Page) {
+  await ensureHero(page);
   await page.goto('/tavern');
   await expect(page.getByTestId('place-tavern')).toBeVisible();
 }
 
+/** Levels the hero the real way — awarding XP through the same call missions will use. */
+async function levelHeroToTen(page: Page) {
+  await page.goto('/character');
+  await page.getByTestId('dev-drawer-toggle').click();
+  await page.getByTestId('dev-level-10').click();
+  await expect(page.getByTestId('hud-level')).toHaveText('10');
+}
+
 test.describe('navigation', () => {
   test('the root sends you to the tavern', async ({ page }) => {
+    await ensureHero(page);
     await page.goto('/');
     await expect(page).toHaveURL(/\/tavern$/);
     await expect(page.getByRole('heading', { name: 'The Gilded Tankard' })).toBeVisible();
@@ -28,39 +58,57 @@ test.describe('navigation', () => {
 
     await page.getByTestId('nav-character').click();
     await expect(page).toHaveURL(/\/character$/);
-    await expect(page.getByTestId('place-character')).toBeVisible();
+    // Character is a built screen as of Phase 2, so the paperdoll is what proves arrival.
+    await expect(page.getByTestId('paperdoll')).toBeVisible();
 
     // Same HUD element instance stays mounted — the frame did not reload.
     await expect(hudGold).toBeVisible();
     await expect(page.getByTestId('nav-tavern')).toBeVisible();
   });
 
-  test('every unlocked place opens and marks itself current', async ({ page }) => {
+  test('every place opens and marks itself current once unlocked', async ({ page }) => {
     await gotoTavern(page);
+    // A fresh hero is level 1, so most of the town is still gated; open it all up first.
+    await levelHeroToTen(page);
 
-    for (const id of ['character', 'armory', 'facet', 'stables', 'settings']) {
+    // Places still awaiting their phase render the dressed placeholder.
+    for (const id of [
+      'tavern',
+      'board',
+      'fortune',
+      'armory',
+      'facet',
+      'forge',
+      'stables',
+      'menagerie',
+      'patrol',
+      'arena',
+      'hall',
+      'guild',
+      'undertavern',
+      'settings',
+    ]) {
       await page.getByTestId(`nav-${id}`).click();
       await expect(page.getByTestId(`place-${id}`)).toBeVisible();
       await expect(page.getByTestId(`nav-${id}`)).toHaveAttribute('aria-current', 'page');
     }
+
+    // Character is built, so it shows the real thing instead.
+    await page.getByTestId('nav-character').click();
+    await expect(page.getByTestId('paperdoll')).toBeVisible();
+    await expect(page.getByTestId('nav-character')).toHaveAttribute('aria-current', 'page');
   });
 
   test('keepers explain why their rooms are unfinished', async ({ page }) => {
+    await ensureHero(page);
     await page.goto('/armory');
     await expect(page.getByTestId('bark-armory')).toContainText('Shelves are bare');
     await expect(page.getByTestId('place-armory')).toContainText('Phase 7');
   });
 });
 
-/** Drives the shell to a given hero level via the dev kit (Phase 2 replaces this with a real hero). */
-async function setPreviewLevel(page: Page, level: number) {
-  await page.goto('/dev/kit');
-  await page.getByTestId('kit-level').fill(String(level));
-}
-
 test.describe('feature gates', () => {
   test('a level-1 hero sees later places locked, with their level shown', async ({ page }) => {
-    await setPreviewLevel(page, 1);
     await gotoTavern(page);
 
     const guild = page.getByTestId('nav-guild');
@@ -74,13 +122,11 @@ test.describe('feature gates', () => {
     await expect(page.getByTestId('nav-character')).toHaveAttribute('data-locked', 'false');
   });
 
-  test('raising the level unlocks places in the rail', async ({ page }) => {
-    await setPreviewLevel(page, 1);
+  test('levelling the hero unlocks places in the rail', async ({ page }) => {
     await gotoTavern(page);
     await expect(page.getByTestId('nav-guild')).toHaveAttribute('data-locked', 'true');
 
-    await setPreviewLevel(page, 10);
-    await gotoTavern(page);
+    await levelHeroToTen(page);
 
     const guild = page.getByTestId('nav-guild');
     await expect(guild).toHaveAttribute('data-locked', 'false');
@@ -89,7 +135,6 @@ test.describe('feature gates', () => {
   });
 
   test('the rail teases what opens next', async ({ page }) => {
-    await setPreviewLevel(page, 1);
     await gotoTavern(page);
     await expect(page.locator('nav')).toContainText('opens at level');
   });
@@ -164,7 +209,7 @@ test.describe('accessibility and resilience', () => {
     // Ambient loops are suppressed, but the place and its content are all present.
     await expect(page.getByTestId('place-tavern')).toBeVisible();
     await page.getByTestId('nav-character').click();
-    await expect(page.getByTestId('place-character')).toBeVisible();
+    await expect(page.getByTestId('paperdoll')).toBeVisible();
   });
 });
 

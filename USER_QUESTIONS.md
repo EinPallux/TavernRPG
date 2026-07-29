@@ -74,7 +74,31 @@ are post-1.0.** → ROADMAP post-1.0 backlog
 
 ---
 
-## Open questions (none)
+## Open questions
 
-*No open questions right now. During coding phases, new product ambiguities get appended here
-under a dated heading with a proposed default (per `CLAUDE.md` working rules).*
+### 2026-07-29 — raised during Phase 2
+
+**Q21. Item icons: game-icons.net is unreachable from the build environment.**
+The plan (and your brief) specifies game-icons.net for item/weapon/armour icons. That site is
+blocked from this sandbox, and the mirror repository can't be attached either, so I drew the 25
+item glyphs in the same line-carved family as the UI chrome instead. They read cleanly and are
+stylistically consistent, but they are simpler than what game-icons offers for hundreds of
+distinct items.
+
+This is *contained*, not baked in: content data references stable `iconId` strings declared in
+`src/data/icons.ts`, so swapping in game-icons SVGs later changes one registry file and no game
+data. Options:
+
+1. **Keep the in-house set** — one consistent visual family, no attribution burden. Fine for
+   1.0 if you like how they look.
+2. **Vendor game-icons.net later** — you (or a session with network access to it) drop the SVGs
+   into `public/assets/icons/`, and I wire the registry. Best when item variety grows past ~50
+   distinct bases.
+3. **Both** — in-house for UI chrome (as now), game-icons for items only.
+
+**Default while unanswered: option 3** — keep the hand-drawn set in place, and treat vendoring
+game-icons for items as a task for whenever the assets can actually be fetched. Nothing blocks.
+→ `docs/tech/asset-pipeline.md` §2, `CREDITS.md`
+
+*New product ambiguities get appended here under a dated heading with a proposed default (per
+`CLAUDE.md` working rules).*

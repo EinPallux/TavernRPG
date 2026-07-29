@@ -33,6 +33,18 @@ export const MIGRATIONS: readonly Migration[] = [
     describe: 'Phase 1: add player settings (nav, motion, audio)',
     migrate: (data) => ({ ...data, settings: { ...DEFAULT_SETTINGS } }),
   },
+  {
+    from: 2,
+    to: 3,
+    describe: 'Phase 2: replace the walking-skeleton payload with the hero slice',
+    migrate: (data) => {
+      // `skeleton` was always explicitly temporary (Phase 0's door-knock counter). Dropping it
+      // loses nothing a player would recognise as progress; the world seed, settings and clock
+      // — everything that identifies their save — carry over untouched.
+      const { skeleton: _skeleton, ...rest } = data as { skeleton?: unknown };
+      return { ...rest, hero: null };
+    },
+  },
 ];
 
 export type MigrationFailure =

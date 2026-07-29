@@ -30,6 +30,35 @@ export const ICON_IDS = [
   'chevron',
   'hourglass',
   'spark',
+  // weapons — class-restricted families (docs/design/systems/items-and-gear.md §1)
+  'sword',
+  'axe',
+  'mace',
+  'lute',
+  'horn',
+  'drum',
+  'staff',
+  'wand',
+  'bow',
+  'crossbow',
+  'saber',
+  'rapier',
+  // offhands
+  'shield',
+  'songbook',
+  'orb',
+  'quiver',
+  'dagger',
+  // armour
+  'helm',
+  'chestplate',
+  'gloves',
+  'boots',
+  'belt',
+  // jewellery
+  'amulet',
+  'ring',
+  'trinket',
 ] as const;
 
 export type IconId = (typeof ICON_IDS)[number];

@@ -15,6 +15,7 @@ import { GROUP_LABELS, NAV_GROUPS, PLACES, type PlaceDef } from '@/data/places';
 import { gateFor, nextUnlock } from '@/engine/progression/gates';
 import { Icon, ChevronIcon, LockIcon } from '@/components/icons';
 import { useShellStore } from '@/state/shellStore';
+import { useGameStore } from '@/state/gameStore';
 import { snappy } from '@/styles/motion';
 
 const RAIL_WIDTH = 240;
@@ -116,7 +117,10 @@ export function NavRail() {
   const pathname = usePathname();
   const collapsed = useShellStore((state) => state.settings.navCollapsed);
   const toggleNav = useShellStore((state) => state.toggleNav);
-  const level = useShellStore((state) => state.preview.level);
+  const previewLevel = useShellStore((state) => state.preview.level);
+  const heroLevel = useGameStore((state) => state.save?.hero?.level);
+  // The hero's real level drives the gates; the preview value only stands in before creation.
+  const level = heroLevel ?? previewLevel;
 
   const upcoming = nextUnlock(level);
   const settingsPlace = PLACES.find((place) => place.id === 'settings');

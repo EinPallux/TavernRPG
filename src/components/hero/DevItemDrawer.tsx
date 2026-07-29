@@ -1,0 +1,146 @@
+'use client';
+
+/**
+ * Dev item drawer — conjures gear so the character screen can be exercised before loot exists.
+ *
+ * Explicitly a development tool: it is collapsed by default, labelled as such, and Phase 5
+ * removes the need for it once missions actually drop items. It is genuinely useful in the
+ * meantime — the paperdoll, comparison tooltips and class-lock rules are all unreviewable
+ * without gear to put in them.
+ */
+
+import { useRef, useState } from 'react';
+import { TavernPanel } from '@/components/ui/TavernPanel';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { createRng, deriveSeed } from '@/engine/rng';
+import { generateItem } from '@/engine/items/generate';
+import { xpNeeded } from '@/engine/progression/xp';
+import { RARITIES, SLOT_IDS, type Rarity, type SlotId } from '@/engine/items/types';
+import type { Hero } from '@/engine/save/schema';
+import { useGameStore } from '@/state/gameStore';
+import { useShellStore } from '@/state/shellStore';
+
+export function DevItemDrawer({ hero }: { hero: Hero }) {
+  const grantItem = useGameStore((state) => state.grantItem);
+  const grantXp = useGameStore((state) => state.grantXp);
+  const grantGold = useGameStore((state) => state.grantGold);
+  const pushToast = useShellStore((state) => state.pushToast);
+  const [open, setOpen] = useState(false);
+  const [rarity, setRarity] = useState<Rarity>('rare');
+  /** Varies the seed per conjure without reaching for unseeded randomness. */
+  const conjureCount = useRef(0);
+
+  const conjure = (slot: SlotId) => {
+    conjureCount.current += 1;
+    const rng = createRng(
+      deriveSeed(hero.createdAt, 'dev-conjure', conjureCount.current),
+      'dev:conjure',
+    );
+    const item = generateItem({
+      level: hero.level,
+      slot,
+      rarity,
+      classId: hero.classId,
+      rng,
+    });
+    grantItem(item);
+    pushToast({ title: item.name, detail: 'Conjured into your backpack.', tone: 'reward' });
+  };
+
+  const conjureFullSet = () => {
+    for (const slot of SLOT_IDS) conjure(slot);
+  };
+
+  return (
+    <TavernPanel
+      title="Dev: conjure gear"
+      headerSlot={
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          data-testid="dev-drawer-toggle"
+          className="text-parchment-500/50 text-xs underline underline-offset-2 hover:text-amber-500"
+        >
+          {open ? 'hide' : 'show'}
+        </button>
+      }
+      elevation="flush"
+      data-testid="dev-drawer"
+    >
+      {open ? (
+        <div className="space-y-3">
+          <p className="text-parchment-500/50 text-[11px]">
+            A development tool. Missions drop real loot from Phase 5; this exists so the paperdoll
+            and comparisons can be reviewed today.
+          </p>
+
+          <div className="flex flex-wrap gap-1.5">
+            {RARITIES.map((option) => (
+              <ActionButton
+                key={option}
+                size="sm"
+                variant={option === rarity ? 'primary' : 'secondary'}
+                onClick={() => setRarity(option)}
+                data-testid={`dev-rarity-${option}`}
+              >
+                {option}
+              </ActionButton>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {SLOT_IDS.map((slot) => (
+              <ActionButton
+                key={slot}
+                size="sm"
+                variant="secondary"
+                onClick={() => conjure(slot)}
+                data-testid={`dev-conjure-${slot}`}
+              >
+                {slot}
+              </ActionButton>
+            ))}
+          </div>
+
+          <ActionButton size="sm" onClick={conjureFullSet} data-testid="dev-conjure-all">
+            Conjure one of everything
+          </ActionButton>
+
+          <div className="border-parchment-500/15 flex flex-wrap gap-1.5 border-t pt-3">
+            <ActionButton
+              size="sm"
+              variant="secondary"
+              onClick={() => grantXp(xpNeeded(hero.level))}
+              data-testid="dev-level-up"
+            >
+              Gain a level
+            </ActionButton>
+            <ActionButton
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                // Enough to open every gated place, for reviewing the rail.
+                for (let level = hero.level; level < 10; level += 1) grantXp(xpNeeded(level));
+              }}
+              data-testid="dev-level-10"
+            >
+              Reach level 10
+            </ActionButton>
+            <ActionButton
+              size="sm"
+              variant="secondary"
+              onClick={() => grantGold(10_000)}
+              data-testid="dev-gold"
+            >
+              +10,000 gold
+            </ActionButton>
+          </div>
+        </div>
+      ) : (
+        <p className="text-parchment-500/40 text-xs">
+          Hidden. Open to spawn gear while loot sources are still being built.
+        </p>
+      )}
+    </TavernPanel>
+  );
+}

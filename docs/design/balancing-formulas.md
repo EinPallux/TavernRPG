@@ -19,7 +19,8 @@
 ## 1. Experience & levels
 
 - XP to go from level `L` to `L+1`: `xpNeeded(L) = round(60 · L^2.1 + 240 · L)` `[TUNE]`
-  - L1→2: 300 · L10→11: ~9.9k · L25→26: ~53k · L50→51: ~236k · L100→101: ~1.03M
+  - L1→2: 300 · L10→11: 9,954 · L25→26: 57,740 · L50→51: 233,814 · L100→101: 974,936
+  - (Exact values, asserted by `src/engine/progression/progression.test.ts`.)
 - No level cap. Level-up: full heal in dungeon context, celebratory FX, +0 free stat points
   (stats are bought with gold — S&F model).
 - Mission XP per Vigor point at level `L`: `xpPerVigor(L) = xpNeeded(L) / 320` `[TUNE]`
@@ -42,7 +43,8 @@ Cost of buying the `n`-th point of an attribute (points bought with gold only, `
 
 `statCost(n) = round(2 + 0.6 · n^1.65)` gold `[TUNE]`
 
-- n=10: ~29 · n=50: ~385 · n=100: ~1.2k · n=300: ~7.4k · n=1000: ~54k
+- n=10: 29 · n=50: 383 · n=100: 1,199 · n=300: 7,337 · n=1000: 53,477
+  (Exact values, asserted by `src/engine/progression/progression.test.ts`.)
 - Soft cap via price alone; no hard cap. UI offers +1 / +5 / +25 / Max-affordable buys.
 - Design check: a day's mission gold at level L should buy roughly **L/2 points** spread across
   attributes early on, decaying to ~L/6 by level 100 (keeps missions → stats → harder missions loop taut).

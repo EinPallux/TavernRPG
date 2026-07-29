@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–1 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–2 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -14,17 +14,23 @@ feedback, edge cases and tests. Deployed on Vercel.
   hand-drawn icon family, the app shell (nav rail + HUD + place transitions), all 15 places
   routed as dressed placeholders, feature gates, `/dev/kit`, and save schema v2 (settings).
 
-94 unit tests + 12 e2e green. Next work: `ROADMAP.md` **Phase 2 (Hero Creation & Character
-Screen)** — the first real game systems: class data, creation flow, paperdoll, backpack, item
-generation and gold-driven stat training. Phase 2 also replaces the shell's `preview` placeholder
-values (`src/state/shellStore.ts`) with the real hero.
+- **Phase 2:** the five classes as data, hero creation, the character screen (paperdoll,
+  attribute training, derived stats, backpack), `generateItem`, and save schema v3 (hero).
+
+170 unit tests + 27 e2e green. Next work: `ROADMAP.md` **Phase 3 (Combat Engine)** — the pure
+`fight()` function, all five class procs, golden-log snapshots and the balance harness. The
+kits it implements are already declared in `src/data/classes.ts`.
 
 ## Where things live (as built)
 
-`src/engine/` pure logic (rng, clock, save schema+migrations, progression/gates) ·
-`src/data/` content (places, icon vocabulary) · `src/state/` stores + persistence + the shared
-clock · `src/components/{ui,shell,icons}/` · `src/app/(game)/<place>/` one route per place ·
-`src/styles/motion.ts` springs. Run `/dev/kit` to see every component state.
+`src/engine/` pure logic — `rng`, `clock`, `save/` (schema + migrations), `progression/`
+(xp, stats, gates), `items/` (types, generate), `hero/` (actions, derived) ·
+`src/data/` content — places, classes, itemBases, icon vocabulary ·
+`src/state/` stores + persistence + the shared clock ·
+`src/components/{ui,shell,icons,items,hero}/` · `src/app/(game)/<place>/` one route per place ·
+`src/styles/motion.ts` springs.
+Run `/dev/kit` for every component state; the character screen's dev drawer conjures gear,
+levels and gold while loot sources are still being built.
 
 ## Read before working (in order)
 

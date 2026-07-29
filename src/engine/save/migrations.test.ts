@@ -98,9 +98,11 @@ describe('migrateSave — the upgrade chain', () => {
     const result = migrateSave({ schemaVersion: 0, knocks: 7 }, withRealTail([zeroToOne]));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.save.skeleton.doorKnocks).toBe(7);
     expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
     expect(result.migratedFrom).toBe(0);
+    // Identity survived every step of the chain; the retired payload did not.
+    expect(result.save.worldSeed).toBe(4242);
+    expect(result.save.hero).toBeNull();
   });
 
   it('runs several steps in order', () => {
@@ -114,7 +116,7 @@ describe('migrateSave — the upgrade chain', () => {
     expect(steps).toEqual([-2, -1, 0]);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.save.skeleton.doorKnocks).toBe(3);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
   });
 
   it('still validates the final result, so a broken migration fails loudly', () => {

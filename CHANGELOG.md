@@ -7,6 +7,35 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 2: Hero Creation & Character Screen
+- **The five classes as data** (`src/data/classes.ts`): main stat, HP factor, armour cap and one
+  signature proc each, declared now and implemented by the combat engine in Phase 3. Creation
+  cards lead with how a class *feels* rather than with a stat table.
+- **Hero creation**: class pick → name (with validation that explains itself, and suggestions so
+  the blank field is never a wall). No hero means the game opens here instead of in the town.
+- **Character screen**: paperdoll with all 10 slots, attribute training with visible prices and a
+  Max button that spends what it can, a derived-stat panel with hover breakdowns showing where
+  every number comes from, and a backpack with an overflow satchel.
+- **Item generation** (`generateItem`): one choke point for all gear — budgets, damage bands,
+  armour, procedural naming, value and scrap yield. Class restriction is enforced *at generation*,
+  so a wrong-class drop cannot exist rather than being filtered later.
+- **25 item icons** drawn in the existing line family, taking the vocabulary to 45 glyphs.
+- **Progression maths**: XP curve with multi-level rollover, and the rising per-point attribute
+  cost that is the game's endless gold sink.
+- **Save schema v3**: the hero replaces the retired walking-skeleton payload, with a v2→v3
+  migration and a captured Phase 1 save proving settings survive the upgrade.
+- **Dev drawer** on the character screen conjures gear, levels and gold so the screen is
+  reviewable before loot sources exist; `grantXp` is the same call missions will use in Phase 5.
+
+### Changed
+- Hero mutations now write through immediately instead of waiting out a 5-second debounce, with a
+  write-sequence guard so an older in-flight save can never land after a newer one and resurrect
+  stale state.
+- The HUD and nav-rail gates read the real hero (level, gold, portrait) instead of preview values.
+- Corrected the XP and stat-cost example values in `balancing-formulas.md` — the quoted figures
+  were miscalculated approximations. The curves are unchanged; the tests now assert the exact
+  values so doc and code cannot drift again.
+
 ### Added — Phase 1: Design System & App Shell
 - **Design system:** colour/type/chamfer tokens, timber and parchment surface treatments, etched
   edges with brass brackets, the facet accent motif, and a named motion system (snappy / standard

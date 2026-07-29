@@ -14,11 +14,13 @@ import { NavRail } from './NavRail';
 import { TopHud } from './TopHud';
 import { PlaceStage } from './PlaceStage';
 import { ToastStack } from '@/components/ui/Toast';
+import { HeroCreation } from '@/components/hero/HeroCreation';
 import { useGameStore } from '@/state/gameStore';
 import { useShellStore } from '@/state/shellStore';
 
 export function AppShell({ children }: { children: ReactNode }) {
   const hydrate = useGameStore((state) => state.hydrate);
+  const status = useGameStore((state) => state.status);
   const save = useGameStore((state) => state.save);
   const applySettings = useGameStore((state) => state.applySettings);
   const settings = useShellStore((state) => state.settings);
@@ -45,16 +47,30 @@ export function AppShell({ children }: { children: ReactNode }) {
   const reducedMotion =
     settings.motion === 'system' ? 'user' : settings.motion === 'reduced' ? 'always' : 'never';
 
+  /**
+   * No hero yet ⇒ creation takes the whole screen. The rail and HUD would be meaningless
+   * (and misleading) before there is anyone to describe, so they are simply not shown.
+   */
+  const needsHero = status === 'ready' && save?.hero == null;
+
   return (
     <MotionConfig reducedMotion={reducedMotion}>
       <div className="bg-wood-900 flex h-screen w-screen overflow-hidden">
-        <NavRail />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <TopHud />
-          <main className="relative min-h-0 flex-1">
-            <PlaceStage>{children}</PlaceStage>
+        {needsHero ? (
+          <main className="relative min-h-0 flex-1" data-testid="hero-creation">
+            <HeroCreation />
           </main>
-        </div>
+        ) : (
+          <>
+            <NavRail />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <TopHud />
+              <main className="relative min-h-0 flex-1">
+                <PlaceStage>{children}</PlaceStage>
+              </main>
+            </div>
+          </>
+        )}
         <ToastStack />
       </div>
     </MotionConfig>

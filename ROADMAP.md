@@ -42,7 +42,7 @@ Phase 0 save fixture proving old saves still open. 94 unit tests + 12 e2e, inclu
 style-rule checks (no `border-radius` > 4px, no serif fonts anywhere) and a 1366×768 no-overflow
 check.
 
-## Phase 2 — Hero Creation & Character Screen (L) 🔲
+## Phase 2 — Hero Creation & Character Screen (L) ✅
 Class data (5 kits' *data*, procs stubbed as definitions), creation flow (class cards → naming →
 world seed), Hero state slice, paperdoll + backpack + satchel UI, attributes panel with training
 buys (`statCost`), derived-stats panel (static math, no combat yet), item model + `generateItem`
@@ -50,6 +50,15 @@ buys (`statCost`), derived-stats panel (static math, no combat yet), item model 
 **Accept:** create hero → equip generated items → buy stats → reload-safe; item budgets match
 formulas doc (property tests); compare tooltips correct for all 10 slots; class-lock rules enforced
 at generation (unit-tested).
+
+**Delivered:** the five classes as data (kits declared; procs implemented in Phase 3), a creation
+flow that leads with *feel* rather than stat tables, and the full character screen — paperdoll,
+attribute training with visible prices, derived-stat panel with hover breakdowns, backpack with
+overflow satchel. `generateItem` is the single choke point for all gear: budgets, naming, value
+and scrap yield, with class restriction enforced at generation so wrong-class loot cannot exist.
+**Save schema v3** replaces the walking-skeleton payload with the hero and ships a v2 fixture.
+170 unit + 27 e2e green. Item icons are drawn in-house rather than sourced from game-icons.net —
+that library is unreachable from the build sandbox (see USER_QUESTIONS Q21).
 
 ## Phase 3 — Combat Engine (M) 🔲
 Pure engine: initiative, rounds, procs (all 5 class kits incl. Verses), crit/armor math, battle
