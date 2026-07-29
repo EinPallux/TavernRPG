@@ -17,7 +17,14 @@ see `ROADMAP.md` phase gates).
   - Open decisions list with working defaults (`USER_QUESTIONS.md`)
   - AI-developer working rules (`CLAUDE.md`, `AGENTS.md`), documentation index (`docs/README.md`)
 
+### Changed
+- **Planning review complete (2026-07-29):** all 20 `USER_QUESTIONS.md` decisions answered by
+  the user and folded into the specs. Deviations from proposed defaults: mount rentals shortened
+  to **7-day terms** (prices re-pinned: 20/55/130 × goldPerVigor, Royal Griffin 6 dice/7 days);
+  audio scope now includes a **user-supplied `bgm.mp3` drop-in** background-music system next to
+  the light SFX pass; hero gender/appearance variants confirmed post-1.0 (backlog).
+
 ### Notes
-- No game code yet by design — Phase 0 (scaffolding) starts after planning review.
+- No game code yet by design — design is locked, Phase 0 (scaffolding) is next.
 - Prior repository state: prepared art in `game_assets/` (backgrounds, class portraits,
   Kenney UI/VFX packs).

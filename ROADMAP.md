@@ -150,8 +150,9 @@ level 10 unaided.
 ## Phase 17 — Balancing, Content Fill & Feel (L) 🔲
 Fill content to plan volumes (96 monsters, 160 blurbs, all zones wired to 14 backdrops, barks,
 empty states), run pacing simulations vs §0 targets and tune every `[TUNE]`, class-balance pass
-via harness, economy 90-day sim bands finalized, SFX pass if Q13 approved, a11y pass (focus order,
-contrast, reduced-motion audit), performance pass vs budgets (bundle, fps, reconciliation).
+via harness, economy 90-day sim bands finalized, SFX pass + `bgm.mp3` drop-in music support
+(Q13 approved — asset pipeline §6), a11y pass (focus order, contrast, reduced-motion audit),
+performance pass vs budgets (bundle, fps, reconciliation).
 **Accept:** pacing sim hits §0 milestone table ±20%; all `[TUNE]` values have post-tuning entries
 in balancing doc changelog section; Lighthouse perf ≥ 90 on stage screens; zero contrast failures.
 
@@ -176,7 +177,8 @@ production deploy plays clean in a fresh browser profile end-to-end.
 7. **3rd gear set per class** (named in `gear-sets.md`), new dungeons (4–6), zone expansion.
 8. **6th class** (community-teased via Town Crier lore first).
 9. **Cloud saves/accounts** (revisits Q1), mobile layout, i18n (German first — Q12).
-10. **Achievements v2, Patrol events, arena scouting, buyback tab** — QoL wave.
+10. **Achievements v2, Patrol events, arena scouting, buyback tab, hero appearance/gender
+    variants (Q20)** — QoL wave.
 
 ## Working agreements
 

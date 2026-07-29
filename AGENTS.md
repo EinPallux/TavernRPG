@@ -7,8 +7,9 @@
 ## Project
 
 TavernRPG: a fully-fledged single-player fantasy browser RPG (Shakes-&-Fidget-inspired,
-simulated-MMO, semi-idle), Next.js/TypeScript, deployed on Vercel. Currently **planning-complete,
-pre-code** — Phase 0 of `ROADMAP.md` is the next milestone, gated on user review.
+simulated-MMO, semi-idle), Next.js/TypeScript, deployed on Vercel. Currently **planning-complete
+and user-reviewed, pre-code** — all `USER_QUESTIONS.md` answers are in (2026-07-29); Phase 0 of
+`ROADMAP.md` is the next milestone.
 
 ## Before any task
 

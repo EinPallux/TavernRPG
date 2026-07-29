@@ -59,8 +59,15 @@ blend), dust motes / ember particles (canvas layer), lantern flicker (CSS), para
 battle-scene push-ins. One `<AmbientStage>` component takes a backdrop + effect recipe from the
 screen config.
 
-## 6. Sound (Q13 pending)
+## 6. Sound (Q13 answered: approved)
 
-Placeholder plan if approved: ~20 SFX (UI ticks, coin, forge, hit/crit/block, victory sting,
-gacha reveal) from CC0 packs (Kenney audio), one `useSfx` hook, master toggle + volume in
-Settings, no music at 1.0 (looping tavern ambience as stretch). All gated behind Q13's answer.
+- **SFX (1.0, Phase 17):** ~20 sounds (UI ticks, coin, forge strike, hit/crit/block/dodge,
+  victory sting, loot/gacha reveal, level-up) from CC0 packs (Kenney audio), one `useSfx` hook
+  with per-category throttling, master toggle + volume in Settings. Lazy-loaded after first
+  interaction (autoplay policies; also keeps initial bundle clean).
+- **Background music — user drop-in (Q13 requirement):** the game checks for
+  `public/assets/audio/bgm.mp3` at startup. If present → looping background music with its own
+  Settings row (toggle + volume, independent of SFX), gentle fade-in on start and fade-out/in on
+  tab blur/focus. If absent → silence, zero errors, Settings row hidden. Swapping the file is the
+  whole workflow — no code, no manifest entry. (Optional later: `bgm_<place>.mp3` per-screen
+  variants; documented as post-1.0.)

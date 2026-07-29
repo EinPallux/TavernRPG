@@ -7,7 +7,8 @@ timed tavern missions, climbing an arena ladder of 1,500 simulated heroes, joini
 delving key-gated dungeons, chasing class gear sets, and rolling the Fortune's Table gacha — all
 single-player, all free, heavily inspired by *Shakes & Fidget* without copying it.
 
-> **Status: 📐 Planning phase complete — awaiting review before Phase 0 (scaffolding).**
+> **Status: 📐 Planning reviewed & locked (all 20 open questions answered) — ready for Phase 0
+> (scaffolding).**
 
 ## What makes it special
 
