@@ -6,8 +6,9 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Planning complete; no game code yet.** Next work: `ROADMAP.md` Phase 0 — but only after the
-user reviews the planning package and answers what they wish in `USER_QUESTIONS.md`.
+**Planning complete and reviewed; no game code yet.** All 20 questions in `USER_QUESTIONS.md`
+were answered by the user on 2026-07-29 and the specs reflect the answers — the design is locked.
+Next work: `ROADMAP.md` Phase 0 (Foundation & Walking Skeleton).
 
 ## Read before working (in order)
 
@@ -20,7 +21,7 @@ user reviews the planning package and answers what they wish in `USER_QUESTIONS.
 
 ## Hard rules (from the user — never violate)
 
-1. **No serif fonts.** Display = Alegreya Sans SC, body = Inter (pending Q14).
+1. **No serif fonts.** Display = Alegreya Sans SC, body = Inter (approved, Q14).
 2. **No rounded AI-slop UI.** Chamfered corners (clip-path tokens); `border-radius` > 4px is banned
    (see style guide §3).
 3. **Highly animated.** Anything that changes state moves (style guide §7); battles are full

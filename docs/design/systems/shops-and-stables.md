@@ -36,13 +36,15 @@ Backdrop: `stable_background.png`. Keeper: **Odo** (sleepy, loves the animals).
 
 | Mount | Effect | Cost | Term |
 |---|---|---|---|
-| Pack Mule | −10% mission time | gold: `40 × goldPerVigor(L)` | 14 days |
-| Dappled Courser | −20% | `110 × goldPerVigor(L)` | 14 days |
-| Armored Warhorse | −30% | `260 × goldPerVigor(L)` | 14 days |
-| **Royal Griffin** | **−50%** | **12 Golden Dice** | 14 days |
+| Pack Mule | −10% mission time | gold: `20 × goldPerVigor(L)` | 7 days |
+| Dappled Courser | −20% | `55 × goldPerVigor(L)` | 7 days |
+| Armored Warhorse | −30% | `130 × goldPerVigor(L)` | 7 days |
+| **Royal Griffin** | **−50%** | **6 Golden Dice** | 7 days |
 
-- Rentals (Q5): one active mount; buying a different mount replaces the remainder (confirm shows
-  lost days). Renewal reminder at 24h left (HUD chip pulse + Odo bark). No stacking, no partial refunds.
+- **7-day rentals** (Q5 answered: shorter terms, faster recurring sink; prices re-pinned so the
+  amortized share of daily gold is unchanged vs a 14-day model). One active mount; buying a
+  different mount replaces the remainder (confirm shows lost days). Renewal reminder at 24h left
+  (HUD chip pulse + Odo bark). No stacking, no partial refunds.
 - Mount affects mission *timer only* (never Vigor cost, rewards, or patrol).
 - Stable screen shows the four stalls with idle mount animations; active mount appears as a small
   chip on the HUD and beside the mission timer.

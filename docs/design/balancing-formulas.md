@@ -110,7 +110,7 @@ Cost of buying the `n`-th point of an attribute (points bought with gold only, `
 **Faucets (expected/day for active player ≈ 1.6):** daily task full-clear 1 · login calendar avg 0.35 ·
 mission drops ~0.15 · arena/dungeon/guild milestones ~0.1 amortized.
 **Sinks:** gacha roll 1 · Ale 1 · shop reroll 1 · arena cooldown skip 1 (max 3/day) · Royal Griffin
-12 per 14 days · backpack +5 slots: 10/20/40 (one-time ×3). Target: meaningful weekly tension between
+6 per 7 days · backpack +5 slots: 10/20/40 (one-time ×3). Target: meaningful weekly tension between
 "roll the banner" vs "ride the Griffin" vs "one more Ale". `[TUNE]`
 
 ## 10. Honor & ladder

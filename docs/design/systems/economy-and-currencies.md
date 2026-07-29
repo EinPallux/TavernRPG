@@ -33,10 +33,11 @@ points *after* mount upkeep and one shop splurge — asserts the "always slightl
 
 - **Income ≈ 1.6/day active** (tasks 1, calendar ~0.35, drops ~0.15, milestones ~0.1) — §9 table.
 - **Sinks (each a distinct desire):** Fortune's Table roll 1 · Ale (+20 Vigor) 1, ≤3/day ·
-  shop reroll 1 · mission skip 1 · arena cooldown skip 1, ≤3/day · **Royal Griffin 12/14 days** ·
+  shop reroll 1 · mission skip 1 · arena cooldown skip 1, ≤3/day · **Royal Griffin 6/7 days** ·
   backpack rows 10/20/40 one-time · guild flex-donation.
 - Weekly F2P budget ≈ 11 dice vs ~25 dice of wants → permanent, honest scarcity with zero paywall.
-  The Griffin (≈ 6/week amortized) is the "subscription" decision anchoring the economy.
+  The Griffin (exactly 6 dice/week) is the "subscription" decision anchoring the economy: riding
+  it costs ~55% of the weekly dice income, every week.
 - Never: dice→gold conversion (would collapse both loops); gold→dice (would trivialize premium).
 
 ## 4. Materials & keys
