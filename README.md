@@ -7,8 +7,28 @@ timed tavern missions, climbing an arena ladder of 1,500 simulated heroes, joini
 delving key-gated dungeons, chasing class gear sets, and rolling the Fortune's Table gacha — all
 single-player, all free, heavily inspired by *Shakes & Fidget* without copying it.
 
-> **Status: 📐 Planning reviewed & locked (all 20 open questions answered) — ready for Phase 0
-> (scaffolding).**
+> **Status: 🔨 Phase 0 complete — the foundation runs.** Planning is reviewed and locked (all 20
+> open questions answered); the project scaffold, determinism primitives, save system and a
+> walking-skeleton screen are in place with tests green. Next: Phase 1 (design system & app shell).
+
+## Running it
+
+```bash
+npm install
+npm run dev          # http://localhost:3000
+```
+
+| Command | What it does |
+|---|---|
+| `npm run dev` / `build` / `start` | Next.js dev server, production build, serve the build |
+| `npm test` | Unit tests (engine, saves, store) — Vitest |
+| `npm run test:e2e` | End-to-end tests — Playwright |
+| `npm run lint` / `typecheck` / `format` | ESLint · `tsc --noEmit` · Prettier |
+| `npm run verify` | The full gate: typecheck → lint → test → build |
+| `npm run assets:sync` | Copies `game_assets/` into `public/assets/` (runs automatically before dev/build) |
+
+Want background music? Drop an MP3 at `public/assets/audio/bgm.mp3` — the game picks it up and
+gives it its own volume control. No file, no music, no errors.
 
 ## What makes it special
 

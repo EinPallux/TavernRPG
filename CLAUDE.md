@@ -6,9 +6,12 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Planning complete and reviewed; no game code yet.** All 20 questions in `USER_QUESTIONS.md`
-were answered by the user on 2026-07-29 and the specs reflect the answers — the design is locked.
-Next work: `ROADMAP.md` Phase 0 (Foundation & Walking Skeleton).
+**Design locked; Phase 0 (Foundation & Walking Skeleton) is complete.** All 20 questions in
+`USER_QUESTIONS.md` were answered on 2026-07-29 and the specs reflect the answers. The scaffold,
+seeded RNG, GameClock, save system (Zod + migrations + IndexedDB) and a throwaway walking-skeleton
+screen are in place with 68 unit tests and 5 e2e tests green.
+Next work: `ROADMAP.md` Phase 1 (Design System & App Shell) — which replaces
+`src/components/skeleton/` with the real nav rail, HUD and place routing.
 
 ## Read before working (in order)
 

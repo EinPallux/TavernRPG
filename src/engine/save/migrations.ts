@@ -1,0 +1,119 @@
+/**
+ * Save migration chain.
+ *
+ * Every load runs through `migrateSave`: unknown data in, a validated current-version
+ * save out — or a precise, human-explainable reason why not. Loading a save written by
+ * any previously shipped version must succeed forever (docs/tech/architecture.md §3).
+ *
+ * Pure module: no DOM, no storage.
+ */
+
+import { CURRENT_SCHEMA_VERSION, saveFileSchema, type SaveFile } from './schema';
+
+export interface Migration {
+  /** Schema version this migration reads. */
+  readonly from: number;
+  /** Schema version it produces (always `from + 1` in practice). */
+  readonly to: number;
+  /** Short description, surfaced in logs and the corrupted-save triage screen. */
+  readonly describe: string;
+  migrate(data: Record<string, unknown>): Record<string, unknown>;
+}
+
+/**
+ * Shipped migrations, ordered oldest first.
+ * Empty until schema version 2 exists — v1 is the first released format.
+ */
+export const MIGRATIONS: readonly Migration[] = [];
+
+export type MigrationFailure =
+  | { readonly kind: 'malformed'; readonly detail: string }
+  | { readonly kind: 'from_future'; readonly saveVersion: number; readonly supported: number }
+  | { readonly kind: 'no_migration_path'; readonly stuckAt: number }
+  | { readonly kind: 'invalid'; readonly detail: string };
+
+export type MigrationResult =
+  | { readonly ok: true; readonly save: SaveFile; readonly migratedFrom: number | null }
+  | { readonly ok: false; readonly failure: MigrationFailure };
+
+/** Player-facing explanation for a failed load. No error codes in the UI. */
+export function describeFailure(failure: MigrationFailure): string {
+  switch (failure.kind) {
+    case 'malformed':
+      return "This file doesn't look like a TavernRPG save.";
+    case 'from_future':
+      return `This save was written by a newer version of the game (format ${failure.saveVersion}; this build understands up to ${failure.supported}). Update the game and try again.`;
+    case 'no_migration_path':
+      return `This save uses an old format (${failure.stuckAt}) that this build can no longer upgrade.`;
+    case 'invalid':
+      return 'This save is damaged and could not be read.';
+  }
+}
+
+function readVersion(data: Record<string, unknown>): number | null {
+  const version = data['schemaVersion'];
+  return typeof version === 'number' && Number.isInteger(version) ? version : null;
+}
+
+/**
+ * Upgrade arbitrary parsed JSON to the current save format.
+ * `chain` is injectable so tests can exercise multi-step upgrades.
+ */
+export function migrateSave(
+  raw: unknown,
+  chain: readonly Migration[] = MIGRATIONS,
+  targetVersion: number = CURRENT_SCHEMA_VERSION,
+): MigrationResult {
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    return {
+      ok: false,
+      failure: {
+        kind: 'malformed',
+        detail: `expected an object, got ${raw === null ? 'null' : typeof raw}`,
+      },
+    };
+  }
+
+  let data = { ...(raw as Record<string, unknown>) };
+  const startVersion = readVersion(data);
+
+  if (startVersion === null) {
+    return {
+      ok: false,
+      failure: { kind: 'malformed', detail: 'missing or non-integer schemaVersion' },
+    };
+  }
+  if (startVersion > targetVersion) {
+    return {
+      ok: false,
+      failure: { kind: 'from_future', saveVersion: startVersion, supported: targetVersion },
+    };
+  }
+
+  let version = startVersion;
+  while (version < targetVersion) {
+    const step = chain.find((migration) => migration.from === version);
+    if (!step) {
+      return { ok: false, failure: { kind: 'no_migration_path', stuckAt: version } };
+    }
+    data = step.migrate(data);
+    data['schemaVersion'] = step.to;
+    version = step.to;
+  }
+
+  const parsed = saveFileSchema.safeParse(data);
+  if (!parsed.success) {
+    const [issue] = parsed.error.issues;
+    const where = issue?.path.join('.') || '(root)';
+    return {
+      ok: false,
+      failure: { kind: 'invalid', detail: `${where}: ${issue?.message ?? 'unknown problem'}` },
+    };
+  }
+
+  return {
+    ok: true,
+    save: parsed.data,
+    migratedFrom: startVersion === targetVersion ? null : startVersion,
+  };
+}

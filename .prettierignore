@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+coverage/
+playwright-report/
+test-results/
+public/assets/
+game_assets/
+package-lock.json
+*.md

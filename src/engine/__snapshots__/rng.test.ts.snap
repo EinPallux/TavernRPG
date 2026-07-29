@@ -1,0 +1,11 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`rng — determinism > is frozen against regression (golden values for seed 42) 1`] = `
+[
+  "0.8686135609",
+  "0.4159551358",
+  "0.3376831533",
+  "0.5103033823",
+  "0.8812672768",
+]
+`;

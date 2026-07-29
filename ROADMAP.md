@@ -10,13 +10,20 @@
 
 ---
 
-## Phase 0 — Foundation & Walking Skeleton (M) 🔲
-Scaffold Next.js 15 + TS strict + Tailwind v4 + Zustand + Motion + Vitest + Playwright + ESLint/
+## Phase 0 — Foundation & Walking Skeleton (M) ✅
+Scaffold Next.js 16 + TS strict + Tailwind v4 + Zustand + Motion + Vitest + Playwright + ESLint/
 Prettier + CI (typecheck/lint/test/build) + Vercel deploy. Seeded RNG lib + GameClock + save
 envelope (Zod, slot 1 only) with a trivial "tavern door" placeholder page proving persistence
 round-trip. Repo hygiene: `game_assets` → served pipeline stub, CREDITS.md seeded.
 **Accept:** CI green on PR; deployed preview loads; a counter survives reload via IndexedDB save;
 `Math.random`/`Date.now` lint ban active; docs: architecture "as-built" notes updated.
+
+**Delivered:** 68 unit tests + 5 Playwright e2e, all green; `npm run verify` (typecheck → lint →
+test → build) passes; static build output; determinism + engine-purity lint guards verified to fire;
+save system ships versioned Zod validation, a migration chain with tests, backup-fallback recovery
+and export/import; asset sync script serving 503 files; `bgm.mp3` drop-in folder created.
+Toolchain deviations from plan (Next 16, ESLint pinned to 9, Vitest 4 environment handling) are
+recorded in `docs/tech/architecture.md` §1 "As-built notes".
 
 ## Phase 1 — Design System & App Shell (L) 🔲
 Tokens (colors/type/chamfers/motion springs), fonts, `<TavernPanel>`, `<ActionButton>`, `<Meter>`,
