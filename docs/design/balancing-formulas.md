@@ -31,6 +31,11 @@
 ## 2. Gold
 
 - Mission gold per Vigor point: `goldPerVigor(L) = round(3.5 · L^1.35 + 8)` `[TUNE]`
+  - L1: 12 · L5: 39 · L10: 86 · L25: 278 · L50: 696 · L100: 1,762
+  - (Exact values, asserted by `src/engine/progression/rewards.test.ts`.)
+  - A full day of Vigor is therefore worth `100 × goldPerVigor(L)` — and **rewards are linear in
+    Vigor**, so twenty 5-minute missions pay exactly what five 20-minute ones do. Long missions
+    are bought with better *odds* (§7), never with a better rate.
 - Patrol gold per hour: `goldPatrol(L) = 14 · goldPerVigor(L) · 0.55` (≈55% of mission rate) `[TUNE]`
 - Arena win gold: `25 × goldPerVigor(L)` (first 10 wins/day).
 - Item sale value: `itemValue = baseSlotValue(L) · rarityMult` where `baseSlotValue(L) = 6 · L^1.35`
