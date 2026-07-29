@@ -25,7 +25,7 @@ and export/import; asset sync script serving 503 files; `bgm.mp3` drop-in folder
 Toolchain deviations from plan (Next 16, ESLint pinned to 9, Vitest 4 environment handling) are
 recorded in `docs/tech/architecture.md` §1 "As-built notes".
 
-## Phase 1 — Design System & App Shell (L) 🔲
+## Phase 1 — Design System & App Shell (L) ✅
 Tokens (colors/type/chamfers/motion springs), fonts, `<TavernPanel>`, `<ActionButton>`, `<Meter>`,
 `<Toast>`, `<Modal>`, `<TimerChip>`, `<KeeperBark>`, `<AmbientStage>` + nav rail + top HUD +
 place routing with transitions + `/dev/kit` harness page. All 15 places routed with backdrop +
@@ -33,7 +33,16 @@ place routing with transitions + `/dev/kit` harness page. All 15 places routed w
 **Accept:** style guide §2–§8 visibly implemented; 60fps transitions; reduced-motion works;
 kit page reviewed against "no rounded slop" checklist; 1366×768 degradation verified.
 
-## Phase 2 — Hero Creation & Character Screen (L) 🔲
+**Delivered:** the full component kit plus a 20-glyph hand-drawn icon family; grouped nav rail
+with visible level gates and collapse-to-icons (persisted); top HUD with portrait/level ring, XP
+meter, wallet and a Vigor tankard that fills; directional place transitions; all 15 places routed
+and dressed with their backdrop, ambience and keeper bark. Feature gates live in the engine as
+one source of truth. **Save schema v2** adds player settings, with a real v1→v2 migration and a
+Phase 0 save fixture proving old saves still open. 94 unit tests + 12 e2e, including automated
+style-rule checks (no `border-radius` > 4px, no serif fonts anywhere) and a 1366×768 no-overflow
+check.
+
+## Phase 2 — Hero Creation & Character Screen (L) ✅
 Class data (5 kits' *data*, procs stubbed as definitions), creation flow (class cards → naming →
 world seed), Hero state slice, paperdoll + backpack + satchel UI, attributes panel with training
 buys (`statCost`), derived-stats panel (static math, no combat yet), item model + `generateItem`
@@ -42,20 +51,55 @@ buys (`statCost`), derived-stats panel (static math, no combat yet), item model 
 formulas doc (property tests); compare tooltips correct for all 10 slots; class-lock rules enforced
 at generation (unit-tested).
 
-## Phase 3 — Combat Engine (M) 🔲
+**Delivered:** the five classes as data (kits declared; procs implemented in Phase 3), a creation
+flow that leads with *feel* rather than stat tables, and the full character screen — paperdoll,
+attribute training with visible prices, derived-stat panel with hover breakdowns, backpack with
+overflow satchel. `generateItem` is the single choke point for all gear: budgets, naming, value
+and scrap yield, with class restriction enforced at generation so wrong-class loot cannot exist.
+**Save schema v3** replaces the walking-skeleton payload with the hero and ships a v2 fixture.
+170 unit + 27 e2e green. Item icons are drawn in-house rather than sourced from game-icons.net —
+that library is unreachable from the build sandbox (see USER_QUESTIONS Q21).
+
+## Phase 3 — Combat Engine (M) ✅
 Pure engine: initiative, rounds, procs (all 5 class kits incl. Verses), crit/armor math, battle
 log emission, `buildCombatant` (hero + archetype monsters), golden-log snapshots, 10k-fight
 balance harness with mirror/win-rate assertions (CI). No UI beyond a dev log-viewer.
 **Accept:** harness passes bands (45–55% mirrors at 4 level checkpoints; archetype win-rate
 targets); logs deterministic across Node/browser; engine has zero DOM/state imports (lint rule).
 
-## Phase 4 — Battle Scene (L) 🔲
+**Delivered:** `fight()` as one pure function emitting a serializable log, all five class procs,
+five monster archetypes, and `buildCombatant` putting heroes and monsters through identical
+formulas. The balance harness measured the classes as originally specified and found them badly
+broken (Warrior beat Mage 100%); the rebalance that followed — class weapon-damage factors and a
+narrower survivability spread — is documented in `systems/characters-and-classes.md`. Final:
+mirrors 49–52%, per-class averages 49–51%, worst matchup 67%, fights 4–16 rounds. Golden logs
+freeze the engine; `/dev/combat` shows every roll. 212 unit + 27 e2e green.
+
+## Phase 4 — Battle Scene (L) ✅
 The animated replay: entrances, lunges, particles (Kenney canvas layer), damage numbers, crit
 slow-mo, block/dodge/verse presentation, HP ghost bars, KO/victory/defeat, speed controls + skip,
 result screen with reward lines & reason hints. Choreography config file. Fuzz: random valid logs
 render without throw.
 **Accept:** mission-length fight ≤8s at ×1 and 60fps on target hardware; every BattleEvent type
 has distinct presentation; reduced-motion variant; result screen matches combat spec §6.
+
+**Delivered.** `battleChoreo.ts` holds every timing; `timeline.ts` turns a log into a schedule as
+a pure function (so pacing is unit-tested without rendering); `useBattlePlayback` derives the
+current frame from elapsed time, which is what makes skip, replay and speed changes free.
+`BattleScene` composes the fighters, a pooled canvas particle layer, floating numbers and screen
+shake; `BattleResult` reads the fight back through `engine/combat/analysis.ts`. Harness at
+`/dev/battle`.
+
+Two things the phase forced that were not in the plan:
+- **Adaptive pacing.** A fixed pace cannot serve both a 3-round and a 20-round fight. The
+  exchange now compresses toward the 8s target while the entrance, knockout, closing beat and
+  every *impact frame* keep their length (combat spec §4). Measured: median 4.8s, p99 8.0s.
+- **The tank archetype was retuned** (balancing §5). It produced 23-round average fights the hero
+  won 99.7% of the time — that is a design problem no choreography can fix. Now ~11 rounds, and
+  it hits hard enough to matter. Golden log regenerated; balance harness still green.
+
+Also shipped: save schema **v4** (persisted battle speed + skip preference) with migration and a
+captured v3 fixture.
 
 ## Phase 5 — Tavern & Missions (L) 🔲
 Tavern screen (ambient, Marla, quest table), Vigor system + HUD tankard, mission offers

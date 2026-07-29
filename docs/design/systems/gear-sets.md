@@ -38,7 +38,7 @@
 
 ### Hunter
 **Thornstalker's Guise** — theme: briar-laced leathers; DEX/CON.
-2pc: +5% dodge (45→50 vs non-Mage) · 4pc: successful dodges add +10% to your next hit (stacks ×3) · 5pc: **dodging grants a free counter-shot at 50% damage** (max 1/round).
+2pc: +5% dodge (40→45) · 4pc: successful dodges add +10% to your next hit (stacks ×3) · 5pc: **dodging grants a free counter-shot at 50% damage** (max 1/round).
 **Galewind Harness** — theme: sky-courier straps; DEX/LCK.
 2pc: +6% crit · 4pc: +12% crit damage · 5pc: **crits reduce enemy armor DR by 5pp** (stacks ×4).
 
@@ -46,7 +46,7 @@
 **Corsair King's Finery** — theme: flamboyant captain's regalia; DEX/LCK.
 2pc: Flurry chance 60→68% · 4pc: Flurry strikes +15% damage · 5pc: **Flurry can chain a third strike at 35% chance, 50% damage**.
 **Nighttide Silks** — theme: moonlit-heist blacks; DEX/CON.
-2pc: +8% dodge (30→38) · 4pc: +10% damage while above 70% HP · 5pc: **first hit each battle is an automatic crit**.
+2pc: +8% parry (15→23) · 4pc: +10% damage while above 70% HP · 5pc: **first hit each battle is an automatic crit**.
 
 *(1.1 outlines: Dragonsbane Aegis · Requiem of the Deep · Starbound Raiment · Wyrmscale Fletching ·
 Serpent's Grin — named now so dungeons/banners can tease them.)*

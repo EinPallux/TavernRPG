@@ -62,6 +62,61 @@
   );
 }
 
+/**
+ * Surfaces — timber and parchment, never flat fills.
+ * Panels get a faint vertical grain plus a warm top-light so they read as physical
+ * material rather than as coloured rectangles (style guide §1, §3).
+ */
+.surface-timber {
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.045) 0%, transparent 42%),
+    repeating-linear-gradient(
+      90deg,
+      rgb(0 0 0 / 0.05) 0px,
+      rgb(0 0 0 / 0.05) 1px,
+      transparent 1px,
+      transparent 7px
+    );
+}
+
+.surface-parchment {
+  background-image:
+    radial-gradient(120% 90% at 30% 0%, rgb(255 255 255 / 0.35), transparent 60%),
+    linear-gradient(180deg, rgb(0 0 0 / 0.02), rgb(0 0 0 / 0.09));
+}
+
+/**
+ * Etched dual-line edge: dark outer, light inner. This is what replaces the drop-shadowed
+ * rounded card — the border does the work, so nothing needs a radius.
+ */
+.edge-etched {
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.55),
+    inset 0 0 0 2px rgb(232 163 61 / 0.16);
+}
+
+.edge-etched-strong {
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.6),
+    inset 0 0 0 2px rgb(232 163 61 / 0.34),
+    0 18px 40px -24px rgb(0 0 0 / 0.9);
+}
+
+/** Angular facet strip — the signature accent (headers, meters, dividers). */
+.facet-rule {
+  height: 3px;
+  background:
+    linear-gradient(90deg, var(--color-amber-500) 0%, transparent 70%),
+    repeating-linear-gradient(
+      135deg,
+      rgb(232 163 61 / 0.55) 0px,
+      rgb(232 163 61 / 0.55) 2px,
+      transparent 2px,
+      transparent 6px
+    );
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+}
+
 html,
 body {
   height: 100%;
@@ -107,6 +162,57 @@ body {
   }
 }
 
+/** Dust motes drifting through lantern light. */
+@keyframes mote-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.5;
+  }
+  80% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translate3d(18px, -70px, 0);
+    opacity: 0;
+  }
+}
+
+/** Lantern flicker — irregular on purpose; a steady pulse reads as a loading spinner. */
+@keyframes lantern-flicker {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  8% {
+    opacity: 0.95;
+  }
+  14% {
+    opacity: 0.7;
+  }
+  42% {
+    opacity: 0.9;
+  }
+  57% {
+    opacity: 0.72;
+  }
+  73% {
+    opacity: 0.98;
+  }
+}
+
+/** Edge shimmer that travels along a filling meter. */
+@keyframes meter-shimmer {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
 .animate-hearth {
   animation: hearth-pulse 6s ease-in-out infinite;
 }
@@ -115,7 +221,22 @@ body {
   animation: ember-rise 5s linear infinite;
 }
 
+.animate-mote {
+  animation: mote-drift 9s linear infinite;
+}
+
+.animate-lantern {
+  animation: lantern-flicker 7s ease-in-out infinite;
+}
+
+.animate-meter-shimmer {
+  animation: meter-shimmer 2.4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .animate-mote,
+  .animate-lantern,
+  .animate-meter-shimmer,
   .animate-hearth,
   .animate-ember {
     animation: none;

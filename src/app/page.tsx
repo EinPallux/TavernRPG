@@ -1,5 +1,6 @@
-import { TavernDoor } from '@/components/skeleton/TavernDoor';
+import { redirect } from 'next/navigation';
 
-export default function Home() {
-  return <TavernDoor />;
+/** The game opens where the game happens: at the tavern. */
+export default function RootPage() {
+  redirect('/tavern');
 }

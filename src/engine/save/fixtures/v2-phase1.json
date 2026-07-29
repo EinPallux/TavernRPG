@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 2,
+  "savedAt": 1785148800000,
+  "slot": 2,
+  "worldSeed": 208181039,
+  "clock": {
+    "lastSeen": 1785148800000,
+    "clampCount": 1
+  },
+  "settings": {
+    "navCollapsed": true,
+    "motion": "reduced",
+    "sfxEnabled": true,
+    "musicEnabled": false,
+    "volume": 0.4
+  },
+  "skeleton": {
+    "doorKnocks": 3,
+    "createdAt": 1785140000000,
+    "lastKnockAt": 1785148000000
+  }
+}

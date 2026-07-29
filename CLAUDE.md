@@ -6,12 +6,46 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phase 0 (Foundation & Walking Skeleton) is complete.** All 20 questions in
-`USER_QUESTIONS.md` were answered on 2026-07-29 and the specs reflect the answers. The scaffold,
-seeded RNG, GameClock, save system (Zod + migrations + IndexedDB) and a throwaway walking-skeleton
-screen are in place with 68 unit tests and 5 e2e tests green.
-Next work: `ROADMAP.md` Phase 1 (Design System & App Shell) — which replaces
-`src/components/skeleton/` with the real nav rail, HUD and place routing.
+**Design locked; Phases 0–3 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+2026-07-29 and the specs reflect the answers.
+
+- **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
+- **Phase 1:** design tokens + motion system, the component kit (`src/components/ui/`), the
+  hand-drawn icon family, the app shell (nav rail + HUD + place transitions), all 15 places
+  routed as dressed placeholders, feature gates, `/dev/kit`, and save schema v2 (settings).
+
+- **Phase 2:** the five classes as data, hero creation, the character screen (paperdoll,
+  attribute training, derived stats, backpack), `generateItem`, and save schema v3 (hero).
+
+- **Phase 3:** the combat engine — pure `fight()`, all five class procs, monster archetypes,
+  golden logs and the balance harness (plus the rebalance it forced).
+
+- **Phase 4:** the battle scene — `battleChoreo.ts` (every timing), the pure `timeline.ts`
+  (log → schedule → frame), `useBattlePlayback`, the canvas particle layer, the result screen
+  with typed loss hints from `engine/combat/analysis.ts`, `/dev/battle`, and save schema v4
+  (persisted playback speed). Nothing in `src/engine/combat/` changed to render the log — as
+  designed — but the phase did force a **tank archetype retune** (see balancing §5).
+
+270 unit tests + 38 e2e green. Next work: `ROADMAP.md` **Phase 5 (Tavern & Missions)** — the core
+loop. Mount `BattleScene` exactly as `/dev/battle` does; it needs a log, a backdrop and a result.
+
+**Before touching class constants or monster archetypes:** run `npm run balance`. The numbers in
+`src/data/classes.ts` were solved for, not chosen, and the bands in
+`src/engine/combat/balance.test.ts` will catch a regression — but the harness tells you *why*.
+Archetypes carry a second constraint that the harness does *not* check: a median fight against an
+on-curve hero should stay under ~12 rounds. `src/components/battle/timeline.test.ts` catches it
+from the pacing side.
+
+## Where things live (as built)
+
+`src/engine/` pure logic — `rng`, `clock`, `save/` (schema + migrations), `progression/`
+(xp, stats, gates), `items/` (types, generate), `hero/` (actions, derived) ·
+`src/data/` content — places, classes, itemBases, icon vocabulary ·
+`src/state/` stores + persistence + the shared clock ·
+`src/components/{ui,shell,icons,items,hero,battle}/` · `src/app/(game)/<place>/` one route per
+place · `src/styles/motion.ts` springs.
+Run `/dev/kit` for every component state; the character screen's dev drawer conjures gear,
+levels and gold while loot sources are still being built.
 
 ## Read before working (in order)
 

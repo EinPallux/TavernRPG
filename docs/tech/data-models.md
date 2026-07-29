@@ -55,17 +55,21 @@ interface Item {
 }
 
 // ————— Hero & activity state (persisted) —————
+// As built in Phase 2 (src/engine/save/schema.ts). Commented fields are planned for the phase
+// noted; each arrives as a new schema version with a migration.
 interface Hero {
   name: string; classId: ClassId; level: number; xp: number;
-  boughtStats: Attributes;          // training counters (cost basis)
-  equipment: Partial<Record<SlotId, Item>>;
-  backpack: (Item | null)[];        // 15–30, null = empty slot
+  trained: Attributes;              // points bought with gold (the cost basis for more)
+  gold: number; dice: number;
+  equipment: Partial<Record<SlotId, Item>>;   // sparse: an empty slot is an absent key
+  backpack: (Item | null)[];        // fixed length 15; null = empty cell, so positions are stable
   satchel: Item[];                  // overflow, max 5
-  gold: number; dice: number; materials: MaterialWallet;
-  vigor: { current: number; alesToday: number };
-  mount?: { tier: 1|2|3|4; expiresAt: Timestamp };
-  activePetId?: string; pets: Record<string, PetState>;
-  setsSeen: string[]; trophies: TrophyId[];
+  createdAt: Timestamp;
+  // materials: MaterialWallet;              // Phase 12 (forge)
+  // vigor: { current: number; alesToday: number };  // Phase 5 (missions)
+  // mount?: { tier: 1|2|3|4; expiresAt: Timestamp }; // Phase 7 (stables)
+  // activePetId?: string; pets: Record<string, PetState>; // Phase 14
+  // trophies: TrophyId[];                   // Phase 11 (dungeons)
 }
 interface ActivityState {
   mission?: ActiveMission;          // { offerSnapshot, duration, startedAt, endsAt, seed }
@@ -107,10 +111,15 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
   hpTimeline: [number, number][]; }
 
 // ————— Save envelope —————
+// Schema v3 as shipped; `activity` and `world` join in Phases 5 and 8.
 interface SaveFile {
-  schemaVersion: number; savedAt: Timestamp; slot: 1|2|3;
-  hero: Hero; activity: ActivityState; world: WorldState;
-  meta: { settings: Settings; tutorial: TutorialState; stats: LifetimeStats; flags: string[] };
+  schemaVersion: 4; savedAt: Timestamp; slot: 1|2|3;
+  worldSeed: Seed;                  // committed once; seeds the entire simulated world
+  clock: { lastSeen: Timestamp; clampCount: number };
+  settings: Settings;               // nav, motion, audio, battle playback (v4)
+  hero: Hero | null;                // null routes the player to creation
+  // activity: ActivityState;       // Phase 5
+  // world: WorldState;             // Phase 8
 }
 ```
 

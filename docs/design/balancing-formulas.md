@@ -19,7 +19,8 @@
 ## 1. Experience & levels
 
 - XP to go from level `L` to `L+1`: `xpNeeded(L) = round(60 · L^2.1 + 240 · L)` `[TUNE]`
-  - L1→2: 300 · L10→11: ~9.9k · L25→26: ~53k · L50→51: ~236k · L100→101: ~1.03M
+  - L1→2: 300 · L10→11: 9,954 · L25→26: 57,740 · L50→51: 233,814 · L100→101: 974,936
+  - (Exact values, asserted by `src/engine/progression/progression.test.ts`.)
 - No level cap. Level-up: full heal in dungeon context, celebratory FX, +0 free stat points
   (stats are bought with gold — S&F model).
 - Mission XP per Vigor point at level `L`: `xpPerVigor(L) = xpNeeded(L) / 320` `[TUNE]`
@@ -42,30 +43,53 @@ Cost of buying the `n`-th point of an attribute (points bought with gold only, `
 
 `statCost(n) = round(2 + 0.6 · n^1.65)` gold `[TUNE]`
 
-- n=10: ~29 · n=50: ~385 · n=100: ~1.2k · n=300: ~7.4k · n=1000: ~54k
+- n=10: 29 · n=50: 383 · n=100: 1,199 · n=300: 7,337 · n=1000: 53,477
+  (Exact values, asserted by `src/engine/progression/progression.test.ts`.)
 - Soft cap via price alone; no hard cap. UI offers +1 / +5 / +25 / Max-affordable buys.
 - Design check: a day's mission gold at level L should buy roughly **L/2 points** spread across
   attributes early on, decaying to ~L/6 by level 100 (keeps missions → stats → harder missions loop taut).
 
 ## 4. Combat (full spec in `systems/combat.md`)
 
-- `HP = CON · (level + 1) · classHpFactor` (Warrior 5.0, Hunter 4.0, Swashbuckler 4.0, Bard 3.0, Mage 2.5)
+**Tuned in Phase 3 against the simulation harness — these are measured values, not estimates.**
+
+| Class | HP factor | DR cap | Weapon damage ×| Spread | Signature |
+|---|---|---|---|---|---|
+| Warrior | 4.2 | 35% | 0.935 | ±20% | Block 25% |
+| Bard | 3.6 | 22% | 1.382 | ±25% | Verses |
+| Mage | 3.4 | 15% | 1.990 | ±45% | Arcane Certainty (defences at 62%) |
+| Hunter | 3.6 | 25% | 1.030 | ±22% | Dodge 40% |
+| Swashbuckler | 3.8 | 25% | 0.918 | ±20% | Flurry 60% @75% + Parry 15% |
+
+- `HP = CON · (level + 1) · classHpFactor`
 - Hit damage: `roll(weaponMin..weaponMax) · (1 + mainStat/10) · critMult · (1 − armorDR)`
-- `armorDR = min(totalArmor / (attackerLevel · 50), classDRcap)` — caps: Warrior 50%, Hunter 25%,
-  Swashbuckler 25%, Bard 20%, Mage 10%.
+- `armorDR = min(totalArmor / (attackerLevel · 50), classDRcap)`
 - Crit: `critChance = min(luck · 5 / (2 · opponentLevel), 50%)`, `critMult = 2.0`.
-- Class procs: Warrior block 25% · Hunter dodge 45% · Swashbuckler double-strike (2nd hit 60%
-  chance, 75% damage) · Bard Verses (see class doc) · Mage attacks ignore dodge/block, +25% weapon
-  damage spread. `[TUNE]`
+- Weapon damage: `avg = (4 + 2.4·level) · rarityFactor · classWeaponDamageFactor`. The class factor
+  is what pays for the survivability spread — without it, high-HP classes were strictly better
+  (see `systems/characters-and-classes.md` §"Phase 3 rebalance").
+- Initiative: dexterity-weighted, damped toward even (`0.5 + (dexShare − 0.5) · 0.8`).
 - Round cap 100 → higher remaining HP-fraction wins; exact tie → defender wins (attacker risk).
+
+**Measured outcome** (levels 10/25/50/100, thousands of fights each): mirrors 49–52%; per-class
+average across all opponents 49.3–50.6%; worst single matchup 67%; fights 4–16 rounds. A deliberate
+counter triangle exists: Bard > Mage > Hunter > Bard. CI asserts all of it
+(`src/engine/combat/balance.test.ts`).
 
 ## 5. Enemy scaling
 
 - Mission monster at player level L: level `L + jitter(−1..+2)`; attributes from **monster archetype
   templates** (bruiser/skirmisher/caster/tank/swarm) budgeted to `statBudget(L) = 12 + 5.2·L` total
-  points distributed per archetype weights; HP factor per archetype (2.5–5.0). `[TUNE]`
+  points distributed per archetype weights; HP factor per archetype (2.5–3.5). `[TUNE]`
 - Mission **win-rate target ≥ 97%** for a player whose stats track the level curve (missions are
   pacing, not challenge; losses come from long gear neglect).
+- **Fight length is a balance constraint, not just a presentation one.** An archetype is out of
+  band if the median fight against an on-curve hero runs past ~12 rounds. The Phase 4 retune of
+  the **tank** (hp 5.0 → 3.2, armour ×1.5 → ×1.2, DR cap 0.45 → 0.30, block 20% → 15%, damage
+  ×0.75 → ×1.2) came from that rule: the original stacked four defences and produced 23-round
+  average fights the hero still won 99.7% of the time. It is still the beefiest thing in a zone
+  (its 0.5 CON weight sees to that) at ~11 rounds, and now hits hard enough to be worth
+  respecting. Measured after the change: mission win rates 99.5–100%, still inside the ≥97% floor.
 - Dungeon floor monster level: `dungeonBase + floor · dungeonStep` — Rat Cellars 12+2·f (14–32),
   Barrowdeep 28+3·f (31–58), Emberdeep 55+4·f (59–95). Stat budgets ×1.35 vs same-level mission
   monsters, boss floors (5, 10) ×1.6 with a signature proc. `[TUNE]`

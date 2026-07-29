@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "savedAt": 1785062400000,
+  "slot": 1,
+  "worldSeed": 3863720897,
+  "clock": {
+    "lastSeen": 1785062400000,
+    "clampCount": 0
+  },
+  "skeleton": {
+    "doorKnocks": 7,
+    "createdAt": 1785060000000,
+    "lastKnockAt": 1785062100000
+  }
+}

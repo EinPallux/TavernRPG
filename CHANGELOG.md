@@ -7,6 +7,125 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 4: Battle Scene
+- **The battle scene** (`src/components/battle/`) — the Phase 3 log, choreographed. Fighters slide
+  in behind a backdrop push-in, attackers lunge, hits throw Kenney particles from a pooled canvas,
+  damage numbers float (crits at ×1.6, gold), health bars chip instantly with a ghost trail
+  draining behind, big hits shake the stage, and the loser desaturates and falls.
+- **Every `BattleEvent` type has its own presentation**: blocks, dodges and misses each get a
+  distinct plate; Bard verses fly a ribbon; a Flurry's second hit lands quicker than the swing
+  that set it up.
+- **`battleChoreo.ts`** holds every timing in the fight, so pacing can be retuned without touching
+  a single rule — and a balance change can never accidentally alter pacing.
+- **`timeline.ts`** turns a log into a schedule as a *pure* function, and `frameAt(t)` derives the
+  whole picture at any moment. That is what makes skip, replay and speed changes free, and it puts
+  the hard part of animation under unit test without rendering anything.
+- **Adaptive pacing.** A fixed pace cannot serve both a 3-round and a 20-round fight, so the
+  exchange compresses toward the 8-second target while the entrance, the knockout, the closing
+  beat and every *impact frame* keep their authored length. Measured across every class ×
+  archetype × level band: median 4.8s, p99 8.0s, worst case 8.7s.
+- **Result screen** with cascading reward lines, a rarity-revealed loot card, the "closest moment"
+  stat, and — after a loss — a reason hint that names something the player can actually change.
+- **`engine/combat/analysis.ts`** reads a log back into counts, closest-moment figures and ranked
+  typed hint codes. The arithmetic is engine work and tested; the wording is UI work.
+- **Reduced motion** keeps every beat and every plate, dropping only anticipation, shake,
+  slow-motion and the particle canvas — the fight stays followable, it just stops performing.
+- **Save schema v4**: battle speed and skip preference persist, with a migration and a captured v3
+  fixture (a real geared hero) added to the regression set.
+- **`/dev/battle`** stages any matchup at any level and reports the run time against the target.
+- Tests: 44 new unit tests (timeline, analysis, scene render, store), a fuzz pass that scrubs every
+  class × archetype × level fight frame by frame, and 11 e2e covering playback, skip, replay,
+  speed, the result screen, reduced motion and the no-rounded-corners rule.
+
+### Changed — Phase 4
+- **The tank archetype was retuned** (hp ×5.0 → ×3.2, armour ×1.5 → ×1.2, damage-reduction cap
+  0.45 → 0.30, block 20% → 15%, damage ×0.75 → ×1.2). It stacked four defences and produced
+  23-round average fights the hero still won 99.7% of the time — a wall you cannot lose to is not
+  tension, it is a wait. Now ~11 rounds, still comfortably the beefiest thing in a zone, and now
+  hitting hard enough to be worth respecting. Mission win rates stay inside the ≥97% floor.
+  *Fight length is now written down as a balance constraint, not just a presentation one.*
+- The `swashbuckler vs dungeon boss` golden log was regenerated to match (19 rounds → 11).
+
+### Added — Phase 3: Combat Engine
+- **`fight()`** — the whole of combat as one pure, seeded function emitting a serializable battle
+  log. Every fight in the game will run through it, so balance lives in exactly one place.
+- **All five class kits implemented**: Shield Wall, Verses (with its three-song state machine),
+  Arcane Certainty, Windstep and Flurry — plus the Swashbuckler's Parry.
+- **Five monster archetypes** (bruiser, skirmisher, caster, tank, swarm) generated from level
+  rather than hand-authored, so 126 monsters stay maintainable and can never drift off-curve.
+- **Balance harness**: thousands of seeded fights per matchup, with CI asserting three bands —
+  mirrors 45–55%, per-class average 45–55%, and any single matchup 30–70%.
+- **Golden battle logs** freeze the engine's exact output; a diff means every committed seed in
+  every save now resolves differently.
+- **`/dev/combat`** viewer shows every roll of a seeded fight, and the win rate over 600 more.
+
+### Changed — the Phase 3 rebalance
+- Measuring the classes as originally specified showed they were badly unbalanced: Warrior beat
+  Bard and Mage 100% of the time, Mage lost to Hunter 0%. Two causes, both fixed:
+  **classes now have a weapon-damage factor** (a Warrior's one-hander hits softly, a Mage's staff
+  hits like a falling tree — this is what pays for the survivability spread), and **the HP/armour
+  spread was narrowed** from ×2.5–5.0 / 10–50% to ×3.4–4.2 / 15–35%, which also brought mirror
+  fights from a 2-to-34-round range into 4–16.
+- **Arcane Certainty softened** from "cannot be blocked or dodged" to "defences work at 62%". The
+  absolute version measured as a 97% hard counter to the Hunter; an arena where your class simply
+  loses is miserable.
+- Hunter dodge 45%→40%; Swashbuckler gained a 15% Parry (it previously had no defence at all).
+- Class specs, the balancing doc and the affected set bonuses were updated to match.
+
+### Added — Phase 2: Hero Creation & Character Screen
+- **The five classes as data** (`src/data/classes.ts`): main stat, HP factor, armour cap and one
+  signature proc each, declared now and implemented by the combat engine in Phase 3. Creation
+  cards lead with how a class *feels* rather than with a stat table.
+- **Hero creation**: class pick → name (with validation that explains itself, and suggestions so
+  the blank field is never a wall). No hero means the game opens here instead of in the town.
+- **Character screen**: paperdoll with all 10 slots, attribute training with visible prices and a
+  Max button that spends what it can, a derived-stat panel with hover breakdowns showing where
+  every number comes from, and a backpack with an overflow satchel.
+- **Item generation** (`generateItem`): one choke point for all gear — budgets, damage bands,
+  armour, procedural naming, value and scrap yield. Class restriction is enforced *at generation*,
+  so a wrong-class drop cannot exist rather than being filtered later.
+- **25 item icons** drawn in the existing line family, taking the vocabulary to 45 glyphs.
+- **Progression maths**: XP curve with multi-level rollover, and the rising per-point attribute
+  cost that is the game's endless gold sink.
+- **Save schema v3**: the hero replaces the retired walking-skeleton payload, with a v2→v3
+  migration and a captured Phase 1 save proving settings survive the upgrade.
+- **Dev drawer** on the character screen conjures gear, levels and gold so the screen is
+  reviewable before loot sources exist; `grantXp` is the same call missions will use in Phase 5.
+
+### Changed
+- Hero mutations now write through immediately instead of waiting out a 5-second debounce, with a
+  write-sequence guard so an older in-flight save can never land after a newer one and resurrect
+  stale state.
+- The HUD and nav-rail gates read the real hero (level, gold, portrait) instead of preview values.
+- Corrected the XP and stat-cost example values in `balancing-formulas.md` — the quoted figures
+  were miscalculated approximations. The curves are unchanged; the tests now assert the exact
+  values so doc and code cannot drift again.
+
+### Added — Phase 1: Design System & App Shell
+- **Design system:** colour/type/chamfer tokens, timber and parchment surface treatments, etched
+  edges with brass brackets, the facet accent motif, and a named motion system (snappy / standard
+  / dramatic springs) so timings are picked from one vocabulary rather than per component.
+- **Component kit:** `TavernPanel`, `ActionButton` (with visible costs and self-explaining disabled
+  states), `Meter`, `TimerChip`, `KeeperBark`, `Modal`, `ToastStack`, `AmbientStage`.
+- **Icons:** a hand-drawn 20-glyph family for navigation, currencies and status, declared as a
+  vocabulary in the data layer and implemented in components so a missing glyph fails the build.
+  The Vigor tankard fills with ale instead of being a static glyph.
+- **App shell:** grouped nav rail (collapsible, persisted, locked places shown with their unlock
+  level), top HUD (portrait + level ring, XP meter, wallet, Vigor, activity timers), and
+  direction-aware place transitions driven by rail order.
+- **The town:** all 15 places routed and dressed — each with its backdrop, tint, ambient recipe
+  and a keeper explaining what phase builds it.
+- **Feature gates** in the engine as one source of truth for the rail, router and future task pool.
+- **`/dev/kit` harness** showing every component state and driving the shell through hero levels,
+  wallets and timers the game cannot produce yet.
+- **Save schema v2** adds player settings (nav, motion, audio) with a real v1→v2 migration and a
+  captured Phase 0 save fixture that must keep loading forever.
+
+### Changed
+- Preferences now write through immediately instead of waiting out the autosave debounce — a
+  collapsed rail survived a reload only by luck before.
+- The Phase 0 walking-skeleton screen is removed; `/` now redirects to the tavern.
+
 ### Added — Phase 0: Foundation & Walking Skeleton
 - **Project scaffold:** Next.js 16 (App Router, Turbopack) + React 19 + TypeScript strict +
   Tailwind v4 + Zustand + Motion, with ESLint/Prettier, Vitest, Playwright and GitHub Actions CI.

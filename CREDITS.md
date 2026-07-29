@@ -9,8 +9,13 @@ Every third-party asset added to the project must be recorded here **in the same
 | Source | What | License | Attribution requirement |
 |---|---|---|---|
 | **Kenney** ([kenney.nl](https://kenney.nl)) | Fantasy UI pack (panels, borders, dividers), VFX particle pack — `game_assets/UI/Kenney_FantasyUIAssets`, `game_assets/VFX/Kenney_VFXParticles` | CC0 1.0 (public domain) | None required; credited by choice |
-| **game-icons.net** ([game-icons.net](https://game-icons.net)) | Item, weapon, armour, pet and UI icons | **CC BY 3.0** | **Required** — per-icon author credit |
+| **game-icons.net** ([game-icons.net](https://game-icons.net)) | Item, weapon, armour, monster and pet icons (from Phase 2) | **CC BY 3.0** | **Required** — per-icon author credit |
 | **Project-owned art** | Scene backgrounds (23) and class portraits (5) in `game_assets/UI/` | Owned by the project author | — |
+| **Project-drawn UI icons** | Navigation, currency and status glyphs — `src/components/icons/` | Owned by the project | — |
+
+The interface chrome (rail, HUD, status glyphs) is drawn in-house as one single-weight family so
+the UI reads as a designed whole rather than an icon-pack collage; game-icons.net supplies the far
+larger set of *content* icons — items, weapons, monsters, pets — where variety is the point.
 
 ### game-icons.net attribution (CC BY 3.0)
 

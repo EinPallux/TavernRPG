@@ -8,7 +8,7 @@
  * Pure module: no DOM, no storage.
  */
 
-import { CURRENT_SCHEMA_VERSION, saveFileSchema, type SaveFile } from './schema';
+import { CURRENT_SCHEMA_VERSION, DEFAULT_SETTINGS, saveFileSchema, type SaveFile } from './schema';
 
 export interface Migration {
   /** Schema version this migration reads. */
@@ -22,9 +22,48 @@ export interface Migration {
 
 /**
  * Shipped migrations, ordered oldest first.
- * Empty until schema version 2 exists — v1 is the first released format.
+ *
+ * Every entry here is load-bearing forever: a save written by any released build must still
+ * open. Never edit a shipped migration to "fix" it — add the next one.
  */
-export const MIGRATIONS: readonly Migration[] = [];
+export const MIGRATIONS: readonly Migration[] = [
+  {
+    from: 1,
+    to: 2,
+    describe: 'Phase 1: add player settings (nav, motion, audio)',
+    migrate: (data) => ({ ...data, settings: { ...DEFAULT_SETTINGS } }),
+  },
+  {
+    from: 2,
+    to: 3,
+    describe: 'Phase 2: replace the walking-skeleton payload with the hero slice',
+    migrate: (data) => {
+      // `skeleton` was always explicitly temporary (Phase 0's door-knock counter). Dropping it
+      // loses nothing a player would recognise as progress; the world seed, settings and clock
+      // — everything that identifies their save — carry over untouched.
+      const { skeleton: _skeleton, ...rest } = data as { skeleton?: unknown };
+      return { ...rest, hero: null };
+    },
+  },
+  {
+    from: 3,
+    to: 4,
+    describe: 'Phase 4: remember battle playback speed and skip preference',
+    migrate: (data) => {
+      // Additive: only the two new keys are filled in. Everything the player already chose
+      // in settings is carried through untouched.
+      const settings = (data['settings'] ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        settings: {
+          ...settings,
+          battleSpeed: DEFAULT_SETTINGS.battleSpeed,
+          battleSkipDefault: DEFAULT_SETTINGS.battleSkipDefault,
+        },
+      };
+    },
+  },
+];
 
 export type MigrationFailure =
   | { readonly kind: 'malformed'; readonly detail: string }

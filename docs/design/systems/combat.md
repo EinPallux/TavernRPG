@@ -21,11 +21,12 @@ fight(attacker: Combatant, defender: Combatant, seed: Seed) -> BattleResult
 
 ## 2. Resolution rules
 
-1. **Initiative:** `rng.pick` weighted by DEX (60/40 toward higher DEX); sides then alternate
-   single attacks (A1, B1, A2, B2 … one attack pair per round).
+1. **Initiative:** dexterity-weighted and damped toward even (`0.5 + (dexShare − 0.5) · 0.8`);
+   sides then alternate single attacks (A1, B1, A2, B2 … one attack pair per round).
 2. **Attack sequence per hit:**
-   - Mage attacker → skip defensive procs; others: defender proc roll (Warrior block 25%,
-     Hunter dodge 45%) → on success, damage = 0, event `blocked`/`dodged`.
+   - Defender proc roll (Warrior block 25%, Hunter dodge 40%, Swashbuckler parry 15%) → on
+     success, damage = 0, event `blocked`/`dodged`. A Mage attacker multiplies those chances by
+     **0.62** rather than skipping them (see the class spec's Phase 3 rebalance note).
    - Damage roll: `weaponRoll · (1 + mainStat/10)`; crit roll (`critChance`, ×2.0);
      armor DR applied (`min(armor/(attackerLvl·50), classCap)`).
    - Swashbuckler: follow-up strike 60% @75% damage (own proc/crit rolls).
@@ -38,9 +39,10 @@ fight(attacker: Combatant, defender: Combatant, seed: Seed) -> BattleResult
 
 ## 3. BattleEvent vocabulary (renderer contract)
 
-`battle_start` (combatant cards, verse?) · `round_start` · `verse_change` · `attack` {source,
-raw, final, crit, followUp?} · `blocked` · `dodged` · `damage` {target, amount, hpAfter, overkill?}
-· `ko` · `battle_end` {winner, rounds, mvpStat}. Log is serializable JSON; renderer must handle any
+`battle_start` {a, b, first} · `round_start` {n} · `verse_change` {side, verse} · `attack` {source,
+raw, final, crit, followUp?} · `blocked` {target} · `dodged` {target} · `missed` {source} ·
+`damage` {target, amount, hpAfter, overkill?} · `ko` {target} · `battle_end` {winner, rounds,
+reason}. Log is serializable JSON; renderer must handle any
 valid log (fuzz-tested) — this is the firewall that lets us restyle presentation without touching math.
 
 ## 4. Battle Scene (the showpiece)
@@ -61,6 +63,24 @@ Full-stage takeover with the location backdrop (mission zone art / arena / dunge
 - Target length: mission fight ≤8s at ×1; dungeon boss ≤20s with intro sting.
 - All timings live in a single `battleChoreo.ts` config — animation tuning never touches engine code.
 
+**Adaptive pacing (as built, Phase 4).** Fights range from three rounds to twenty, so a fixed
+pace either rushes the short ones or drags the long ones. `buildTimeline` therefore lays every
+event on the clock at its authored length, then compresses toward `TARGET_FIGHT_DURATION` if the
+total overruns:
+
+- **Never compressed:** the entrance, the knockout and the closing beat. A rushed knockout is a
+  wasted knockout.
+- **Never compressed:** the frame in which a blow *connects* (`attackImpact`). That frame is the
+  event; lose it and a flurry becomes a smear.
+- **Compressed, down to `PACE_FLOOR` (0.35):** anticipation, recovery, the pause on a round
+  number, defence and verse beats.
+- A fight long enough to need more than that floor is allowed to run over target rather than
+  become unreadable. Measured across every class × archetype × level band: median 4.8s, p99 8.0s,
+  worst case 8.7s (a 22-round, 101-event outlier — 0.2% of fights).
+
+The timeline is a pure function of `(log, choreo)`, so all of this is unit-tested without
+rendering anything (`src/components/battle/timeline.test.ts`).
+
 ## 5. Where fights trigger
 
 | Context | Attacker | Notes |
@@ -77,10 +97,29 @@ reveal), honor delta (arena), "closest moment" stat (min HP survived), share-fre
 Loss screens always state the *reason hint* ("Their armor shrugged off 41% of your damage — raise
 Strength or find a heavier weapon").
 
+**As built.** `src/engine/combat/analysis.ts` reads the log back into counts, the closest-moment
+figures and a ranked list of typed `LossHint` codes; `BattleResult.tsx` turns those codes into
+sentences. The split matters: the arithmetic is engine work and unit-tested, the wording is UI
+work and can be edited without touching a pure module. Hints available today —
+
+| Code | Fires when | Points the player at |
+|---|---|---|
+| `so-close` | loser took the winner under 15% health | leads the list; nothing to fix, keep going |
+| `armour` | ≥30% of raw damage absorbed | main attribute, heavier weapon |
+| `evaded` | ≥30% of swings blocked/dodged/missed | Luck, levels |
+| `outpaced` | their damage/round ≥1.25× yours | weapon upgrade |
+| `fragile` | knocked out inside 5 rounds | Constitution, armour |
+| `round-limit` | nobody could finish it | health fractions decided it |
+
+A defeat with no hint is a bug, and is tested as one. The screen shows the top two.
+
 ## 7. Testing & balance harness
 
 - Golden-log snapshot tests (seeded fights) freeze engine behavior; any math change shows as a diff.
-- `simulate(classA, classB, level, budget, n=10_000)` harness asserts: mirror win-rates 45–55%
-  cross-class at equal budget (levels 10/25/50/100); mission win-rate ≥97% on-curve; dungeon floor
-  win-rate bands per design (F1 ~90% at gate level … F10 ~25% until overleveled/geared).
+- `simulate(a, b, opts)` powers the balance suite, which asserts three distinct bands at levels
+  10/25/50/100 (see `systems/characters-and-classes.md` §"Balance policy"):
+  **mirrors 45–55%** (symmetry check on the engine itself), **per-class average 45–55%** (no class
+  quietly stronger), **any single matchup 30–70%** (counters allowed, walls not).
+  Also asserted: mission win-rate ≥97% on-curve, and fight length 4–30 rounds so the battle scene
+  always has something watchable to animate. Dungeon floor bands land with Phase 11.
 - Fuzz: random valid logs → renderer must not throw (jsdom test).
