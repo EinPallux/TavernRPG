@@ -72,10 +72,19 @@ Contrast: all text pairs ≥ 4.5:1 (checked in CI via token test). Dark theme on
 
 ## 6. Iconography & item presentation
 
-game-icons.net glyphs (asset doc §2) on rarity backplates: chamfered tile, rarity frame + subtle
-inner glow, glyph in warm off-white; Set pieces add the set sigil watermark corner. Currency icons
-custom (tankard Vigor gauge is a *filling tankard*, dice are physical). Nav icons single-weight
-line-carved style, amber on hover.
+Two distinct icon jobs, deliberately sourced differently:
+
+- **UI chrome — drawn in-house** (`src/components/icons/`): navigation, currencies, status. One
+  single-weight "line-carved" family (24×24, `currentColor`, 1.5 stroke, round caps) so the
+  interface reads as one designed system instead of an icon-pack collage. The icon *vocabulary*
+  is declared in `src/data/icons.ts` and implemented in the components layer, so a missing glyph
+  is a type error. The Vigor tankard is not a static glyph — it fills with ale as the meter drains.
+- **Content icons — game-icons.net** (asset doc §2, from Phase 2): items, weapons, armour,
+  monsters, pets, where variety is the whole point. Rendered on rarity backplates: chamfered tile,
+  rarity frame + subtle inner glow, glyph in warm off-white; Set pieces add a sigil watermark corner.
+
+Icons must be legible at **19px** — the nav rail size. Thin radial detail (a gear's spokes, a
+horse's head) turns to mush; silhouettes survive. Test at size, not zoomed in.
 
 ## 7. Motion system (the "alive" contract)
 

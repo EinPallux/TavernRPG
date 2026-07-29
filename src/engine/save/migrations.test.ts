@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeFailure, migrateSave, type Migration } from './migrations';
+import { describeFailure, migrateSave, MIGRATIONS, type Migration } from './migrations';
 import { CURRENT_SCHEMA_VERSION, createNewSave } from './schema';
 
 const NOW = new Date(2026, 6, 29, 12, 0, 0).getTime();
@@ -70,8 +70,11 @@ describe('migrateSave — rejections', () => {
 });
 
 describe('migrateSave — the upgrade chain', () => {
-  // A synthetic chain standing in for future real migrations: it proves multi-step
-  // upgrades run in order and that the result is validated at the end.
+  /**
+   * A synthetic pre-release step, prepended to the *real* shipped chain. Testing against the
+   * real tail matters: it proves a hypothetical older format still reaches the current schema
+   * through every migration we actually ship, not just through a toy one.
+   */
   const zeroToOne: Migration = {
     from: 0,
     to: 1,
@@ -89,8 +92,10 @@ describe('migrateSave — the upgrade chain', () => {
     },
   };
 
+  const withRealTail = (head: Migration[]): Migration[] => [...head, ...MIGRATIONS];
+
   it('upgrades an old save and reports where it came from', () => {
-    const result = migrateSave({ schemaVersion: 0, knocks: 7 }, [zeroToOne]);
+    const result = migrateSave({ schemaVersion: 0, knocks: 7 }, withRealTail([zeroToOne]));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.save.skeleton.doorKnocks).toBe(7);
@@ -100,11 +105,11 @@ describe('migrateSave — the upgrade chain', () => {
 
   it('runs several steps in order', () => {
     const steps: number[] = [];
-    const chain: Migration[] = [
+    const chain = withRealTail([
       { from: -2, to: -1, describe: 'a', migrate: (d) => (steps.push(-2), d) },
       { from: -1, to: 0, describe: 'b', migrate: (d) => (steps.push(-1), d) },
       { from: 0, to: 1, describe: 'c', migrate: (d) => (steps.push(0), zeroToOne.migrate(d)) },
-    ];
+    ]);
     const result = migrateSave({ schemaVersion: -2, knocks: 3 }, chain);
     expect(steps).toEqual([-2, -1, 0]);
     expect(result.ok).toBe(true);
@@ -113,12 +118,22 @@ describe('migrateSave — the upgrade chain', () => {
   });
 
   it('still validates the final result, so a broken migration fails loudly', () => {
-    const brokenChain: Migration[] = [
+    const brokenChain = withRealTail([
       { from: 0, to: 1, describe: 'drops required fields', migrate: () => ({}) },
-    ];
+    ]);
     const result = migrateSave({ schemaVersion: 0 }, brokenChain);
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.failure.kind).toBe('invalid');
+  });
+
+  it('reports the version it got stuck at when a step is missing', () => {
+    // Nothing knows how to read format 0, so the chain cannot start.
+    const result = migrateSave({ schemaVersion: 0 }, MIGRATIONS);
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.failure.kind).toBe('no_migration_path');
+    if (result.failure.kind !== 'no_migration_path') return;
+    expect(result.failure.stuckAt).toBe(0);
   });
 });

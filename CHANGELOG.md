@@ -7,6 +7,31 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 1: Design System & App Shell
+- **Design system:** colour/type/chamfer tokens, timber and parchment surface treatments, etched
+  edges with brass brackets, the facet accent motif, and a named motion system (snappy / standard
+  / dramatic springs) so timings are picked from one vocabulary rather than per component.
+- **Component kit:** `TavernPanel`, `ActionButton` (with visible costs and self-explaining disabled
+  states), `Meter`, `TimerChip`, `KeeperBark`, `Modal`, `ToastStack`, `AmbientStage`.
+- **Icons:** a hand-drawn 20-glyph family for navigation, currencies and status, declared as a
+  vocabulary in the data layer and implemented in components so a missing glyph fails the build.
+  The Vigor tankard fills with ale instead of being a static glyph.
+- **App shell:** grouped nav rail (collapsible, persisted, locked places shown with their unlock
+  level), top HUD (portrait + level ring, XP meter, wallet, Vigor, activity timers), and
+  direction-aware place transitions driven by rail order.
+- **The town:** all 15 places routed and dressed — each with its backdrop, tint, ambient recipe
+  and a keeper explaining what phase builds it.
+- **Feature gates** in the engine as one source of truth for the rail, router and future task pool.
+- **`/dev/kit` harness** showing every component state and driving the shell through hero levels,
+  wallets and timers the game cannot produce yet.
+- **Save schema v2** adds player settings (nav, motion, audio) with a real v1→v2 migration and a
+  captured Phase 0 save fixture that must keep loading forever.
+
+### Changed
+- Preferences now write through immediately instead of waiting out the autosave debounce — a
+  collapsed rail survived a reload only by luck before.
+- The Phase 0 walking-skeleton screen is removed; `/` now redirects to the tavern.
+
 ### Added — Phase 0: Foundation & Walking Skeleton
 - **Project scaffold:** Next.js 16 (App Router, Turbopack) + React 19 + TypeScript strict +
   Tailwind v4 + Zustand + Motion, with ESLint/Prettier, Vitest, Playwright and GitHub Actions CI.

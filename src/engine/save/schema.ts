@@ -12,7 +12,7 @@
 import { z } from 'zod';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -38,6 +38,32 @@ export const skeletonStateSchema = z.object({
   lastKnockAt: timestampSchema.nullable(),
 });
 
+/**
+ * Player preferences. Added in schema v2 (Phase 1) — the first real migration, and the
+ * reason a v1 save from Phase 0 still loads today.
+ */
+export const settingsSchema = z.object({
+  /** Nav rail collapsed to icons only. */
+  navCollapsed: z.boolean(),
+  /**
+   * Motion preference. 'system' follows `prefers-reduced-motion`; the explicit options let a
+   * player opt out of ceremonies (or back into them) regardless of their OS setting.
+   */
+  motion: z.enum(['system', 'full', 'reduced']),
+  /** Audio, wired up in Phase 17 (SFX + the optional bgm.mp3 drop-in). */
+  sfxEnabled: z.boolean(),
+  musicEnabled: z.boolean(),
+  volume: z.number().min(0).max(1),
+});
+
+export const DEFAULT_SETTINGS: Settings = {
+  navCollapsed: false,
+  motion: 'system',
+  sfxEnabled: true,
+  musicEnabled: true,
+  volume: 0.7,
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -45,10 +71,12 @@ export const saveFileSchema = z.object({
   /** Seeds the entire simulated world; committed at hero creation, never regenerated. */
   worldSeed: seedSchema,
   clock: clockStateSchema,
+  settings: settingsSchema,
   skeleton: skeletonStateSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
+export type Settings = z.infer<typeof settingsSchema>;
 export type SkeletonState = z.infer<typeof skeletonStateSchema>;
 export type SaveFile = z.infer<typeof saveFileSchema>;
 
@@ -66,6 +94,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     slot,
     worldSeed: worldSeed >>> 0,
     clock: { lastSeen: now, clampCount: 0 },
+    settings: { ...DEFAULT_SETTINGS },
     skeleton: { doorKnocks: 0, createdAt: now, lastKnockAt: null },
   };
 }

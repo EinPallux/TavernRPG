@@ -10,8 +10,8 @@
 'use client';
 
 import { create } from 'zustand';
-import { GameClock } from '@/engine/clock';
-import { createNewSave, type SaveFile, type SaveSlot } from '@/engine/save/schema';
+import { createNewSave, type SaveFile, type SaveSlot, type Settings } from '@/engine/save/schema';
+import { clockSnapshot, gameNow, resetClockForTests, restoreClock } from './clock';
 import { readSave, writeSave } from './persistence';
 
 /** Autosave debounce; also flushed immediately when the page is hidden. */
@@ -27,8 +27,6 @@ function newWorldSeed(): number {
   return buffer[0]! >>> 0;
 }
 
-/** Module-scoped so the clock's high-water mark survives re-renders. */
-let clock = new GameClock();
 let autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 let hidingListenerAttached = false;
 
@@ -56,6 +54,8 @@ export interface GameStoreState {
   startOver: () => Promise<void>;
   flush: () => Promise<void>;
   dismissNotice: () => void;
+  /** Persist changed player preferences. No-op when nothing actually changed. */
+  applySettings: (settings: Settings) => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -65,8 +65,8 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
     const stamped: SaveFile = {
       ...save,
-      savedAt: clock.now(),
-      clock: clock.snapshot(),
+      savedAt: gameNow(),
+      clock: clockSnapshot(),
     };
 
     set({ isSaving: true });
@@ -123,8 +123,8 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         }
 
         if (result.status === 'empty') {
-          const fresh = createNewSave({ slot, worldSeed: newWorldSeed(), now: clock.now() });
-          clock = new GameClock(undefined, fresh.clock);
+          const fresh = createNewSave({ slot, worldSeed: newWorldSeed(), now: gameNow() });
+          restoreClock(fresh.clock);
           set({ status: 'ready', save: fresh, isSaving: true });
           await writeSave(fresh);
           set({ lastSavedAt: fresh.savedAt, isSaving: false });
@@ -132,7 +132,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         }
 
         // Resume the clock from the save so a rewound device clock cannot rewind progress.
-        clock = new GameClock(undefined, result.save.clock);
+        restoreClock(result.save.clock);
         const notices: string[] = [];
         if (result.recoveredFromBackup) {
           notices.push('Your last save was damaged, so the previous one was restored.');
@@ -161,7 +161,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const { save } = get();
       if (!save) return;
 
-      const now = clock.now();
+      const now = gameNow();
       set({
         save: {
           ...save,
@@ -183,8 +183,8 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         autosaveTimer = null;
       }
 
-      const fresh = createNewSave({ slot, worldSeed: newWorldSeed(), now: clock.now() });
-      clock = new GameClock(undefined, fresh.clock);
+      const fresh = createNewSave({ slot, worldSeed: newWorldSeed(), now: gameNow() });
+      restoreClock(fresh.clock);
       set({ status: 'ready', save: fresh, notice: null, error: null, isSaving: true });
       await writeSave(fresh);
       set({ lastSavedAt: fresh.savedAt, isSaving: false, saveError: null });
@@ -201,6 +201,21 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     dismissNotice() {
       set({ notice: null });
     },
+
+    applySettings(settings) {
+      const { save } = get();
+      if (!save) return;
+
+      const unchanged = (Object.keys(settings) as (keyof Settings)[]).every(
+        (key) => save.settings[key] === settings[key],
+      );
+      if (unchanged) return;
+
+      set({ save: { ...save, settings } });
+      // Preferences write straight through rather than waiting out the autosave debounce:
+      // they are tiny, they change rarely, and losing one to a quick reload feels broken.
+      void persistNow();
+    },
   };
 });
 
@@ -210,7 +225,7 @@ export function resetGameStoreForTests(): void {
     clearTimeout(autosaveTimer);
     autosaveTimer = null;
   }
-  clock = new GameClock();
+  resetClockForTests();
   useGameStore.setState({
     status: 'idle',
     slot: 1,

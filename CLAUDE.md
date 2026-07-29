@@ -6,12 +6,25 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phase 0 (Foundation & Walking Skeleton) is complete.** All 20 questions in
-`USER_QUESTIONS.md` were answered on 2026-07-29 and the specs reflect the answers. The scaffold,
-seeded RNG, GameClock, save system (Zod + migrations + IndexedDB) and a throwaway walking-skeleton
-screen are in place with 68 unit tests and 5 e2e tests green.
-Next work: `ROADMAP.md` Phase 1 (Design System & App Shell) — which replaces
-`src/components/skeleton/` with the real nav rail, HUD and place routing.
+**Design locked; Phases 0–1 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+2026-07-29 and the specs reflect the answers.
+
+- **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
+- **Phase 1:** design tokens + motion system, the component kit (`src/components/ui/`), the
+  hand-drawn icon family, the app shell (nav rail + HUD + place transitions), all 15 places
+  routed as dressed placeholders, feature gates, `/dev/kit`, and save schema v2 (settings).
+
+94 unit tests + 12 e2e green. Next work: `ROADMAP.md` **Phase 2 (Hero Creation & Character
+Screen)** — the first real game systems: class data, creation flow, paperdoll, backpack, item
+generation and gold-driven stat training. Phase 2 also replaces the shell's `preview` placeholder
+values (`src/state/shellStore.ts`) with the real hero.
+
+## Where things live (as built)
+
+`src/engine/` pure logic (rng, clock, save schema+migrations, progression/gates) ·
+`src/data/` content (places, icon vocabulary) · `src/state/` stores + persistence + the shared
+clock · `src/components/{ui,shell,icons}/` · `src/app/(game)/<place>/` one route per place ·
+`src/styles/motion.ts` springs. Run `/dev/kit` to see every component state.
 
 ## Read before working (in order)
 

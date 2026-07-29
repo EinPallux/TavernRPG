@@ -8,7 +8,7 @@
  * Pure module: no DOM, no storage.
  */
 
-import { CURRENT_SCHEMA_VERSION, saveFileSchema, type SaveFile } from './schema';
+import { CURRENT_SCHEMA_VERSION, DEFAULT_SETTINGS, saveFileSchema, type SaveFile } from './schema';
 
 export interface Migration {
   /** Schema version this migration reads. */
@@ -22,9 +22,18 @@ export interface Migration {
 
 /**
  * Shipped migrations, ordered oldest first.
- * Empty until schema version 2 exists — v1 is the first released format.
+ *
+ * Every entry here is load-bearing forever: a save written by any released build must still
+ * open. Never edit a shipped migration to "fix" it — add the next one.
  */
-export const MIGRATIONS: readonly Migration[] = [];
+export const MIGRATIONS: readonly Migration[] = [
+  {
+    from: 1,
+    to: 2,
+    describe: 'Phase 1: add player settings (nav, motion, audio)',
+    migrate: (data) => ({ ...data, settings: { ...DEFAULT_SETTINGS } }),
+  },
+];
 
 export type MigrationFailure =
   | { readonly kind: 'malformed'; readonly detail: string }

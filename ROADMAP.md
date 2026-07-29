@@ -25,13 +25,22 @@ and export/import; asset sync script serving 503 files; `bgm.mp3` drop-in folder
 Toolchain deviations from plan (Next 16, ESLint pinned to 9, Vitest 4 environment handling) are
 recorded in `docs/tech/architecture.md` §1 "As-built notes".
 
-## Phase 1 — Design System & App Shell (L) 🔲
+## Phase 1 — Design System & App Shell (L) ✅
 Tokens (colors/type/chamfers/motion springs), fonts, `<TavernPanel>`, `<ActionButton>`, `<Meter>`,
 `<Toast>`, `<Modal>`, `<TimerChip>`, `<KeeperBark>`, `<AmbientStage>` + nav rail + top HUD +
 place routing with transitions + `/dev/kit` harness page. All 15 places routed with backdrop +
 "under construction" keeper barks (locked ones show gate levels).
 **Accept:** style guide §2–§8 visibly implemented; 60fps transitions; reduced-motion works;
 kit page reviewed against "no rounded slop" checklist; 1366×768 degradation verified.
+
+**Delivered:** the full component kit plus a 20-glyph hand-drawn icon family; grouped nav rail
+with visible level gates and collapse-to-icons (persisted); top HUD with portrait/level ring, XP
+meter, wallet and a Vigor tankard that fills; directional place transitions; all 15 places routed
+and dressed with their backdrop, ambience and keeper bark. Feature gates live in the engine as
+one source of truth. **Save schema v2** adds player settings, with a real v1→v2 migration and a
+Phase 0 save fixture proving old saves still open. 94 unit tests + 12 e2e, including automated
+style-rule checks (no `border-radius` > 4px, no serif fonts anywhere) and a 1366×768 no-overflow
+check.
 
 ## Phase 2 — Hero Creation & Character Screen (L) 🔲
 Class data (5 kits' *data*, procs stubbed as definitions), creation flow (class cards → naming →
