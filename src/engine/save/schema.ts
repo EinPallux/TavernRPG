@@ -13,7 +13,7 @@ import { ICON_IDS } from '@/data/icons';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -104,6 +104,13 @@ export const settingsSchema = z.object({
   sfxEnabled: z.boolean(),
   musicEnabled: z.boolean(),
   volume: z.number().min(0).max(1),
+  /**
+   * Battle playback speed, remembered between fights (combat spec §4 step 5). A player who
+   * has settled on ×4 should never be dropped back to ×1 by opening a new mission.
+   */
+  battleSpeed: z.union([z.literal(1), z.literal(2), z.literal(4)]),
+  /** Jump straight to the result screen instead of watching the fight. */
+  battleSkipDefault: z.boolean(),
 });
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -112,6 +119,8 @@ export const DEFAULT_SETTINGS: Settings = {
   sfxEnabled: true,
   musicEnabled: true,
   volume: 0.7,
+  battleSpeed: 1,
+  battleSkipDefault: false,
 };
 
 export const saveFileSchema = z.object({

@@ -7,6 +7,45 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 4: Battle Scene
+- **The battle scene** (`src/components/battle/`) — the Phase 3 log, choreographed. Fighters slide
+  in behind a backdrop push-in, attackers lunge, hits throw Kenney particles from a pooled canvas,
+  damage numbers float (crits at ×1.6, gold), health bars chip instantly with a ghost trail
+  draining behind, big hits shake the stage, and the loser desaturates and falls.
+- **Every `BattleEvent` type has its own presentation**: blocks, dodges and misses each get a
+  distinct plate; Bard verses fly a ribbon; a Flurry's second hit lands quicker than the swing
+  that set it up.
+- **`battleChoreo.ts`** holds every timing in the fight, so pacing can be retuned without touching
+  a single rule — and a balance change can never accidentally alter pacing.
+- **`timeline.ts`** turns a log into a schedule as a *pure* function, and `frameAt(t)` derives the
+  whole picture at any moment. That is what makes skip, replay and speed changes free, and it puts
+  the hard part of animation under unit test without rendering anything.
+- **Adaptive pacing.** A fixed pace cannot serve both a 3-round and a 20-round fight, so the
+  exchange compresses toward the 8-second target while the entrance, the knockout, the closing
+  beat and every *impact frame* keep their authored length. Measured across every class ×
+  archetype × level band: median 4.8s, p99 8.0s, worst case 8.7s.
+- **Result screen** with cascading reward lines, a rarity-revealed loot card, the "closest moment"
+  stat, and — after a loss — a reason hint that names something the player can actually change.
+- **`engine/combat/analysis.ts`** reads a log back into counts, closest-moment figures and ranked
+  typed hint codes. The arithmetic is engine work and tested; the wording is UI work.
+- **Reduced motion** keeps every beat and every plate, dropping only anticipation, shake,
+  slow-motion and the particle canvas — the fight stays followable, it just stops performing.
+- **Save schema v4**: battle speed and skip preference persist, with a migration and a captured v3
+  fixture (a real geared hero) added to the regression set.
+- **`/dev/battle`** stages any matchup at any level and reports the run time against the target.
+- Tests: 44 new unit tests (timeline, analysis, scene render, store), a fuzz pass that scrubs every
+  class × archetype × level fight frame by frame, and 11 e2e covering playback, skip, replay,
+  speed, the result screen, reduced motion and the no-rounded-corners rule.
+
+### Changed — Phase 4
+- **The tank archetype was retuned** (hp ×5.0 → ×3.2, armour ×1.5 → ×1.2, damage-reduction cap
+  0.45 → 0.30, block 20% → 15%, damage ×0.75 → ×1.2). It stacked four defences and produced
+  23-round average fights the hero still won 99.7% of the time — a wall you cannot lose to is not
+  tension, it is a wait. Now ~11 rounds, still comfortably the beefiest thing in a zone, and now
+  hitting hard enough to be worth respecting. Mission win rates stay inside the ≥97% floor.
+  *Fight length is now written down as a balance constraint, not just a presentation one.*
+- The `swashbuckler vs dungeon boss` golden log was regenerated to match (19 rounds → 11).
+
 ### Added — Phase 3: Combat Engine
 - **`fight()`** — the whole of combat as one pure, seeded function emitting a serializable battle
   log. Every fight in the game will run through it, so balance lives in exactly one place.

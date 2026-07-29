@@ -75,13 +75,31 @@ narrower survivability spread — is documented in `systems/characters-and-class
 mirrors 49–52%, per-class averages 49–51%, worst matchup 67%, fights 4–16 rounds. Golden logs
 freeze the engine; `/dev/combat` shows every roll. 212 unit + 27 e2e green.
 
-## Phase 4 — Battle Scene (L) 🔲
+## Phase 4 — Battle Scene (L) ✅
 The animated replay: entrances, lunges, particles (Kenney canvas layer), damage numbers, crit
 slow-mo, block/dodge/verse presentation, HP ghost bars, KO/victory/defeat, speed controls + skip,
 result screen with reward lines & reason hints. Choreography config file. Fuzz: random valid logs
 render without throw.
 **Accept:** mission-length fight ≤8s at ×1 and 60fps on target hardware; every BattleEvent type
 has distinct presentation; reduced-motion variant; result screen matches combat spec §6.
+
+**Delivered.** `battleChoreo.ts` holds every timing; `timeline.ts` turns a log into a schedule as
+a pure function (so pacing is unit-tested without rendering); `useBattlePlayback` derives the
+current frame from elapsed time, which is what makes skip, replay and speed changes free.
+`BattleScene` composes the fighters, a pooled canvas particle layer, floating numbers and screen
+shake; `BattleResult` reads the fight back through `engine/combat/analysis.ts`. Harness at
+`/dev/battle`.
+
+Two things the phase forced that were not in the plan:
+- **Adaptive pacing.** A fixed pace cannot serve both a 3-round and a 20-round fight. The
+  exchange now compresses toward the 8s target while the entrance, knockout, closing beat and
+  every *impact frame* keep their length (combat spec §4). Measured: median 4.8s, p99 8.0s.
+- **The tank archetype was retuned** (balancing §5). It produced 23-round average fights the hero
+  won 99.7% of the time — that is a design problem no choreography can fix. Now ~11 rounds, and
+  it hits hard enough to matter. Golden log regenerated; balance harness still green.
+
+Also shipped: save schema **v4** (persisted battle speed + skip preference) with migration and a
+captured v3 fixture.
 
 ## Phase 5 — Tavern & Missions (L) 🔲
 Tavern screen (ambient, Marla, quest table), Vigor system + HUD tankard, mission offers

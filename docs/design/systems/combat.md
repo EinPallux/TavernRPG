@@ -63,6 +63,24 @@ Full-stage takeover with the location backdrop (mission zone art / arena / dunge
 - Target length: mission fight ≤8s at ×1; dungeon boss ≤20s with intro sting.
 - All timings live in a single `battleChoreo.ts` config — animation tuning never touches engine code.
 
+**Adaptive pacing (as built, Phase 4).** Fights range from three rounds to twenty, so a fixed
+pace either rushes the short ones or drags the long ones. `buildTimeline` therefore lays every
+event on the clock at its authored length, then compresses toward `TARGET_FIGHT_DURATION` if the
+total overruns:
+
+- **Never compressed:** the entrance, the knockout and the closing beat. A rushed knockout is a
+  wasted knockout.
+- **Never compressed:** the frame in which a blow *connects* (`attackImpact`). That frame is the
+  event; lose it and a flurry becomes a smear.
+- **Compressed, down to `PACE_FLOOR` (0.35):** anticipation, recovery, the pause on a round
+  number, defence and verse beats.
+- A fight long enough to need more than that floor is allowed to run over target rather than
+  become unreadable. Measured across every class × archetype × level band: median 4.8s, p99 8.0s,
+  worst case 8.7s (a 22-round, 101-event outlier — 0.2% of fights).
+
+The timeline is a pure function of `(log, choreo)`, so all of this is unit-tested without
+rendering anything (`src/components/battle/timeline.test.ts`).
+
 ## 5. Where fights trigger
 
 | Context | Attacker | Notes |
@@ -78,6 +96,22 @@ Rewards breakdown (gold w/ guild Treasury bonus line, XP w/ Drillmaster line, it
 reveal), honor delta (arena), "closest moment" stat (min HP survived), share-free replay button.
 Loss screens always state the *reason hint* ("Their armor shrugged off 41% of your damage — raise
 Strength or find a heavier weapon").
+
+**As built.** `src/engine/combat/analysis.ts` reads the log back into counts, the closest-moment
+figures and a ranked list of typed `LossHint` codes; `BattleResult.tsx` turns those codes into
+sentences. The split matters: the arithmetic is engine work and unit-tested, the wording is UI
+work and can be edited without touching a pure module. Hints available today —
+
+| Code | Fires when | Points the player at |
+|---|---|---|
+| `so-close` | loser took the winner under 15% health | leads the list; nothing to fix, keep going |
+| `armour` | ≥30% of raw damage absorbed | main attribute, heavier weapon |
+| `evaded` | ≥30% of swings blocked/dodged/missed | Luck, levels |
+| `outpaced` | their damage/round ≥1.25× yours | weapon upgrade |
+| `fragile` | knocked out inside 5 rounds | Constitution, armour |
+| `round-limit` | nobody could finish it | health fractions decided it |
+
+A defeat with no hint is a bug, and is tested as one. The screen shows the top two.
 
 ## 7. Testing & balance harness
 

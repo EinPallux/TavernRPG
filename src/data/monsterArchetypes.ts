@@ -71,16 +71,23 @@ export const ARCHETYPES: readonly ArchetypeDef[] = [
     proc: { kind: 'arcane-certainty' },
   },
   {
+    /**
+     * Retuned in Phase 4. The original (hp 5.0 / armour 1.5 / cap 0.45 / block 0.2) stacked
+     * four defences on top of each other and produced 23-round average fights that the hero
+     * still won 99.7% of the time — a wall you cannot lose to is not tension, it is a wait.
+     * It is still comfortably the longest archetype (its 0.5 CON weight keeps it the beefiest
+     * thing in the zone) but it now hits hard enough to be worth respecting.
+     */
     id: 'tank',
     name: 'Tank',
     tell: 'Wears more iron than it can lift.',
     mainStat: 'str',
     weights: { str: 0.25, dex: 0.05, int: 0.05, con: 0.5, lck: 0.15 },
-    hpFactor: 5.0,
-    armourFactor: 1.5,
-    damageFactor: 0.75,
-    damageReductionCap: 0.45,
-    proc: { kind: 'block', chance: 0.2 },
+    hpFactor: 3.2,
+    armourFactor: 1.2,
+    damageFactor: 1.2,
+    damageReductionCap: 0.3,
+    proc: { kind: 'block', chance: 0.15 },
   },
   {
     id: 'swarm',

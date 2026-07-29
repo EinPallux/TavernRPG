@@ -45,6 +45,24 @@ export const MIGRATIONS: readonly Migration[] = [
       return { ...rest, hero: null };
     },
   },
+  {
+    from: 3,
+    to: 4,
+    describe: 'Phase 4: remember battle playback speed and skip preference',
+    migrate: (data) => {
+      // Additive: only the two new keys are filled in. Everything the player already chose
+      // in settings is carried through untouched.
+      const settings = (data['settings'] ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        settings: {
+          ...settings,
+          battleSpeed: DEFAULT_SETTINGS.battleSpeed,
+          battleSkipDefault: DEFAULT_SETTINGS.battleSkipDefault,
+        },
+      };
+    },
+  },
 ];
 
 export type MigrationFailure =

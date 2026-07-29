@@ -152,3 +152,42 @@ describe('gameStore — hero actions', () => {
     expect(store().save?.hero).toBeNull();
   });
 });
+
+describe('gameStore — battle preferences', () => {
+  it('remembers the playback speed the player chose, across a reload', async () => {
+    await store().hydrate(1);
+    expect(store().save?.settings.battleSpeed).toBe(1);
+
+    store().setBattleSpeed(4);
+    expect(store().save?.settings.battleSpeed).toBe(4);
+
+    await store().flush();
+    const persisted = await readSave(1);
+    expect(persisted.status).toBe('loaded');
+    expect(persisted.status === 'loaded' && persisted.save.settings.battleSpeed).toBe(4);
+  });
+
+  it('does not write when the speed did not actually change', async () => {
+    await store().hydrate(1);
+    store().setBattleSpeed(2);
+    await store().flush();
+
+    const before = store().save?.savedAt;
+    store().setBattleSpeed(2);
+    expect(store().save?.savedAt).toBe(before);
+  });
+
+  it('leaves the rest of the player’s settings alone', async () => {
+    await store().hydrate(1);
+    const settings = store().save!.settings;
+    store().applySettings({ ...settings, motion: 'reduced', volume: 0.3 });
+
+    store().setBattleSpeed(4);
+
+    expect(store().save?.settings).toMatchObject({
+      motion: 'reduced',
+      volume: 0.3,
+      battleSpeed: 4,
+    });
+  });
+});

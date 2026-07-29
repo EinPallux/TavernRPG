@@ -80,9 +80,16 @@ counter triangle exists: Bard > Mage > Hunter > Bard. CI asserts all of it
 
 - Mission monster at player level L: level `L + jitter(−1..+2)`; attributes from **monster archetype
   templates** (bruiser/skirmisher/caster/tank/swarm) budgeted to `statBudget(L) = 12 + 5.2·L` total
-  points distributed per archetype weights; HP factor per archetype (2.5–5.0). `[TUNE]`
+  points distributed per archetype weights; HP factor per archetype (2.5–3.5). `[TUNE]`
 - Mission **win-rate target ≥ 97%** for a player whose stats track the level curve (missions are
   pacing, not challenge; losses come from long gear neglect).
+- **Fight length is a balance constraint, not just a presentation one.** An archetype is out of
+  band if the median fight against an on-curve hero runs past ~12 rounds. The Phase 4 retune of
+  the **tank** (hp 5.0 → 3.2, armour ×1.5 → ×1.2, DR cap 0.45 → 0.30, block 20% → 15%, damage
+  ×0.75 → ×1.2) came from that rule: the original stacked four defences and produced 23-round
+  average fights the hero still won 99.7% of the time. It is still the beefiest thing in a zone
+  (its 0.5 CON weight sees to that) at ~11 rounds, and now hits hard enough to be worth
+  respecting. Measured after the change: mission win rates 99.5–100%, still inside the ≥97% floor.
 - Dungeon floor monster level: `dungeonBase + floor · dungeonStep` — Rat Cellars 12+2·f (14–32),
   Barrowdeep 28+3·f (31–58), Emberdeep 55+4·f (59–95). Stat budgets ×1.35 vs same-level mission
   monsters, boss floors (5, 10) ×1.6 with a signature proc. `[TUNE]`

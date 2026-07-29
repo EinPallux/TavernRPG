@@ -82,6 +82,12 @@ export interface GameStoreState {
   dismissNotice: () => void;
   /** Persist changed player preferences. No-op when nothing actually changed. */
   applySettings: (settings: Settings) => void;
+  /**
+   * Remember the battle playback speed the player settled on (combat spec §4 step 5). Its own
+   * action rather than a full `applySettings` because the battle scene fires it mid-fight and
+   * should never race a settings screen writing the other keys.
+   */
+  setBattleSpeed: (speed: Settings['battleSpeed']) => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -287,6 +293,14 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       if (unchanged) return;
 
       set({ save: { ...save, settings } });
+      void persistNow();
+    },
+
+    setBattleSpeed(battleSpeed) {
+      const { save } = get();
+      if (!save || save.settings.battleSpeed === battleSpeed) return;
+
+      set({ save: { ...save, settings: { ...save.settings, battleSpeed } } });
       void persistNow();
     },
   };

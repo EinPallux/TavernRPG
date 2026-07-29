@@ -20,13 +20,21 @@ feedback, edge cases and tests. Deployed on Vercel.
 - **Phase 3:** the combat engine — pure `fight()`, all five class procs, monster archetypes,
   golden logs and the balance harness (plus the rebalance it forced).
 
-212 unit tests + 27 e2e green. Next work: `ROADMAP.md` **Phase 4 (Battle Scene)** — turning the
-battle log into the animated showpiece. The log format is final and fuzz-safe; nothing in
-`src/engine/combat/` should need to change to render it.
+- **Phase 4:** the battle scene — `battleChoreo.ts` (every timing), the pure `timeline.ts`
+  (log → schedule → frame), `useBattlePlayback`, the canvas particle layer, the result screen
+  with typed loss hints from `engine/combat/analysis.ts`, `/dev/battle`, and save schema v4
+  (persisted playback speed). Nothing in `src/engine/combat/` changed to render the log — as
+  designed — but the phase did force a **tank archetype retune** (see balancing §5).
 
-**Before touching class constants:** run `npm run balance`. The numbers in `src/data/classes.ts`
-were solved for, not chosen, and the bands in `src/engine/combat/balance.test.ts` will catch a
-regression — but the harness tells you *why*.
+270 unit tests + 38 e2e green. Next work: `ROADMAP.md` **Phase 5 (Tavern & Missions)** — the core
+loop. Mount `BattleScene` exactly as `/dev/battle` does; it needs a log, a backdrop and a result.
+
+**Before touching class constants or monster archetypes:** run `npm run balance`. The numbers in
+`src/data/classes.ts` were solved for, not chosen, and the bands in
+`src/engine/combat/balance.test.ts` will catch a regression — but the harness tells you *why*.
+Archetypes carry a second constraint that the harness does *not* check: a median fight against an
+on-curve hero should stay under ~12 rounds. `src/components/battle/timeline.test.ts` catches it
+from the pacing side.
 
 ## Where things live (as built)
 
@@ -34,8 +42,8 @@ regression — but the harness tells you *why*.
 (xp, stats, gates), `items/` (types, generate), `hero/` (actions, derived) ·
 `src/data/` content — places, classes, itemBases, icon vocabulary ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero}/` · `src/app/(game)/<place>/` one route per place ·
-`src/styles/motion.ts` springs.
+`src/components/{ui,shell,icons,items,hero,battle}/` · `src/app/(game)/<place>/` one route per
+place · `src/styles/motion.ts` springs.
 Run `/dev/kit` for every component state; the character screen's dev drawer conjures gear,
 levels and gold while loot sources are still being built.
 

@@ -113,10 +113,10 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
 // ————— Save envelope —————
 // Schema v3 as shipped; `activity` and `world` join in Phases 5 and 8.
 interface SaveFile {
-  schemaVersion: 3; savedAt: Timestamp; slot: 1|2|3;
+  schemaVersion: 4; savedAt: Timestamp; slot: 1|2|3;
   worldSeed: Seed;                  // committed once; seeds the entire simulated world
   clock: { lastSeen: Timestamp; clampCount: number };
-  settings: Settings;               // nav, motion, audio
+  settings: Settings;               // nav, motion, audio, battle playback (v4)
   hero: Hero | null;                // null routes the player to creation
   // activity: ActivityState;       // Phase 5
   // world: WorldState;             // Phase 8
