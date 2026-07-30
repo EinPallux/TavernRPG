@@ -14,10 +14,11 @@ import { MOUNT_IDS } from '@/data/mounts';
 import { CRIER_CATEGORIES, RIVAL_ARCHETYPES } from '@/data/crierTemplates';
 import { CHAT_CATEGORIES } from '@/data/guildChat';
 import { BANNER_COLOURS, GUILD_NAME_MAX, SIGIL_ICONS } from '@/data/guilds';
+import { BANNER_IDS, ROLL_OUTCOMES } from '@/data/banners';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 12;
+export const CURRENT_SCHEMA_VERSION = 13;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -608,6 +609,80 @@ export const DEFAULT_FORGE: Forge = {
   crafted: 0,
 };
 
+/* ── Fortune's Table (schema v13) ──────────────────────────────────────────────── */
+
+/** One line in the history log — what was rolled, on what, and when (gacha spec §7). */
+export const rollRecordSchema = z.object({
+  at: timestampSchema,
+  bannerId: z.enum(BANNER_IDS),
+  outcome: z.enum(ROLL_OUTCOMES),
+  /** What it was called on the reveal, so the log and the card never disagree. */
+  label: z.string().min(1),
+  /** True when the pity counter paid rather than the dice. */
+  pitied: z.boolean(),
+  /** True when the roll cost nothing (the Daily Draw's free card). */
+  free: z.boolean(),
+});
+
+/** `[TUNE]` Rolls kept in the log (gacha spec §8). Enough to answer "what did I get?" for weeks. */
+export const ROLL_HISTORY_LIMIT = 200;
+
+export const gachaSchema = z.object({
+  /**
+   * The weekly banner's pity counter, and **which set it has been counting toward**.
+   *
+   * Two fields rather than one because the counter persists across weeks *for the same set*
+   * (gacha spec §4) — a player twelve rolls into Oathsworn does not lose those rolls when the
+   * table turns over to Wolfblood, they simply stop advancing until Oathsworn comes round again.
+   * A bare counter with no set attached would either reset every Monday (punishing) or pay out
+   * on whatever happened to be featured (a lie).
+   */
+  weeklyPity: z.number().int().min(0),
+  weeklyPitySet: z.string().nullable(),
+  /** Lifetime rolls on the Grand Reading. The track's rungs are derived from it, never stored. */
+  monthlyRolls: z.number().int().min(0),
+  /**
+   * Monthly rolls the track has already been paid out for — a **high-water mark in rolls**, not
+   * a count of rungs.
+   *
+   * The fifth of these in the save, and it is here for the fifth time for the same reason
+   * (CLAUDE.md): a payout derived from a counter is reproducible, which is the opposite of
+   * idempotent. Holding the mark separately from `monthlyRolls` also means a rung that somehow
+   * failed to land — a thrown error, a half-written save — is simply paid on the next roll,
+   * rather than silently skipped forever.
+   */
+  monthlyPaidThrough: z.number().int().min(0),
+  /** Shards from duplicate set pieces; five make a recipe (spec §5). */
+  shards: z.number().int().min(0),
+  /** Free Daily Draw rolls taken today, capped at one. Cleared by the Reset Engine. */
+  freeRollsToday: z.number().int().min(0),
+  /** Lifetime rolls, for the room to have something to say on a return visit. */
+  rolls: z.number().int().min(0),
+  /**
+   * Pets Vesna has handed over.
+   *
+   * Only *her* grants. The Menagerie (Phase 14) derives ownership of all twelve from their
+   * documented sources — dungeon trophies, mission counters, arena rank, the login calendar —
+   * every one of which is already a fact in this save. A second list of "pets owned" would be
+   * the same fact written twice, free to drift, and would need reconciling on every load.
+   */
+  pets: z.array(z.string()),
+  /** Newest first, capped at `ROLL_HISTORY_LIMIT`. */
+  history: z.array(rollRecordSchema),
+});
+
+export const DEFAULT_GACHA: Gacha = {
+  weeklyPity: 0,
+  weeklyPitySet: null,
+  monthlyRolls: 0,
+  monthlyPaidThrough: 0,
+  shards: 0,
+  freeRollsToday: 0,
+  rolls: 0,
+  pets: [],
+  history: [],
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -632,6 +707,8 @@ export const saveFileSchema = z.object({
   dungeons: dungeonsSchema,
   /** The Emberforge (schema v12). */
   forge: forgeSchema,
+  /** Fortune's Table (schema v13). */
+  gacha: gachaSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -639,6 +716,8 @@ export type Settings = z.infer<typeof settingsSchema>;
 export type Hero = z.infer<typeof heroSchema>;
 export type Materials = z.infer<typeof materialsSchema>;
 export type Forge = z.infer<typeof forgeSchema>;
+export type Gacha = z.infer<typeof gachaSchema>;
+export type StoredRollRecord = z.infer<typeof rollRecordSchema>;
 export type Activity = z.infer<typeof activitySchema>;
 export type StoredMissionOffer = z.infer<typeof missionOfferSchema>;
 export type StoredActiveMission = z.infer<typeof activeMissionSchema>;
@@ -686,6 +765,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     guild: { ...DEFAULT_GUILD },
     dungeons: { ...DEFAULT_DUNGEONS },
     forge: { ...DEFAULT_FORGE },
+    gacha: { ...DEFAULT_GACHA },
   };
 }
 

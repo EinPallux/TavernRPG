@@ -95,6 +95,8 @@ import {
   type CraftResultState,
   type ScrapResult,
 } from './forgeActions';
+import { roll as rollOn, type RollResultState } from './gachaActions';
+import type { BannerId } from '@/data/banners';
 import type { ForgeTier } from '@/engine/forge/forgeConfig';
 import type { VerseId } from '@/engine/combat/types';
 import type { DungeonId } from '@/data/dungeons';
@@ -269,6 +271,10 @@ export interface GameStoreState {
   craftSetPiece: (setId: string) => CraftResultState;
   /** The Verse a Maestro five-piece opens on. */
   setOpeningVerse: (verse: VerseId) => void;
+
+  // ── Fortune's Table (Phase 13) ───────────────────────────────────────────────────
+  /** One card, or ten on the Grand Reading. The free daily card costs nothing. */
+  rollBanner: (bannerId: BannerId, ten?: boolean) => RollResultState;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -365,7 +371,9 @@ export const useGameStore = create<GameStoreState>((set, get) => {
    * one adapter rather than a dozen near-identical bodies.
    */
   const runGuild = (
-    transition: (save: SaveFile) => { ok: true; save: SaveFile } | { ok: false; refusal: GuildRefusal },
+    transition: (
+      save: SaveFile,
+    ) => { ok: true; save: SaveFile } | { ok: false; refusal: GuildRefusal },
   ): GuildRefusal | null => {
     const { save } = get();
     if (!save) return { kind: 'no-hero' };
@@ -941,6 +949,23 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
 
       const result = craftFromRecipeOn(save, setId);
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    rollBanner(bannerId, ten = false) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = rollOn(save, {
+        bannerId,
+        today: currentDayKey(),
+        now: gameNow(),
+        ...(ten ? { ten: true } : {}),
+      });
       if (!result.ok) return result;
 
       set({ save: result.save });

@@ -153,7 +153,7 @@ levels per clear — the four floors behind the Rusty Key would have taken them 
 | Dungeon floor 1–9 | 50% + 25% separate epic roll | normal roll: 40/32/20/8/0; epic roll grants Epic; Set replaces Epic at 20% of epic hits |
 | Dungeon floor 10 | 100% Epic **or** Set (50/50) | — |
 | Shops stock (6 slots) | — | 30 / 38 / 24 / 8 / 0 (never Set) |
-| Fortune's Table | table in `systems/gacha-fortunes-table.md` | pity 20 |
+| Fortune's Table | see the banner tables below | weekly pity 20 |
 | Golden Die from mission | 1.5% per 20-min mission, 0.6% others | — |
 | Dungeon key drop | 6% per mission once dungeon level-gate reached (until key owned) | — |
 | Ale drop | 2% per mission, cap 1/day | — |
@@ -205,6 +205,47 @@ sets, not a set first and then a slot — drawing a set first keeps offering pie
 one, so the chase stalls at the end. `forge.test.ts` simulates the documented sources and asserts
 a five-piece set converges; the same suite holds a full-set mirror inside **42–58%** (gear-sets
 spec §3).
+
+**Fortune's Table as built (Phase 13).** All three banners run one seven-outcome table with
+different weights, in `src/data/banners.ts`, and the odds panel renders those weights directly —
+the same shared-object discipline the forge tiers use.
+
+| Outcome | Daily Draw | Set of the Week | Grand Reading |
+|---|---|---|---|
+| Featured | 14% | 5% | 9% |
+| Epic gear | 2% | 3% | 6% |
+| Rare gear | 12% | 12% | 15% |
+| Materials | 28% | 30% | 26% |
+| Gold cache | 22% | 22% | 20% |
+| Ale | 6% | 8% | 4% |
+| Uncommon gear | 16% | 20% | 20% |
+
+`[TUNE]` A gold cache is `45 × goldPerVigor(level)`; a capped Ale pays 60% of one instead of
+nothing. Pity is **20** on the weekly banner only, checked *before* the roll, and the counter
+follows the featured **set** rather than the week. The Grand Reading has no featured pity because
+its track is its floor: `MONTHLY_TRACK_STEP = 15` `[TUNE]` buys a rung, three rungs (a set recipe,
+the Owl of Vesna, six Starmetal), and it does not loop. Duplicate set pieces convert to
+`DUPE_STARMETAL = 2` plus a shard, `SHARDS_PER_RECIPE = 5`. `SNAIL_CHANCE = 1%` rides *on top of*
+a monthly card rather than replacing one.
+
+The Daily Draw's rate-up is `DAILY_SLOT_RATE_UP = 3` on the highlighted **slot** within a featured
+result — it does not change how often "featured" comes up, and `gacha.test.ts` asserts the
+featured share is the same on every day of the week.
+
+### Measured shares, Phase 13 (`npm run economy`)
+
+Sixty modelled days, active player, now including 1.6 cards a day at Fortune's Table:
+
+| faucet | share |
+|---|---|
+| missions | 52.5% |
+| patrol | 33.0% |
+| loot sales | 4.0% |
+| **gacha** | **10.5%** |
+
+The band asserts gacha stays under 12% and below the mission faucet. The room is a *dice* sink
+first; if rolling ever paid better per day than running missions, the correct play would be to
+stop playing the game and spin the wheel.
 
 ## 8. Item stat budgets
 

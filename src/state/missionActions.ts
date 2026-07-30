@@ -22,6 +22,7 @@ import type { BountyChest } from '@/engine/guilds/bounty';
 import { refreshArenaDay } from './arenaActions';
 import { creditBounty, guildBonus, refreshGuildDay } from './guildActions';
 import { refreshForgeDay } from './forgeActions';
+import { refreshGachaDay } from './gachaActions';
 import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
@@ -82,6 +83,9 @@ export function refreshDay(
   // The crucible cools with everything else. A week away is one reset, not seven — the same
   // rule Vigor and the shop shelves follow (crafting spec §2).
   if (outcome.didReset) next = refreshForgeDay(next);
+
+  // And Vesna deals a fresh card on the house. Same boundary, same owner (gacha spec §3).
+  if (outcome.didReset) next = refreshGachaDay(next);
 
   // A board is drawn lazily: on the first visit of the day, after a reroll, or after a reset
   // nulled it. Drawing it here rather than at midnight means a player who never opens the
@@ -258,12 +262,7 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
 
   // The hall's cut, applied where the payout is computed so the result screen and the ledger
   // agree with the quote (guilds spec §2).
-  const { spoils, battle } = resolveMission(
-    mission,
-    hero,
-    guildBonus(save),
-    save.dungeons.keys,
-  );
+  const { spoils, battle } = resolveMission(mission, hero, guildBonus(save), save.dungeons.keys);
   const item = spoils.item
     ? generateItem({
         slot: spoils.item.slot,

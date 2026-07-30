@@ -25,7 +25,24 @@ async function ensureHero(page: Page) {
     await page.getByTestId('hero-name').fill('Kargath');
     await page.getByTestId('confirm-hero').click();
     await expect(page.getByTestId('paperdoll')).toBeVisible();
+    await flush(page);
   }
+}
+
+/**
+ * Wait for the autosave to reach disk.
+ *
+ * Every helper here mutates and then navigates, and a navigation reads the save back off disk —
+ * so without this the test is racing its own write (CLAUDE.md). It only bites under parallel
+ * load, which is exactly when it is hardest to read as a race rather than as a broken room.
+ */
+async function flush(page: Page) {
+  await page.evaluate(async () => {
+    const store = (
+      window as unknown as { __tavernStore?: { getState: () => { flush: () => Promise<void> } } }
+    ).__tavernStore;
+    await store?.getState().flush();
+  });
 }
 
 async function gotoTavern(page: Page) {
@@ -40,6 +57,7 @@ async function levelHeroToTen(page: Page) {
   await page.getByTestId('dev-drawer-toggle').click();
   await page.getByTestId('dev-level-10').click();
   await expect(page.getByTestId('hud-level')).toHaveText('10');
+  await flush(page);
 }
 
 test.describe('navigation', () => {
@@ -100,16 +118,22 @@ test.describe('navigation', () => {
     await expect(page.getByTestId('nav-character')).toHaveAttribute('aria-current', 'page');
   });
 
-  test('keepers explain why their rooms are unfinished', async ({ page }) => {
-    // This test walks forward a room at a time as the phases land: the Armory stood in for it
-    // until Phase 7, the Emberforge until Phase 12. Fortune's Table is the next one still
-    // dressed, and like every remaining placeholder it sits behind a gate.
+  test('rooms still under construction say so, and say when', async ({ page }) => {
+    /*
+     * This test walked forward a room at a time as the phases landed — the Armory stood in for it
+     * until Phase 7, the Emberforge until Phase 12, Fortune's Table until Phase 13. With Vesna's
+     * table open, **every keeper-run room in the town is built**, so the keeper-bark half of it
+     * has nothing left to check and is retired. What remains are the three keeperless rooms, which
+     * explain themselves in the panel's own voice.
+     */
     await ensureHero(page);
     await levelHeroToTen(page);
 
-    await page.goto('/fortune');
-    await expect(page.getByTestId('bark-fortune')).toContainText('The cards say');
-    await expect(page.getByTestId('place-fortune')).toContainText('Phase 13');
+    await page.goto('/menagerie');
+    await expect(page.getByTestId('place-menagerie')).toContainText('Phase 14');
+    await expect(page.getByTestId('place-menagerie')).toContainText('snoring');
+    // No keeper, so no bubble — the room speaks for itself instead of inventing a proprietor.
+    await expect(page.getByTestId('bark-menagerie')).toHaveCount(0);
   });
 
   test('rooms that have been built show the real thing instead', async ({ page }) => {

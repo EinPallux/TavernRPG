@@ -215,6 +215,22 @@ describe('shops and stables — Phase 7 sinks', () => {
     expect(sales / earned).toBeLessThan(0.25);
   });
 
+  it('keeps Fortune\u2019s Table a garnish rather than a wage', () => {
+    /*
+     * The gacha is a *dice* sink first; the gold it returns is incidental, and it has to stay
+     * that way. If rolling ever paid better per day than running missions, the correct play
+     * would be to stop playing the game and spin the wheel — which is the exact failure mode
+     * the F2P covenant exists to avoid.
+     */
+    const gacha = shopper.ledger.reduce((sum, day) => sum + day.earned.gacha, 0);
+    const missions = shopper.ledger.reduce((sum, day) => sum + day.earned.missions, 0);
+    const earned = totalEarned(shopper.ledger);
+
+    expect(gacha / earned).toBeGreaterThan(0.001);
+    expect(gacha / earned).toBeLessThan(0.12);
+    expect(gacha).toBeLessThan(missions);
+  });
+
   it('never lets a shop purchase overdraw the purse', () => {
     for (const day of shopper.ledger) {
       expect(day.spent.shops, `day ${day.day}`).toBeGreaterThanOrEqual(0);

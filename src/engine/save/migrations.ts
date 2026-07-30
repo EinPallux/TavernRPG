@@ -14,6 +14,7 @@ import {
   DEFAULT_ARENA,
   DEFAULT_DUNGEONS,
   DEFAULT_FORGE,
+  DEFAULT_GACHA,
   DEFAULT_GUILD,
   DEFAULT_SETTINGS,
   EMPTY_MATERIALS,
@@ -172,9 +173,28 @@ export const MIGRATIONS: readonly Migration[] = [
       const hero = data['hero'] as Record<string, unknown> | null;
       return {
         ...data,
-        ...(hero ? { hero: { ...hero, materials: { ...EMPTY_MATERIALS }, openingVerse: null } } : {}),
+        ...(hero
+          ? { hero: { ...hero, materials: { ...EMPTY_MATERIALS }, openingVerse: null } }
+          : {}),
         forge: { ...DEFAULT_FORGE },
       };
+    },
+  },
+  {
+    from: 12,
+    to: 13,
+    describe: "Phase 13: Fortune's Table — banner pity, the monthly track and the roll history",
+    migrate: (data) => {
+      /*
+       * Purely additive, and empty rather than generous for the third time running.
+       *
+       * A returning player has spent Golden Dice on Ale, shop rerolls and cooldown skips for
+       * twelve phases; none of those were rolls, so none of them owe pity. Seeding the weekly
+       * counter or the monthly track from anything would hand out a guaranteed set piece for
+       * work done on a different system entirely — and the whole point of a published pity
+       * track is that the number on screen is the number that was earned.
+       */
+      return { ...data, gacha: { ...DEFAULT_GACHA } };
     },
   },
 ];

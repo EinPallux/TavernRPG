@@ -7,6 +7,57 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 13: Fortune's Table (a gacha that tells you the truth)
+- **Three banners, and the calendar decides them.** The Daily Draw highlights a slot, Set of the
+  Week puts one of your class's two sets on the table until Monday, and Vesna's Grand Reading
+  turns over on the first. The schedule is a **pure function of `(date, world seed, class)`** and
+  is stored nowhere — a save that has not been opened for a fortnight already knows what was
+  featured on every day it missed, and nothing has to *advance* it, which keeps the Reset Engine
+  the only thing in the game that decides it is tomorrow.
+- **The odds are on the screen, beside the button.** Not in a menu, not behind an "i" — a
+  permanent panel showing all seven outcomes as exact percentages, following whichever banner you
+  are looking at. `outcomeOdds()` reads the same weights the roll rolls against, so there is no
+  version of the panel that can advertise a rate the engine does not honour. That is CLAUDE.md
+  rule 6 implemented as a shared constant rather than as a promise.
+- **Pity in public.** Twenty cards on the weekly banner without a featured hit and the next one
+  *is* one. The meter fills on the card, prints the exact count, and says "guaranteed" out loud
+  before the click. The counter **follows the set, not the week**: twelve rolls into Oathsworn
+  survive a Wolfblood week rather than being spent by it — and the meter reads zero on a week it
+  will not pay, because "12/20" under a card that cannot honour it is a lie told for six days.
+- **A card is never nothing.** A featured hit is always a piece you are *missing*; once the set is
+  whole it converts on the table instead — two Starmetal and a shard, five shards a pattern — as
+  its own reveal frame rather than a silent substitution. An Ale you cannot drink pays gold. The
+  Grand Reading has no featured pity because its **track** is its floor: fifteen cards always buy
+  a rung, and the three rungs are a set recipe, the Owl of Vesna, and six Starmetal.
+- **The roll moment.** Dice tumble across the felt, cards land face-down, then they turn **in
+  rhythm with the best one last** — which is what makes a ten-card spread a crescendo instead of a
+  list. Skippable from the first frame, collapsed entirely under reduced motion, and the cards
+  are already in the save before the first frame plays: closing the tab mid-ceremony keeps them.
+- **A receipt.** The last two hundred cards, with free ones marked free and pitied ones marked
+  owed, because a log that flattened those into "featured" would make the published floor
+  unverifiable from the one place anyone would go to check it.
+- **Save schema v13** — the weekly counter and the set it follows, the monthly track's
+  roll-denominated high-water mark, shards, the free daily card, Vesna's pet grants and the
+  history — with a v12 fixture captured at Torvald's bench. Empty on arrival for the third schema
+  running: a returning player has spent dice on Ale and rerolls for twelve phases, and none of
+  that is a roll that owes pity.
+- **The economy sim gains a gacha faucet** and a band that holds it under 12% of income. Measured
+  at 10.5% for an active player over sixty days — a garnish, not a wage. If rolling ever paid
+  better per day than running missions, the correct play would be to stop playing the game.
+
+### Fixed — Phase 13
+- **The whole e2e suite had been running at 1280×720** while the config claimed 1080p:
+  `devices['Desktop Chrome']` carries its own viewport, and a project-level `use` beats the
+  top-level block. The declaration moved below the spread. The 1366×768 floor is still tested
+  explicitly, where it was always meant to be.
+- **Two more e2e helpers created a hero and navigated before the write landed** (`app-shell`).
+  Same rule as the four fixed in Phase 12, same parallel-load-only symptom.
+- **A countdown longer than two days read as hours.** "Turns over in 673h" is a number, not an
+  answer; past 48 hours `formatRemaining` speaks in days.
+- **"Keepers explain why their rooms are unfinished" ran out of keepers.** With Vesna's table
+  open, every keeper-run room in Emberhollow is built. The test now checks the three keeperless
+  placeholders, which explain themselves in the panel's own voice.
+
 ### Added — Phase 12: Gear Sets & the Emberforge (a chase, and a bench to cheat at it)
 - **Ten curated sets, two per class.** Helm, chest, gloves, boots, belt — the one item type in
   the game whose statline is *authored* rather than rolled, because a set is a build and a build

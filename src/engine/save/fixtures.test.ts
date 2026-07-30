@@ -24,6 +24,7 @@ import v8Phase8 from './fixtures/v8-phase8.json';
 import v9Phase9 from './fixtures/v9-phase9.json';
 import v10Phase10 from './fixtures/v10-phase10.json';
 import v11Phase11 from './fixtures/v11-phase11.json';
+import v12Phase12 from './fixtures/v12-phase12.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { migrateSave } from './migrations';
@@ -33,6 +34,7 @@ import {
   DEFAULT_ARENA,
   DEFAULT_DUNGEONS,
   DEFAULT_FORGE,
+  DEFAULT_GACHA,
   DEFAULT_GUILD,
   EMPTY_MATERIALS,
   DEFAULT_SETTINGS,
@@ -428,6 +430,44 @@ describe('save fixtures — every shipped version still loads', () => {
     expect(result.save.hero?.name).toBe('Bryn Halloway');
     expect(result.save.guild.guildId).toBe(15);
     expect(result.save.world?.ladder.indexOf(PLAYER_LADDER_ID)).toBe(686);
+  });
+
+  it('opens a Phase 12 (v12) save with a stocked purse and a warm forge', () => {
+    const result = migrateSave(structuredClone(v12Phase12));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(12);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // Everything the v12 player had at the bench: a purse, three melts spent today, an ember
+    // banked, a pattern found, and the set piece it bought them.
+    expect(result.save.hero?.materials).toEqual({ scrap: 81, essence: 45, starmetal: 3 });
+    expect(result.save.forge.scrapsUsedToday).toBe(3);
+    expect(result.save.forge.emberMeter).toBe(1);
+    expect(result.save.forge.recipes).toEqual(['nighttide-silks']);
+    const bagged = [...result.save.hero!.backpack, ...result.save.hero!.satchel];
+    expect(bagged.filter((item) => item?.setId === 'nighttide-silks')).toHaveLength(1);
+  });
+
+  it('sits a Phase 12 player down at an empty table', () => {
+    const result = migrateSave(structuredClone(v12Phase12));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    /*
+     * Empty rather than generous, for the third schema running. A returning player has spent
+     * Golden Dice on Ale, shop rerolls and cooldown skips for twelve phases — none of which were
+     * rolls, so none of which owe pity. Seeding the counter from any of that would hand out a
+     * guaranteed set piece for work done on a different system, and a published pity track is
+     * only honest if the number on screen is the number that was earned.
+     */
+    expect(result.save.gacha).toEqual(DEFAULT_GACHA);
+    // And nothing else moved.
+    expect(result.save.hero?.name).toBe('Bryn Halloway');
+    expect(result.save.hero?.classId).toBe('swashbuckler');
+    expect(result.save.dungeons.keys).toEqual(['rusty-key', 'bone-key']);
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {
