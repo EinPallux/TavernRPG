@@ -157,6 +157,7 @@ levels per clear — the four floors behind the Rusty Key would have taken them 
 | Golden Die from mission | 1.5% per 20-min mission, 0.6% others | — |
 | Dungeon key drop | 6% per mission once dungeon level-gate reached (until key owned) | — |
 | Ale drop | 2% per mission, cap 1/day | — |
+| Pet egg | dungeon firsts & fixed milestones (deterministic, no RNG) | — |
 
 **Drop slot weighting and the weapon floor (Phase 6).** Item chance and rarity are as published
 above; *which slot* a drop lands in is not uniform. Weapon 22 / chest 14 / offhand 10 / helmet,
@@ -178,7 +179,32 @@ guarantee is what makes the shop a *fix* for gear supply rather than a second sl
 player whose weapon has fallen behind can buy one on any day, at any level, for
 `3.2 × itemValue`. Reroll is 1 Golden Die with no free one (unlike the mission board, whose free
 daily reroll exists because the day's *work* must always be there).
-| Pet egg | dungeon firsts & fixed milestones (deterministic, no RNG) | — |
+
+**The Emberforge as built (Phase 12).** All of it lives in `src/engine/forge/forgeConfig.ts`, and
+the crafting screen renders those tables directly — the promise that odds are always visible only
+survives if the tile the player reads and the roll the engine makes are the *same object*.
+
+| Investment | Cost `[TUNE]` | C / U / R / E | Feeds pity |
+|---|---|---|---|
+| Rough forge | 12 Scrap | 45 / 40 / 14 / 1 | no |
+| Fine forge | 30 Scrap + 6 Essence | 10 / 45 / 36 / 9 | no |
+| Master forge | 12 Essence + 1 Starmetal | 0 / 25 / 52 / 23 | yes |
+
+`EMBER_PITY = 5` `[TUNE]` — the fifth Master forge banks the fifth ember, and the *next* one is a
+guaranteed Epic. Checked **before** the roll, not after: a meter that only pays when the dice
+would have failed silently eats the Epics you were going to get anyway. Only the Master tier feeds
+it, because that is the tier being gambled on. `SCRAPS_PER_DAY = 10` `[TUNE]` is what keeps
+sell-vs-scrap a live choice rather than "scrap everything"; `RECIPE_COST = 20 Essence + 2
+Starmetal` `[TUNE]` is deliberately steeper than a Master forge, because a recipe craft is a
+*guaranteed* set piece and the only path that cannot hand back a duplicate.
+
+**Set acquisition (Phase 12).** `SET_REPLACES_EPIC = 0.20` below dungeon floor 10 and
+`CLEAR_SET_CHANCE = 0.50` on the clear, per the table above. Neither can produce a piece already
+owned: `drawMissingPiece()` draws uniformly across every missing slot of **both** the class's
+sets, not a set first and then a slot — drawing a set first keeps offering pieces of a finished
+one, so the chase stalls at the end. `forge.test.ts` simulates the documented sources and asserts
+a five-piece set converges; the same suite holds a full-set mirror inside **42–58%** (gear-sets
+spec §3).
 
 ## 8. Item stat budgets
 

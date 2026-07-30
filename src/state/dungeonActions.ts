@@ -13,7 +13,9 @@
 
 import { createRng, deriveSeed } from '@/engine/rng';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
-import { generateItem } from '@/engine/items/generate';
+import { generateItem, generateSetPiece } from '@/engine/items/generate';
+import { rollSetInstead } from '@/engine/items/drops';
+import { drawMissingPiece, ownedSetPieces } from '@/engine/items/sets';
 import type { Item } from '@/engine/items/types';
 import { applyXp } from '@/engine/progression/xp';
 import {
@@ -182,20 +184,37 @@ export function descend(save: SaveFile, id: DungeonId, now: number): DelveResult
     return { ok: true, save: withProgress, outcome, items: [], leveledTo: null };
   }
 
-  // Drops are described by the engine and *made* here, at the floor's level rather than the
-  // hero's — a level-40 Epic out of a level-32 floor would make the floor the wrong reward.
-  const items = outcome.spoils.items.map((drop, index) =>
-    generateItem({
-      slot: drop.slot,
-      rarity: drop.rarity,
-      classId: hero.classId,
-      level: Math.max(1, outcome.floorLevel),
-      rng: createRng(
-        deriveSeed(save.worldSeed, 'delve-item', id, outcome.floor, outcome.progress.attempts, index),
-        `delve-item/${id}/${outcome.floor}/${index}`,
-      ),
-    }),
-  );
+  /*
+   * Drops are described by the engine and *made* here, at the floor's level rather than the
+   * hero's — a level-40 Epic out of a level-32 floor would make the floor the wrong reward.
+   *
+   * An Epic may come up as a **set piece** instead (gear-sets spec §1), and when it does the
+   * dungeon never hands over one already owned: a chase whose reward can be a duplicate is a
+   * chase with a hole in it. If every piece of the rolled set is already held the Epic stands,
+   * which is the honest outcome — there is nothing left in that set to want.
+   */
+  const owned = ownedSetPieces(hero);
+  const items = outcome.spoils.items.map((drop, index) => {
+    const rng = createRng(
+      deriveSeed(save.worldSeed, 'delve-item', id, outcome.floor, outcome.progress.attempts, index),
+      `delve-item/${id}/${outcome.floor}/${index}`,
+    );
+    const level = Math.max(1, outcome.floorLevel);
+
+    if (drop.rarity === 'epic' && rollSetInstead(outcome.floor, rng.fork('set'))) {
+      const piece = drawMissingPiece(hero.classId, owned, rng.fork('piece'));
+      if (piece) {
+        const made = generateSetPiece({ setId: piece.setId, slot: piece.slot, level, rng });
+        if (made) {
+          // Two pieces of the same set in one clear must not be the same piece.
+          owned.add(`${piece.setId}:${piece.slot}`);
+          return made;
+        }
+      }
+    }
+
+    return generateItem({ slot: drop.slot, rarity: drop.rarity, classId: hero.classId, level, rng });
+  });
 
   const levelled = applyXp(hero.level, hero.xp, outcome.spoils.xp);
   let next: Hero = {

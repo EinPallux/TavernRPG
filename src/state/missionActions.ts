@@ -21,6 +21,7 @@ import type { WeeklyPayout } from '@/engine/arena/payout';
 import type { BountyChest } from '@/engine/guilds/bounty';
 import { refreshArenaDay } from './arenaActions';
 import { creditBounty, guildBonus, refreshGuildDay } from './guildActions';
+import { refreshForgeDay } from './forgeActions';
 import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
@@ -77,6 +78,10 @@ export function refreshDay(
 
   const guildDay = refreshGuildDay(next, outcome.daysProcessed, today, outcome.didReset);
   next = guildDay.save;
+
+  // The crucible cools with everything else. A week away is one reset, not seven — the same
+  // rule Vigor and the shop shelves follow (crafting spec §2).
+  if (outcome.didReset) next = refreshForgeDay(next);
 
   // A board is drawn lazily: on the first visit of the day, after a reroll, or after a reset
   // nulled it. Drawing it here rather than at midnight means a player who never opens the

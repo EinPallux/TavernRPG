@@ -36,6 +36,12 @@ fight(attacker: Combatant, defender: Combatant, seed: Seed) -> BattleResult
    exact tie → defender wins.
 4. All rolls consume a dedicated RNG stream (`combat:<seed>`), events record roll context for
    debugging ("why did I lose" tooltips in the result screen).
+5. **Set modifiers (Phase 12).** A combatant may carry a `CombatModifiers` bag — the fold of every
+   active gear-set bonus, built before the fight and read at the points above (damage, crit,
+   block/dodge, verse length, and a handful of dedicated branches: reflect, lifesteal, absorb,
+   dodge-fury, counter, shred, third-strike, first-strike-crit, steady, execute). Set bonuses are
+   *not* `CombatProc`s despite what `gear-sets.md` §4 originally sketched; see that spec's §5 for
+   why, and for the rule that a new lever needs a fold case, a read, and a test.
 
 ## 3. BattleEvent vocabulary (renderer contract)
 

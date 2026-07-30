@@ -48,8 +48,15 @@ export const VERSE_IDS: readonly VerseId[] = ['battle-hymn', 'ironsong', 'discor
 /** Verses change on rounds 1, 5, 9 … (every fourth round). */
 export const VERSE_PERIOD = 4;
 
-export function isVerseChangeRound(round: number): boolean {
-  return (round - 1) % VERSE_PERIOD === 0;
+/**
+ * Whether a Verse re-rolls this round.
+ *
+ * `extraRounds` is Maestro 2 stretching the period — a Verse that lasts a round longer changes
+ * on 1, 6, 11 rather than 1, 5, 9. Passed in rather than read from anywhere, because the
+ * resolver asks this *per side*: two Bards with different sets change on different rounds.
+ */
+export function isVerseChangeRound(round: number, extraRounds = 0): boolean {
+  return (round - 1) % Math.max(1, VERSE_PERIOD + extraRounds) === 0;
 }
 
 export const NO_VERSE: VerseEffect = {

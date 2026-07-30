@@ -38,6 +38,15 @@ async function ensureHero(page: Page) {
     await expect(page.getByTestId('confirm-hero')).toBeEnabled({ timeout: SETUP_TIMEOUT });
     await page.getByTestId('confirm-hero').click();
     await expect(creation).toHaveCount(0, { timeout: SETUP_TIMEOUT });
+
+    // Every caller navigates immediately afterwards, and a navigation reads the hero back off
+    // disk. Without this the creation write is still in flight and the next page renders the
+    // class picker again — which is what "mutates then navigates must flush" means (CLAUDE.md).
+    // It only bites under load, which is exactly when it is hardest to read as a race.
+    await page.evaluate(async () => {
+      const store = (window as unknown as { __tavernStore?: StoreHandle }).__tavernStore;
+      await store?.getState().flush();
+    });
   }
 }
 

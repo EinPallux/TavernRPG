@@ -268,7 +268,11 @@ export function BattleScene({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 18 }}
             transition={dramatic}
-            className="absolute inset-0 z-10 grid place-items-center bg-gradient-to-t from-[rgb(24_18_14/0.94)] via-[rgb(24_18_14/0.78)] to-transparent p-6"
+            /* `pb-20` clears the playback bar, which stays mounted (for Replay) at a higher
+               z-index. A short mission result floats well above it; a dungeon result carrying a
+               best-attempt bar or a clear ceremony grows until "Continue" lands underneath the
+               bar and stops taking clicks. */
+            className="absolute inset-0 z-10 grid place-items-center overflow-y-auto bg-gradient-to-t from-[rgb(24_18_14/0.94)] via-[rgb(24_18_14/0.78)] to-transparent p-6 pb-20"
             data-testid="battle-result-layer"
           >
             {result}

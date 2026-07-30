@@ -277,7 +277,7 @@ worth up to twelve levels of difficulty at dungeon budget**, more than the level
 across six floors — so the first draft's flavour-first floor ordering had three places where the
 dungeon got *easier* as you went down.
 
-## Phase 12 — Gear Sets & The Emberforge (L) 🔲
+## Phase 12 — Gear Sets & The Emberforge (L) ✅
 10 launch sets (data + set-bonus procs in engine + sigil presentation), Set Collections page,
 set-aware paperdoll glows, dungeon/loot integration (Set replaces Epic rolls per tables, no-dupe
 rule), Emberforge screen: scrapping (limits, yields, crucible ceremony), standard crafting
@@ -285,6 +285,13 @@ rule), Emberforge screen: scrapping (limits, yields, crucible ceremony), standar
 **Accept:** every set completable via dungeons+crafting (simulated acquisition test converges);
 set bonuses measurably fire in harness (each 5pc bonus has a dedicated engine test); forge odds
 match config in 100k-roll tests; scrap/sell decision surfaces correct values.
+**Done 2026-07-30.** `data/gearSets.ts` (ten sets, thirty bonuses declared as `SetEffect` data),
+`engine/items/sets.ts` (the fold into one `CombatModifiers` bag, plus derived set progress),
+`engine/forge/` (`forgeConfig`, `craft`), `state/forgeActions.ts`, the Emberforge's three benches
+with the anvil-strike ceremony, the Set Collections tab with its paperdoll glow, and save schema
+v12. The design decision that paid for itself: **thirty bonuses as declarative data rather than
+thirty proc kinds** — the golden logs confirm the resolver costs nothing for a fighter wearing no
+set, and set eleven is now a data change.
 
 ## Phase 13 — Fortune's Table (M) 🔲
 Gacha room (Vesna, ambience), 3 banner types with deterministic rotation, roll economics (free

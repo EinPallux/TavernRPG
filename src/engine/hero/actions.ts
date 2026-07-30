@@ -15,7 +15,7 @@ import {
   type AttributeId,
   type Attributes,
 } from '@/engine/progression/stats';
-import { BACKPACK_SLOTS, SATCHEL_SLOTS, type Hero } from '@/engine/save/schema';
+import { BACKPACK_SLOTS, EMPTY_MATERIALS, SATCHEL_SLOTS, type Hero } from '@/engine/save/schema';
 import { starterKit } from '@/engine/items/starterKit';
 import type { RngStream } from '@/engine/rng';
 import type { ClassId, Item, SlotId } from '@/engine/items/types';
@@ -48,6 +48,8 @@ export function createHero({
     trained: { str: 0, dex: 0, int: 0, con: 0, lck: 0 },
     gold: startingGold,
     dice: 0,
+    materials: { ...EMPTY_MATERIALS },
+    openingVerse: null,
     // Set properly when the world raises and the player takes the bottom rung; zero until then
     // means "not yet on the ladder" rather than "worst hero alive".
     honor: 0,

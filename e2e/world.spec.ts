@@ -41,6 +41,14 @@ async function ensureHero(page: Page) {
     await expect(page.getByTestId('confirm-hero')).toBeEnabled({ timeout: SETUP_TIMEOUT });
     await page.getByTestId('confirm-hero').click();
     await expect(creation).toHaveCount(0, { timeout: SETUP_TIMEOUT });
+
+    // The write must reach disk before the next navigation reads it back — the suite's own
+    // "mutate then navigate must flush" rule (CLAUDE.md). It only bites under parallel load,
+    // which is exactly when it is hardest to read as a race rather than as a bug in the room.
+    await page.evaluate(async () => {
+      const store = (window as unknown as { __tavernStore?: StoreHandle }).__tavernStore;
+      await store?.getState().flush();
+    });
   }
 }
 

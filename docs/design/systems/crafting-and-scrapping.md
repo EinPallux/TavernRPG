@@ -57,3 +57,31 @@ hunger keep the tension permanent (economy doc has the faucet/sink table).
 
 `MaterialWallet` {scrap, essence, starmetal}, `ForgeState` {scrapsUsedToday, emberMeter,
 recipesOwned: SetId[]}, `craftItem(slot, tier, rng)`. All costs/odds in one `forgeConfig.ts`.
+
+## 6. As built (Phase 12)
+
+`src/engine/forge/` — `forgeConfig` (every number the room runs on) and `craft` (the two crafts) —
+plus `src/engine/items/dispose.ts` for the crucible side, `src/state/forgeActions.ts` for the
+save transitions, and `src/components/forge/` for the room. Numbers: `../balancing-formulas.md`
+§7.
+
+Five decisions worth not re-making:
+
+- **The tile and the dice read the same object.** `forgeOdds()` and `rollForgeRarity()` both go
+  through `FORGE_TIER_DEFS`, so there is no version of the screen that can advertise a
+  distribution the engine does not roll. Rule 6 (odds always visible) implemented as a shared
+  constant rather than as a promise. The pity track is published the same way, as five pips and a
+  "Strike (Epic)" label — a floor nobody can see is indistinguishable from good luck.
+- **Pity is checked *before* the roll.** A meter that only pays out when the roll would have
+  failed is a meter that quietly steals the Epics you were going to get anyway. At five, the next
+  Master forge is an Epic full stop, and the meter resets whether or not the dice would have
+  obliged.
+- **Only the Master forge feeds the meter.** It is the tier you are gambling on; letting Rough
+  forges bank embers would turn the floor into a farm.
+- **Scrap yields are rolled at generation and stored on the item.** The same sword melts the same
+  today or a month from now, and a retune of the yield table cannot silently revalue everything
+  already in a player's bags.
+- **The crucible quotes before it acts, through the same code that refuses.** The daily cap lives
+  in `quoteDisposal`, not in the screen, so the row that offers a melt and the action that
+  declines one cannot disagree. Confirm levels come from the engine too: nothing for a Common,
+  once for a Rare, twice for a Set piece — and the second ask names the set it is about to break.

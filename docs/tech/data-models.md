@@ -135,7 +135,7 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
 
 // ————— Save envelope —————
 interface SaveFile {
-  schemaVersion: 10; savedAt: Timestamp; slot: 1|2|3;
+  schemaVersion: 12; savedAt: Timestamp; slot: 1|2|3;
   worldSeed: Seed;                  // committed once; seeds the entire simulated world
   clock: { lastSeen: Timestamp; clampCount: number };
   settings: Settings;               // nav, motion, audio, battle playback (v4)
@@ -144,6 +144,7 @@ interface SaveFile {
   world: WorldState | null;         // v8: raised on first entry, null until then
   guild: Guild;                     // v10
   dungeons: Dungeons;               // v11
+  forge: ForgeState;                // v12
 }
 
 // ————— The Undertavern (v11) —————
@@ -158,6 +159,31 @@ interface DungeonProgress {
   bestAttempts: number[];           // fixed 10; share 0–1 of the floor monster's health taken off
   attempts: number;                 // seeds each descent, so the next one is a different fight
   clearedAt: Timestamp | null;
+}
+
+// ————— The Emberforge (v12) —————
+interface MaterialBundle { scrap: number; essence: number; starmetal: number; }
+interface ForgeState {
+  scrapsUsedToday: number;          // 0–10; the Reset Engine clears it, nothing here reads a date
+  emberMeter: number;               // 0–5; only Master forges bank one, 5 → next is a sure Epic
+  recipes: string[];                // set ids the player holds a pattern for
+  crafted: number;                  // monotonic; seeds each strike, like the dungeon attempt count
+}
+// On the Hero, not here, for the same reason gold is — they are the player's, not the room's:
+//   materials: MaterialBundle;
+//   openingVerse: VerseId | null;   // honoured only while a Maestro five-piece is worn
+
+// ————— Gear sets (content, v12) —————
+// A set *bonus* is data the engine folds, not a proc: `SetEffect` is a flat union of ~24 named
+// levers ('damage' | 'reflect' | 'counter' | 'shred' | 'choose-verse' | …), `modifiersFor()`
+// folds every active one into a single CombatModifiers bag, and `fight()` reads that bag at the
+// dozen points it matters. Thirty bonuses would otherwise be thirty branches in the resolver.
+interface SetEffectBearingBonus { pieces: 2|4|5; text: string; effects: SetEffect[]; }
+interface SetProgress {             // derived from the hero, never stored
+  definition: GearSetDef;
+  owned: Set<SetPieceSlot>;         // anywhere — worn, bagged or in the satchel
+  equipped: Set<SetPieceSlot>;      // what the bonuses actually count
+  complete: boolean;
 }
 ```
 

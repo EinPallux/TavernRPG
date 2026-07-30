@@ -71,7 +71,13 @@ feedback, edge cases and tests. Deployed on Vercel.
   `engine/dungeons/` (`floors`, `delve`, `keys`), `state/dungeonActions.ts`, the Undertavern with
   its torch-lit descent and floor-10 ceremony, and save schema v11.
 
-913 unit tests + 130 e2e green. Next work: `ROADMAP.md` **Phase 12 (Gear Sets & The Emberforge)**.
+- **Phase 12:** gear sets and the forge — `data/gearSets.ts` (ten sets, thirty bonuses declared as
+  `SetEffect` data rather than thirty proc kinds), `engine/items/sets.ts` (the fold into one
+  `CombatModifiers` bag, derived progress, the no-dupe draw), `engine/forge/`
+  (`forgeConfig` + `craft`), `state/forgeActions.ts`, the Emberforge's three benches with the
+  anvil-strike ceremony, the Set Collections tab with its paperdoll glow, and save schema v12.
+
+945 unit tests + 142 e2e green. Next work: `ROADMAP.md` **Phase 13 (Fortune's Table)**.
 
 **A dungeon floor's difficulty is level *and* archetype, and archetype is worth more than you
 think.** Twelve levels of spread at dungeon budget — swarm 27, caster 32, skirmisher 34, bruiser
@@ -104,6 +110,18 @@ you add a store action, `void persistNow()` is still correct — the queue handl
 before `page.reload()` or `page.goto()`, because the suite does in microseconds what a player
 does in seconds. A test that reloads without flushing is racing its own write.
 
+**A set bonus is data, and the resolver reads a bag.** Thirty bonuses across ten sets would be
+thirty branches in `fight()`; instead each is a list of named `SetEffect` levers that
+`modifiersFor()` folds into one `CombatModifiers` object at build time. Adding an eleventh set is
+a change to `data/gearSets.ts` alone — only a genuinely new *mechanic* costs engine work. If you
+add a lever, it needs a fold case, a read in `fight()`, and a test that proves it fires; the
+suite has one per five-piece capstone for exactly that reason.
+
+**The forge tile and the forge dice must be the same object.** `forgeOdds()` and
+`rollForgeRarity()` both read `FORGE_TIER_DEFS`, which is what makes "odds always visible" (rule 6)
+true rather than merely intended. Never let a screen hold a second copy of a rate — the guild
+bounty already taught this lesson once, from the other direction.
+
 **Before touching class constants or monster archetypes:** run `npm run balance`. The numbers in
 `src/data/classes.ts` were solved for, not chosen, and the bands in
 `src/engine/combat/balance.test.ts` will catch a regression — but the harness tells you *why*.
@@ -120,21 +138,21 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 ## Where things live (as built)
 
 `src/engine/` pure logic — `rng`, `clock`, `save/` (schema + migrations), `progression/`
-(xp, stats, gates, rewards), `items/` (types, generate, drops, starterKit), `hero/`
+(xp, stats, gates, rewards), `items/` (types, generate, drops, dispose, sets, starterKit), `hero/`
 (actions, derived), `combat/`, `missions/` (board, lifecycle), `patrol/`, `shops/`, `stables/`,
 `world/` (identity, generate, materialize, ladder, simulate, rivals, crier, halls), `arena/`
 (arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty),
-`dungeons/` (floors, delve, keys), `economy/`, `reset/` ·
+`dungeons/` (floors, delve, keys), `forge/` (forgeConfig, craft), `economy/`, `reset/` ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
-patrolLog, mounts, shopBarks, arenaBarks, names, guilds, guildChat, bounties, dungeons, legends,
-crierTemplates ·
+patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, names, guilds, guildChat, bounties,
+dungeons, gearSets, legends, crierTemplates ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons}/` ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,
 the level histogram and the Crier's output from any seed). The character screen's dev drawer
-conjures gear, levels and gold while loot sources are still being built.
+conjures any combination of gear, levels and gold on demand.
 
 ## Read before working (in order)
 

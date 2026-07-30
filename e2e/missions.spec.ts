@@ -32,8 +32,13 @@ async function ensureHero(page: Page, name = 'Kargath') {
     // The button is disabled until both are in; waiting for it beats racing React.
     await expect(page.getByTestId('confirm-hero')).toBeEnabled({ timeout: SETUP_TIMEOUT });
     await page.getByTestId('confirm-hero').click();
-    // Creation must actually finish before navigating, or the goto races the save.
+    // Creation must actually finish *and reach disk* before navigating, or the goto races the
+    // save and lands back on the class picker.
     await expect(creation).toHaveCount(0, { timeout: SETUP_TIMEOUT });
+    await page.evaluate(async () => {
+      const store = (window as unknown as { __tavernStore?: TavernStoreHandle }).__tavernStore;
+      await store?.getState().flush();
+    });
     await page.goto('/tavern');
   }
 

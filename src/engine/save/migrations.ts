@@ -13,8 +13,10 @@ import {
   DEFAULT_ACTIVITY,
   DEFAULT_ARENA,
   DEFAULT_DUNGEONS,
+  DEFAULT_FORGE,
   DEFAULT_GUILD,
   DEFAULT_SETTINGS,
+  EMPTY_MATERIALS,
   saveFileSchema,
   type SaveFile,
 } from './schema';
@@ -151,6 +153,28 @@ export const MIGRATIONS: readonly Migration[] = [
       // keys, so the doors are shut until a mission turns one up. Granting the Rusty Key here
       // would hand every returning player the one drop the whole unlock is built around.
       return { ...data, dungeons: { ...DEFAULT_DUNGEONS } };
+    },
+  },
+  {
+    from: 11,
+    to: 12,
+    describe: 'Phase 12: gear sets and the Emberforge — materials, the forge, set recipes',
+    migrate: (data) => {
+      /*
+       * The hero gains a purse and a Verse preference; the save gains the forge.
+       *
+       * Materials start empty even though the player has almost certainly scrapped things
+       * already — Phase 7's disposal quoted the yield and then threw it away, because there was
+       * nowhere to put it. Back-paying a stockpile nobody earned would hand a returning player a
+       * Master forge on their first visit, which is exactly the moment the room is meant to be
+       * introducing itself.
+       */
+      const hero = data['hero'] as Record<string, unknown> | null;
+      return {
+        ...data,
+        ...(hero ? { hero: { ...hero, materials: { ...EMPTY_MATERIALS }, openingVerse: null } } : {}),
+        forge: { ...DEFAULT_FORGE },
+      };
     },
   },
 ];

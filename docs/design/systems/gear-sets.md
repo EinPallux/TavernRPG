@@ -65,3 +65,34 @@ Serpent's Grin — named now so dungeons/banners can tease them.)*
 `GearSetDef` {id, classId, name, theme, pieces: 5×curated statline templates, bonuses: {2,4,5},
 sigilIconId}; `SetProgress` derived from owned/equipped pieces. Set procs implement the same proc
 interface as class kits (engine treats them uniformly — `combat.md` §2).
+
+## 5. As built (Phase 12)
+
+`src/data/gearSets.ts` (ten sets, thirty bonuses), `src/engine/items/sets.ts` (the fold into a
+`CombatModifiers` bag, plus derived progress and the no-dupe draw), `generateSetPiece` in
+`src/engine/items/generate.ts`, the drop integration in `src/engine/items/drops.ts`, and the
+Collections tab in `src/components/hero/SetCollections.tsx`. Numbers: `../balancing-formulas.md`
+§7.
+
+Four decisions worth not re-making:
+
+- **A bonus is data, not a proc.** The spec said set procs would "implement the same proc
+  interface as class kits"; they do not, and should not. Thirty bonuses across ten sets is thirty
+  branches in `fight()`, and most of them are numbers anyway — `+8% damage` and `+6% crit` are the
+  same kind of thing said twice. A bonus is a list of named `SetEffect` levers, `modifiersFor()`
+  folds every active one into a single `CombatModifiers` bag at build time, and the resolver reads
+  that bag at the dozen places it matters. Adding an eleventh set is a data change; only a
+  genuinely new *mechanic* costs engine work. The golden logs confirm the cost to a fighter
+  wearing no set is zero — `NO_MODIFIERS` is a shared frozen object and the reads are all
+  falsy-guarded.
+- **Owned and equipped are counted separately, everywhere.** They answer different questions —
+  "how far off am I?" is about the collection and "why is my four-piece not firing?" is about the
+  paperdoll — and a single number cannot answer both. `setProgress()` returns both sets of slots;
+  the Collections page draws owned pieces lit and worn pieces glowing; bonuses count worn only.
+- **Progress is derived, never stored.** Same rule guild halls follow. What a hero is wearing is
+  already in the save; a second copy of "you have four Oathsworn pieces" is the same fact written
+  twice and free to drift the moment a piece comes off.
+- **The Maestro five-piece needed a screen, not a number.** `choose-verse` is the one bonus in the
+  game that is a decision, and a decision with no interface is not one. The pick is persisted on
+  the hero (`openingVerse`) and survives the set coming off; `openingVerse()` only honours it
+  while the bonus is live, so a stale preference is harmless and a re-equipped set remembers.

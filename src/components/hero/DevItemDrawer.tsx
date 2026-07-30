@@ -3,10 +3,10 @@
 /**
  * Dev item drawer — conjures gear so the character screen can be exercised before loot exists.
  *
- * Explicitly a development tool: it is collapsed by default, labelled as such, and Phase 5
- * removes the need for it once missions actually drop items. It is genuinely useful in the
- * meantime — the paperdoll, comparison tooltips and class-lock rules are all unreviewable
- * without gear to put in them.
+ * Explicitly a development tool: collapsed by default and labelled as such. Missions, shops and
+ * dungeons all hand out real loot now, but a harness that can put *any* combination of gear on
+ * the paperdoll on demand is still the only way to review comparisons, class locks and set glows
+ * without playing for a week first.
  */
 
 import { useRef, useState } from 'react';
@@ -70,8 +70,8 @@ export function DevItemDrawer({ hero }: { hero: Hero }) {
       {open ? (
         <div className="space-y-3">
           <p className="text-parchment-500/50 text-[11px]">
-            A development tool. Missions drop real loot from Phase 5; this exists so the paperdoll
-            and comparisons can be reviewed today.
+            A development tool. Missions, shops and dungeons drop the real thing; this exists so any
+            combination of gear can be put on the paperdoll on demand.
           </p>
 
           <div className="flex flex-wrap gap-1.5">
