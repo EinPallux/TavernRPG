@@ -23,10 +23,22 @@ import {
 } from '@/engine/progression/rewards';
 import { applyXp, xpNeeded } from '@/engine/progression/xp';
 import { maxAffordable, statCost } from '@/engine/progression/stats';
+import { itemValue } from '@/engine/items/generate';
+import { missionDropTable } from '@/engine/items/drops';
+import { SHOP_PRICE_MULTIPLIER, SHOP_RARITY_WEIGHTS } from '@/engine/shops/stock';
+import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
+import { MOUNTS_BY_ID, type MountId } from '@/data/mounts';
+import { RARITIES, type Rarity } from '@/engine/items/types';
 
-/** Faucets and sinks the model currently understands. Grows as systems ship. */
-export const MODELLED_FAUCETS = ['missions', 'patrol'] as const;
-export const MODELLED_SINKS = ['training'] as const;
+/**
+ * Faucets and sinks the model currently understands. Grows as systems ship.
+ *
+ * `sales` and `shops`/`mounts` joined in Phase 7 when the Armory, the Facet and the Stables
+ * opened. Still absent: the gacha, guild donations, pet feeding, dungeon gold — each lands with
+ * its system, because a sim that invents numbers for unbuilt features asserts a fiction.
+ */
+export const MODELLED_FAUCETS = ['missions', 'patrol', 'sales'] as const;
+export const MODELLED_SINKS = ['training', 'shops', 'mounts'] as const;
 
 export type Faucet = (typeof MODELLED_FAUCETS)[number];
 export type Sink = (typeof MODELLED_SINKS)[number];
@@ -45,6 +57,25 @@ export interface DayLedger {
   readonly purse: number;
   readonly missionsRun: number;
   readonly vigorUnspent: number;
+  /** Gear bought from a shop today (Phase 7). */
+  readonly itemsBought: number;
+}
+
+/**
+ * The average value of a piece from a given rarity table, at a level.
+ *
+ * Used for both ends of the gear trade: what a drop fetches when sold, and what a shelf piece
+ * costs. Averaging the published table rather than rolling keeps the sim deterministic — the
+ * bands are about *rates*, and a seeded roll would only add noise for them to tolerate.
+ */
+function averageValue(level: number, weights: Readonly<Record<Rarity, number>>): number {
+  const total = RARITIES.reduce((sum, rarity) => sum + weights[rarity], 0);
+  if (total === 0) return 0;
+
+  return RARITIES.reduce(
+    (sum, rarity) => sum + (weights[rarity] / total) * itemValue(level, rarity),
+    0,
+  );
 }
 
 export interface PlayStyle {
@@ -54,8 +85,12 @@ export interface PlayStyle {
   readonly duration: MissionDuration;
   /** Hours of patrol run on a typical day (0 for a player who never uses it). */
   readonly patrolHours: number;
-  /** Share of the purse spent on training each day. */
+  /** Share of the purse spent on training each day, *after* gear and upkeep. */
   readonly trainingSpend: number;
+  /** Pieces bought from a shop in a typical week (Phase 7). Zero for a pure looter. */
+  readonly shopBuysPerWeek: number;
+  /** Which stall they keep, or null for the ones who walk. */
+  readonly mountId: MountId | null;
 }
 
 export const ACTIVE_PLAYER: PlayStyle = {
@@ -63,6 +98,9 @@ export const ACTIVE_PLAYER: PlayStyle = {
   duration: 20,
   patrolHours: 8,
   trainingSpend: 0.9,
+  // Two upgrades a week is what "keeps their gear current" looks like at a 3.2× markup.
+  shopBuysPerWeek: 2,
+  mountId: 'warhorse',
 };
 
 /** Someone who opens the game once, spends half their Vigor and leaves. */
@@ -71,6 +109,18 @@ export const CASUAL_PLAYER: PlayStyle = {
   duration: 10,
   patrolHours: 10,
   trainingSpend: 0.9,
+  shopBuysPerWeek: 1,
+  mountId: 'mule',
+};
+
+/** The control: never shops, never rents. Proves neither is mandatory. */
+export const FRUGAL_PLAYER: PlayStyle = {
+  vigorUsed: 1,
+  duration: 20,
+  patrolHours: 8,
+  trainingSpend: 0.9,
+  shopBuysPerWeek: 0,
+  mountId: null,
 };
 
 export interface SimOptions {
@@ -90,10 +140,16 @@ export interface SimResult {
 /**
  * Play `days` days.
  *
- * The modelled player spends their Vigor on missions, runs a patrol shift overnight, and puts
- * most of what they earn into training — the loop the game is actually asking for. Missions are
- * assumed won: balancing §5 puts an on-curve player at ≥97%, and modelling the 3% would add
- * noise without changing any ratio the bands care about.
+ * The modelled player spends their Vigor on missions, runs a patrol shift overnight, sells the
+ * loot they do not wear, keeps a mount, buys the odd upgrade from a shelf, and puts what is left
+ * into training — the loop the game is actually asking for. Missions are assumed won: balancing
+ * §5 puts an on-curve player at ≥97%, and modelling the 3% would add noise without changing any
+ * ratio the bands care about.
+ *
+ * **Order of spending matters and is deliberate.** Upkeep and gear come out first, and training
+ * takes a share of what survives — that is what makes training the *residual* sink the design
+ * wants it to be, and it is why adding shops in Phase 7 correctly slowed attribute growth
+ * instead of leaving it untouched.
  */
 export function simulateEconomy({
   days,
@@ -131,10 +187,30 @@ export function simulateEconomy({
 
     const patrolGold = Math.floor(goldPatrolPerHour(level) * style.patrolHours);
 
-    purse += missionGold + patrolGold;
+    // Loot sold. Every mission has a chance of an item; the player wears the occasional
+    // upgrade and sells the rest, which is the same thing at this resolution.
+    const dropTable = missionDropTable(style.duration);
+    const salesGold = Math.floor(
+      missionsRun * dropTable.itemChance * averageValue(level, dropTable.rarityWeights),
+    );
 
-    // Spend on training. The player buys into whichever attribute is cheapest next, which is
-    // what "spread across attributes" means in practice.
+    purse += missionGold + patrolGold + salesGold;
+
+    // ── Upkeep first: the mount is a standing arrangement, not a splurge. ──
+    const mount = style.mountId ? MOUNTS_BY_ID[style.mountId] : null;
+    const dailyMountCost = mount ? Math.round(mountPrice(mount, level).gold / MOUNT_TERM_DAYS) : 0;
+    const mountSpend = Math.min(purse, dailyMountCost);
+    purse -= mountSpend;
+
+    // ── Then gear. Shop pieces cost 3.2× value, which is what makes buying a real decision. ──
+    const shelfPrice = Math.round(averageValue(level, SHOP_RARITY_WEIGHTS) * SHOP_PRICE_MULTIPLIER);
+    // Fractional buys per day are fine: the ledger is a rate, not a shopping list.
+    const wantToBuy = style.shopBuysPerWeek / 7;
+    const affordableBuys = shelfPrice > 0 ? Math.min(wantToBuy, purse / shelfPrice) : 0;
+    const shopSpend = Math.floor(affordableBuys * shelfPrice);
+    purse -= shopSpend;
+
+    // ── Training takes a share of whatever survived. The residual sink, by design. ──
     const budget = Math.floor(purse * style.trainingSpend);
     let spentOnTraining = 0;
     let pointsBought = 0;
@@ -159,13 +235,14 @@ export function simulateEconomy({
     ledger.push({
       day,
       level,
-      earned: { missions: missionGold, patrol: patrolGold },
-      spent: { training: spentOnTraining },
+      earned: { missions: missionGold, patrol: patrolGold, sales: salesGold },
+      spent: { training: spentOnTraining, shops: shopSpend, mounts: mountSpend },
       xpEarned,
       pointsBought,
       purse,
       missionsRun,
       vigorUnspent: VIGOR_PER_DAY - vigorBudget,
+      itemsBought: affordableBuys,
     });
   }
 

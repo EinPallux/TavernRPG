@@ -37,6 +37,14 @@ export interface ResettableState {
   readonly boardRerollsToday: number;
   /** Day key the current mission board was drawn for. */
   readonly boardDay: DayKey | null;
+  /**
+   * Shop shelves, keyed by shop id (shops spec §1: "restock at midnight").
+   *
+   * Cleared rather than compared. A shop could perfectly well notice its own stored day is
+   * yesterday's — and that is precisely the independent clock check this module exists to
+   * prevent. One owner decides it is tomorrow; everything else is told.
+   */
+  readonly shops: Readonly<Record<string, unknown>>;
 }
 
 export interface ResetOutcome<T extends ResettableState> {
@@ -97,6 +105,9 @@ export function processResets<T extends ResettableState>(
       boardRerollsToday: 0,
       // The board is stale the moment the day turns; it redraws on next read.
       boardDay: null,
+      // Bram and Sela restock overnight. Like the board, the new shelf is drawn lazily on the
+      // first visit — a player who never opens the shop never has stale stock to explain.
+      shops: {},
     },
     daysProcessed: boundaries,
     didReset: true,

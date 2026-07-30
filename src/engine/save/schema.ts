@@ -10,10 +10,11 @@
 
 import { z } from 'zod';
 import { ICON_IDS } from '@/data/icons';
+import { MOUNT_IDS } from '@/data/mounts';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 6;
+export const CURRENT_SCHEMA_VERSION = 7;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -169,8 +170,37 @@ export const patrolShiftSchema = z.object({
 });
 
 /**
+ * A shop's shelf for a day (schema v7).
+ *
+ * The six items are persisted rather than regenerated from the seed on read. Regenerating would
+ * be smaller, but it would mean a change to `generateItem` could swap what a player is looking
+ * at between opening the shop and clicking buy — and a shop that sells you something other than
+ * the thing on the card is the one bug a shop must not have.
+ */
+export const shopStockSchema = z.object({
+  /** The day this shelf was drawn for. A different day means restock. */
+  day: dayKeySchema,
+  items: z.array(itemSchema),
+  /** Indices of `items` already bought. Sold slots keep their place (shops spec §3). */
+  sold: z.array(z.number().int().min(0)),
+  /** Rerolls bought today; part of the draw seed, and priced from the second one on. */
+  rerollsToday: z.number().int().min(0),
+});
+
+/**
+ * A mount rental (schema v7). One id and an expiry — whether it is still running is computed
+ * from the clock, the same way a patrol shift is.
+ */
+export const mountRentalSchema = z.object({
+  mountId: z.enum(MOUNT_IDS),
+  rentedAt: timestampSchema,
+  expiresAt: timestampSchema,
+});
+
+/**
  * Everything time-bound about the player's day. Added in schema v5 (Phase 5), when missions
- * gave the game its first thing that happens while you are not looking; patrol joined in v6.
+ * gave the game its first thing that happens while you are not looking; patrol joined in v6,
+ * shop shelves and the mount stall in v7.
  */
 export const activitySchema = z.object({
   vigor: z.number().min(0),
@@ -204,6 +234,10 @@ export const activitySchema = z.object({
   patrol: patrolShiftSchema.nullable(),
   /** Lifetime counter, for tasks and Hildy's regard. */
   patrolsCompleted: z.number().int().min(0),
+  /** Both shops' shelves, keyed by shop id (schema v7). */
+  shops: z.record(z.string(), shopStockSchema),
+  /** The mount in the stall, if any (schema v7). */
+  mount: mountRentalSchema.nullable(),
 });
 
 export const DEFAULT_ACTIVITY: Activity = {
@@ -220,6 +254,8 @@ export const DEFAULT_ACTIVITY: Activity = {
   missionsCompleted: 0,
   patrol: null,
   patrolsCompleted: 0,
+  shops: {},
+  mount: null,
 };
 
 export const saveFileSchema = z.object({
@@ -242,6 +278,8 @@ export type Activity = z.infer<typeof activitySchema>;
 export type StoredMissionOffer = z.infer<typeof missionOfferSchema>;
 export type StoredActiveMission = z.infer<typeof activeMissionSchema>;
 export type StoredPatrolShift = z.infer<typeof patrolShiftSchema>;
+export type StoredShopStock = z.infer<typeof shopStockSchema>;
+export type StoredMountRental = z.infer<typeof mountRentalSchema>;
 export type SaveFile = z.infer<typeof saveFileSchema>;
 
 export interface NewSaveOptions {

@@ -67,13 +67,15 @@ interface Hero {
   createdAt: Timestamp;
   // materials: MaterialWallet;              // Phase 12 (forge)
   // vigor: { current: number; alesToday: number };  // Phase 5 (missions)
-  // mount?: { tier: 1|2|3|4; expiresAt: Timestamp }; // Phase 7 (stables)
+  // (the mount lives on ActivityState, not the hero — it is time-bound, like a shift)
   // activePetId?: string; pets: Record<string, PetState>; // Phase 14
   // trophies: TrophyId[];                   // Phase 11 (dungeons)
 }
 interface ActivityState {
   mission?: ActiveMission;          // { offerSnapshot, duration, startedAt, endsAt, seed }
   patrol?: PatrolShift;             // { startedAt, endsAt, hours, heroLevel } — see below
+  shops: Record<ShopId, ShopStock>; // v7: { day, items[6], sold[], rerollsToday }
+  mount?: MountRental;              // v7: { mountId, rentedAt, expiresAt } — clock decides if live
   arena: ArenaState; dungeons: Record<string, DungeonProgress>;
   forge: ForgeState; gacha: PityState & { history: GachaResult[] };
   board: DailyTasksState; calendar: CalendarState;

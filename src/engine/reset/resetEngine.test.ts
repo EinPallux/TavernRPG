@@ -34,6 +34,7 @@ function stateOn(day: string | null, overrides: Partial<ResettableState> = {}): 
     freeAlesToday: 1,
     boardRerollsToday: 1,
     boardDay: day,
+    shops: { armory: { day, items: [], sold: [], rerollsToday: 0 } },
     ...overrides,
   };
 }
@@ -81,6 +82,25 @@ describe('processResets', () => {
     expect(outcome.state.boardRerollsToday).toBe(0);
     // Yesterday's board is stale; nulling the day forces a redraw.
     expect(outcome.state.boardDay).toBeNull();
+    // Bram and Sela restock overnight (shops spec §1). Clearing the shelves is what makes the
+    // next visit redraw them — a shop comparing its own stored day would be the second clock.
+    expect(outcome.state.shops).toEqual({});
+  });
+
+  it('restocks the shops once however many midnights were missed', () => {
+    // A week away is one restock, not seven — the same rule Vigor follows.
+    const outcome = processResets(stateOn('2026-07-22'), '2026-07-29', walk);
+
+    expect(outcome.daysProcessed).toHaveLength(7);
+    expect(outcome.state.shops).toEqual({});
+  });
+
+  it('leaves the shelves alone when no boundary was crossed', () => {
+    const before = stateOn('2026-07-29');
+    const outcome = processResets(before, '2026-07-29', walk);
+
+    expect(outcome.didReset).toBe(false);
+    expect(outcome.state.shops).toBe(before.shops);
   });
 
   it('walks every missed boundary in order after a long absence', () => {

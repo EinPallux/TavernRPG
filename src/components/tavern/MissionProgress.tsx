@@ -14,7 +14,8 @@ import { missionProgress, msRemaining, type ActiveMission } from '@/engine/missi
 import { SKIP_DICE_COST } from '@/engine/missions/board';
 import { formatRemaining } from '@/components/ui/TimerChip';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { HeroIcon } from '@/components/icons';
+import { HeroIcon, Icon } from '@/components/icons';
+import type { MountDef } from '@/data/mounts';
 import { blurb as blurbById, renderBlurb } from '@/data/missionBlurbs';
 import { monster as monsterById } from '@/data/monsters';
 import { ZONES_BY_ID, backdropFor, type ZoneId } from '@/data/zones';
@@ -27,9 +28,17 @@ export interface MissionProgressProps {
   readonly onSkip: () => void;
   /** Fires the moment the hero gets home, so the screen can offer the fight. */
   readonly onArrived: () => void;
+  /** The mount that shortened this road, if one did (shops spec §4). */
+  readonly mount?: MountDef | null;
 }
 
-export function MissionProgress({ mission, dice, onSkip, onArrived }: MissionProgressProps) {
+export function MissionProgress({
+  mission,
+  dice,
+  onSkip,
+  onArrived,
+  mount = null,
+}: MissionProgressProps) {
   const reduceMotion = useReducedMotion();
   const [now, setNow] = useState(() => gameNow());
 
@@ -120,8 +129,20 @@ export function MissionProgress({ mission, dice, onSkip, onArrived }: MissionPro
           >
             {arrived ? 'Back at the door' : formatRemaining(remaining)}
           </p>
-          <p className="text-parchment-500/45 mt-0.5 text-xs">
-            {mission.duration}-minute contract · {monster?.name ?? 'unknown foe'} awaits
+          <p className="text-parchment-500/45 mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs">
+            <span>
+              {mission.duration}-minute contract · {monster?.name ?? 'unknown foe'} awaits
+            </span>
+            {mount && (
+              <span
+                className="flex items-center gap-1 text-amber-500"
+                title={`${mount.name} — the road is ${Math.round(mount.speedBonus * 100)}% shorter`}
+                data-testid="mission-mount"
+              >
+                <Icon name={mount.iconId} size={12} />
+                {mount.name}
+              </span>
+            )}
           </p>
         </div>
 

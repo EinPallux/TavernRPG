@@ -7,6 +7,42 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 7: Shops & Stables
+- **The Armory and the Gilded Facet are open.** Six pieces on the shelf every morning, drawn from
+  the day's seed. Bram always has a weapon and an offhand for your class plus three armour
+  pieces; Sela always has two rings, two amulets and a trinket. Only the sixth slot is a
+  wildcard — a shop that *might* have nothing you can use is a shop you learn to skip.
+- **The shelf answers the question you walked in with.** Every card shows what it would do to
+  your hero against what you are wearing, on the card rather than behind a hover.
+- **Buying is a splurge, selling is income** — 3.2× value out, 100% of value back. Sold slots
+  leave a wrapped parcel in the gap so the shelf does not reflow under your cursor, and the
+  restock clock says exactly how long until Bram unpacks the next cart.
+- **A fresh shelf costs a Golden Die**, with no free one. The mission board gets a free daily
+  reroll because the day's *work* must always be there; a shop shelf is a convenience.
+- **One way to get rid of an item** (`disposeItem`), shared by both keepers and, later, the
+  forge. Junk goes with a click; a Rare or an Epic asks once; a locked piece is refused; and a
+  Set piece is not merchandise at any price. The service quotes before it acts, so the confirm
+  you see is the rule the engine enforces rather than a screen's opinion.
+- **The Wandering Stables.** Four stalls, seven-day rentals, one at a time: Pack Mule −10%,
+  Dappled Courser −20%, Armoured Warhorse −30%, and the Royal Griffin at −50% for six earned
+  Golden Dice. Each stall shows what it does to a mission in minutes, not percentages.
+- **A mount shortens the road and nothing else** — mission timers only, never Vigor, never
+  rewards, never patrol. It rides on the HUD beside whatever is running and beside the mission
+  timer itself, and pulses in its last day.
+- **Renewing extends, switching replaces.** Paying for the mount you already have adds a week to
+  the week you have left rather than throwing it away; taking a different animal forfeits the
+  remainder and says how many days that is before you confirm.
+- **Save schema v7** carries both shelves and the stall, with a v6 fixture caught mid-shift.
+- The economy simulation now models shop purchases, mount upkeep and loot sales, and
+  `/dev/economy` shows them per day.
+
+### Changed — Phase 7
+- Shop restock joins the Reset Engine rather than each shop checking the date. A shop that
+  notices its own stored day is yesterday's is exactly the second clock that module exists to
+  prevent.
+- The top HUD's mount chip is real rather than a preview value, and the mission card names the
+  animal that shortened the road.
+
 ### Added — Phase 6: Patrol & Economy Pass 1
 - **The City Watch is open.** Sign on for 1–12 hours with Hildy, watch the lantern move along the
   route, and clock off for the pay. It is the "I'm done for today" button: a floor under a bad

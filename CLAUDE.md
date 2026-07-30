@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–6 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–7 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -40,9 +40,15 @@ feedback, edge cases and tests. Deployed on Vercel.
   nav rail links), and save schema v6. The sim found the XP curve was ~10× too slow and, once
   fixed, that gear supply could not keep up — hence the weapon pity floor in `items/drops.ts`.
 
-438 unit tests + 67 e2e green. Next work: `ROADMAP.md` **Phase 7 (Shops & Stables)** — the Armory
-and Gilded Facet with day-seeded stock, `disposeItem`, and the Stables' rental mounts. Shops are
-also the real fix for the gear-supply gap the pity floor is currently papering over.
+- **Phase 7:** commerce — `engine/shops/stock.ts` (day-seeded shelves with a *guaranteed* mix, so
+  Bram always has a weapon), `engine/items/dispose.ts` (one path for sell + scrap that quotes
+  before it acts), `engine/stables/mounts.ts` (7-day rentals; renewing extends, switching
+  replaces), one `ShopScreen` serving both keepers, the Stables, economy sim pass 2, and save
+  schema v7. Shop restock joined the Reset Engine rather than each shop checking the date.
+
+552 unit tests + 91 e2e green. Next work: `ROADMAP.md` **Phase 8 (World Simulation Core)** —
+1,500 seeded bots, 60 guilds, progression ticks with LoD reconciliation, the ladder service and
+the Town Crier feed.
 
 **Before touching class constants or monster archetypes:** run `npm run balance`. The numbers in
 `src/data/classes.ts` were solved for, not chosen, and the bands in
@@ -61,11 +67,13 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 
 `src/engine/` pure logic — `rng`, `clock`, `save/` (schema + migrations), `progression/`
 (xp, stats, gates, rewards), `items/` (types, generate, drops, starterKit), `hero/`
-(actions, derived), `combat/`, `missions/` (board, lifecycle), `patrol/`, `economy/`, `reset/` ·
-`src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks, patrolLog ·
+(actions, derived), `combat/`, `missions/` (board, lifecycle), `patrol/`, `shops/`, `stables/`,
+`economy/`, `reset/` ·
+`src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
+patrolLog, mounts, shopBarks ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol}/` · `src/app/(game)/<place>/` one
-route per place · `src/styles/motion.ts` springs.
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables}/` ·
+`src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts). The character screen's
 dev drawer conjures gear, levels and gold while loot sources are still being built.

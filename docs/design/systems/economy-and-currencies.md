@@ -70,11 +70,17 @@ every coin in and every coin out as a per-day `DayLedger`. Two rules keep it hon
 - **It calls the same functions the game does.** Nothing in it re-implements a curve, so a change
   to `missionPayout`, `goldPatrolPerHour` or `statCost` moves the sim the same day it moves the
   game. The moment the sim carries its own copy of a formula it starts asserting its own past.
-- **It models only what exists.** Pass 1 covers missions and patrol as faucets, training as the
-  sink (`MODELLED_FAUCETS` / `MODELLED_SINKS`). Shops (Phase 7), mount upkeep, the gacha and guild
-  bonuses are absent because they are not built — a sim that invents numbers for unbuilt systems
-  asserts a fiction, and the §2 health check above only becomes fully checkable once they land.
-  Each is added to the constant as it ships, and the bands tighten with it.
+- **It models only what exists.** Pass 1 (Phase 6) covered missions and patrol as faucets and
+  training as the sink; **pass 2 (Phase 7)** added loot sales as a faucet and shop purchases and
+  mount upkeep as sinks (`MODELLED_FAUCETS` / `MODELLED_SINKS`). The gacha, guild donations, pet
+  feeding and dungeon gold are still absent because they are not built — a sim that invents
+  numbers for unbuilt systems asserts a fiction, and the §2 health check above only becomes fully
+  checkable once they land. Each is added to the constant as it ships, and the bands tighten
+  with it.
+- **Order of spending is deliberate**: upkeep, then gear, then training takes a share of what
+  survives. That is what makes training the *residual* sink the design wants, and it is why
+  adding shops in Phase 7 correctly slowed attribute growth instead of leaving it untouched.
+  The measured shares are tabled in `../balancing-formulas.md` §9.
 
 15 CI bands in `economy.test.ts`: the §0 pacing milestones, the "always slightly broke" purse (the
 tuned quantity is *attribute points a day's income buys*, not a gold figure — a ratio survives

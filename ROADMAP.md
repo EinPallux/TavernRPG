@@ -167,13 +167,37 @@ Two more things the phase forced:
   bag and the resulting losses read as a balance problem. Both fixed; see CLAUDE.md on what
   "on curve" means.
 
-## Phase 7 — Shops & Stables (M) 🔲
+## Phase 7 — Shops & Stables (M) ✅
 Armory + Gilded Facet (day-seed stock, guaranteed-mix rules, reroll, buy/sell with confirms),
 universal `disposeItem` service, Stables with 4 rental mounts (timer chip, renewal reminder,
 replacement confirm), mission-timer integration.
 **Accept:** stock deterministic per day-seed (same day+seed ⇒ same stock); sell/buy ledger
 balances; mounts reduce timers exactly per tier; all keeper barks in; restock at midnight verified
 across a simulated week.
+
+**Delivered.** Both shops are one screen (`ShopScreen`) with two keepers — everything structural
+is identical and duplicating it would guarantee drift. The shelf is drawn from
+`(worldSeed, dayKey, shopId, rerollCount)` and *persisted*, not regenerated on read: storing the
+seed would be smaller, but a change to `generateItem` could then swap the item between the card
+and the click, which is the one bug a shop must not have. Sold slots keep their place behind a
+wrapped parcel. Restock is the Reset Engine's job — shelves are cleared at the boundary and drawn
+lazily on the next visit, so no feature compares its own stored day. `disposeItem` quotes before
+it acts, which is what lets the confirm the UI renders be the same rule the engine enforces.
+Save schema **v7**; 552 unit + 91 e2e green.
+
+Three things the phase forced or settled:
+- **The guaranteed mix is what makes shops the gear-supply fix**, not the reroll. Bram always has
+  a weapon and an offhand for your class, so a hero whose weapon has fallen behind can buy one on
+  any day at any level. The Phase 6 pity floor stays as the floor for a player who never shops.
+- **Renewing a mount extends; only switching replaces.** The spec's "replaces the remainder" is
+  right for a different animal and quietly robs anyone who renews early on the same one. Runway
+  is capped at two terms, because prices pin to `goldPerVigor` *at purchase* and without a cap a
+  level-10 player could buy a season of Warhorse and ride it into their forties.
+- **The economy sim grew shops, mount upkeep and loot sales**, as Phase 6 promised it would. It
+  says training still takes 85.8% of spending (correct — §2 calls it "the endless one") and shops
+  only 3.1%, which makes the Armory a gear-supply fix rather than a gold sink. Recorded with the
+  measured table in balancing §9 and flagged for the Phase 17 pass; the lever is the 3.2×
+  multiplier, not the stock size.
 
 ## Phase 8 — World Simulation Core (L) 🔲
 World generation (1,500 bots, 60 guilds, personalities, ladder seed, top-10 legends data), bot

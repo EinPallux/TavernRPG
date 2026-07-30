@@ -144,6 +144,14 @@ with its win rate sliding from 100% to 40%. So a **pity rule** applies — a her
 5+ levels behind gets a weapon on their next drop. Pity decides *what* a drop is, never *whether*
 one happens, so the published item chance is untouched. It matters less once Bram's Armory opens
 in Phase 7 and gold can simply buy a weapon; it remains the floor for a player who never shops.
+
+**Shop shelves as built (Phase 7).** Bram's six slots are a *guaranteed mix*, not six rolls:
+1 weapon + 1 offhand (class-locked) + 3 distinct armour pieces + 1 wildcard. Sela's are 2 rings +
+2 amulets + 1 trinket + 1 wildcard jewellery. Only rarity is rolled, off the table above. The
+guarantee is what makes the shop a *fix* for gear supply rather than a second slot machine — a
+player whose weapon has fallen behind can buy one on any day, at any level, for
+`3.2 × itemValue`. Reroll is 1 Golden Die with no free one (unlike the mission board, whose free
+daily reroll exists because the day's *work* must always be there).
 | Pet egg | dungeon firsts & fixed milestones (deterministic, no RNG) | — |
 
 ## 8. Item stat budgets
@@ -165,6 +173,28 @@ mission drops ~0.15 · arena/dungeon/guild milestones ~0.1 amortized.
 **Sinks:** gacha roll 1 · Ale 1 · shop reroll 1 · arena cooldown skip 1 (max 3/day) · Royal Griffin
 6 per 7 days · backpack +5 slots: 10/20/40 (one-time ×3). Target: meaningful weekly tension between
 "roll the banner" vs "ride the Griffin" vs "one more Ale". `[TUNE]`
+
+### Measured shares, Phase 7 (`npm run economy`)
+
+Sixty modelled days, active player (all Vigor, 8h patrol, a Warhorse, two shop pieces a week):
+
+| | share |
+|---|---|
+| **In:** missions | 58.7% |
+| **In:** patrol | 36.9% |
+| **In:** loot sales | 4.4% |
+| **Out:** attribute training | 85.8% |
+| **Out:** mount upkeep | 11.2% |
+| **Out:** shop purchases | 3.1% |
+
+Two things to read off this. Training dominating is **correct** — §2 calls it "the endless one",
+and `statCost`'s `n^1.65` outruns every other sink by design. But **shops at 3.1% are close to
+decoration**: at two pieces a week the markup barely dents a purse that is mostly going into
+attributes anyway. That is not obviously wrong (buying gear is meant to be optional, and the
+frugal control reaches the same level with *more* attribute points), but it means the Armory is
+currently a gear-supply fix rather than a gold sink. `[TUNE]` — revisit in the Phase 17 balance
+pass once the gacha, mounts-at-scale and guild donations are also in `MODELLED_SINKS`; if shops
+should carry more of the sink load, the lever is the 3.2× multiplier, not the stock size.
 
 ## 10. Honor & ladder
 

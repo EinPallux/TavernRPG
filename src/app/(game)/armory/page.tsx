@@ -1,6 +1,12 @@
-import { PlaceScreen } from '@/components/shell/PlaceScreen';
+import { GatedPlace } from '@/components/shell/GatedPlace';
+import { ShopScreen } from '@/components/shops/ShopScreen';
 import { PLACES_BY_ID } from '@/data/places';
 
+/** Bram's shop, opened in Phase 7. One shop component serves both keepers. */
 export default function Page() {
-  return <PlaceScreen place={PLACES_BY_ID.armory} />;
+  return (
+    <GatedPlace place={PLACES_BY_ID.armory}>
+      <ShopScreen shopId="armory" />
+    </GatedPlace>
+  );
 }

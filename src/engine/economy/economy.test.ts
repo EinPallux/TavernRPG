@@ -5,10 +5,12 @@
  * the loop stops being taut — the player suddenly rich, or suddenly unable to buy anything, or
  * levelling in a week — this fails the build rather than the player.
  *
- * The bands only cover what is *modelled*. Shops, mounts and the gacha are not built yet, so
- * asserting a post-splurge purse here would be asserting a fiction; those bands tighten as
+ * The bands only cover what is *modelled*. Shops, mounts and loot sales joined in Phase 7; the
+ * gacha, guild donations and dungeon gold are still absent because they are not built, and
+ * asserting a number for them would be asserting a fiction. Those bands tighten as
  * `MODELLED_SINKS` grows. What *is* asserted is every ratio that holds regardless: pacing, the
- * gold/training relationship, and patrol staying the fallback rather than the strategy.
+ * gold/training relationship, patrol staying the fallback rather than the strategy, and — as of
+ * Phase 7 — that neither shopping nor a mount is mandatory.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -18,11 +20,16 @@ import { VIGOR_PER_DAY, vigorPerLevel, xpPerVigor } from '@/engine/progression/r
 import {
   ACTIVE_PLAYER,
   CASUAL_PLAYER,
+  FRUGAL_PLAYER,
   MODELLED_FAUCETS,
+  MODELLED_SINKS,
   simulateEconomy,
   totalEarned,
   totalSpent,
 } from './simulate';
+import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
+import { mount as mountDef } from '@/data/mounts';
+import { goldPerVigor } from '@/engine/progression/rewards';
 
 /** Days to reach a level, missions only, at the given daily Vigor spend. */
 function daysToLevel(target: number, vigorPerDay = VIGOR_PER_DAY): number {
@@ -151,13 +158,83 @@ describe('patrol stays the fallback, not the strategy', () => {
   });
 });
 
+describe('shops and stables — Phase 7 sinks', () => {
+  const shopper = simulateEconomy({ days: 60 });
+  const frugal = simulateEconomy({ days: 60, style: FRUGAL_PLAYER });
+
+  it('takes real money off the table — gear and upkeep are not decoration', () => {
+    // If these round to nothing, the shop is a museum and training is the only sink again.
+    const onGear = shopper.ledger.reduce((sum, day) => sum + day.spent.shops, 0);
+    const onUpkeep = shopper.ledger.reduce((sum, day) => sum + day.spent.mounts, 0);
+    const total = totalSpent(shopper.ledger);
+
+    expect(onGear / total).toBeGreaterThan(0.02);
+    expect(onUpkeep / total).toBeGreaterThan(0.02);
+  });
+
+  it('keeps mount upkeep inside its designed share of income', () => {
+    // §4: rentals are a recurring pinch. Above roughly a fifth of income they stop being a
+    // choice and become a tax on playing.
+    for (const day of shopper.ledger) {
+      const income = MODELLED_FAUCETS.reduce((sum, f) => sum + day.earned[f], 0);
+      if (income === 0) continue;
+      expect(day.spent.mounts / income, `day ${day.day}`).toBeLessThan(0.25);
+    }
+  });
+
+  it('prices a week of Warhorse against a week of income the way §4 promises', () => {
+    for (const level of [10, 40, 90]) {
+      const weekly = 7 * 100 * goldPerVigor(level);
+      const rental = mountPrice(mountDef('warhorse'), level).gold;
+      expect(rental / weekly, `level ${level}`).toBeGreaterThan(0.1);
+      expect(rental / weekly, `level ${level}`).toBeLessThan(0.2);
+      expect(MOUNT_TERM_DAYS).toBe(7);
+    }
+  });
+
+  it('leaves neither shopping nor renting mandatory', () => {
+    // The frugal player must still progress. A game where you *have* to shop to keep up is a
+    // game with a soft paywall in it, dice or no dice.
+    expect(frugal.finalLevel).toBeGreaterThanOrEqual(shopper.finalLevel);
+    expect(frugal.totalPointsBought).toBeGreaterThan(shopper.totalPointsBought);
+  });
+
+  it('makes shopping cost attribute points — that is the whole trade', () => {
+    // Gold spent on gear is gold not spent on training. If this ever came out level, the
+    // markup would be doing nothing and the shop would be free power.
+    expect(shopper.totalPointsBought).toBeLessThan(frugal.totalPointsBought);
+  });
+
+  it('sells loot for a meaningful but secondary share of income', () => {
+    // Sales should matter without rivalling the mission faucet, or the loop becomes "farm
+    // vendor trash" instead of "run missions".
+    const sales = shopper.ledger.reduce((sum, day) => sum + day.earned.sales, 0);
+    const earned = totalEarned(shopper.ledger);
+
+    expect(sales / earned).toBeGreaterThan(0.01);
+    expect(sales / earned).toBeLessThan(0.25);
+  });
+
+  it('never lets a shop purchase overdraw the purse', () => {
+    for (const day of shopper.ledger) {
+      expect(day.spent.shops, `day ${day.day}`).toBeGreaterThanOrEqual(0);
+      expect(day.itemsBought, `day ${day.day}`).toBeGreaterThanOrEqual(0);
+    }
+  });
+});
+
 describe('the ledger itself', () => {
   const run = simulateEconomy({ days: 30 });
 
   it('balances — every coin is accounted for', () => {
+    // Sums the constants rather than naming sinks: a faucet or sink added without a ledger
+    // entry has to fail here, which is the only thing making this an audit rather than a
+    // restatement of the code.
     const finalPurse = run.ledger.reduce(
       (purse, day) =>
-        purse + MODELLED_FAUCETS.reduce((s, f) => s + day.earned[f], 0) - day.spent.training,
+        purse +
+        MODELLED_FAUCETS.reduce((s, f) => s + day.earned[f], 0) -
+        MODELLED_SINKS.reduce((s, k) => s + day.spent[k], 0),
       100,
     );
     expect(finalPurse).toBe(run.finalPurse);
@@ -166,7 +243,9 @@ describe('the ledger itself', () => {
   it('never goes into debt', () => {
     for (const day of run.ledger) {
       expect(day.purse, `day ${day.day}`).toBeGreaterThanOrEqual(0);
-      expect(day.spent.training, `day ${day.day}`).toBeGreaterThanOrEqual(0);
+      for (const sink of MODELLED_SINKS) {
+        expect(day.spent[sink], `day ${day.day} ${sink}`).toBeGreaterThanOrEqual(0);
+      }
     }
   });
 

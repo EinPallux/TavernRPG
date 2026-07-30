@@ -14,6 +14,7 @@ import v2Phase1 from './fixtures/v2-phase1.json';
 import v3Phase3 from './fixtures/v3-phase3.json';
 import v4Phase4 from './fixtures/v4-phase4.json';
 import v5Phase5 from './fixtures/v5-phase5.json';
+import v6Phase6 from './fixtures/v6-phase6.json';
 import { migrateSave } from './migrations';
 import { CURRENT_SCHEMA_VERSION, DEFAULT_ACTIVITY, DEFAULT_SETTINGS } from './schema';
 
@@ -186,6 +187,39 @@ describe('save fixtures — every shipped version still loads', () => {
     expect(result.save.activity.patrolsCompleted).toBe(0);
     // The additive migration reaches *inside* the activity slice, so the rest must be intact.
     expect(result.save.activity.lastProcessedDay).toBe('2026-08-14');
+  });
+
+  it('opens a Phase 6 (v6) save with a shift still on the beat', () => {
+    const result = migrateSave(structuredClone(v6Phase6));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(6);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // A running shift is timestamps, and timestamps are what a careless migration mangles.
+    const patrol = result.save.activity.patrol;
+    expect(patrol).not.toBeNull();
+    expect(patrol?.hours).toBe(8);
+    expect(patrol?.endsAt).toBe((patrol?.startedAt ?? 0) + 8 * 3_600_000);
+    expect(patrol?.heroLevel).toBe(18);
+    expect(result.save.activity.patrolsCompleted).toBe(4);
+    expect(result.save.activity.vigor).toBe(40);
+  });
+
+  it('gives a pre-Phase-7 save empty shelves and an empty stall', () => {
+    const result = migrateSave(structuredClone(v6Phase6));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // Empty shelves are exactly what a player sees the morning after a restock: they draw
+    // lazily on first visit, so nobody arrives to a broken shop.
+    expect(result.save.activity.shops).toEqual({});
+    expect(result.save.activity.mount).toBeNull();
+    // Additive inside the activity slice — the shift and the counters must be untouched.
+    expect(result.save.activity.patrol).not.toBeNull();
+    expect(result.save.activity.missionsCompleted).toBe(37);
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

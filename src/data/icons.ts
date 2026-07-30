@@ -59,6 +59,11 @@ export const ICON_IDS = [
   'amulet',
   'ring',
   'trinket',
+  // the stalls at the Wandering Stables
+  'mule',
+  'courser',
+  'warhorse',
+  'griffin',
 ] as const;
 
 export type IconId = (typeof ICON_IDS)[number];

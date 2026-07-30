@@ -7,8 +7,9 @@
  * are, how close the next level is, what they can spend, how much of the day is left, and
  * whether anything is running.
  *
- * The hero drives everything it can as of Phase 2. Vigor and activity timers still read from
- * `PreviewState` because those systems arrive with missions and patrol (Phases 5–6).
+ * Everything here is real as of Phase 7 — hero, wallet, Vigor, the running activity and the
+ * mount. `PreviewState` remains only as the fallback the shell harness drives when no save is
+ * loaded (`/dev/kit`).
  */
 
 import Image from 'next/image';
@@ -22,6 +23,7 @@ import { useGameStore } from '@/state/gameStore';
 import { classDef } from '@/data/classes';
 import { xpNeeded } from '@/engine/progression/xp';
 import { vigorCeiling } from '@/engine/reset/resetEngine';
+import { activeMount, needsRenewalSoon } from '@/engine/stables/mounts';
 import { gameNow } from '@/state/clock';
 import { snappy } from '@/styles/motion';
 
@@ -59,10 +61,7 @@ export function TopHud() {
   const hero = useGameStore((state) => state.save?.hero ?? null);
   const activity = useGameStore((state) => state.save?.activity ?? null);
 
-  /**
-   * The hero and their day are authoritative wherever they exist. Only the mount timer is
-   * still a preview value; its system arrives with the Stables in Phase 9.
-   */
+  /** The hero and their day are authoritative wherever they exist. */
   const level = hero?.level ?? preview.level;
   const xp = hero?.xp ?? preview.xp;
   const xpForNext = hero ? xpNeeded(hero.level) : preview.xpForNext;
@@ -85,6 +84,12 @@ export function TopHud() {
   // Patrol mirrors the mission chip (spec §5). Only one can ever run, so they never collide.
   const patrol = activity?.patrol ?? null;
   const patrolDone = patrol !== null && gameNow() >= patrol.endsAt;
+
+  // The mount rides alongside whatever is running — it is not an activity, it is a standing
+  // arrangement. In its last day the chip pulses, which is Odo's reminder (shops spec §4).
+  const rental = activity?.mount ?? null;
+  const mount = activeMount(rental, gameNow());
+  const mountExpiring = needsRenewalSoon(rental, gameNow());
 
   return (
     <header className="surface-timber bg-wood-800/95 relative z-30 flex h-[72px] items-center gap-6 border-b border-amber-500/20 px-5">
@@ -194,8 +199,20 @@ export function TopHud() {
             />
           )
         )}
-        {preview.mountExpiresAt !== null && (
-          <TimerChip endsAt={preview.mountExpiresAt} label="Mount" data-testid="hud-mount" />
+        {mount && rental ? (
+          <Link
+            href="/stables"
+            title={`${mount.name} — mission timers −${Math.round(mount.speedBonus * 100)}%`}
+            className={mountExpiring ? 'animate-pulse' : ''}
+            data-testid={mountExpiring ? 'hud-mount-expiring' : 'hud-mount'}
+          >
+            <TimerChip endsAt={rental.expiresAt} label={mount.name} />
+          </Link>
+        ) : (
+          preview.mountExpiresAt !== null &&
+          !activity && (
+            <TimerChip endsAt={preview.mountExpiresAt} label="Mount" data-testid="hud-mount" />
+          )
         )}
       </div>
 
