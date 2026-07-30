@@ -22,7 +22,9 @@ import { xpNeeded } from '@/engine/progression/xp';
 import {
   consolationPayout,
   missionPayout,
+  NO_BONUS,
   type MissionDuration,
+  type PayoutBonus,
 } from '@/engine/progression/rewards';
 import type { Hero } from '@/engine/save/schema';
 import { monster as monsterDef } from '@/data/monsters';
@@ -110,7 +112,11 @@ export interface MissionOutcome {
  * resolves once to show the fight, and the store resolves again to grant the rewards, and the
  * two must agree.
  */
-export function resolveMission(mission: ActiveMission, hero: Hero): MissionOutcome {
+export function resolveMission(
+  mission: ActiveMission,
+  hero: Hero,
+  bonus: PayoutBonus = NO_BONUS,
+): MissionOutcome {
   const template = monsterDef(mission.offer.monsterId);
   const foe = buildMonsterCombatant({
     id: mission.offer.monsterId,
@@ -123,7 +129,12 @@ export function resolveMission(mission: ActiveMission, hero: Hero): MissionOutco
 
   const victory = battle.winner === 'a';
   // Priced at the level the contract was signed at, so levelling mid-mission never pays less.
-  const full = missionPayout(mission.heroLevel, mission.duration, xpNeeded(mission.heroLevel));
+  const full = missionPayout(
+    mission.heroLevel,
+    mission.duration,
+    xpNeeded(mission.heroLevel),
+    bonus,
+  );
 
   if (!victory) {
     const consolation = consolationPayout(full);

@@ -14,7 +14,7 @@
  * Pure module.
  */
 
-import type { DayKey } from '@/engine/clock';
+import { weekKeyFor, type DayKey } from '@/engine/clock';
 
 /** Dice by finishing bracket (spec §3). */
 export const PAYOUT_BRACKETS: readonly { readonly maxRank: number; readonly dice: number }[] = [
@@ -28,23 +28,13 @@ export const PAYOUT_BRACKETS: readonly { readonly maxRank: number; readonly dice
 export const LEGENDS_SNAPSHOT_SIZE = 10;
 
 /**
- * The week a day belongs to, identified by the date of the Sunday that *ends* it.
+ * Re-exported so the arena's own tests and callers keep one import.
  *
- * Parsed as local midday rather than midnight: a `YYYY-MM-DD` string parsed as local midnight
- * can land on the missing hour of a spring-forward and roll into the previous day, which would
- * hand two different days the same week key. Midday is never ambiguous.
+ * The function itself moved to `engine/clock.ts` in Phase 10, when the guild bounty needed the
+ * same answer: two implementations of "which week is this?" is the drift bug the Reset Engine
+ * exists to prevent, one layer up.
  */
-export function weekKeyFor(dayKey: DayKey): string {
-  const [year, month, day] = dayKey.split('-').map(Number);
-  const date = new Date(year!, month! - 1, day!, 12, 0, 0, 0);
-
-  // Advance to the coming Sunday. `getDay()` is 0 on Sunday, so a Sunday is already its own key.
-  const daysUntilSunday = (7 - date.getDay()) % 7;
-  date.setDate(date.getDate() + daysUntilSunday);
-
-  const pad = (value: number) => String(value).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
+export { weekKeyFor };
 
 export function diceForRank(rank: number): number {
   if (rank <= 0) return 0;
