@@ -38,6 +38,14 @@ export interface UseBattlePlaybackOptions {
   readonly startFinished?: boolean;
   /** Fires once the last beat has played, however playback got there — including Skip. */
   readonly onFinished?: () => void;
+  /**
+   * How long the whole fight should take at ×1, overriding the eight-second default.
+   *
+   * The Undertavern is the only caller: its floors carry a ×1.35 stat budget and its bosses
+   * ×1.6, which produces genuinely longer fights (see `DUNGEON_FIGHT_DURATION`). Squeezing
+   * eighteen rounds into eight seconds does not make a fast fight, it makes an unreadable one.
+   */
+  readonly targetDuration?: number;
 }
 
 interface PlaybackState {
@@ -66,10 +74,14 @@ export function useBattlePlayback({
   initialSpeed = 1,
   startFinished = false,
   onFinished,
+  targetDuration,
 }: UseBattlePlaybackOptions): BattlePlayback {
   const reducedMotion = useReducedMotion();
   const choreo = useMemo(() => choreoFor(Boolean(reducedMotion)), [reducedMotion]);
-  const timeline = useMemo(() => buildTimeline(log, choreo), [log, choreo]);
+  const timeline = useMemo(
+    () => buildTimeline(log, choreo, targetDuration === undefined ? {} : { targetDuration }),
+    [log, choreo, targetDuration],
+  );
 
   const [state, setState] = useState<PlaybackState>(() =>
     freshState(timeline, startFinished, initialSpeed),

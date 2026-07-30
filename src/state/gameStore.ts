@@ -87,6 +87,8 @@ import {
   type FoundOptions,
   type GuildRefusal,
 } from './guildActions';
+import { descend as descendOn, type DelveResult } from './dungeonActions';
+import type { DungeonId } from '@/data/dungeons';
 import type { BountyChest } from '@/engine/guilds/bounty';
 import type { RaidResult } from '@/engine/arena/raids';
 import type { WeeklyPayout } from '@/engine/arena/payout';
@@ -238,6 +240,16 @@ export interface GameStoreState {
   kickGuildMember: (botId: number) => GuildRefusal | null;
   setGuildMotto: (motto: string) => GuildRefusal | null;
   postGuildMessage: (text: string) => GuildRefusal | null;
+
+  // ── The Undertavern (Phase 11) ───────────────────────────────────────────────────
+  /**
+   * Fight the floor in front of you in one of the three.
+   *
+   * Returns the whole transition — battle log, spoils and progress — so the room can play the
+   * fight it already knows the outcome of, exactly as the arena does. There is no separate
+   * "claim": a delve has no timer to wait on and nothing to collect later.
+   */
+  descendInto: (id: DungeonId) => DelveResult;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -867,6 +879,18 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
     postGuildMessage(text) {
       return runGuild((save) => postMessageOn(save, text, gameNow()));
+    },
+
+    descendInto(id) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = descendOn(save, id, gameNow());
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
     },
 
     markLadderSeen() {

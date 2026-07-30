@@ -7,6 +7,53 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 11: Dungeons (three doors under the Tankard)
+- **The Undertavern.** Three key-gated, ten-floor gauntlets in the cellar: the Rat Cellars, the
+  Barrowdeep Crypt and the Emberdeep Foundry. Thirty named floors, and every one of them stands
+  at a **fixed level** — floor 7 of the Rat Cellars is level 26 whether you meet it at 20 or at
+  60. That single property is what makes a dungeon a power benchmark instead of content.
+- **A wall you can measure yourself against.** Floors carry a ×1.35 stat budget, so you will
+  stop; the point is being able to see *how far short*. Every door shows ten rungs, what is
+  standing on the current one, and how much of its health your best attempt took off. Between two
+  gear upgrades that bar is the only progress there is, and "you took it to 71%" is a target
+  where "you lost" is a wall.
+- **Free attempts, and a chain.** No Vigor, no cost, no timer. Win and the next floor is right
+  there in the same visit — a good delve after a gear spike runs four floors deep. Lose and the
+  door shuts for thirty minutes while the horrors regroup; nothing else is taken from you.
+- **Six bosses with signatures, announced.** Floors 5 and 10, each carrying a named ability with
+  a written explainer that holds the stage before the first blow: Riddletail's swarm arrives every
+  third round and cannot be parried, the Pale Margrave drinks every swing that fails to land, and
+  Vulkarr cools into his own armour a little more each round. Three different *shapes* of ability
+  rather than three bigger numbers, and **floor 5 teaches what floor 10 tests** — each mid-boss is
+  a weaker version of its own finale, so the mechanic that ends a dungeon is one you have met.
+- **Keys off the road.** Six percent a mission once you are old enough for the door they open, and
+  only ever one key in the pool at a time — the lowest door you have reached and cannot yet open.
+  A key is a one-time unlock; the door then stays open forever.
+- **The payoff.** Every floor pays a Vigor-day of XP and gold plus a 50% drop with a separate 25%
+  Epic roll on top. Floor 10 hands over a guaranteed Epic, three Golden Dice and the dungeon's
+  crest, seals the door behind you, and puts the trophy on your profile.
+- **Save schema v11** — dungeon progress, keys and trophies, with a v10 fixture captured mid-week
+  inside a guild hall.
+
+### Fixed — Phase 11
+- **Two dungeons got easier as you went down.** Archetype turns out to be worth up to twelve
+  levels of difficulty at dungeon budget — more than the level curve gains across six floors — so
+  a roster picked for flavour alone put a swarm on Barrowdeep's floor 7 that fell to a level-33
+  hero when floor 6 needed 46. All three dungeons now run their archetypes in ascending order of
+  measured difficulty, and the harness asserts the ramp never dips.
+- **The mid-bosses overshot.** At the spec's flat ×1.6, Emberdeep's floor 5 was harder than the
+  floor *below* it. Mid-bosses now run ×1.5 — the smaller wall the "floor 5 teaches, floor 10
+  tests" design already implied.
+- **A floor paid XP at the floor's level**, so a fresh level-10 delver collected two level-14
+  levels from one clear and the four chainable floors behind the Rusty Key would have carried
+  them to 20 in a single visit. Gold is still priced at the floor (which is what stops
+  back-farming); XP now takes the lower of the two levels.
+- **Eighteen rounds in eight seconds is not a fast fight.** Dungeon fights run genuinely longer
+  than missions — a tank floor is 15–17 rounds at the level that clears it — and the standard
+  pacing target compressed them into an unreadable smear. The Undertavern gets its own targets.
+- **`ember-500` was never a colour.** Several dungeon classes named a token that does not exist
+  (it is `ember-600`), so the boss banner and the best-attempt bars rendered in plain parchment.
+
 ### Added — Phase 10: Guilds (a hall with people in it)
 - **Sixty halls, and none of them is a row in a list.** Every card carries what the hall is
   *like* — cosy, nocturnal, cutthroat, early risers — derived from the personalities of the

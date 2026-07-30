@@ -309,6 +309,143 @@ describe('fight — edge cases', () => {
   });
 });
 
+/**
+ * The three dungeon boss signatures (dungeons spec §2).
+ *
+ * Each is tested for the thing that makes it *that* ability rather than a bigger number: the
+ * swarm arrives on a rhythm and cannot be stopped, the siphon answers a defence, the hardening
+ * ramps and then stops. All three announce themselves first — a wall that does not teach is
+ * just a wall.
+ */
+describe('fight — boss signatures', () => {
+  const SIGNATURE = { label: 'Rat Swarm', explainer: 'Every third round, the swarm comes.' };
+
+  it('names the trick before the first blow, and only once', () => {
+    const boss = dummy({
+      id: 'boss',
+      maxHealth: 4_000,
+      procs: [{ kind: 'swarm-call', everyRounds: 3, damageShare: 0.5 }],
+      signature: SIGNATURE,
+    });
+    const { log } = fight(dummy({ id: 'hero', maxHealth: 4_000 }), boss, 11);
+
+    const traits = log.filter((event) => event.t === 'boss_trait');
+    expect(traits).toHaveLength(1);
+    expect(traits[0]).toMatchObject({ side: 'b', ...SIGNATURE });
+    // Before anything is swung, so it is a warning rather than a post-mortem.
+    expect(log.indexOf(traits[0]!)).toBeLessThan(
+      log.findIndex((event) => event.t === 'attack'),
+    );
+  });
+
+  it('calls the swarm on its rhythm, and lands it through any defence', () => {
+    const boss = dummy({
+      id: 'boss',
+      maxHealth: 9_000,
+      procs: [{ kind: 'swarm-call', everyRounds: 3, damageShare: 0.5 }],
+      signature: SIGNATURE,
+    });
+    // A hero who blocks and dodges everything: only the swarm can touch them.
+    const turtle = dummy({
+      id: 'hero',
+      maxHealth: 9_000,
+      weapon: { min: 1, max: 1 },
+      procs: [
+        { kind: 'block', chance: 1 },
+        { kind: 'dodge', chance: 1 },
+      ],
+    });
+    const { log } = fight(turtle, boss, 12, { maxRounds: 10 });
+
+    const rounds = log.filter((event) => event.t === 'round_start').length;
+    expect(count(log, 'swarm')).toBe(Math.floor(rounds / 3));
+
+    // Every swarm cry is followed immediately by damage on the other side.
+    const cry = log.findIndex((event) => event.t === 'swarm');
+    expect(log[cry + 1]).toMatchObject({ t: 'damage', target: 'a' });
+  });
+
+  it('heals the Margrave on a block, a dodge and a miss alike', () => {
+    // Blocks *most* swings rather than all of them: a boss nothing can touch never drops below
+    // full health, and a heal capped at the missing health would then always be zero.
+    const margrave = dummy({
+      id: 'boss',
+      maxHealth: 1_000,
+      weapon: { min: 1, max: 1 },
+      procs: [
+        { kind: 'block', chance: 0.6 },
+        { kind: 'siphon', healShare: 0.08 },
+      ],
+      signature: { label: 'Pale Communion', explainer: 'It feeds on a swing that misses.' },
+    });
+    const hero = dummy({ id: 'hero', maxHealth: 5_000, weapon: { min: 100, max: 100 } });
+    const { log } = fight(hero, margrave, 4, { maxRounds: 12 });
+
+    const heals = log.filter((event) => event.t === 'heal');
+    expect(heals.length).toBeGreaterThan(0);
+    for (const heal of heals) {
+      expect(heal.target).toBe('b');
+      // Never past full, and never a heal of nothing.
+      expect(heal.amount).toBeGreaterThan(0);
+      expect(heal.hpAfter).toBeLessThanOrEqual(1_000);
+    }
+  });
+
+  it('never siphons a corpse back to its feet', () => {
+    const margrave = dummy({
+      id: 'boss',
+      maxHealth: 200,
+      procs: [
+        { kind: 'block', chance: 1 },
+        { kind: 'siphon', healShare: 0.5 },
+      ],
+    });
+    const { log } = fight(dummy({ id: 'hero', weapon: { min: 500, max: 500 } }), margrave, 7);
+
+    const ko = log.findIndex((event) => event.t === 'ko');
+    expect(ko).toBeGreaterThan(-1);
+    expect(log.slice(ko).some((event) => event.t === 'heal')).toBe(false);
+  });
+
+  it('thickens Vulkarr’s armour by the round, to a ceiling', () => {
+    const vulkarr = dummy({
+      id: 'boss',
+      maxHealth: 20_000,
+      armour: 100_000,
+      damageReductionCap: 0.2,
+      weapon: { min: 1, max: 1 },
+      procs: [{ kind: 'hardening', perRound: 0.02, cap: 0.1 }],
+      signature: { label: 'Cooling Iron', explainer: 'Its plate thickens as the fight drags.' },
+    });
+    const { log } = fight(dummy({ id: 'hero', weapon: { min: 200, max: 200 } }), vulkarr, 3, {
+      maxRounds: 12,
+    });
+
+    const hardens = log.filter((event) => event.t === 'harden');
+    // Five rounds to reach the ceiling at +2pp each, and then it stops announcing.
+    expect(hardens).toHaveLength(5);
+    expect(hardens.map((event) => Math.round(event.reduction * 100))).toEqual([2, 4, 6, 8, 10]);
+
+    // And it bites: the same swing lands for less late in the fight than it did at the start.
+    const hits = log.flatMap((event) =>
+      event.t === 'damage' && event.target === 'b' ? [event.amount] : [],
+    );
+    expect(hits.at(-1)!).toBeLessThan(hits[0]!);
+  });
+
+  it('leaves an ordinary monster completely unchanged', () => {
+    // The golden logs cover this too, but stated here as the rule it is: these procs exist only
+    // where they are put, and nothing acquires one by being in a dungeon.
+    const plain = buildMonsterCombatant({ id: 'm', name: 'Rat', archetypeId: 'swarm', level: 20 });
+    const { log } = fight(buildReferenceCombatant('warrior', 20, 'hero'), plain, 8);
+
+    expect(count(log, 'boss_trait')).toBe(0);
+    expect(count(log, 'swarm')).toBe(0);
+    expect(count(log, 'heal')).toBe(0);
+    expect(count(log, 'harden')).toBe(0);
+  });
+});
+
 describe('combatant construction', () => {
   it('translates every class kit into resolver procs', () => {
     expect(procsForClass('warrior')).toEqual([

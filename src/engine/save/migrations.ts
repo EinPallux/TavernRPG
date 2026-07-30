@@ -12,6 +12,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   DEFAULT_ACTIVITY,
   DEFAULT_ARENA,
+  DEFAULT_DUNGEONS,
   DEFAULT_GUILD,
   DEFAULT_SETTINGS,
   saveFileSchema,
@@ -139,6 +140,17 @@ export const MIGRATIONS: readonly Migration[] = [
       // hero starts in. Nothing about their hero, world or arena changes, and the sixty halls
       // they can now apply to were already in the world slice — they just had no door until now.
       return { ...data, guild: { ...DEFAULT_GUILD } };
+    },
+  },
+  {
+    from: 10,
+    to: 11,
+    describe: 'Phase 11: the Undertavern — dungeon progress, keys and trophies',
+    migrate: (data) => {
+      // Purely additive, and deliberately empty rather than generous: an existing player has no
+      // keys, so the doors are shut until a mission turns one up. Granting the Rusty Key here
+      // would hand every returning player the one drop the whole unlock is built around.
+      return { ...data, dungeons: { ...DEFAULT_DUNGEONS } };
     },
   },
 ];

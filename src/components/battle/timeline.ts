@@ -53,6 +53,13 @@ export function beatDuration(event: BattleEvent, choreo: BattleChoreo): number {
     case 'dodged':
     case 'missed':
       return choreo.defenceBeat;
+    case 'boss_trait':
+      return choreo.bossTraitBeat;
+    case 'swarm':
+      return choreo.swarmBeat;
+    case 'heal':
+    case 'harden':
+      return choreo.bossTickBeat;
     case 'ko':
       return choreo.knockoutBeat;
     case 'battle_end':
@@ -64,7 +71,14 @@ export function beatDuration(event: BattleEvent, choreo: BattleChoreo): number {
  * Beats that carry the ceremony rather than the exchange. They keep their authored length no
  * matter how long the fight is — a rushed knockout is a wasted knockout.
  */
-const FIXED_BEATS: ReadonlySet<BattleEvent['t']> = new Set(['battle_start', 'ko', 'battle_end']);
+const FIXED_BEATS: ReadonlySet<BattleEvent['t']> = new Set([
+  'battle_start',
+  // The boss explainer is text to *read*. Compressing it with the exchange would leave a
+  // twenty-round fight flashing the one line that could have prevented the next twenty.
+  'boss_trait',
+  'ko',
+  'battle_end',
+]);
 
 /**
  * The part of a beat that never compresses.
@@ -148,11 +162,19 @@ export interface BattleFrame {
   readonly lunging: { side: Side; progress: number; crit: boolean; followUp: boolean } | null;
   /** Momentary reactions to draw on a fighter. */
   readonly reaction: { side: Side; kind: 'blocked' | 'dodged' | 'missed' } | null;
+  /** The boss's signature, announced. Non-null only while its beat is playing. */
+  readonly trait: { side: Side; label: string; explainer: string } | null;
+  /** The swarm's telegraph, the beat before its hit lands. */
+  readonly swarm: { side: Side; label: string } | null;
+  /** Accumulated hardening per side, 0–1, so the scene can thicken what it draws. */
+  readonly hardened: Readonly<Record<Side, number>>;
   readonly floatingDamage: readonly {
     readonly id: string;
     readonly side: Side;
     readonly amount: number;
     readonly crit: boolean;
+    /** Healing floats up green and signed; damage floats up red. */
+    readonly heal?: boolean;
     /** 0–1 through its lifetime. */
     readonly progress: number;
   }[];
@@ -184,6 +206,9 @@ export function frameAt(
   let round = 0;
   let lunging: BattleFrame['lunging'] = null;
   let reaction: BattleFrame['reaction'] = null;
+  let trait: BattleFrame['trait'] = null;
+  let swarm: BattleFrame['swarm'] = null;
+  const hardened: Record<Side, number> = { a: 0, b: 0 };
   let knockedOut: Side | null = null;
   let finished = false;
   let shake = 0;
@@ -192,6 +217,7 @@ export function frameAt(
     side: Side;
     amount: number;
     crit: boolean;
+    heal?: boolean;
     progress: number;
   }[] = [];
   const impacts: { id: string; side: Side; crit: boolean }[] = [];
@@ -245,6 +271,38 @@ export function frameAt(
       case 'missed':
         if (active) reaction = { side: event.source, kind: 'missed' };
         break;
+
+      case 'boss_trait':
+        if (active) trait = { side: event.side, label: event.label, explainer: event.explainer };
+        break;
+
+      case 'swarm':
+        if (active) swarm = { side: event.source, label: event.label };
+        break;
+
+      case 'harden':
+        hardened[event.side] = event.reduction;
+        break;
+
+      case 'heal': {
+        health[event.target] = event.hpAfter;
+        // The ghost trails a bar going *down*; a bar going up simply catches it, or the boss
+        // would appear to heal and then un-heal as the trail drained back over it.
+        ghost[event.target] = Math.max(ghost[event.target], event.hpAfter);
+
+        const life = choreo.damageNumberLife;
+        if (sinceStart < life) {
+          floatingDamage.push({
+            id: `heal-${beat.index}`,
+            side: event.target,
+            amount: event.amount,
+            crit: false,
+            heal: true,
+            progress: sinceStart / life,
+          });
+        }
+        break;
+      }
 
       case 'damage': {
         health[event.target] = event.hpAfter;
@@ -308,6 +366,9 @@ export function frameAt(
     verse,
     lunging,
     reaction,
+    trait,
+    swarm,
+    hardened,
     floatingDamage,
     impacts,
     shake,

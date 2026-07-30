@@ -49,6 +49,23 @@ function eventLine(event: BattleEvent): { text: string; tone: string } {
       return { text: `  ${event.target.toUpperCase()} slips aside`, tone: 'text-parchment-500/60' };
     case 'missed':
       return { text: `  ${event.source.toUpperCase()} swings wide`, tone: 'text-parchment-500/60' };
+    case 'boss_trait':
+      return {
+        text: `${event.side.toUpperCase()}: ${event.label} — ${event.explainer}`,
+        tone: 'text-ember-600 font-bold',
+      };
+    case 'swarm':
+      return { text: `  ${event.label} arrives`, tone: 'text-ember-600' };
+    case 'heal':
+      return {
+        text: `      ${event.target.toUpperCase()} +${event.amount} → ${event.hpAfter} hp`,
+        tone: 'text-moss-600',
+      };
+    case 'harden':
+      return {
+        text: `  ${event.side.toUpperCase()} hardens (+${Math.round(event.reduction * 100)}pp cap)`,
+        tone: 'text-parchment-500/60',
+      };
     case 'damage':
       return {
         text: `      ${event.target.toUpperCase()} −${event.amount} → ${event.hpAfter} hp`,

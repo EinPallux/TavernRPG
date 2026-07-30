@@ -253,7 +253,12 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
 
   // The hall's cut, applied where the payout is computed so the result screen and the ledger
   // agree with the quote (guilds spec §2).
-  const { spoils, battle } = resolveMission(mission, hero, guildBonus(save));
+  const { spoils, battle } = resolveMission(
+    mission,
+    hero,
+    guildBonus(save),
+    save.dungeons.keys,
+  );
   const item = spoils.item
     ? generateItem({
         slot: spoils.item.slot,
@@ -291,6 +296,11 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
           ? { alesHeld: activity.alesHeld + 1, freeAlesToday: activity.freeAlesToday + 1 }
           : {}),
       },
+      // A key opens its door permanently, so it goes on the belt and never comes off. The
+      // guard is belt-and-braces: `rollKeyDrop` already refuses to hand out one twice.
+      ...(spoils.key && !save.dungeons.keys.includes(spoils.key)
+        ? { dungeons: { ...save.dungeons, keys: [...save.dungeons.keys, spoils.key] } }
+        : {}),
     },
     spoils,
     battle,

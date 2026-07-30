@@ -17,7 +17,7 @@ import { BANNER_COLOURS, GUILD_NAME_MAX, SIGIL_ICONS } from '@/data/guilds';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 10;
+export const CURRENT_SCHEMA_VERSION = 11;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -524,6 +524,40 @@ export const DEFAULT_GUILD: Guild = {
   bounty: null,
 };
 
+/* ── The Undertavern (schema v11) ─────────────────────────────────────────────────── */
+
+/**
+ * One dungeon's progress.
+ *
+ * `bestAttempts` is a fixed ten-slot array indexed by floor − 1, holding the share of the
+ * monster's health that attempt took off. Kept for *losses*: between two gear upgrades it is the
+ * only progress a player has to look at, and "you took it to 71%" is a target where a bare "you
+ * lost" is a wall.
+ */
+export const dungeonProgressSchema = z.object({
+  floorsCleared: z.number().int().min(0).max(10),
+  cooldownUntil: timestampSchema,
+  bestAttempts: z.array(z.number().min(0).max(1)).length(10),
+  /**
+   * How many times the player has gone down. Seeds each attempt, so the same descent replays
+   * identically while the *next* one is a genuinely different fight — a floor you lost to must
+   * not be the same fight forever.
+   */
+  attempts: z.number().int().min(0),
+  clearedAt: timestampSchema.nullable(),
+});
+
+export const dungeonsSchema = z.object({
+  /** Keys found on missions. A key is a one-time unlock; the door then stays open. */
+  keys: z.array(z.string()),
+  /** Cleared-dungeon crests, shown on the profile forever after. */
+  trophies: z.array(z.string()),
+  /** Keyed by `DungeonId`. Absent means never entered, which reads the same as empty. */
+  progress: z.record(z.string(), dungeonProgressSchema),
+});
+
+export const DEFAULT_DUNGEONS: Dungeons = { keys: [], trophies: [], progress: {} };
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -544,6 +578,8 @@ export const saveFileSchema = z.object({
   arena: arenaSchema,
   /** The Guild Hall (schema v10). */
   guild: guildSchema,
+  /** The Undertavern (schema v11). */
+  dungeons: dungeonsSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -561,6 +597,8 @@ export type StoredFeedEntry = z.infer<typeof feedEntrySchema>;
 export type StoredRival = z.infer<typeof rivalSchema>;
 export type Arena = z.infer<typeof arenaSchema>;
 export type Guild = z.infer<typeof guildSchema>;
+export type Dungeons = z.infer<typeof dungeonsSchema>;
+export type StoredDungeonProgress = z.infer<typeof dungeonProgressSchema>;
 export type StoredChatMessage = z.infer<typeof chatMessageSchema>;
 export type StoredApplication = z.infer<typeof applicationSchema>;
 export type StoredApplicant = z.infer<typeof applicantSchema>;
@@ -592,6 +630,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     world: null,
     arena: { ...DEFAULT_ARENA },
     guild: { ...DEFAULT_GUILD },
+    dungeons: { ...DEFAULT_DUNGEONS },
   };
 }
 

@@ -10,7 +10,18 @@
 import { describe, expect, it } from 'vitest';
 import { createRng } from '@/engine/rng';
 import { RARITIES } from './types';
-import { MISSION_DROPS, missionDropTable, rarityOdds, rollMissionDrops, rollRarity } from './drops';
+import {
+  DUNGEON_CLEAR_DROPS,
+  DUNGEON_EPIC_CHANCE,
+  DUNGEON_FLOOR_DROPS,
+  MISSION_DROPS,
+  dungeonDropTable,
+  missionDropTable,
+  rarityOdds,
+  rollDungeonDrops,
+  rollMissionDrops,
+  rollRarity,
+} from './drops';
 
 const BATCH = 40_000;
 /** Sampling slack for a batch this size — tight enough to catch a real drift. */
@@ -142,5 +153,79 @@ describe('rarityOdds', () => {
     expect(rarityOdds(long, 'uncommon')).toBeCloseTo(10.64, 1);
     expect(rarityOdds(long, 'rare')).toBeCloseTo(4.94, 1);
     expect(rarityOdds(long, 'epic')).toBeCloseTo(1.52, 1);
+  });
+});
+
+describe('dungeon drop rates match the published table', () => {
+  const SAMPLES = 30_000;
+
+  it('pays a floor twice: the normal roll and a separate Epic on top', () => {
+    /*
+     * Two rolls, not one, and the test says so in both directions. Balancing §7 publishes a 50%
+     * item chance *plus* a 25% Epic roll for floors 1–9, and a single generous roll cannot
+     * produce that shape however its weights are written — a floor the player geared up three
+     * days to beat has to be able to pay twice.
+     */
+    const rng = createRng(4242, 'dungeon-drops');
+    let normals = 0;
+    let epics = 0;
+    let both = 0;
+
+    for (let i = 0; i < SAMPLES; i += 1) {
+      const drops = rollDungeonDrops(3, rng.fork(`f${i}`));
+      if (drops.length === 2) both += 1;
+      if (drops.length > 0) normals += 1;
+      epics += drops.filter((drop) => drop.rarity === 'epic').length;
+    }
+
+    // The normal roll alone accounts for half of all floors…
+    expect(normals / SAMPLES).toBeGreaterThan(DUNGEON_FLOOR_DROPS.itemChance);
+    // …and the bonus Epic lands on a quarter of them, independently.
+    expect(epics / SAMPLES).toBeGreaterThan(DUNGEON_EPIC_CHANCE);
+    expect(both / SAMPLES).toBeCloseTo(DUNGEON_FLOOR_DROPS.itemChance * DUNGEON_EPIC_CHANCE, 1);
+  });
+
+  it('weights a floor toward the good end of the table, unlike a mission', () => {
+    /*
+     * Compared as *shares of the table*, not as absolute odds. A dungeon floor drops twice as
+     * often as a five-minute mission, so its absolute chance of a Common is higher even though
+     * its weights are far kinder — measuring the wrong one of those makes the better shelf look
+     * like the worse one.
+     */
+    const share = (table: typeof DUNGEON_FLOOR_DROPS, rarity: 'common' | 'epic') => {
+      const total = RARITIES.reduce((sum, id) => sum + table.rarityWeights[id], 0);
+      return table.rarityWeights[rarity] / total;
+    };
+
+    // 40/32/20/8 against a mission's 62/26/9.5/2.5 (§7).
+    expect(share(DUNGEON_FLOOR_DROPS, 'epic')).toBeGreaterThan(share(missionDropTable(20), 'epic'));
+    expect(share(DUNGEON_FLOOR_DROPS, 'common')).toBeLessThan(share(missionDropTable(5), 'common'));
+    // And it drops at all twice as often, on top of the better weights.
+    expect(DUNGEON_FLOOR_DROPS.itemChance).toBeGreaterThan(missionDropTable(20).itemChance);
+  });
+
+  it('always hands over exactly one Epic on the tenth floor', () => {
+    const rng = createRng(99, 'clear');
+    for (let i = 0; i < 500; i += 1) {
+      const drops = rollDungeonDrops(10, rng.fork(`c${i}`));
+      // One certain Epic rather than one certain plus one likely: the guarantee comes out of
+      // the table, so the bonus roll is switched off for the clear.
+      expect(drops).toHaveLength(1);
+      expect(drops[0]!.rarity).toBe('epic');
+    }
+    expect(dungeonDropTable(10)).toBe(DUNGEON_CLEAR_DROPS);
+    expect(DUNGEON_CLEAR_DROPS.itemChance).toBe(1);
+  });
+
+  it('never turns a dungeon into a Golden Dice faucet', () => {
+    // Floor 10 pays them in a lump for finishing; the floors themselves pay none (§7).
+    expect(DUNGEON_FLOOR_DROPS.diceChance).toBe(0);
+    expect(DUNGEON_CLEAR_DROPS.diceChance).toBe(0);
+  });
+
+  it('is fixed by its stream, so watching the fight twice cannot reroll the loot', () => {
+    const once = rollDungeonDrops(7, createRng(7, 'delve'));
+    const again = rollDungeonDrops(7, createRng(7, 'delve'));
+    expect(again).toEqual(once);
   });
 });

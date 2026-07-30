@@ -34,6 +34,8 @@ export interface BattleSceneProps {
   readonly onFinished?: () => void;
   /** Result screen, revealed once the last beat has played. */
   readonly result?: ReactNode;
+  /** Override the eight-second pacing target. The Undertavern's long fights need it. */
+  readonly targetDuration?: number;
   readonly className?: string;
 }
 
@@ -61,6 +63,62 @@ function VersusFlash({ a, b }: { a: CombatantCard; b: CombatantCard }) {
   );
 }
 
+/**
+ * A boss naming its signature, before the first blow (dungeons spec §2).
+ *
+ * The one piece of *text* the battle scene asks the player to read, which is why it takes the
+ * whole stage and holds. Floors 5 and 10 are walls by design; a wall that kills you without
+ * saying why is a bug report, and a wall that tells you it heals when you miss is a puzzle.
+ */
+function BossTrait({
+  label,
+  explainer,
+  reduced,
+}: {
+  label: string;
+  explainer: string;
+  reduced: boolean;
+}) {
+  return (
+    <motion.div
+      initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.3, y: -14 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={dramatic}
+      className="pointer-events-none absolute inset-x-0 top-1/3 z-10 grid place-items-center px-8"
+      data-testid="boss-trait"
+    >
+      <div className="chamfer-md border-ember-600/60 bg-wood-900/92 max-w-lg border-2 px-6 py-4 text-center shadow-[0_0_44px_rgb(217_108_47/0.35)]">
+        <p className="font-display text-ember-600 text-xl font-extrabold tracking-[0.14em] uppercase">
+          {label}
+        </p>
+        <p className="text-parchment-300/85 mt-1.5 text-sm leading-relaxed">{explainer}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+/** The swarm's telegraph — a beat of warning before an unavoidable hit. */
+function SwarmCry({ label, side }: { label: string; side: Side }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.7 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.4 }}
+      transition={snappy}
+      className="pointer-events-none absolute inset-x-0 top-[38%] grid place-items-center"
+      data-testid="swarm-cry"
+    >
+      <span
+        className="chamfer-sm border-ember-600/50 bg-wood-900/85 text-ember-600 font-display border px-3 py-1 text-sm font-bold tracking-[0.2em] uppercase"
+        style={{ transform: `translateX(${side === 'a' ? '-18%' : '18%'})` }}
+      >
+        {label}
+      </span>
+    </motion.div>
+  );
+}
+
 export function BattleScene({
   log,
   backdrop = '/assets/backgrounds/mission_background_3.png',
@@ -69,10 +127,17 @@ export function BattleScene({
   startFinished = false,
   onFinished,
   result,
+  targetDuration,
   className = '',
 }: BattleSceneProps) {
   const reducedMotion = useReducedMotion();
-  const playback = useBattlePlayback({ log, initialSpeed, startFinished, onFinished });
+  const playback = useBattlePlayback({
+    log,
+    initialSpeed,
+    startFinished,
+    onFinished,
+    ...(targetDuration === undefined ? {} : { targetDuration }),
+  });
   const { frame, isFinished, progress } = playback;
 
   // `battle_start` carries both nameplates; without it there is nothing to draw.
@@ -157,6 +222,21 @@ export function BattleScene({
       </motion.div>
 
       <AnimatePresence>{showVersus && <VersusFlash a={cards.a} b={cards.b} />}</AnimatePresence>
+
+      {/* The boss naming its trick, and the swarm announcing itself (dungeons spec §2). */}
+      <AnimatePresence>
+        {frame.trait && (
+          <BossTrait
+            key="trait"
+            label={frame.trait.label}
+            explainer={frame.trait.explainer}
+            reduced={reducedMotion === true}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {frame.swarm && <SwarmCry key="swarm" label={frame.swarm.label} side={frame.swarm.side} />}
+      </AnimatePresence>
 
       {/* Round counter */}
       <AnimatePresence>

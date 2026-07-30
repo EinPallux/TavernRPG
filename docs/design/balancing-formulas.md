@@ -110,6 +110,32 @@ counter triangle exists: Bard > Mage > Hunter > Bard. CI asserts all of it
   Barrowdeep 28+3·f (31–58), Emberdeep 55+4·f (59–95). Stat budgets ×1.35 vs same-level mission
   monsters, boss floors (5, 10) ×1.6 with a signature proc. `[TUNE]`
 
+**As built (Phase 11).** Two corrections, both measured rather than argued.
+
+- **Archetype is worth up to twelve levels.** Against an on-curve reference hero at ×1.35, the
+  level needed to clear a level-40 monster runs swarm 27, caster 32, skirmisher 34, bruiser 38,
+  tank 39. That spread is larger than the level curve gains across six floors, so an archetype
+  order picked for flavour dominates the ramp: the first draft had Barrowdeep floor 7 clearing at
+  level 33 when floor 6 needed 46. All three dungeons now run **swarm → caster → skirmisher →
+  bruiser → tank**, pushing in the same direction as the level curve. The resulting clear-level
+  ramps are Rat Cellars 8→37, Barrowdeep 20→66, Emberdeep 50→110, all non-decreasing, all
+  asserted in `engine/dungeons/dungeons.test.ts`.
+- **Mid-bosses run ×1.5, not ×1.6.** At the flat ×1.6 the floor-5 bump was worth more than the
+  four levels Emberdeep's curve gains in a step, so its floor 5 was harder than its floor 6. The
+  smaller step is the one the design already implies — **floor 5 teaches what floor 10 tests** —
+  and each mid-boss carries a weaker version of its own finale's signature.
+
+A signature is worth 2–5 levels of clear difficulty on top of the budget (Vulkarr's the most, at
+5). That is the right share: the wall is the stat budget, and the signature is what makes the
+wall *memorable*.
+
+**Floor rewards.** `FLOOR_VIGOR_EQUIVALENT = 90` per floor (spec §2), ×1.5 on bosses. **Gold is
+priced at the floor's level and XP at the lower of the floor's and the hero's**, which is not
+symmetry for its own sake. Gold is absolute, so pricing it at the floor makes sweeping an old
+dungeon at level 90 worth pocket change and needs no rule forbidding it. XP is a share of *a*
+level's requirement, and pricing that at the floor meant a level-10 delver banked two level-14
+levels per clear — the four floors behind the Rusty Key would have taken them to 20 in one visit.
+
 ## 6. Vigor & mission durations
 
 - Vigor 100/day, reset at local midnight. Base durations 5/10/15/20 min; Vigor cost = base minutes.

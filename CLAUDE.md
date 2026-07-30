@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–10 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–11 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -66,7 +66,18 @@ feedback, edge cases and tests. Deployed on Vercel.
   retunes of the *Phase 8* generator: it had never respected `GUILD_CAPACITY` (halls advertised
   "78/25 members"), and its seeded treasury predated `stepCost`, leaving all sixty on +1%.
 
-864 unit tests + 122 e2e green. Next work: `ROADMAP.md` **Phase 11 (Dungeons)**.
+- **Phase 11:** dungeons — `data/dungeons.ts` (three dungeons, thirty fixed-level floors, six
+  boss signatures), three new `CombatProc` kinds in the resolver with their own events,
+  `engine/dungeons/` (`floors`, `delve`, `keys`), `state/dungeonActions.ts`, the Undertavern with
+  its torch-lit descent and floor-10 ceremony, and save schema v11.
+
+913 unit tests + 130 e2e green. Next work: `ROADMAP.md` **Phase 12 (Gear Sets & The Emberforge)**.
+
+**A dungeon floor's difficulty is level *and* archetype, and archetype is worth more than you
+think.** Twelve levels of spread at dungeon budget — swarm 27, caster 32, skirmisher 34, bruiser
+38, tank 39 against a level-40 monster — which is more than the level curve gains across six
+floors. Pick a new floor's archetype on flavour alone and the dungeon will get easier somewhere
+in the middle. `engine/dungeons/dungeons.test.ts` measures the whole ramp and fails on a dip.
 
 **A day-keyed roll is reproducible, which is the opposite of idempotent.** Four high-water marks
 now exist for this one bug — `arena.lastRaidDay`, `guild.lastApplicantDay`, `lastChatDay`,
@@ -112,12 +123,13 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 (xp, stats, gates, rewards), `items/` (types, generate, drops, starterKit), `hero/`
 (actions, derived), `combat/`, `missions/` (board, lifecycle), `patrol/`, `shops/`, `stables/`,
 `world/` (identity, generate, materialize, ladder, simulate, rivals, crier, halls), `arena/`
-(arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty), `economy/`, `reset/` ·
+(arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty),
+`dungeons/` (floors, delve, keys), `economy/`, `reset/` ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
-patrolLog, mounts, shopBarks, arenaBarks, names, guilds, guildChat, bounties, legends,
+patrolLog, mounts, shopBarks, arenaBarks, names, guilds, guildChat, bounties, dungeons, legends,
 crierTemplates ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild}/` ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,
