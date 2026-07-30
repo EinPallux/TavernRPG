@@ -18,7 +18,9 @@ import { missionPhase, type MissionSpoils } from '@/engine/missions/types';
 import { ALE_DICE_COST, ALE_VIGOR, type MissionDuration } from '@/engine/progression/rewards';
 import { canDrinkAle, processResets, vigorCeiling } from '@/engine/reset/resetEngine';
 import type { WeeklyPayout } from '@/engine/arena/payout';
+import type { BountyChest } from '@/engine/guilds/bounty';
 import { refreshArenaDay } from './arenaActions';
+import { creditBounty, guildBonus, refreshGuildDay } from './guildActions';
 import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
@@ -62,6 +64,8 @@ export function refreshDay(
   readonly vigorForfeited: number;
   /** Weeks that closed while the player was away (arena spec §3). Usually empty. */
   readonly payouts: readonly WeeklyPayout[];
+  /** The guild bounty chest, if a Sunday passed and the hall earned one. */
+  readonly chest: BountyChest | null;
 } {
   const outcome = processResets(save.activity, today, daysBetween);
   let next = { ...save, activity: outcome.state as Activity };
@@ -70,6 +74,9 @@ export function refreshDay(
   // list rather than asking the clock: one owner decides it is tomorrow (daily-loop spec §4).
   const arenaDay = refreshArenaDay(next, outcome.daysProcessed, outcome.didReset);
   next = arenaDay.save;
+
+  const guildDay = refreshGuildDay(next, outcome.daysProcessed, today, outcome.didReset);
+  next = guildDay.save;
 
   // A board is drawn lazily: on the first visit of the day, after a reroll, or after a reset
   // nulled it. Drawing it here rather than at midnight means a player who never opens the
@@ -93,6 +100,7 @@ export function refreshDay(
     didReset: outcome.didReset,
     vigorForfeited: outcome.vigorForfeited,
     payouts: arenaDay.payouts,
+    chest: guildDay.chest,
   };
 }
 
@@ -243,7 +251,9 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
   const pending = save.activity.pendingMission;
   if (!pending || pending.offer.id !== mission.offer.id) return null;
 
-  const { spoils, battle } = resolveMission(mission, hero);
+  // The hall's cut, applied where the payout is computed so the result screen and the ledger
+  // agree with the quote (guilds spec §2).
+  const { spoils, battle } = resolveMission(mission, hero, guildBonus(save));
   const item = spoils.item
     ? generateItem({
         slot: spoils.item.slot,
@@ -266,10 +276,12 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
 
   const activity = save.activity;
   const gainedFreeAle = spoils.ale && activity.freeAlesToday < 1;
+  // A finished contract counts toward the week's bounty, if that is what it is counting.
+  const credited = creditBounty(save, 'missions', 1);
 
   return {
     save: {
-      ...save,
+      ...credited,
       hero: next,
       activity: {
         ...activity,

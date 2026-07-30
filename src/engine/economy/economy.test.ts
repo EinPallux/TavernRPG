@@ -269,3 +269,63 @@ describe('the ledger itself', () => {
     expect(day.spent.training).toBe(expected);
   });
 });
+
+describe('a hall changes the numbers — Phase 10', () => {
+  const unguilded = simulateEconomy({ days: 30 });
+  // A player two months into an established hall: both tracks well up, neither maxed.
+  const guilded = simulateEconomy({
+    days: 30,
+    style: { ...ACTIVE_PLAYER, treasuryStep: 60, drillmasterStep: 40 },
+  });
+
+  it('pays a guilded player more for the same day’s work', () => {
+    expect(totalEarned(guilded.ledger)).toBeGreaterThan(totalEarned(unguilded.ledger));
+  });
+
+  it('compounds the two tracks without running away', () => {
+    // Treasury 60 is +15% on the coin. Thirty days of it earns *more* than 15% more, because
+    // Drillmaster's +10% XP puts the player a couple of levels ahead and the gold curve pays by
+    // level — the two tracks multiply through the calendar rather than simply adding.
+    //
+    // So the band is deliberately wider than the published cap, and the thing it is actually
+    // guarding is that the compounding stays a nudge: an off-by-one in the step maths (0.25%
+    // read as 2.5%) would land far outside it.
+    const ratio = totalEarned(guilded.ledger) / totalEarned(unguilded.ledger);
+    expect(ratio).toBeGreaterThan(1.15);
+    expect(ratio).toBeLessThan(1.45);
+  });
+
+  it('applies exactly the published multiplier on any single day, level held', () => {
+    // The direct claim, isolated from the compounding above.
+    const oneDay = (steps: { treasuryStep: number; drillmasterStep: number }) =>
+      simulateEconomy({ days: 1, startLevel: 40, style: { ...ACTIVE_PLAYER, ...steps } })
+        .ledger[0]!;
+
+    const plain = oneDay({ treasuryStep: 0, drillmasterStep: 0 });
+    const buffed = oneDay({ treasuryStep: 60, drillmasterStep: 40 });
+
+    expect(buffed.earned.patrol / plain.earned.patrol).toBeCloseTo(1.15, 2);
+    expect(buffed.earned.missions / plain.earned.missions).toBeCloseTo(1.15, 2);
+  });
+
+  it('advances a guilded player faster without breaking the pacing band', () => {
+    // Drillmaster 40 is +10% XP. Faster, but nowhere near a different game — if joining a guild
+    // halved the time to level 50, the whole §0 curve would be a lie for anybody in one.
+    expect(guilded.finalLevel).toBeGreaterThanOrEqual(unguilded.finalLevel);
+    expect(guilded.finalLevel).toBeLessThan(unguilded.finalLevel + 6);
+  });
+
+  it('leaves the unguilded player exactly where they were', () => {
+    // The regression that matters most: every band above this one is tuned against a player in
+    // no guild, and adding the lever must not have moved them.
+    expect(simulateEconomy({ days: 30, style: ACTIVE_PLAYER })).toEqual(unguilded);
+  });
+
+  it('still keeps them slightly broke rather than rich', () => {
+    // The economy's whole stance (§2). A hall should make a player *faster*, not solvent.
+    const late = guilded.ledger.slice(-7);
+    for (const day of late) {
+      expect(day.purse, `day ${day.day}`).toBeLessThan(day.earned.missions * 6);
+    }
+  });
+});

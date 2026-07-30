@@ -25,10 +25,14 @@ import {
 } from '@/engine/world/crier';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { applyRaids, invalidateDrawOnDrift, seatPlayer } from './arenaActions';
+import { tickGuild, type GuildTick } from './guildActions';
 import type { RaidResult } from '@/engine/arena/raids';
 import type { SaveFile, StoredWorld } from '@/engine/save/schema';
 
 const DAY = 86_400_000;
+
+/** Nothing happened in the hall — the shape returned when there is no catch-up to do. */
+const QUIET_HALL = { newApplicants: 0, newMessages: 0 } as const;
 
 /** An absence shorter than this is not worth a "while you were away" card. */
 export const SUMMARY_THRESHOLD_MS = 6 * 3_600_000;
@@ -109,6 +113,8 @@ export interface CatchUp {
   readonly events: readonly SimEvent[];
   /** The attacks the player slept through, if any (arena spec §3). */
   readonly raids: RaidResult | null;
+  /** What happened in the hall: applicants at the door, messages on the board. */
+  readonly guild: Pick<GuildTick, 'newApplicants' | 'newMessages'>;
   /** Wall-clock cost, so the dev harness can show the budget being met. */
   readonly elapsedMs: number;
 }
@@ -122,14 +128,14 @@ export interface CatchUp {
 export function catchUpWorld(save: SaveFile, now: number): CatchUp {
   const stored = save.world;
   if (!stored || !save.hero) {
-    return { save, summary: null, events: [], raids: null, elapsedMs: 0 };
+    return { save, summary: null, events: [], raids: null, guild: QUIET_HALL, elapsedMs: 0 };
   }
 
   const startedAt = performance.now();
   const engine = toEngine(stored);
   const absence = now - engine.lastSimAt;
   if (absence <= 0) {
-    return { save, summary: null, events: [], raids: null, elapsedMs: 0 };
+    return { save, summary: null, events: [], raids: null, guild: QUIET_HALL, elapsedMs: 0 };
   }
 
   const rank = playerRank(stored);
@@ -175,11 +181,13 @@ export function catchUpWorld(save: SaveFile, now: number): CatchUp {
     world: toStored(result.world, rivalUpdate.rivals, feed),
   };
   const raided = applyRaids(simulated, engine.lastSimAt, now);
+  // The hall gets on with its week: applicants knock, members talk, the bounty advances.
+  const hall = tickGuild(raided.save, engine.lastSimAt, now, result.events);
 
   // Rank drift: standing still on a moving ladder costs places, and the card should say so. Read
   // after the raids, because being knocked down three rungs overnight is exactly the drift the
   // player wants accounted for.
-  const rankAfter = raided.save.world?.ladder.indexOf(PLAYER_LADDER_ID) ?? -1;
+  const rankAfter = hall.save.world?.ladder.indexOf(PLAYER_LADDER_ID) ?? -1;
   const drift = rank > 0 && rankAfter !== -1 ? rank - (rankAfter + 1) : 0;
 
   const summary =
@@ -191,10 +199,11 @@ export function catchUpWorld(save: SaveFile, now: number): CatchUp {
     // A rank that moved leaves the arena board stale — it was drawn from a band around where the
     // player used to be. Cleared here rather than in the screen so it holds however the player
     // arrives.
-    save: invalidateDrawOnDrift(raided.save, rank),
+    save: invalidateDrawOnDrift(hall.save, rank),
     summary,
     events: result.events,
     raids: raided.raids,
+    guild: { newApplicants: hall.newApplicants, newMessages: hall.newMessages },
     elapsedMs: performance.now() - startedAt,
   };
 }

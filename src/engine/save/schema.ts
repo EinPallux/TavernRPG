@@ -12,10 +12,12 @@ import { z } from 'zod';
 import { ICON_IDS } from '@/data/icons';
 import { MOUNT_IDS } from '@/data/mounts';
 import { CRIER_CATEGORIES, RIVAL_ARCHETYPES } from '@/data/crierTemplates';
+import { CHAT_CATEGORIES } from '@/data/guildChat';
+import { BANNER_COLOURS, GUILD_NAME_MAX, SIGIL_ICONS } from '@/data/guilds';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 9;
+export const CURRENT_SCHEMA_VERSION = 10;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -411,6 +413,117 @@ export const DEFAULT_ARENA: Arena = {
   legends: [],
 };
 
+/* ── The Guild Hall (schema v10) ───────────────────────────────────────────────── */
+
+/** A message in the hall. Bot lines, the player's own, and the hall's system notices. */
+export const chatMessageSchema = z.object({
+  id: z.string().min(1),
+  at: timestampSchema,
+  author: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('bot'), botId: z.number().int().min(0), name: z.string().min(1) }),
+    z.object({ kind: z.literal('player'), name: z.string().min(1) }),
+    z.object({ kind: z.literal('system') }),
+  ]),
+  text: z.string().min(1),
+  category: z.enum(CHAT_CATEGORIES),
+  /**
+   * The event behind the line. Null only for colour, hellos and replies — the audit test asserts
+   * exactly that, so a null anywhere else is a hall that made something up.
+   */
+  sourceEvent: simEventSchema.nullable(),
+});
+
+/** A bot waiting on the Guildmaster's answer. */
+export const applicantSchema = z.object({
+  botId: z.number().int().min(0),
+  at: timestampSchema,
+});
+
+/** The player's own letter, out with one of the sixty. */
+export const applicationSchema = z.object({
+  guildId: z.number().int().min(0),
+  appliedAt: timestampSchema,
+  decidesAt: timestampSchema,
+});
+
+/** The hall the player founded, if they did. */
+export const foundedGuildSchema = z.object({
+  id: z.number().int().min(0),
+  name: z.string().min(1).max(GUILD_NAME_MAX),
+  motto: z.string().max(80),
+  field: z.enum(BANNER_COLOURS),
+  charge: z.enum(BANNER_COLOURS),
+  sigil: z.enum(SIGIL_ICONS),
+  foundedAt: timestampSchema,
+});
+
+/** The week's co-op target and what has been done toward it. */
+export const bountyStateSchema = z.object({
+  weekKey: z.string().min(1),
+  bountyId: z.string().min(1),
+  target: z.number().min(0),
+  playerUnits: z.number().min(0),
+  botUnits: z.number().min(0),
+  settled: z.boolean(),
+});
+
+export const guildSchema = z.object({
+  /**
+   * The hall the player belongs to: 0–59 for one of the sixty, `PLAYER_GUILD_ID` for their own,
+   * null for nobody. One field rather than two booleans, because "in a bot guild" and "in my own
+   * guild" are the same membership as far as buffs, chat and the bounty are concerned.
+   */
+  guildId: z.number().int().min(0).nullable(),
+  joinedAt: timestampSchema,
+  founded: foundedGuildSchema.nullable(),
+  /** Out with one of the sixty, awaiting an answer. */
+  application: applicationSchema.nullable(),
+  /** Last refusal per guild id, for the 24h reapply cooldown. */
+  refusedAt: z.record(z.string(), timestampSchema),
+  /** Bot members of the *founded* hall. The sixty keep their rosters in the world slice. */
+  roster: z.array(z.number().int().min(0)),
+  officers: z.array(z.number().int().min(0)),
+  applicants: z.array(applicantSchema),
+  /** Day index high-water marks, so a reload never re-rolls a day (the arena's lesson). */
+  lastApplicantDay: z.number().int().min(0),
+  lastChatDay: z.number().int().min(0),
+  lastBountyDay: z.number().int().min(0),
+  /**
+   * The two tracks, for a founded hall. A player in one of the sixty reads the steps off that
+   * guild's own treasury instead — one number, in the world slice, that the simulation already
+   * grows.
+   */
+  treasuryStep: z.number().int().min(0),
+  treasuryPool: z.number().min(0),
+  drillmasterStep: z.number().int().min(0),
+  drillmasterPool: z.number().min(0),
+  /** Gold donated this week, by member. Keyed by bot id, or `player`. */
+  contributions: z.record(z.string(), z.number().min(0)),
+  chat: z.array(chatMessageSchema),
+  bounty: bountyStateSchema.nullable(),
+});
+
+export const DEFAULT_GUILD: Guild = {
+  guildId: null,
+  joinedAt: 0,
+  founded: null,
+  application: null,
+  refusedAt: {},
+  roster: [],
+  officers: [],
+  applicants: [],
+  lastApplicantDay: 0,
+  lastChatDay: 0,
+  lastBountyDay: 0,
+  treasuryStep: 0,
+  treasuryPool: 0,
+  drillmasterStep: 0,
+  drillmasterPool: 0,
+  contributions: {},
+  chat: [],
+  bounty: null,
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -429,6 +542,8 @@ export const saveFileSchema = z.object({
   world: worldSchema.nullable(),
   /** The Proving Grounds (schema v9). */
   arena: arenaSchema,
+  /** The Guild Hall (schema v10). */
+  guild: guildSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -445,6 +560,12 @@ export type StoredBotRecord = z.infer<typeof botRecordSchema>;
 export type StoredFeedEntry = z.infer<typeof feedEntrySchema>;
 export type StoredRival = z.infer<typeof rivalSchema>;
 export type Arena = z.infer<typeof arenaSchema>;
+export type Guild = z.infer<typeof guildSchema>;
+export type StoredChatMessage = z.infer<typeof chatMessageSchema>;
+export type StoredApplication = z.infer<typeof applicationSchema>;
+export type StoredApplicant = z.infer<typeof applicantSchema>;
+export type StoredFoundedGuild = z.infer<typeof foundedGuildSchema>;
+export type StoredBounty = z.infer<typeof bountyStateSchema>;
 export type Grudge = z.infer<typeof grudgeSchema>;
 export type LegendsWeek = z.infer<typeof legendsWeekSchema>;
 export type SaveFile = z.infer<typeof saveFileSchema>;
@@ -470,6 +591,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     // around, and no rank for the level-of-detail bands to centre on.
     world: null,
     arena: { ...DEFAULT_ARENA },
+    guild: { ...DEFAULT_GUILD },
   };
 }
 

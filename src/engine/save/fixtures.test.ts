@@ -21,6 +21,7 @@ import v5Phase5 from './fixtures/v5-phase5.json';
 import v6Phase6 from './fixtures/v6-phase6.json';
 import v7Phase7 from './fixtures/v7-phase7.json';
 import v8Phase8 from './fixtures/v8-phase8.json';
+import v9Phase9 from './fixtures/v9-phase9.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { migrateSave } from './migrations';
@@ -28,6 +29,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   DEFAULT_ACTIVITY,
   DEFAULT_ARENA,
+  DEFAULT_GUILD,
   DEFAULT_SETTINGS,
   type SaveFile,
 } from './schema';
@@ -314,6 +316,41 @@ describe('save fixtures — every shipped version still loads', () => {
     // rivals either. Phase 9 is what changes that, on load rather than in the migration.
     expect(result.save.world?.ladder).not.toContain(PLAYER_LADDER_ID);
     expect(result.save.world?.rivals).toEqual([]);
+  });
+
+  it('opens a Phase 9 (v9) save with its arena mid-session', () => {
+    const result = migrateSave(structuredClone(v9Phase9));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(9);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // Everything the v9 player had in flight: a rung, a cooldown, a grudge, a week archived.
+    expect(result.save.world?.ladder.indexOf(PLAYER_LADDER_ID)).toBe(686);
+    expect(result.save.hero?.honor).toBe(5_142);
+    expect(result.save.arena.draw).toHaveLength(3);
+    expect(result.save.arena.rewardedWinsToday).toBe(6);
+    expect(result.save.arena.revengeQueue).toHaveLength(1);
+    expect(result.save.arena.legends[0]?.weekKey).toBe('2026-09-06');
+    expect(result.save.arena.bestRank).toBe(669);
+  });
+
+  it('gives a Phase 9 player a Guild Hall they have not walked into yet', () => {
+    const result = migrateSave(structuredClone(v9Phase9));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // Purely additive: an existing hero is simply unguilded, the state a new one starts in. The
+    // sixty halls were already in their world slice — they just had no door until now.
+    expect(result.save.guild).toEqual(DEFAULT_GUILD);
+    expect(result.save.guild.guildId).toBeNull();
+    expect(result.save.world?.guilds.length).toBe(60);
+    // And nothing else moved.
+    expect(result.save.hero?.name).toBe('Bryn Halloway');
+    expect(result.save.activity.mount?.mountId).toBe('griffin');
+    expect(result.save.activity.missionsCompleted).toBe(214);
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {
