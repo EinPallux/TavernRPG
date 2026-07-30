@@ -55,9 +55,23 @@ async function firstOffer(page: Page): Promise<string> {
   return testid!.replace('mission-card-', '');
 }
 
+/**
+ * Wait for the autosave to reach disk.
+ *
+ * Tests that reload are reading from storage, and the suite mutates and navigates in the same
+ * instant where a player would take seconds — so anything asserted after a reload has to be
+ * flushed first.
+ */
+async function flushSave(page: Page) {
+  await page.evaluate(async () => {
+    const store = (window as unknown as { __tavernStore?: TavernStoreHandle }).__tavernStore;
+    await store?.getState().flush();
+  });
+}
+
 /** Bring the running mission home, the way a closed tab would. */
 async function fastForward(page: Page) {
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     const store = (window as unknown as { __tavernStore?: TavernStoreHandle }).__tavernStore;
     if (!store) throw new Error('store handle missing');
     const { save } = store.getState();
@@ -68,11 +82,14 @@ async function fastForward(page: Page) {
         activity: { ...save.activity, mission: { ...save.activity.mission, endsAt: 1 } },
       },
     });
+    // Flushed, not just set: the tests that reload after this are reading from storage, so a
+    // state-only change is invisible to exactly the reload they are exercising.
+    await store.getState().flush();
   });
 }
 
 interface TavernStoreHandle {
-  getState: () => { save: SaveShape | null };
+  getState: () => { save: SaveShape | null; flush: () => Promise<void> };
   setState: (partial: { save: SaveShape }) => void;
 }
 interface SaveShape {
@@ -207,6 +224,7 @@ test.describe('the core loop', () => {
     await page.getByTestId(`accept-${id}`).click();
     await expect(page.getByTestId('mission-progress')).toBeVisible();
 
+    await flushSave(page);
     await page.reload();
 
     // Still on the road, still 80 Vigor — the timer is two stamps in the save.
@@ -221,6 +239,9 @@ test.describe('the core loop', () => {
     await fastForward(page);
     await expect(page.getByTestId('mission-returned')).toBeVisible();
 
+    // `landMission` runs when the card appears, *after* `fastForward` flushed — so the state
+    // this test reloads into is written by a later save than the one already waited on.
+    await flushSave(page);
     await page.reload();
 
     // Missions never auto-resolve: the fight is still waiting to be seen.

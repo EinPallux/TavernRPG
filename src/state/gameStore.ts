@@ -61,6 +61,8 @@ import {
   type ClaimResult,
   type MissionRefusal,
 } from './missionActions';
+import { catchUpWorld, ensureWorld } from './worldActions';
+import type { AbsenceSummary } from '@/engine/world/crier';
 import {
   clockSnapshot,
   currentDayKey,
@@ -161,34 +163,45 @@ export interface GameStoreState {
   rerollShopStock: (shopId: ShopId) => ShopRefusal | null;
   /** Take a stall at the Stables. Returns the quote so the UI can report what it displaced. */
   rentMount: (mountId: MountId) => RentalResult | StableRefusal;
+
+  // ── The simulated world (Phase 8) ────────────────────────────────────────────────
+  /**
+   * What the player missed, set once on load. Null for a short absence — a card saying
+   * "while you were away (4 minutes)" is noise.
+   */
+  absenceSummary: AbsenceSummary | null;
+  dismissAbsenceSummary: () => void;
+  /** Advance the simulation to now. The online tick; also safe to call idly. */
+  tickWorld: () => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
   /**
-   * Write-ordering guard. Writes are fired off without awaiting, so two can overlap — the
-   * classic hazard is an older write finishing last and writing its stale snapshot back into
-   * the store, resurrecting state the player already moved past. Only the newest write is
-   * allowed to touch state when it lands, and it merges *metadata* onto whatever the current
-   * save is rather than replacing it with its own snapshot.
+   * The autosave queue — **serialised and coalescing**.
+   *
+   * Writes used to be fired off in parallel with a sequence guard that stopped a stale one
+   * writing its snapshot back into the store. That guarded the store but not the *disk*: an
+   * older `put` could still land last, and once Phase 8's world took the save to ~145 KB it
+   * regularly did. Nine `grantXp` calls in a loop produced nine overlapping writes and the
+   * level that survived a reload was whichever one happened to finish last — measured at 5
+   * instead of 10.
+   *
+   * So only one write runs at a time, and callers arriving mid-write set a dirty flag instead
+   * of starting another. The drain loop re-reads `get().save` each pass, which means a burst of
+   * twenty mutations costs two writes and the second one is always the newest state.
    */
-  let writeSequence = 0;
+  let writing = false;
+  let dirty = false;
+  let drain: Promise<void> = Promise.resolve();
 
-  const persistNow = async (): Promise<void> => {
+  const writeOnce = async (): Promise<void> => {
     const { save } = get();
     if (!save) return;
 
-    const stamped: SaveFile = {
-      ...save,
-      savedAt: gameNow(),
-      clock: clockSnapshot(),
-    };
-
-    const sequence = (writeSequence += 1);
-    set({ isSaving: true });
+    const stamped: SaveFile = { ...save, savedAt: gameNow(), clock: clockSnapshot() };
 
     try {
       await writeSave(stamped);
-      if (sequence !== writeSequence) return; // superseded; the newer write owns the state
 
       const current = get().save;
       set({
@@ -196,17 +209,37 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           ? { save: { ...current, savedAt: stamped.savedAt, clock: stamped.clock } }
           : {}),
         lastSavedAt: stamped.savedAt,
-        isSaving: false,
         saveError: null,
       });
     } catch (cause) {
-      if (sequence !== writeSequence) return;
-      set({
-        isSaving: false,
-        saveError: 'Your progress could not be saved to this browser’s storage.',
-      });
+      set({ saveError: 'Your progress could not be saved to this browser’s storage.' });
       console.error('[TavernRPG] save failed', cause);
     }
+  };
+
+  /** Resolves once the save on disk reflects everything known at the time of the call. */
+  const persistNow = (): Promise<void> => {
+    if (writing) {
+      dirty = true;
+      return drain;
+    }
+
+    writing = true;
+    set({ isSaving: true });
+
+    drain = (async () => {
+      try {
+        do {
+          dirty = false;
+          await writeOnce();
+        } while (dirty);
+      } finally {
+        writing = false;
+        set({ isSaving: false });
+      }
+    })();
+
+    return drain;
   };
 
   /**
@@ -285,6 +318,27 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           lastSavedAt: result.save.savedAt,
           notice: notices.length > 0 ? notices.join(' ') : null,
         });
+
+        // ── The world catches up *after* first paint. ──
+        //
+        // Raising 1,500 heroes and replaying a fortnight is ~300ms of synchronous work. Doing
+        // it before `status: 'ready'` put that straight into every page load, delaying the
+        // hero, the HUD and the quest table for something none of them need. The player's own
+        // save is on screen immediately; the Crier board fills a beat later, which is exactly
+        // the right priority.
+        //
+        // Nothing here is persisted either. The world is deterministic and ~145 KB: writing it
+        // on every load buys nothing the next load could not recompute, and the ordinary
+        // autosave — first mutation, or `pagehide` — carries it anyway.
+        setTimeout(() => {
+          const current = get().save;
+          if (!current?.hero) return;
+
+          const caught = catchUpWorld(ensureWorld(current, gameNow()), gameNow());
+          if (caught.save === current) return;
+
+          set({ save: caught.save, absenceSummary: caught.summary });
+        }, 0);
       } catch (cause) {
         set({
           status: 'failed',
@@ -311,7 +365,13 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       // Draw the opening board straight away: creation ends at the tavern, and an empty
       // quest table would be the first thing a new player saw.
       const seeded = refreshDay({ ...save, hero }, currentDayKey(), dayKeysBetween).save;
-      set({ save: seeded });
+      // Raise the 1,500. The world is generated at creation rather than lazily, so the ladder
+      // the player is joining already has ninety days of history behind it — and the warm-up
+      // day is simulated straight away so the Crier board has news on arrival rather than
+      // being blank until the second session.
+      const withWorld = ensureWorld(seeded, gameNow());
+      const warmed = catchUpWorld(withWorld, gameNow());
+      set({ save: warmed.save });
       await persistNow();
     },
 
@@ -567,6 +627,23 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       set({ save: result.save });
       void persistNow();
       return result;
+    },
+
+    absenceSummary: null,
+
+    dismissAbsenceSummary() {
+      set({ absenceSummary: null });
+    },
+
+    tickWorld() {
+      const { save } = get();
+      if (!save?.world) return;
+
+      const caught = catchUpWorld(save, gameNow());
+      if (caught.save === save) return;
+
+      set({ save: caught.save });
+      void persistNow();
     },
 
     setBattleSpeed(battleSpeed) {

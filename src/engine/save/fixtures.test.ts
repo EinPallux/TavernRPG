@@ -15,6 +15,7 @@ import v3Phase3 from './fixtures/v3-phase3.json';
 import v4Phase4 from './fixtures/v4-phase4.json';
 import v5Phase5 from './fixtures/v5-phase5.json';
 import v6Phase6 from './fixtures/v6-phase6.json';
+import v7Phase7 from './fixtures/v7-phase7.json';
 import { migrateSave } from './migrations';
 import { CURRENT_SCHEMA_VERSION, DEFAULT_ACTIVITY, DEFAULT_SETTINGS } from './schema';
 
@@ -220,6 +221,34 @@ describe('save fixtures — every shipped version still loads', () => {
     // Additive inside the activity slice — the shift and the counters must be untouched.
     expect(result.save.activity.patrol).not.toBeNull();
     expect(result.save.activity.missionsCompleted).toBe(37);
+  });
+
+  it('opens a Phase 7 (v7) save with a half-sold shelf and a mount still in the stall', () => {
+    const result = migrateSave(structuredClone(v7Phase7));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(7);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    const activity = result.save.activity;
+    expect(activity.shops['armory']?.sold).toEqual([0, 3]);
+    expect(activity.shops['armory']?.rerollsToday).toBe(2);
+    expect(activity.mount?.mountId).toBe('warhorse');
+    // The shift from v6 is still in flight underneath all of it.
+    expect(activity.patrol?.hours).toBe(8);
+  });
+
+  it('gives a pre-Phase-8 save no world, which the load path then raises', () => {
+    const result = migrateSave(structuredClone(v7Phase7));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // Null rather than generated: the migration is a pure function with no clock, and an
+    // existing hero without a world is exactly the case the load path already handles.
+    expect(result.save.world).toBeNull();
+    expect(result.save.hero?.name).toBe('Odo Marchand');
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

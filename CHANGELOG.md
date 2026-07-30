@@ -7,6 +7,43 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 8: World Simulation Core (the 1,500)
+- **Aldenvale has people in it.** Fifteen hundred simulated heroes, spread across sixty guilds,
+  on a ladder that already looks ninety days old when you arrive. They level, they fight each
+  other, they climb past you, they go quiet for a fortnight and come back.
+- **Ten named legends at the top** — Serathiel the Unbowed at rank one, and nine more behind her.
+  Hand-written identities on the same stat curves as everybody else: the endgame has faces, not
+  just numbers.
+- **The Town Crier**, on the Tavern wall. Level-ups, ladder swaps, milestones, guild drama, rival
+  taunts and the odd note about a wyvern over Frostfell Ridge. Entries arrive under a wax seal
+  and categories collapse. **Every headline is backed by something the simulation actually did**
+  — there is no "generate plausible news" path, and a test audits a hundred entries to keep it
+  that way.
+- **Rivals.** Two or three names near your rank who keep turning up, keep passing you and keep
+  having opinions. Rivalries heat up with encounters and cool with distance, so they rotate
+  naturally as you climb — nothing has to decide a rivalry is over.
+- **"While you were away."** Come back after a week and the game tells you how many levels were
+  gained, how many ranks changed hands, and — the number that stings — how many places you
+  slipped by standing still.
+- **The world keeps running whether you are there or not**, and catching up is free: a fortnight
+  reconciles in 135 ms and a year in 177 ms, because anything past two weeks is integrated rather
+  than replayed. Detail is spent where it can be seen — heroes near your rank get simulated hour
+  by hour, the far ones are a single closed-form step.
+- **The same seed always builds the same world**, at any timestamp, so a bug is reproducible and
+  save-scumming cannot change fate.
+- **Save schema v8** carries the world as pure divergence — 99 bytes a bot, 145 KB all in —
+  because names, classes and personalities are recomputed from the seed rather than stored.
+- `/dev/world`: the ladder, the level histogram and the Crier's output from any seed.
+
+### Changed — Phase 8
+- **The autosave no longer loses writes.** Saves were written in parallel with a guard that
+  stopped a stale one overwriting the store — but not the disk. Once the world took the save to
+  145 KB an older write regularly landed last, and a hero levelled to 10 could reload as 5.
+  Writes are now serialised and coalescing: a burst of twenty changes costs two writes, and the
+  second is always the newest state.
+- The world catches up **after the first frame** rather than before it, so the hero, the HUD and
+  the quest table are never waiting on a simulation none of them need.
+
 ### Added — Phase 7: Shops & Stables
 - **The Armory and the Gilded Facet are open.** Six pieces on the shelf every morning, drawn from
   the day's seed. Bram always has a weapon and an offhand for your class plus three armour

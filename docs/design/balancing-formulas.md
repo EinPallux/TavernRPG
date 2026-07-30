@@ -204,6 +204,12 @@ should carry more of the sink load, the lever is the 3.2× multiplier, not the s
   below current position beyond the swap rule.
 - Bots fight each other on schedule ticks; ladder churn ~3–5% of ranks/day around any given rank.
 
+**As built (Phase 8).** Rank and honor are *separate consequences* of the same win, which is the
+S&F model the rule above describes — so after a few days of simulation the ladder is no longer
+sorted by honor, and rank 1 may hold less than rank 3. That is correct, not a bug: **rank is the
+position, honor is the score.** They only coincide at world generation, where the ladder is
+seeded from honor.
+
 ## 11. Guild economics
 
 - Treasury/Drillmaster: 100 upgrade steps each; step `s` costs `500 · s^1.7` gold donated (any
@@ -219,6 +225,23 @@ should carry more of the sink load, the lever is the 3.2× multiplier, not the s
   hand-tuned "named rivals" with dedication ≈ 1.0–1.1 so Rank 1 is a real chase. `[TUNE]`
 - Bot levels at world-gen (day 0) seed a believable server age of ~90 days: level distribution
   log-normal, median ~28, p95 ~74, max ~92 — the player starts at the bottom of a living ladder.
+
+**As built (Phase 8).** `median = exp(mu)` and `p95 = exp(mu + 1.645σ)` give `mu = ln(28)`,
+`σ = ln(74/28)/1.645 ≈ 0.59`. Two corrections were needed to hit that:
+
+- **Dedication correlates, it does not multiply.** Scaling the draw by a dedication factor moves
+  the distribution's *centre* — the first implementation did exactly that and pulled the median
+  from 28 to 24. Level and dedication are now joined by a Gaussian copula (correlation 0.65):
+  the bot's dedication percentile becomes one z-score, noise another, and the two mix in
+  quadrature. The diligent sit above the idle and the marginal distribution is untouched.
+- **The ceiling compresses, it does not clamp.** At n = 1,500 a raw log-normal's top draw lands
+  near level 185; clamping at 92 left ~75 heroes tied on the cap. Anything above level 70 is now
+  bent asymptotically toward **82** for ordinary bots, with the ten legends taking 83–92 as an
+  authored tier. Measured across seeds: median 27–28, p95 73–76, max 92, ~2% at the ordinary
+  ceiling.
+
+Bot hourly XP is anchored to the player's own curve (`VIGOR_PER_DAY × xpPerVigor(level)`), so a
+change to player pacing re-paces the whole world with it rather than leaving 1,500 heroes behind.
 
 ## 13. Daily/weekly reward tables
 

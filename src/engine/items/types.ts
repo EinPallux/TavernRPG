@@ -55,7 +55,12 @@ export const RARITY_LABELS: Readonly<Record<Rarity, string>> = {
   set: 'Set',
 };
 
-export type ClassId = 'warrior' | 'bard' | 'mage' | 'hunter' | 'swashbuckler';
+/**
+ * The five classes, as a list so callers that need to *enumerate* them (world generation,
+ * balance sweeps) do not have to import the whole `CLASSES` data module to get five strings.
+ */
+export const CLASS_IDS = ['warrior', 'bard', 'mage', 'hunter', 'swashbuckler'] as const;
+export type ClassId = (typeof CLASS_IDS)[number];
 
 export interface WeaponDamage {
   readonly min: number;

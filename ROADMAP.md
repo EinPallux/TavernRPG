@@ -199,7 +199,7 @@ Three things the phase forced or settled:
   measured table in balancing §9 and flagged for the Phase 17 pass; the lever is the 3.2×
   multiplier, not the stock size.
 
-## Phase 8 — World Simulation Core (L) 🔲
+## Phase 8 — World Simulation Core (L) ✅
 World generation (1,500 bots, 60 guilds, personalities, ladder seed, top-10 legends data), bot
 progression ticks (online 5-min + load reconciliation with LoD bands, ≤1s/14-day budget), ladder
 service, Town Crier feed (generation + home panel UI + overnight summary card). No player-facing
@@ -207,6 +207,33 @@ arena yet (dev ladder viewer, flagged).
 **Accept:** same seed ⇒ identical world at any timestamp (property test); reconciliation budget
 met (perf test); feed entries reference real sim deltas (audit test samples 100 entries);
 bot stat blocks pass `buildCombatant` plausibility bounds vs level curves.
+
+**Delivered.** Fifteen hundred heroes, sixty guilds and ten named legends from one number.
+Identity is *derived* rather than stored — 99 bytes a bot, 145 KB for the world — so a
+`BotRecord` is only what the simulation actually changes. Bots are built on the same curves
+players are, which is what makes inspecting or fighting one honest. All four acceptance criteria
+are tests: determinism, **135 ms for a fortnight / 177 ms for a year**, the hundred-entry feed
+audit, and stat blocks bounded against `buildReferenceCombatant`. 651 unit + 104 e2e green.
+
+Two numbers had to be *solved* rather than chosen:
+- **The level curve missed §12 twice.** A dedication multiplier on the log-normal pulled the
+  median from 28 to 24 — scaling a distribution moves its centre — so dedication and level are
+  now correlated through a Gaussian copula, which keeps the marginal exactly on target. And a
+  hard clamp at 92 left seventy-five heroes tied on the ceiling; the top is now compressed
+  asymptotically, with the legends occupying a visible tier above the field.
+- **The Crier was monotonous before it was wrong.** Every headline was true and backed by a real
+  delta, and the board still came out fourteen ladder passes in a row, because the sim emits
+  twice as many of those and they score higher. No category may now take more than 40% of the
+  board.
+
+Three things the phase forced outside its own scope:
+- **The autosave was losing writes.** Parallel writes were guarded against clobbering the *store*
+  but not the *disk*; at 145 KB an older `put` regularly landed last, and a hero levelled to 10
+  reloaded as 5. Writes are now serialised and coalescing.
+- **World catch-up moved after first paint.** ~300 ms of simulation was sitting in front of the
+  player's own hero on every load.
+- A new hero met a blank Crier board, so the world is now generated with its clock a day back and
+  that day is simulated on arrival.
 
 ## Phase 9 — Arena & Hall of Fame (M) 🔲
 Opponent draw (±rank band), threat reads, cooldown/skip, rewarded-wins caps, rank-swap + honor
