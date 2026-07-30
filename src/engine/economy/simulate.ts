@@ -18,6 +18,7 @@
 import {
   VIGOR_PER_DAY,
   goldPatrolPerHour,
+  goldPerVigor,
   missionPayout,
   type MissionDuration,
 } from '@/engine/progression/rewards';
@@ -29,16 +30,18 @@ import { SHOP_PRICE_MULTIPLIER, SHOP_RARITY_WEIGHTS } from '@/engine/shops/stock
 import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
 import { MOUNTS_BY_ID, type MountId } from '@/data/mounts';
 import { guildMultipliers } from '@/engine/guilds/buffs';
+import { GOLD_CACHE_VIGOR, banner, outcomeOdds, type RollOutcome } from '@/data/banners';
 import { RARITIES, type Rarity } from '@/engine/items/types';
 
 /**
  * Faucets and sinks the model currently understands. Grows as systems ship.
  *
  * `sales` and `shops`/`mounts` joined in Phase 7 when the Armory, the Facet and the Stables
- * opened. Still absent: the gacha, guild donations, pet feeding, dungeon gold — each lands with
- * its system, because a sim that invents numbers for unbuilt features asserts a fiction.
+ * opened; `gacha` in Phase 13 with Fortune's Table. Still absent: guild donations, pet feeding,
+ * dungeon gold — each lands with its system, because a sim that invents numbers for unbuilt
+ * features asserts a fiction.
  */
-export const MODELLED_FAUCETS = ['missions', 'patrol', 'sales'] as const;
+export const MODELLED_FAUCETS = ['missions', 'patrol', 'sales', 'gacha'] as const;
 export const MODELLED_SINKS = ['training', 'shops', 'mounts'] as const;
 
 export type Faucet = (typeof MODELLED_FAUCETS)[number];
@@ -79,6 +82,27 @@ function averageValue(level: number, weights: Readonly<Record<Rarity, number>>):
   );
 }
 
+/**
+ * Expected **gold** from one card at Fortune's Table (gacha spec §4).
+ *
+ * Gold caches at face value plus gear cards at what they would sell for. Materials, Ale and set
+ * pieces are deliberately worth zero here: they are real value, but they are not *gold*, and
+ * counting them would let the faucet band pass on income the player cannot spend on training.
+ * The weekly banner is the reference table — the other two differ by a point or two and the
+ * bands are not that tight.
+ */
+function goldPerRoll(level: number): number {
+  const table = banner('weekly');
+  const share = (outcome: RollOutcome) => outcomeOdds(table, outcome) / 100;
+
+  return (
+    share('gold') * GOLD_CACHE_VIGOR * goldPerVigor(level) +
+    share('epic') * itemValue(level, 'epic') +
+    share('rare') * itemValue(level, 'rare') +
+    share('uncommon') * itemValue(level, 'uncommon')
+  );
+}
+
 export interface PlayStyle {
   /** Share of the day's Vigor actually spent. 1 = a completist, 0.4 = a busy Tuesday. */
   readonly vigorUsed: number;
@@ -101,6 +125,14 @@ export interface PlayStyle {
    */
   readonly treasuryStep?: number;
   readonly drillmasterStep?: number;
+  /**
+   * Cards pulled at Fortune's Table on a typical day (Phase 13).
+   *
+   * Everyone gets at least 1: the Daily Draw's card is free, so even the control takes it. Above
+   * that it is Golden Dice, which are contested with Ale, the Griffin and shop rerolls — an
+   * active player converting some of a ~1.6/day income into rolls lands a little over one.
+   */
+  readonly gachaRollsPerDay?: number;
 }
 
 export const ACTIVE_PLAYER: PlayStyle = {
@@ -111,6 +143,7 @@ export const ACTIVE_PLAYER: PlayStyle = {
   // Two upgrades a week is what "keeps their gear current" looks like at a 3.2× markup.
   shopBuysPerWeek: 2,
   mountId: 'warhorse',
+  gachaRollsPerDay: 1.6,
 };
 
 /** Someone who opens the game once, spends half their Vigor and leaves. */
@@ -121,6 +154,7 @@ export const CASUAL_PLAYER: PlayStyle = {
   trainingSpend: 0.9,
   shopBuysPerWeek: 1,
   mountId: 'mule',
+  gachaRollsPerDay: 1,
 };
 
 /** The control: never shops, never rents. Proves neither is mandatory. */
@@ -130,6 +164,8 @@ export const FRUGAL_PLAYER: PlayStyle = {
   patrolHours: 8,
   trainingSpend: 0.9,
   shopBuysPerWeek: 0,
+  // The free card only. A control that refused a free thing would not be modelling anybody.
+  gachaRollsPerDay: 1,
   mountId: null,
 };
 
@@ -211,7 +247,10 @@ export function simulateEconomy({
       missionsRun * dropTable.itemChance * averageValue(level, dropTable.rarityWeights),
     );
 
-    purse += missionGold + patrolGold + salesGold;
+    // ── Fortune's Table. Cards that are gear get sold at the same resolution as loot. ──
+    const gachaGold = Math.floor((style.gachaRollsPerDay ?? 0) * goldPerRoll(level));
+
+    purse += missionGold + patrolGold + salesGold + gachaGold;
 
     // ── Upkeep first: the mount is a standing arrangement, not a splurge. ──
     const mount = style.mountId ? MOUNTS_BY_ID[style.mountId] : null;
@@ -252,7 +291,7 @@ export function simulateEconomy({
     ledger.push({
       day,
       level,
-      earned: { missions: missionGold, patrol: patrolGold, sales: salesGold },
+      earned: { missions: missionGold, patrol: patrolGold, sales: salesGold, gacha: gachaGold },
       spent: { training: spentOnTraining, shops: shopSpend, mounts: mountSpend },
       xpEarned,
       pointsBought,

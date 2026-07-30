@@ -12,8 +12,6 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: 'on-first-retry',
-    // Desktop-first game (docs/tech/ui-ux-style-guide.md §2).
-    viewport: { width: 1920, height: 1080 },
   },
   projects: [
     {
@@ -25,6 +23,16 @@ export default defineConfig({
         ...(process.env.PLAYWRIGHT_CHROMIUM_PATH
           ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } }
           : {}),
+        /*
+         * Desktop-first game (docs/tech/ui-ux-style-guide.md §2).
+         *
+         * **After** the device spread, not before it: `devices['Desktop Chrome']` carries its own
+         * 1280×720 viewport, and project-level `use` beats the top-level block — so declaring
+         * this up there (as it was until Phase 13) silently ran the whole suite at 1280×720 while
+         * claiming 1080p. Two years of "why does this only fail in CI" live in that ordering.
+         * The 1366×768 floor still gets tested, explicitly, in `app-shell.spec.ts`.
+         */
+        viewport: { width: 1920, height: 1080 },
       },
     },
   ],

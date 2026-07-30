@@ -293,13 +293,22 @@ v12. The design decision that paid for itself: **thirty bonuses as declarative d
 thirty proc kinds** — the golden logs confirm the resolver costs nothing for a fighter wearing no
 set, and set eleven is now a data change.
 
-## Phase 13 — Fortune's Table (M) 🔲
+## Phase 13 — Fortune's Table (M) ✅
 Gacha room (Vesna, ambience), 3 banner types with deterministic rotation, roll economics (free
 daily, dice rolls), drop tables, weekly pity + monthly pity track, dupe conversion, the roll
 ceremony (dice tumble, tarot flips, rarity buildups), odds panel + history log.
 **Accept:** rates match config (100k-roll test incl. pity trigger paths & missing-first); rotation
 matches calendar fixtures (month boundaries, week starts); ceremony skippable & reduced-motion
 safe; converted dupes credit correctly.
+**Done 2026-07-30.** `data/banners.ts` (three banners, one seven-outcome table, the monthly
+track), `data/vesnaBarks.ts`, `engine/gacha/` (`schedule` — the rotation as a pure function of the
+calendar; `roll`; `track`), `state/gachaActions.ts`, the room with its always-visible odds panel,
+public pity meter, tarot ceremony and history log, an economy-sim gacha faucet, and save schema
+v13. The design position the whole room is built on: **every rate the player can be affected by is
+on screen beside the button that spends the die**, which is only true because the panel and the
+dice read the same object. Building it also caught that the entire e2e suite had been running at
+1280×720 while the config claimed 1080p — `devices['Desktop Chrome']` brings its own viewport and
+a project-level `use` beats the top-level one.
 
 ## Phase 14 — The Menagerie (S) 🔲
 12 pets (data, acquisition wiring to dungeon firsts/milestones/banner slots/egg drops), stalls UI

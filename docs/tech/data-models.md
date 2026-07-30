@@ -135,7 +135,7 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
 
 // ————— Save envelope —————
 interface SaveFile {
-  schemaVersion: 12; savedAt: Timestamp; slot: 1|2|3;
+  schemaVersion: 13; savedAt: Timestamp; slot: 1|2|3;
   worldSeed: Seed;                  // committed once; seeds the entire simulated world
   clock: { lastSeen: Timestamp; clampCount: number };
   settings: Settings;               // nav, motion, audio, battle playback (v4)
@@ -145,6 +145,7 @@ interface SaveFile {
   guild: Guild;                     // v10
   dungeons: Dungeons;               // v11
   forge: ForgeState;                // v12
+  gacha: GachaState;                // v13
 }
 
 // ————— The Undertavern (v11) —————
@@ -172,6 +173,26 @@ interface ForgeState {
 // On the Hero, not here, for the same reason gold is — they are the player's, not the room's:
 //   materials: MaterialBundle;
 //   openingVerse: VerseId | null;   // honoured only while a Maestro five-piece is worn
+
+// ————— Fortune's Table (v13) —————
+interface GachaState {
+  weeklyPity: number;               // counts toward the *set*, not the week
+  weeklyPitySet: SetId | null;      // which set those rolls belong to
+  monthlyRolls: number;             // the track's rungs are floor(rolls/15), never stored
+  monthlyPaidThrough: number;       // high-water mark in ROLLS, so a rung cannot pay twice
+  shards: number;                   // from duplicate set pieces; 5 = a recipe
+  freeRollsToday: number;           // the Daily Draw's free card; cleared by the Reset Engine
+  rolls: number;                    // lifetime
+  pets: PetId[];                    // ONLY Vesna's grants — see below
+  history: RollRecord[];            // newest first, capped at 200
+}
+interface RollRecord { at: Timestamp; bannerId: BannerId; outcome: RollOutcome;
+  label: string; pitied: boolean; free: boolean; }
+// The banner *schedule* is deliberately absent: it is a pure function of (dayKey, worldSeed,
+// classId), so a save that missed a fortnight already knows what was featured on every day of it.
+// `pets` records what this room handed over, not what the player owns. The Menagerie (v14)
+// derives ownership of all twelve from their documented sources — dungeon trophies,
+// missionsCompleted, arena rank, the login calendar — each of which is already a fact in the save.
 
 // ————— Gear sets (content, v12) —————
 // A set *bonus* is data the engine folds, not a proc: `SetEffect` is a flat union of ~24 named

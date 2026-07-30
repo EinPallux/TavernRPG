@@ -29,6 +29,9 @@ export function formatRemaining(ms: number): string {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
 
+  // Past two days, hours stop being a unit anyone reads: a monthly banner "turns over in 673h"
+  // is a number, not an answer. Days and hours from there up (Phase 13).
+  if (hours >= 48) return `${Math.floor(hours / 24)}d ${hours % 24}h`;
   if (hours > 0) return `${hours}h ${String(minutes).padStart(2, '0')}m`;
   if (minutes > 0) return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
   return `${seconds}s`;

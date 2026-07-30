@@ -105,6 +105,22 @@ function firstFreeBackpackIndex(hero: Hero): number {
   return hero.backpack.findIndex((slot) => slot === null);
 }
 
+/**
+ * Whether `count` more items would fit without the satchel having to shove anything out.
+ *
+ * `addItem` never refuses loot — a full satchel discards its oldest unlocked piece rather than
+ * dropping the drop. That is right for a mission, where the loot is already earned, and wrong
+ * for a *purchase*: a shop, a forge or a gacha spin has to be able to say "there is nowhere to
+ * put this" before it takes the payment. Three screens were each computing this inline; one of
+ * them counted the satchel wrong.
+ */
+export function hasRoom(hero: Hero, count = 1): boolean {
+  const free =
+    hero.backpack.filter((slot) => slot === null).length +
+    Math.max(0, SATCHEL_SLOTS - hero.satchel.length);
+  return free >= Math.max(1, count);
+}
+
 export interface AddItemResult {
   readonly hero: Hero;
   /** Where it landed, so the UI can flash the right cell. */

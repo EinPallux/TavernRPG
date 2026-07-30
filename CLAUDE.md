@@ -77,7 +77,13 @@ feedback, edge cases and tests. Deployed on Vercel.
   (`forgeConfig` + `craft`), `state/forgeActions.ts`, the Emberforge's three benches with the
   anvil-strike ceremony, the Set Collections tab with its paperdoll glow, and save schema v12.
 
-945 unit tests + 142 e2e green. Next work: `ROADMAP.md` **Phase 13 (Fortune's Table)**.
+- **Phase 13:** Fortune's Table — `data/banners.ts` (three banners over one seven-outcome table,
+  the monthly track) and `data/vesnaBarks.ts`, `engine/gacha/` (`schedule` derives the whole
+  rotation from `(date, seed, class)` and stores nothing; `roll`; `track`),
+  `state/gachaActions.ts`, the room with its always-visible odds panel, public pity meter, tarot
+  ceremony and history log, an economy-sim gacha faucet, and save schema v13.
+
+984 unit tests + 153 e2e green. Next work: `ROADMAP.md` **Phase 14 (The Menagerie)**.
 
 **A dungeon floor's difficulty is level *and* archetype, and archetype is worth more than you
 think.** Twelve levels of spread at dungeon budget — swarm 27, caster 32, skirmisher 34, bruiser
@@ -122,6 +128,24 @@ suite has one per five-piece capstone for exactly that reason.
 true rather than merely intended. Never let a screen hold a second copy of a rate — the guild
 bounty already taught this lesson once, from the other direction.
 
+**A rotating banner is a pure function of the calendar, not a stored schedule.**
+`engine/gacha/schedule.ts` derives all three banners from `(dayKey, worldSeed, classId)` and keys
+each seed on its *period* (the day, the week's Monday, the month) rather than the day — a weekly
+banner seeded by the day re-rolls every morning. Nothing stores or advances it, which keeps the
+Reset Engine the only thing that decides it is tomorrow. Phase 14's banner slots should follow
+the same shape.
+
+**The gacha's pity counter follows the set, not the week** (`gacha.weeklyPitySet`). Rolls banked
+toward Oathsworn survive a Wolfblood week — but `pityFor()` reports **zero** on a week that will
+not honour them, because a meter reading 12/20 under a card that cannot pay it is a lie told for
+six days. The two behaviours look contradictory and are both required.
+
+**Five day-or-count-keyed high-water marks now exist** — `arena.lastRaidDay`,
+`guild.lastApplicantDay`, `lastChatDay`, `lastBountyDay`, and `gacha.monthlyPaidThrough`. The last
+one is denominated in *rolls*, not rungs, and is the shape to copy: rungs are
+`floor(rolls / 15)` arithmetic on totals rather than an increment on a boundary, so replaying it
+cannot double-pay.
+
 **Before touching class constants or monster archetypes:** run `npm run balance`. The numbers in
 `src/data/classes.ts` were solved for, not chosen, and the bands in
 `src/engine/combat/balance.test.ts` will catch a regression — but the harness tells you *why*.
@@ -142,12 +166,13 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 (actions, derived), `combat/`, `missions/` (board, lifecycle), `patrol/`, `shops/`, `stables/`,
 `world/` (identity, generate, materialize, ladder, simulate, rivals, crier, halls), `arena/`
 (arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty),
-`dungeons/` (floors, delve, keys), `forge/` (forgeConfig, craft), `economy/`, `reset/` ·
+`dungeons/` (floors, delve, keys), `forge/` (forgeConfig, craft),
+`gacha/` (schedule, roll, track), `economy/`, `reset/` ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
-patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, names, guilds, guildChat, bounties,
-dungeons, gearSets, legends, crierTemplates ·
+patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, vesnaBarks, names, guilds, guildChat,
+bounties, dungeons, gearSets, banners, legends, crierTemplates ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge}/` ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,
