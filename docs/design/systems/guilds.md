@@ -59,3 +59,32 @@ Candle") — membership is identity, not a menu.
 `GuildDef/GuildState` {id, name, banner, motto, members: (botId|player)[], treasuryStep,
 drillmasterStep, chatLog, bountyState, requirements}, `applyToGuild`, `donate`, ladder-honor
 aggregation. Chat generation runs inside world-sim ticks (`world-simulation.md` §4).
+
+## 7. As built (Phase 10)
+
+`src/engine/guilds/` — `membership` (browse, apply, bot decisions, found, roster, resumes),
+`buffs` (step costs, donations, multipliers), `chat`, `bounty`. Content in `src/data/guildChat.ts`
+(162 slotted templates over eleven categories) and `src/data/bounties.ts` (8 bounties over 6
+metrics). Store transitions in `src/state/guildActions.ts`; the screen in
+`src/components/guild/`. Numbers and their derivations: `../balancing-formulas.md` §11.
+
+Five decisions worth not re-making:
+
+- **A hall of the sixty stores nothing.** Name, banner, motto, vibe, requirements and both buff
+  steps are all derived from `(worldSeed, guildId, roster)` — the world slice already tracks a
+  guild's treasury and membership, and a second copy would be the same number written twice and
+  free to drift. `hallOf(save)` reconciles the two shapes so nothing downstream ever asks whether
+  it is looking at one of the sixty or at the player's own.
+- **Vibe tags are scored against halls, not against the population.** Two earlier passes shipped
+  a browse list of near-identical rows: hardcoded midpoints labelled 58 of 60 "early risers", and
+  z-scoring against all 1,500 bots made 35 of 60 "cosy". A hall is only ever *comparatively*
+  nocturnal, so the comparison has to be against the other halls.
+- **Every day-keyed roll needs a high-water mark.** A roll seeded by its day index is
+  *reproducible*, which is the opposite of idempotent once its effect has been applied. Applicant
+  intake, chat catch-up and bot bounty progress each keep one (`lastApplicantDay`, `lastChatDay`,
+  `lastBountyDay`) — the same rule, and the same class of bug, as `arena.lastRaidDay`.
+- **A week is a week key**, from `engine/clock.ts` — the date of the Sunday that ends it, parsed
+  at local midday so a daylight-saving change cannot make it ambiguous. The arena payout and the
+  guild bounty share the one implementation.
+- **Bot bounty output reads off the bounty's own `perMember`.** It briefly had a private per-week
+  table holding the same numbers, which is how the two came to disagree without anyone noticing.

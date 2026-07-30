@@ -17,7 +17,7 @@ import { simTick } from '@/engine/world/simulate';
 import { missionPayout, xpPatrolPerHour, goldPatrolPerHour } from '@/engine/progression/rewards';
 import { xpNeeded } from '@/engine/progression/xp';
 import { patrolEarnings } from '@/engine/patrol/patrol';
-import { BOUNTIES } from '@/data/bounties';
+import { BOUNTIES, bountyById, bountyTarget } from '@/data/bounties';
 import { GUILD_COUNT } from '@/data/guilds';
 import { VIBE_TAGS } from '@/data/guildChat';
 import {
@@ -41,6 +41,7 @@ import {
   applyToGuild,
   browseGuilds,
   decideApplication,
+  derivedTracks,
   guildProfile,
   requirementsFor,
   resumeFor,
@@ -80,9 +81,8 @@ const world: WorldState = { ...base, ladder: joinLadder(base.ladder) };
 /**
  * A hall with a roster worth reading *and* a place free.
  *
- * The world generator packs a handful of guilds past the twenty-five cap — 51 members in the
- * biggest, on this seed — so the browse list legitimately contains full halls. Picking one of
- * those as the fixture tests "sorry, we are full" over and over instead of the paths that matter.
+ * The generator fills halls right up to the cap, so a naive "biggest guild" pick lands on a full
+ * one and tests "sorry, we are full" over and over instead of the paths that matter.
  */
 const populated = world.guilds.find(
   (record) => record.memberIds.length >= 8 && record.memberIds.length < GUILD_CAPACITY,
@@ -213,11 +213,50 @@ describe('the sixty halls', () => {
     expect(requirementsFor(world, [])).toEqual({ minLevel: 1, minHonor: 0 });
   });
 
+  it('never generates a hall over its own capacity', () => {
+    // Phase 8 did not know about the cap, and the Guild Hall's browse list duly opened on five
+    // halls advertising "78/25 members" — a number that reads as a bug from across the room.
+    for (const record of world.guilds) {
+      expect(record.memberIds.length, `guild ${record.id}`).toBeLessThanOrEqual(GUILD_CAPACITY);
+    }
+  });
+
+  it('gives the sixty buffs worth choosing between — balancing §11', () => {
+    // The economic heart of guilds: joining the best-funded hall has to be visibly better than
+    // joining the worst. The Phase 8 seeded treasury predated `stepCost` and left every hall at
+    // +1.25%, which made the whole browse list a formality.
+    const list = browseGuilds(world);
+    const gold = list.map((hall) => hall.treasuryStep * BONUS_PER_STEP).sort((a, b) => b - a);
+
+    // A well-established hall is somewhere near the spec's "~+15% by month 2"…
+    expect(gold[0]!).toBeGreaterThan(0.09);
+    expect(gold[0]!).toBeLessThanOrEqual(0.25);
+    // …and the spread between best and worst is a real decision, not rounding.
+    expect(gold[0]! / gold.at(-1)!).toBeGreaterThan(2);
+  });
+
   it('reads buff steps off the treasury the world already tracks', () => {
     const profile = guildProfile(world, populated.id)!;
     expect(profile.treasuryStep + profile.drillmasterStep).toBeGreaterThan(0);
     // Two tracks out of one pot: a hall cannot have maxed both from a ninety-day treasury.
     expect(profile.treasuryStep).toBeLessThan(MAX_STEPS);
+  });
+
+  it('keeps the change, so a donation into one of the sixty still lands somewhere', () => {
+    // A hall's pot has seven digits in it and its next step costs six, so without the remainder
+    // the player gives ten thousand gold and every number on the screen stays exactly the same.
+    const tracks = derivedTracks(world.seed, populated);
+    for (const track of ['treasury', 'drillmaster'] as const) {
+      expect(tracks[track].pool).toBeGreaterThanOrEqual(0);
+      expect(tracks[track].pool).toBeLessThan(stepCost(tracks[track].step + 1));
+    }
+    // And the two together are the treasury the world actually holds, to within rounding.
+    const banked =
+      totalCostThrough(tracks.treasury.step) +
+      totalCostThrough(tracks.drillmaster.step) +
+      tracks.treasury.pool +
+      tracks.drillmaster.pool;
+    expect(Math.abs(banked - populated.treasury)).toBeLessThanOrEqual(2);
   });
 });
 
@@ -506,10 +545,11 @@ describe('the weekly bounty', () => {
   });
 
   it('simulates the hall’s own contribution off who is in it', () => {
+    const contracts = bountyById('contracts')!;
     const keen = simulateBotContribution({
       world,
       memberIds: populated.memberIds,
-      metric: 'missions',
+      definition: contracts,
       from: T0,
       to: T0 + 5 * DAY,
       lastRollDay: 0,
@@ -521,12 +561,47 @@ describe('the weekly bounty', () => {
     const again = simulateBotContribution({
       world,
       memberIds: populated.memberIds,
-      metric: 'missions',
+      definition: contracts,
       from: T0,
       to: T0 + 5 * DAY,
       lastRollDay: keen.lastRollDay,
     });
     expect(again.units).toBe(0);
+  });
+
+  /**
+   * The bounty is co-operative or it is nothing, and this is the assertion that says so in
+   * numbers. A hall's own week has to land the poster in the band where the *player* decides the
+   * outcome: comfortably past half so a member who shows up can finish it, and short of the
+   * target so a member who does not show up costs them the full chest.
+   *
+   * It caught a real one. Whole-number metrics — three arena wins a week is 0.43 a day — were
+   * being floored per bot per day, so twenty-five members contributed zero and the poster read
+   * 0/44 forever. Every metric is checked because the failure was invisible on `missions` and
+   * `patrolHours`, whose numbers are large enough to survive the rounding that killed the rest.
+   */
+  it('leaves the week close enough that the player decides it, on every bounty', () => {
+    const to = T0 + 30 * DAY;
+    const members = populated.memberIds.length + 1;
+
+    // Every bounty in the pool, so a generous definition cannot hide a mean one.
+    for (const definition of BOUNTIES) {
+      const { units } = simulateBotContribution({
+        world,
+        memberIds: populated.memberIds,
+        definition,
+        from: to - 7 * DAY,
+        to,
+        lastRollDay: Math.floor((to - 7 * DAY) / DAY),
+      });
+
+      const share = units / bountyTarget(definition, members);
+      const where = `${definition.id} left the hall at ${Math.round(share * 100)}%`;
+      // Past the half-chest line on its own…
+      expect(share, where).toBeGreaterThan(PARTIAL_THRESHOLD);
+      // …and short of the full one, so the player's week is what finishes it.
+      expect(share, where).toBeLessThan(1);
+    }
   });
 
   it('pays a full chest on a clear and half on a near miss — ROADMAP acceptance', () => {
@@ -662,6 +737,42 @@ describe('guild chat', () => {
       lastChatDay: first.lastChatDay,
     });
     expect(again.messages).toEqual([]);
+  });
+
+  /**
+   * The tell this whole module exists to avoid, measured.
+   *
+   * Colour comes from thirty-two lines narrowed again by voice, so an unconstrained pick over a
+   * three-day catch-up put "Evening. Anyone still up?" on the screen four times — nothing wrong
+   * with the roll, just what a small pool looks like when the player can see all of it at once.
+   * Two properties keep the log reading like a room: most of what is said is said once, and
+   * nobody follows themselves while there is anybody else awake.
+   */
+  it('does not repeat itself, and nobody talks to themselves', () => {
+    const { messages } = generateChat({
+      world,
+      memberIds: members,
+      guildName,
+      events: [],
+      from: T0,
+      to: T0 + 3 * DAY,
+      lastChatDay: 0,
+    });
+    expect(messages.length).toBeGreaterThan(20);
+
+    const seen = new Map<string, number>();
+    for (const message of messages) seen.set(message.text, (seen.get(message.text) ?? 0) + 1);
+    const worst = Math.max(...seen.values());
+
+    expect(seen.size / messages.length).toBeGreaterThan(0.6);
+    expect(worst, 'one line said too many times in three days').toBeLessThanOrEqual(3);
+
+    for (let i = 1; i < messages.length; i += 1) {
+      const before = messages[i - 1]!.author;
+      const after = messages[i]!.author;
+      if (before.kind !== 'bot' || after.kind !== 'bot') continue;
+      expect(after.botId, messages[i]!.text).not.toBe(before.botId);
+    }
   });
 
   it('reads what the player said, crudely and on purpose', () => {

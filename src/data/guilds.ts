@@ -441,6 +441,15 @@ export function guild(id: number): GuildDef | null {
 /** The player's guild id. Bot guilds are 0…59; the founded one is this. */
 export const PLAYER_GUILD_ID = 1_000;
 
+/**
+ * Members a hall holds (guilds spec §1: "member count /25").
+ *
+ * Lives here rather than in `engine/guilds/` because the *world generator* has to respect it
+ * too, and generate → membership → generate would be a cycle. It was not a shared constant in
+ * Phase 8, and the result was five halls on the browse list reading "78/25 members".
+ */
+export const GUILD_CAPACITY = 25;
+
 /** Sigils the banner builder offers. Drawn from the icon family, not a new asset set. */
 export const SIGIL_ICONS = [
   'sword',

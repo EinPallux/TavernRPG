@@ -14,12 +14,23 @@
  */
 
 import { createRng, deriveSeed } from '@/engine/rng';
-import { GUILD_COUNT } from '@/data/guilds';
+import { GUILD_CAPACITY, GUILD_COUNT } from '@/data/guilds';
 import { LEGEND_COUNT } from '@/data/legends';
 import { BOT_COUNT, botIdentity, dedicationPercentile } from './identity';
 
 /** Share of the population that starts in a guild (spec §2). */
 export const GUILDED_SHARE = 0.55;
+
+/**
+ * `[TUNE]` Gold a ninety-day-old hall has banked, per member, across both tracks.
+ *
+ * Solved backwards from `stepCost` rather than guessed. The Phase 8 figure was 900 a member,
+ * written before the buff curve existed; read back through it, a full hall came to +1.25% against
+ * balancing §11's "~+15% by month 2". Steps cost `500·s^1.7`, so step 60 is about twelve million
+ * gold and a hall's pot has to be in the millions for the browse list to show any difference
+ * between one hall and another.
+ */
+export const TREASURY_PER_MEMBER = 420_000;
 
 /**
  * Level distribution, solved for the §12 shape: median ~28, p95 ~74, max ~92.
@@ -247,10 +258,17 @@ export function generateWorld(seed: number, createdAt: number): WorldState {
     if (!rng.bool(GUILDED_SHARE)) continue;
     // Weighted toward the earlier guilds so a few halls are large and most are modest, which is
     // what a real server looks like — a flat spread gives sixty identical guilds.
-    const pick = Math.min(
-      GUILD_COUNT - 1,
-      Math.floor(Math.abs(rng.float(0, 1) ** 1.6) * GUILD_COUNT),
-    );
+    //
+    // Capped, and it has to be: before Phase 10 nothing enforced `GUILD_CAPACITY` here, and the
+    // Guild Hall's browse list duly opened on five halls advertising "78/25 members". A full
+    // hall simply turns the applicant away and they try the next one, which is also what a real
+    // server looks like.
+    let pick = Math.min(GUILD_COUNT - 1, Math.floor(Math.abs(rng.float(0, 1) ** 1.6) * GUILD_COUNT));
+    for (let tries = 0; tries < 6 && memberIds[pick]!.length >= GUILD_CAPACITY; tries += 1) {
+      pick = Math.min(GUILD_COUNT - 1, Math.floor(Math.abs(rng.float(0, 1) ** 1.6) * GUILD_COUNT));
+    }
+    if (memberIds[pick]!.length >= GUILD_CAPACITY) continue;
+
     memberIds[pick]!.push(draft.id);
     guildOf.set(draft.id, pick);
   }
@@ -272,7 +290,13 @@ export function generateWorld(seed: number, createdAt: number): WorldState {
     id,
     memberIds: members,
     // Seeded treasury: a ninety-day-old guild has been donating the whole time.
-    treasury: Math.round(members.length * 900 * (0.5 + rng.float(0, 1))),
+    //
+    // `[TUNE]` balancing §11. Priced against the *buff curve* rather than guessed, which is what
+    // the Phase 8 figure (900 a member) was — it predated `stepCost`, and read back through it a
+    // full hall came to +1.25%, against the spec's "~+15% by month 2". Steps cost `500·s^1.7`,
+    // so step 60 is about twelve million gold; a hall's pot has to be in the millions for the
+    // browse list to show a difference between one hall and another at all.
+    treasury: Math.round(members.length * TREASURY_PER_MEMBER * (0.35 + rng.float(0, 1.3))),
     active: true,
   }));
 

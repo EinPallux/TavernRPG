@@ -18,13 +18,16 @@ import { createRng, deriveSeed } from '@/engine/rng';
 import { botIdentity, type Personality } from '@/engine/world/identity';
 import type { GuildRecord, WorldState } from '@/engine/world/generate';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
-import { guild as guildDef, GUILD_COUNT, PLAYER_GUILD_ID, type BannerColour } from '@/data/guilds';
+import {
+  GUILD_CAPACITY,
+  GUILD_COUNT,
+  PLAYER_GUILD_ID,
+  guild as guildDef,
+  type BannerColour,
+} from '@/data/guilds';
 import type { SigilIcon } from '@/data/guilds';
 import type { VibeTag } from '@/data/guildChat';
 import { stepsAffordable, type TrackId } from './buffs';
-
-/** Members a hall holds (spec §1: "member count /25"). */
-export const GUILD_CAPACITY = 25;
 
 /** Founding costs this much gold (spec §1). */
 export const FOUNDING_COST = 500;
@@ -204,16 +207,33 @@ export function requirementsFor(world: WorldState, members: readonly number[]): 
  * two tracks is seeded per guild, because a hall that has poured everything into the Drillmaster
  * is a different proposition from one that went all-in on the Treasury.
  */
+export function derivedTracks(
+  worldSeed: number,
+  record: GuildRecord,
+): Readonly<Record<TrackId, { readonly step: number; readonly pool: number }>> {
+  const rng = createRng(deriveSeed(worldSeed, 'guild-split', record.id), `guild:${record.id}`);
+  const toTreasury = rng.float(0.3, 0.7);
+  const treasury = stepsAffordable(0, record.treasury * toTreasury);
+  const drillmaster = stepsAffordable(0, record.treasury * (1 - toTreasury));
+  return {
+    treasury: { step: treasury.steps, pool: Math.round(treasury.remainder) },
+    drillmaster: { step: drillmaster.steps, pool: Math.round(drillmaster.remainder) },
+  };
+}
+
+/**
+ * Just the steps, for the callers that only rank halls against each other.
+ *
+ * The remainder matters to exactly one screen — the member standing in the hall, who has just
+ * put gold in the pot and deserves to see it land somewhere — so it is carried by `derivedTracks`
+ * and dropped here.
+ */
 export function derivedSteps(
   worldSeed: number,
   record: GuildRecord,
 ): Readonly<Record<TrackId, number>> {
-  const rng = createRng(deriveSeed(worldSeed, 'guild-split', record.id), `guild:${record.id}`);
-  const toTreasury = rng.float(0.3, 0.7);
-  return {
-    treasury: stepsAffordable(0, record.treasury * toTreasury).steps,
-    drillmaster: stepsAffordable(0, record.treasury * (1 - toTreasury)).steps,
-  };
+  const tracks = derivedTracks(worldSeed, record);
+  return { treasury: tracks.treasury.step, drillmaster: tracks.drillmaster.step };
 }
 
 export interface GuildProfile {
@@ -563,5 +583,5 @@ export function resumeFor(world: WorldState, applicant: Applicant): ApplicantRes
   };
 }
 
-/** The player's own hall counts as a guild id too, so chat and the Hall of Fame can name it. */
-export { PLAYER_GUILD_ID };
+/** Re-exported so callers get the capacity and the player's hall id from one import. */
+export { GUILD_CAPACITY, PLAYER_GUILD_ID };

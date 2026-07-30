@@ -47,6 +47,41 @@ export const MAX_CHAT_CATCHUP_DAYS = 3;
 const WAKING_FROM = 8;
 const WAKING_TO = 23;
 
+/**
+ * How many lines back a template stays "just said".
+ *
+ * Colour is drawn from thirty-two lines (fourteen greetings, eighteen idles) and then narrowed
+ * again by voice, so an unconstrained pick over a two-day catch-up produced "Evening. Anyone
+ * still up?" four times on one screen. Nothing was wrong with the roll — that is simply what
+ * uniform sampling of a small pool looks like when you can see all of it at once, and a hall
+ * that repeats itself is the single loudest tell that nobody is home.
+ *
+ * So a line that has just been said is off the table until it scrolls out of this window. It
+ * never *forbids* a pick: if the window swallows every candidate the constraint is dropped for
+ * that message rather than losing the line altogether.
+ */
+const RECENTLY_SAID = 12;
+
+/**
+ * Pick a line nobody has used lately, remembering it.
+ *
+ * Deterministic — `index` still comes off the day's seeded stream, and the window is rebuilt in
+ * the same order on every replay, so the same day generates the same conversation.
+ */
+function pickFresh(
+  lines: readonly ChatTemplate[],
+  index: number,
+  recent: string[],
+): ChatTemplate | null {
+  const fresh = lines.filter((line) => !recent.includes(line.id));
+  const template = chatLineAt(fresh.length > 0 ? fresh : lines, index);
+  if (!template) return null;
+
+  recent.push(template.id);
+  if (recent.length > RECENTLY_SAID) recent.shift();
+  return template;
+}
+
 export type ChatAuthor =
   | { readonly kind: 'bot'; readonly botId: number; readonly name: string }
   | { readonly kind: 'player'; readonly name: string }
@@ -201,7 +236,9 @@ export function generateChat({
   const messages: ChatMessage[] = [];
   // Events are consumed rather than reused, so the same level-up is not congratulated twice.
   const unspoken = events.filter((event) => memberIds.includes(event.botId));
+  const recent: string[] = [];
   let cursor = 0;
+  let lastSpeaker = -1;
 
   for (let dayIndex = firstDay; dayIndex <= lastDay; dayIndex += 1) {
     const rng = createRng(deriveSeed(world.seed, 'chat', dayIndex), `chat:${dayIndex}`);
@@ -214,8 +251,13 @@ export function generateChat({
       const awake = awakeMembers(world, memberIds, at);
       if (awake.length === 0) continue;
 
-      const speaker = awake[Math.floor(rng.next() * awake.length) % awake.length]!;
+      // Nobody talks to themselves twice in a row while the room is full, so if the roll picks
+      // the last speaker again and there is anyone else up, it goes to them instead.
+      const floor = awake.filter((id) => id !== lastSpeaker);
+      const pool = floor.length > 0 ? floor : awake;
+      const speaker = pool[Math.floor(rng.next() * pool.length) % pool.length]!;
       const voice = voiceOf(world, speaker);
+      lastSpeaker = speaker;
 
       // An event to talk about, if there is one going spare; otherwise colour.
       const event = cursor < unspoken.length ? unspoken[cursor] : undefined;
@@ -224,7 +266,7 @@ export function generateChat({
       const category: ChatCategory = talk?.category ?? (rng.bool(0.4) ? 'greeting' : 'idle');
       const slots: ChatSlots = talk?.slots ?? { guild: guildName };
       const lines = usableChatLines(category, slots, voice);
-      const template = chatLineAt(lines, rng.int(0, 4096));
+      const template = pickFresh(lines, rng.int(0, 4096), recent);
       if (!template) continue;
 
       if (talk) cursor += 1;
@@ -302,6 +344,8 @@ export function replyToPlayer({
   const rng = createRng(deriveSeed(world.seed, 'reply', at), `reply:${at}`);
   const wanted = REPLY_SHAPE[intent];
   const replies: ChatMessage[] = [];
+  // Two people answering "hey" with the same four words is worse than one person answering.
+  const said: string[] = [];
 
   for (const botId of awake) {
     if (replies.length >= 2) break;
@@ -315,11 +359,12 @@ export function replyToPlayer({
       hero: playerName,
       ...(others[0] !== undefined ? { other: botIdentity(world.seed, others[0]).name } : {}),
     };
-    const lines = usableChatLines('reply', slots, voiceOf(world, botId)).filter((line) =>
-      wanted.includes(line.id),
+    const lines = usableChatLines('reply', slots, voiceOf(world, botId)).filter(
+      (line) => wanted.includes(line.id) && !said.includes(line.id),
     );
     const template = chatLineAt(lines, rng.int(0, 4096));
     if (!template) continue;
+    said.push(template.id);
 
     replies.push({
       // Offset so the replies land after the player's own line and in a readable order.

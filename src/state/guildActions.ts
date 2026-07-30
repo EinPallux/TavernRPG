@@ -33,7 +33,7 @@ import {
   GUILD_CAPACITY,
   applyToGuild,
   decideApplication,
-  derivedSteps,
+  derivedTracks,
   rollApplicants,
   type ApplyRefusal,
 } from '@/engine/guilds/membership';
@@ -105,6 +105,16 @@ export interface Hall {
   readonly memberCount: number;
   readonly treasuryStep: number;
   readonly drillmasterStep: number;
+  /**
+   * Gold already banked toward the *next* step on each track.
+   *
+   * Carried for both kinds of hall so the Pot reads the same either way. A founded hall keeps it
+   * in the save; one of the sixty has it derived back out of its world treasury, which is what
+   * lets a donation into somebody else's pot still show up as movement rather than vanishing
+   * into a number too big to see it.
+   */
+  readonly treasuryPool: number;
+  readonly drillmasterPool: number;
   /** True when the player founded it, which is what unlocks the Guildmaster tools. */
   readonly isOwn: boolean;
 }
@@ -134,6 +144,8 @@ export function hallOf(save: SaveFile): Hall | null {
       memberCount: guild.roster.length + 1,
       treasuryStep: guild.treasuryStep,
       drillmasterStep: guild.drillmasterStep,
+      treasuryPool: guild.treasuryPool,
+      drillmasterPool: guild.drillmasterPool,
       isOwn: true,
     };
   }
@@ -142,7 +154,7 @@ export function hallOf(save: SaveFile): Hall | null {
   const definition = guildDef(guild.guildId);
   if (!record || !definition) return null;
 
-  const steps = derivedSteps(world.seed, record);
+  const tracks = derivedTracks(world.seed, record);
   return {
     id: guild.guildId,
     name: definition.name,
@@ -152,8 +164,10 @@ export function hallOf(save: SaveFile): Hall | null {
     sigil: null,
     roster: record.memberIds,
     memberCount: record.memberIds.length + 1,
-    treasuryStep: steps.treasury,
-    drillmasterStep: steps.drillmaster,
+    treasuryStep: tracks.treasury.step,
+    drillmasterStep: tracks.drillmaster.step,
+    treasuryPool: tracks.treasury.pool,
+    drillmasterPool: tracks.drillmaster.pool,
     isOwn: false,
   };
 }
@@ -627,7 +641,7 @@ export function tickGuild(
       const worked = simulateBotContribution({
         world: engine,
         memberIds: hall.roster,
-        metric: definition.metric,
+        definition,
         from,
         to,
         lastRollDay: next.guild.lastBountyDay,

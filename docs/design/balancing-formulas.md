@@ -245,6 +245,35 @@ Two rules the numbers above do not show:
   a healthy bot guild reaches ~+15% by month 2. Guild Bounty weekly chest: gold pot + 1 Golden Die +
   materials, scaled to completion %. `[TUNE]`
 
+**As built (Phase 10).** Three numbers had to be solved for rather than chosen.
+
+- **`TREASURY_PER_MEMBER = 420_000`** (`world/generate.ts`). Phase 8 seeded a guild's treasury at
+  900 gold a member — a figure invented before `stepCost` existed. Step 60 costs about twelve
+  million, so every one of the sixty landed on step 4 and advertised +1%, and the browse list was
+  a formality. At 420k a member the sixty spread **+4.5% to +13%, median +8.8%**, which puts the
+  spec's "~+15% by month 2" at the top of the range rather than at the average, and makes which
+  hall you join a real decision. Asserted in `guilds.test.ts` ("buffs worth choosing between").
+- **`HALL_EFFORT = 0.82`** (`guilds/bounty.ts`). What a hall of *average* dedication gets done
+  toward its own bounty in a week, without the player. It is the number that decides whether the
+  bounty is co-operative or decorative: above 1 the hall clears it alone and the poster is
+  scenery; below the 0.6 partial threshold the player cannot reach the line however hard they
+  work. At 0.82 the hall reliably banks half a chest and **the player's week is the difference
+  between half a chest and all of it.** Bot output is read off the bounty's own `perMember`, not
+  a parallel table, so a change to a bounty target re-paces the simulation with it.
+- **`MEAN_DEDICATION = 0.495`**, the population mean implied by §12's distribution (60% casual
+  0.15–0.5, 30% regular 0.5–0.85, 10% hardcore 0.85–1.1). Divided back out so `HALL_EFFORT` means
+  a share of the target rather than a share of what a maximally dedicated hall would manage.
+
+Whole-number metrics are **rounded stochastically**: a member whose day comes to 0.27 arena wins
+has a 27% chance of one win, rather than being floored to zero. Flooring was the original
+implementation and it took the entire hall's contribution to nothing on four of the six metrics.
+The roll comes off the same day-and-bot seed as everything else, so a week replays identically.
+
+Guild buffs are the one multiplier that **compounds**: gold and XP together mean faster levels
+mean higher payouts. A single day is exactly `1 + 0.0025 · steps`; over a month a maxed hall is
+worth more than +25%, which is why `economy.test.ts` asserts the exact figure on one day and a
+wider band over thirty.
+
 ## 12. Simulated-player progression
 
 - Each bot has `dedication ∈ [0.15, 1.1]` (distribution: 60% casual 0.15–0.5, 30% regular 0.5–0.85,

@@ -93,6 +93,26 @@ interface WorldState {
   bots: BotRecord[]; guilds: GuildState[]; ladder: number[];   // botId order; player sentinel -1
   rivals: RivalLink[]; feed: FeedEntry[];                      // capped 300
 }
+interface GuildState {              // v8: a hall's divergence. Name/banner/motto derive from id
+  id: number; memberIds: number[];  // capped at GUILD_CAPACITY (25)
+  treasury: number;                 // v10: buff steps derive from this, never stored beside it
+}
+
+// ————— The player's guild (v10) —————
+interface Guild {                   // one slice, whichever kind of hall they are in
+  guildId: number | null;           // null = unguilded; PLAYER_GUILD_ID (1000) = they founded it
+  joinedAt: Timestamp | null;
+  application: { guildId: number; appliedAt: Timestamp; decidesAt: Timestamp } | null;
+  refusedAt: Record<string, Timestamp>;       // 24h reapply cooldown, per hall
+  founded: FoundedGuild | null;     // name, motto, field, charge, sigil — only when they founded
+  roster: number[]; officers: number[]; applicants: Applicant[];   // founded halls only
+  treasuryStep: number; treasuryPool: number;                      // founded halls only:
+  drillmasterStep: number; drillmasterPool: number;                // one of the sixty derives both
+  contributions: Record<string, number>;      // this week, keyed by botId or 'player'
+  chat: StoredChatMessage[];        // capped 200
+  bounty: BountyState | null;       // { weekKey, bountyId, target, playerUnits, botUnits, settled }
+  lastApplicantDay: number; lastChatDay: number; lastBountyDay: number;   // high-water marks
+}
 
 // ————— Combat (engine I/O — pure) —————
 interface Combatant {               // snapshot; built by buildCombatant(hero|bot|monster)
@@ -114,15 +134,15 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
   hpTimeline: [number, number][]; }
 
 // ————— Save envelope —————
-// Schema v3 as shipped; `activity` and `world` join in Phases 5 and 8.
 interface SaveFile {
-  schemaVersion: 4; savedAt: Timestamp; slot: 1|2|3;
+  schemaVersion: 10; savedAt: Timestamp; slot: 1|2|3;
   worldSeed: Seed;                  // committed once; seeds the entire simulated world
   clock: { lastSeen: Timestamp; clampCount: number };
   settings: Settings;               // nav, motion, audio, battle playback (v4)
   hero: Hero | null;                // null routes the player to creation
-  // activity: ActivityState;       // Phase 5
-  // world: WorldState;             // Phase 8
+  activity: ActivityState;          // v5–v7: missions, patrol, shops, mount, arena
+  world: WorldState | null;         // v8: raised on first entry, null until then
+  guild: Guild;                     // v10
 }
 ```
 

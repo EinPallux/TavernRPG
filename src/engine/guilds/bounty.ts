@@ -23,12 +23,40 @@ import { weekKeyFor, type DayKey } from '@/engine/clock';
 import { botIdentity } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import type { WorldState } from '@/engine/world/generate';
-import { BOUNTIES, bountyById, bountyTarget, bountyTitle, type BountyMetric } from '@/data/bounties';
+import {
+  BOUNTIES,
+  bountyById,
+  bountyTarget,
+  bountyTitle,
+  type BountyDef,
+  type BountyMetric,
+} from '@/data/bounties';
 
 /** Share of the target that still pays something (spec §4). */
 export const PARTIAL_THRESHOLD = 0.6;
 /** What a partial clear is worth, against a full one. */
 export const PARTIAL_SHARE = 0.5;
+
+/**
+ * `[TUNE]` What a hall of average dedication gets done on its own, as a share of its own target.
+ *
+ * The single number that decides whether the bounty is co-operative or decorative. Above 1 the
+ * hall clears it without the player and the poster is scenery; at the 0.5 it sat at before, the
+ * player could not reach the sixty-percent line however hard they worked and the poster was a
+ * weekly reminder that they were losing. Just under the partial threshold's opposite shoulder is
+ * the interesting place: the hall reliably banks half a chest, and *the player's week is the
+ * difference between half and all of it.*
+ */
+export const HALL_EFFORT = 0.82;
+
+/**
+ * Mean dedication across the population (balancing §12: 60% casual, 30% regular, 10% hardcore).
+ *
+ * Here so `HALL_EFFORT` means what it says. Bot output is per-member and scaled by that member's
+ * own dedication, so without dividing the population's average back out, "82%" would silently be
+ * "82% of what a *maximally* dedicated hall would do" — which is 40% of the target in practice.
+ */
+const MEAN_DEDICATION = 0.495;
 
 /** `[TUNE]` the chest, per member, scaled by hero level at payout. */
 export const CHEST_GOLD_PER_LEVEL = 120;
@@ -146,7 +174,14 @@ export function contribute(state: BountyState, metric: BountyMetric, units: numb
 export function simulateBotContribution(options: {
   readonly world: WorldState;
   readonly memberIds: readonly number[];
-  readonly metric: BountyMetric;
+  /**
+   * The bounty itself, not just its metric.
+   *
+   * Bot output used to come off a private per-week table that happened to hold the same numbers
+   * as `bounties.ts` — a second copy of the tuning, free to drift, and the reason the hall's week
+   * could quietly stop matching the target it was measured against. One table now.
+   */
+  readonly definition: BountyDef;
   readonly from: number;
   readonly to: number;
   readonly lastRollDay: number;
@@ -172,7 +207,12 @@ export function simulateBotContribution(options: {
         deriveSeed(options.world.seed, 'bounty-day', dayIndex, botId),
         `bounty:${dayIndex}:${botId}`,
       );
-      const done = dailyUnits(options.metric, personality.dedication, rng.float(0.6, 1.4));
+      const done = dailyUnits(
+        options.definition,
+        personality.dedication,
+        rng.float(0.6, 1.4),
+        rng.float(0, 1),
+      );
       if (done <= 0) continue;
 
       units += done;
@@ -186,22 +226,33 @@ export function simulateBotContribution(options: {
 /**
  * A bot's day, in whatever the bounty counts.
  *
- * Deliberately built off the same `perMember` numbers the targets are: a fully dedicated member
- * does roughly a seventh of their per-member target a day, so a hall of committed players clears
- * a bounty on Saturday and a hall of casuals does not clear it at all.
+ * Read straight off the bounty's own `perMember`, so the hall's week and the target it is judged
+ * against can never be tuned apart: change a number in `bounties.ts` and the simulation follows.
+ * A member of average dedication does `HALL_EFFORT` of their share; a hardcore one does twice
+ * that and a casual one about a third of it, which is what makes *who is in the guild* the thing
+ * that decides whether the hall carries its own bounty.
+ *
+ * **Rounded stochastically, and that is the whole reason this reads correctly.** Most metrics are
+ * counted in small whole numbers — three arena wins a week is under half a win a day. Rounding
+ * that to a whole number *at all* is a lie in one direction or the other, and flooring it turned
+ * the entire hall's week into zero, which is what a 0/44 bounty poster looked like. Carrying the
+ * fraction as the *odds* of a whole unit keeps the expected value exactly `daily` while only
+ * emitting whole wins — so a full hall produces the ~40 the target was drawn against, and which
+ * of them had the good week still varies. Deterministic: the roll is off the day-and-bot seed.
  */
-function dailyUnits(metric: BountyMetric, dedication: number, noise: number): number {
-  const perWeek: Readonly<Record<BountyMetric, number>> = {
-    missions: 6,
-    arenaWins: 3,
-    patrolHours: 10,
-    itemsScrapped: 4,
-    levelsGained: 2,
-    goldDonated: 900,
-  };
+function dailyUnits(
+  definition: BountyDef,
+  dedication: number,
+  noise: number,
+  roll: number,
+): number {
   // Dedication runs 0.15–1.1. A casual member contributes, just not much.
-  const daily = (perWeek[metric] / 7) * dedication * noise;
-  return metric === 'goldDonated' ? Math.round(daily) : Math.floor(daily + 0.35);
+  const perDay = (definition.perMember * HALL_EFFORT) / MEAN_DEDICATION / 7;
+  const daily = perDay * dedication * noise;
+  if (definition.metric === 'goldDonated') return Math.round(daily);
+
+  const whole = Math.floor(daily);
+  return whole + (roll < daily - whole ? 1 : 0);
 }
 
 export interface BountyChest {
