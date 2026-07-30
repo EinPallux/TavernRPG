@@ -33,6 +33,8 @@ import { AmbientStage } from '@/components/ui/AmbientStage';
 import { useGameStore } from '@/state/gameStore';
 import { gameNow } from '@/state/clock';
 import type { ClaimResult } from '@/state/missionActions';
+import { TownCrier } from '@/components/world/TownCrier';
+import { AbsenceCard } from '@/components/world/AbsenceCard';
 import { MissionCard } from './MissionCard';
 import { MissionProgress } from './MissionProgress';
 import { dramatic, standard } from '@/styles/motion';
@@ -52,6 +54,8 @@ export function TavernScreen() {
   const landMission = useGameStore((state) => state.landMission);
   const buyAle = useGameStore((state) => state.buyAle);
   const drinkAle = useGameStore((state) => state.drinkAle);
+  const absenceSummary = useGameStore((state) => state.absenceSummary);
+  const dismissAbsenceSummary = useGameStore((state) => state.dismissAbsenceSummary);
 
   const [staged, setStaged] = useState<StagedFight | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -267,8 +271,32 @@ export function TavernScreen() {
           {phase === 'door' && activity.pendingMission && (
             <ReturnedCard mission={activity.pendingMission} onFight={handleFight} />
           )}
+
+          {/* The Crier board. The Tavern is the game's home screen, so this is where the
+              simulation becomes visible (world-simulation spec §6). */}
+          {save.world && save.world.feed.length > 0 && (
+            <div className="mt-5 max-w-3xl">
+              <TownCrier entries={save.world.feed} now={gameNow()} />
+            </div>
+          )}
         </div>
       </AmbientStage>
+
+      {/* What the world did while the tab was shut. Shown once, then gone. */}
+      <AnimatePresence>
+        {absenceSummary && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={dramatic}
+            className="bg-wood-900/85 absolute inset-0 z-50 grid place-items-center p-8 backdrop-blur-sm"
+            data-testid="absence-overlay"
+          >
+            <AbsenceCard summary={absenceSummary} onDismiss={dismissAbsenceSummary} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* The fight takes the whole stage. */}
       <AnimatePresence>

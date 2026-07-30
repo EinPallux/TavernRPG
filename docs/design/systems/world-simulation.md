@@ -78,6 +78,56 @@ Bot record ≤ ~200 bytes hot state (identity/stats derivable from seed; only *d
 stored: level, honor, guildId, heat, dormancy). 1,500 bots ≈ trivial. Sim tick ≤ 8ms online;
 full 14-day reconciliation ≤ 1s. Chat/feed logs capped (200 / 300 entries) with archival trim.
 
+## 7b. As built (Phase 8)
+
+**Identity is derived, never stored.** A `BotRecord` is seven numbers — level, xp, honor, guild,
+gear score, dormancy — and `engine/world/identity.ts` recomputes name, class, culture,
+personality and timezone from `(worldSeed, botId)` on demand. Measured: **99 bytes a bot, 145 KB
+for the whole world**, inside the ≤200 B/bot budget. The constraint this imposes is that every
+identity function is a pure function of the *id*, never of a draw order — the level-of-detail
+bands touch bots in whatever order they please.
+
+**The level curve needed two fixes to match §12.** A dedication *multiplier* on the log-normal
+moved the median from the intended 28 down to 24, because scaling a distribution moves its
+centre; dedication and level are now correlated through a Gaussian copula, which puts the
+diligent above the idle while leaving the marginal distribution exactly where the spec wants it.
+And a hard clamp at 92 left seventy-five heroes tied on the ceiling — a wall, not a ladder — so
+the top is now **compressed asymptotically** toward a ceiling of 82, with the ten legends
+occupying 83–92 as a visible tier above the field. Measured: median 28, p95 74, max 92.
+
+**Reconciliation.** Full band (rivals, guildmates, ±100 ranks, the top ten) replays hour by hour
+with events; ±500 gets one pass a day, ladder swaps only; everyone else is a single closed-form
+integration. Measured **135 ms for a fortnight and 177 ms for a year** — the year costs no more
+because anything past fourteen days is integrated rather than replayed.
+
+What is guaranteed: determinism (same world, span and context ⇒ same result), order-independence
+*within* a tick, and that `integrateProgress` **composes** — a fortnight in one step equals
+fourteen daily steps, which is what lets the closed-form path and the replay path meet at the
+fourteen-day boundary without a seam. What is deliberately *not* guaranteed is that one long call
+equals many short ones: the bands follow the player, so a bot drifting across a band boundary
+between calls gets different treatment. That is the level-of-detail system working, and the
+difference is invisible at the distances where it happens.
+
+**The Crier may only report deltas.** Every `FeedEntry` carries the `SimEvent` behind it, and the
+audit test walks a hundred entries checking it exists. The one exception is `flavour` — lines
+about the world rather than its people — which carries `sourceEvent: null` and is tagged so the
+audit can tell the two apart. Two things beyond raw priority proved necessary:
+
+- **Category diversity.** The sim emits roughly twice as many ladder passes as level-ups and
+  ladder scores higher, so pure score ranking produced fourteen ladder passes and nothing else.
+  No category may take more than 40% of the board; entries held back for variety backfill the
+  remainder, so a genuinely one-note day still fills up.
+- **A warm-up day.** The world is generated with its clock a day in the past so the first
+  catch-up has something to report. Without it a new hero walked into a Tavern with a blank
+  board, and the whole simulation was invisible until the second session.
+
+**Two things the phase changed outside itself.** The autosave is now **serialised and
+coalescing**: writes used to run in parallel with a guard that stopped a stale one writing back
+into the store, which protected the store but not the disk — once the save reached 145 KB an
+older `put` regularly landed last, and a hero levelled to 10 reloaded as 5. And the world catches
+up **after first paint** rather than before, so ~300 ms of simulation no longer sits in front of
+the player's own hero on every load.
+
 ## 8. Data hooks
 
 `WorldState` {seed, createdAt, lastSimAt, bots: BotRecord[], guilds, ladder, rivals, feed},

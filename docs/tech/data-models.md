@@ -82,11 +82,12 @@ interface ActivityState {
 }
 
 // ————— World simulation (persisted as divergence; identity derives from seed) —————
-interface BotRecord {               // ≤ ~200B hot state each
+interface BotRecord {               // measured 99 B each — identity is derived, never stored
   id: number;                       // index into seed-derived identity (name/class/personality)
   level: number; xp: number; honor: number; gearScore: number;
-  guildId?: number; dormantUntil?: Timestamp; rivalHeat?: number;
-}
+  guildId: number;                  // -1 for the unguilded
+  dormantUntil: Timestamp;          // 0 when they are around
+}                                   // rival heat lives on WorldState.rivals, not per bot
 interface WorldState {
   seed: Seed; createdAt: Timestamp; lastSimAt: Timestamp; lastProcessedDay: DayKey;
   bots: BotRecord[]; guilds: GuildState[]; ladder: number[];   // botId order; player sentinel -1

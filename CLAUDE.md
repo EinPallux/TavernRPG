@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–7 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–8 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -46,9 +46,22 @@ feedback, edge cases and tests. Deployed on Vercel.
   replaces), one `ShopScreen` serving both keepers, the Stables, economy sim pass 2, and save
   schema v7. Shop restock joined the Reset Engine rather than each shop checking the date.
 
-552 unit tests + 91 e2e green. Next work: `ROADMAP.md` **Phase 8 (World Simulation Core)** —
-1,500 seeded bots, 60 guilds, progression ticks with LoD reconciliation, the ladder service and
-the Town Crier feed.
+- **Phase 8:** the 1,500 — `engine/world/` (`identity` derives everything from `(seed, botId)`
+  so a `BotRecord` is only divergence; `generate`, `materialize`, `ladder` as the single
+  authority over rank and honor, `simulate` with LoD bands, `rivals`, `crier`), the Town Crier
+  board, the absence card, `/dev/world`, and save schema v8. Also fixed the autosave, which was
+  losing writes once the save grew (see below).
+
+651 unit tests + 104 e2e green. Next work: `ROADMAP.md` **Phase 9 (Arena & Hall of Fame)** — the
+player joins the ladder they have been watching.
+
+**The autosave is serialised and coalescing** (`gameStore.ts`). It was parallel with a guard that
+protected the store but not the disk; at 145 KB an older write landed last and ate a level. If
+you add a store action, `void persistNow()` is still correct — the queue handles the rest.
+
+**Anything that mutates then navigates must flush.** e2e helpers call `store.getState().flush()`
+before `page.reload()` or `page.goto()`, because the suite does in microseconds what a player
+does in seconds. A test that reloads without flushing is racing its own write.
 
 **Before touching class constants or monster archetypes:** run `npm run balance`. The numbers in
 `src/data/classes.ts` were solved for, not chosen, and the bands in
@@ -68,15 +81,16 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 `src/engine/` pure logic — `rng`, `clock`, `save/` (schema + migrations), `progression/`
 (xp, stats, gates, rewards), `items/` (types, generate, drops, starterKit), `hero/`
 (actions, derived), `combat/`, `missions/` (board, lifecycle), `patrol/`, `shops/`, `stables/`,
-`economy/`, `reset/` ·
+`world/` (identity, generate, materialize, ladder, simulate, rivals, crier), `economy/`, `reset/` ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
-patrolLog, mounts, shopBarks ·
+patrolLog, mounts, shopBarks, names, guilds, legends, crierTemplates ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables}/` ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
-(the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts). The character screen's
-dev drawer conjures gear, levels and gold while loot sources are still being built.
+(the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,
+the level histogram and the Crier's output from any seed). The character screen's dev drawer
+conjures gear, levels and gold while loot sources are still being built.
 
 ## Read before working (in order)
 

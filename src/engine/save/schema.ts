@@ -11,10 +11,11 @@
 import { z } from 'zod';
 import { ICON_IDS } from '@/data/icons';
 import { MOUNT_IDS } from '@/data/mounts';
+import { CRIER_CATEGORIES, RIVAL_ARCHETYPES } from '@/data/crierTemplates';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 7;
+export const CURRENT_SCHEMA_VERSION = 8;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -258,6 +259,75 @@ export const DEFAULT_ACTIVITY: Activity = {
   mount: null,
 };
 
+/* ── The simulated world (schema v8) ───────────────────────────────────────────── */
+
+/**
+ * A bot's **divergence** from what the seed already says (world-simulation spec §7).
+ *
+ * Name, class, culture, personality and timezone are deliberately absent: they are recomputed
+ * from `(worldSeed, id)` by `engine/world/identity.ts`. Storing 1,500 names would cost more
+ * than the rest of the save put together, and would let a stored name drift from the seed that
+ * is supposed to imply it.
+ */
+export const botRecordSchema = z.object({
+  id: z.number().int().min(0),
+  level: z.number().int().min(1),
+  xp: z.number().min(0),
+  honor: z.number().min(0),
+  /** Guild index, or -1 for the unguilded. */
+  guildId: z.number().int().min(-1),
+  gearScore: z.number().min(0),
+  dormantUntil: timestampSchema,
+});
+
+export const guildRecordSchema = z.object({
+  id: z.number().int().min(0),
+  memberIds: z.array(z.number().int().min(0)),
+  treasury: z.number().min(0),
+  active: z.boolean(),
+});
+
+export const rivalSchema = z.object({
+  botId: z.number().int().min(0),
+  archetype: z.enum(RIVAL_ARCHETYPES),
+  heat: z.number().min(0).max(100),
+  since: timestampSchema,
+  everBeaten: z.boolean(),
+});
+
+const simEventSchema = z.object({
+  kind: z.enum(['levelUp', 'ladderPass', 'milestone', 'dormant', 'returned']),
+  at: timestampSchema,
+  botId: z.number().int().min(0),
+  otherId: z.number().int().min(0).optional(),
+  level: z.number().int().min(1).optional(),
+  rank: z.number().int().min(1).optional(),
+});
+
+export const feedEntrySchema = z.object({
+  id: z.string().min(1),
+  at: timestampSchema,
+  category: z.enum(CRIER_CATEGORIES),
+  text: z.string().min(1),
+  relation: z.enum(['rival', 'guildmate', 'neighbour', 'stranger', 'world']),
+  /** Null only for world flavour — every other headline carries the delta behind it. */
+  sourceEvent: simEventSchema.nullable(),
+});
+
+export const worldSchema = z.object({
+  seed: seedSchema,
+  createdAt: timestampSchema,
+  /** Last timestamp the simulation was advanced to. */
+  lastSimAt: timestampSchema,
+  bots: z.array(botRecordSchema),
+  guilds: z.array(guildRecordSchema),
+  /** Bot ids in ladder order, best first. */
+  ladder: z.array(z.number().int().min(0)),
+  rivals: z.array(rivalSchema),
+  /** Newest first, capped at 300 (spec §7). */
+  feed: z.array(feedEntrySchema),
+});
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -269,6 +339,11 @@ export const saveFileSchema = z.object({
   /** Null until the player finishes creation — that is what routes them to the class picker. */
   hero: heroSchema.nullable(),
   activity: activitySchema,
+  /**
+   * The 1,500 (schema v8). Null until the world is generated, which happens at hero creation —
+   * a save with no hero has no world to simulate.
+   */
+  world: worldSchema.nullable(),
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -280,6 +355,10 @@ export type StoredActiveMission = z.infer<typeof activeMissionSchema>;
 export type StoredPatrolShift = z.infer<typeof patrolShiftSchema>;
 export type StoredShopStock = z.infer<typeof shopStockSchema>;
 export type StoredMountRental = z.infer<typeof mountRentalSchema>;
+export type StoredWorld = z.infer<typeof worldSchema>;
+export type StoredBotRecord = z.infer<typeof botRecordSchema>;
+export type StoredFeedEntry = z.infer<typeof feedEntrySchema>;
+export type StoredRival = z.infer<typeof rivalSchema>;
 export type SaveFile = z.infer<typeof saveFileSchema>;
 
 export interface NewSaveOptions {
@@ -299,6 +378,9 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     settings: { ...DEFAULT_SETTINGS },
     hero: null,
     activity: { ...DEFAULT_ACTIVITY },
+    // The world is generated at hero creation: a save with no hero has nothing to simulate
+    // around, and no rank for the level-of-detail bands to centre on.
+    world: null,
   };
 }
 

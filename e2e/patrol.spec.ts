@@ -12,7 +12,7 @@ import { expect, test, type Page } from '@playwright/test';
 const SETUP_TIMEOUT = 20_000;
 
 interface StoreHandle {
-  getState: () => { save: Save | null };
+  getState: () => { save: Save | null; flush: () => Promise<void> };
   setState: (partial: { save: Save }) => void;
 }
 interface Save {
@@ -49,6 +49,21 @@ async function levelPastTheGate(page: Page) {
   await page.getByTestId('dev-drawer-toggle').click();
   await page.getByTestId('dev-level-10').click();
   await expect(page.getByTestId('hud-level')).toHaveText('10', { timeout: SETUP_TIMEOUT });
+  await flushSave(page);
+}
+
+/**
+ * Wait for the autosave to reach disk.
+ *
+ * Every caller here navigates immediately afterwards, and a full page load reads from storage —
+ * so without this the test is racing its own write. A real player takes seconds to cross a
+ * room; the suite takes microseconds.
+ */
+async function flushSave(page: Page) {
+  await page.evaluate(async () => {
+    const store = (window as unknown as { __tavernStore?: StoreHandle }).__tavernStore;
+    await store?.getState().flush();
+  });
 }
 
 async function gotoWatch(page: Page) {
@@ -60,7 +75,7 @@ async function gotoWatch(page: Page) {
 
 /** Wind a running shift back so `minutes` of it have already happened. */
 async function ageShift(page: Page, minutes: number) {
-  await page.evaluate((mins) => {
+  await page.evaluate(async (mins) => {
     const store = (window as unknown as { __tavernStore?: StoreHandle }).__tavernStore;
     if (!store) throw new Error('store handle missing');
     const { save } = store.getState();
@@ -77,6 +92,8 @@ async function ageShift(page: Page, minutes: number) {
         },
       },
     });
+    // Flushed, not just set: "survives a reload mid-shift" reads from storage.
+    await store.getState().flush();
   }, minutes);
 }
 
@@ -90,6 +107,8 @@ async function takeShift(page: Page, hours: number) {
   if (await confirm.isVisible()) await confirm.click();
 
   await expect(page.getByTestId('patrol-on-duty')).toBeVisible();
+  // Callers that cross to the tavern next need the shift on disk, not just in the store.
+  await flushSave(page);
 }
 
 test.describe('the gate', () => {
@@ -249,6 +268,7 @@ test.describe('one place at a time', () => {
     const id = (await card.getAttribute('data-testid'))!.replace('mission-card-', '');
     await page.getByTestId(`accept-${id}`).click();
     await expect(page.getByTestId('mission-progress')).toBeVisible();
+    await flushSave(page);
 
     await page.goto('/patrol');
     await expect(page.getByTestId('place-patrol')).toBeVisible({ timeout: SETUP_TIMEOUT });

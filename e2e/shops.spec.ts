@@ -13,7 +13,7 @@ import { expect, test, type Page } from '@playwright/test';
 const SETUP_TIMEOUT = 20_000;
 
 interface StoreHandle {
-  getState: () => { save: Save | null };
+  getState: () => { save: Save | null; flush: () => Promise<void> };
   setState: (partial: { save: Save }) => void;
 }
 interface Save {
@@ -51,6 +51,13 @@ async function outfit(page: Page, { gold = 5 }: { gold?: number } = {}) {
 
   // +10,000 a click. Enough clicks that nothing under test is gated on affordability.
   for (let i = 0; i < gold; i += 1) await page.getByTestId('dev-gold').click();
+
+  // Every caller navigates straight afterwards, and a page load reads from storage — without
+  // this the test races its own autosave.
+  await page.evaluate(async () => {
+    const store = (window as unknown as { __tavernStore?: StoreHandle }).__tavernStore;
+    await store?.getState().flush();
+  });
 }
 
 /** Give the hero Golden Dice, which no faucet in the build hands out on demand. */

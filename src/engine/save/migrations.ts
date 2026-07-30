@@ -101,6 +101,17 @@ export const MIGRATIONS: readonly Migration[] = [
       return { ...data, activity: { ...activity, shops: {}, mount: null } };
     },
   },
+  {
+    from: 7,
+    to: 8,
+    describe: 'Phase 8: add the simulated world (1,500 heroes, guilds, ladder, feed)',
+    migrate: (data) => {
+      // Null rather than generated. Generating here would need a clock this pure function does
+      // not have, and the load path already knows how to raise a world for a hero who has none
+      // — which is exactly what an existing player is.
+      return { ...data, world: null };
+    },
+  },
 ];
 
 export type MigrationFailure =

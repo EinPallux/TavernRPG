@@ -83,12 +83,21 @@ walking-skeleton screen that Phase 1 replaces with the real app shell.
   (settings/tutorial/statistics), `ui` (ephemeral, never persisted).
 - **Save model:** 3 slots (Q2) + autosave: debounced 5s after mutations + on `visibilitychange`/
   `pagehide`. Save = `{schemaVersion, savedAt, worldSeed, slices…}` (~bots stored as divergence
-  records, world-sim §7 — target < 1 MB/slot).
+  records, world-sim §7 — target < 1 MB/slot; measured 145 KB with the world, 99 B/bot).
+- **The autosave is serialised and coalescing** (as built, Phase 8). Only one write runs at a
+  time; callers arriving mid-write set a dirty flag and the drain loop re-reads current state.
+  The earlier design fired writes in parallel with a sequence guard, which stopped a stale write
+  clobbering the *store* but not the *disk* — once the world took the save to 145 KB an older
+  `put` regularly landed last, and a hero levelled to 10 reloaded as 5. A burst of twenty
+  mutations now costs two writes, and the second is always the newest state.
+- **Expensive load work happens after first paint.** World reconciliation (~300 ms) runs in a
+  deferred task rather than before `status: 'ready'`, so the hero and the HUD are never waiting
+  on a simulation they do not read.
 - **Migrations:** `migrations/vN.ts` chain, pure functions with Vitest fixtures per version;
   loading any historical save from 1.0-beta onward must succeed (CI keeps fixture saves).
   Shipped so far: **v1** walking skeleton · **v2** settings · **v3** hero · **v4** battle playback
   preferences · **v5** activity (Vigor, mission) · **v6** patrol shift · **v7** shop shelves and
-  the mount stall. Every one ships a captured
+  the mount stall · **v8** the simulated world. Every one ships a captured
   fixture of the *previous* version, and a fixture is captured in the least convenient state the
   version can be in rather than at rest — v5's carries a mission mid-timer, because a migration
   that only handles the idle save is a migration that has not been tested.

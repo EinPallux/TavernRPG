@@ -21,14 +21,20 @@ export function monsterStatBudget(level: number): number {
   return Math.round(12 + 5.2 * Math.max(1, level));
 }
 
-/** Baseline weapon damage a fighter of this level is expected to swing. */
-function baselineWeaponDamage(level: number): { min: number; max: number } {
+/**
+ * Baseline weapon damage a fighter of this level is expected to swing.
+ *
+ * Exported since Phase 8: the world simulation builds 1,500 bots off exactly these curves, which
+ * is what "fair under inspection" means — a bot is not a monster with a name, it is a hero built
+ * the way heroes are built.
+ */
+export function baselineWeaponDamage(level: number): { min: number; max: number } {
   const average = 4 + 2.4 * Math.max(1, level);
   return { min: average * 0.8, max: average * 1.2 };
 }
 
 /** Baseline total armour a fighter of this level is expected to wear. */
-function baselineArmour(level: number): number {
+export function baselineArmour(level: number): number {
   return Math.max(1, level) * 7 * 0.88 * 5;
 }
 
