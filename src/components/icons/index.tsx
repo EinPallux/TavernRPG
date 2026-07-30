@@ -295,6 +295,39 @@ export const TrophyIcon = (props: IconProps) => (
   </Glyph>
 );
 
+/* ── Forge materials ─────────────────────────────────────────────────────────────── */
+
+/**
+ * Scrap. Overlapping metal scales — what a broken piece of armour looks like in a bucket.
+ *
+ * The three materials are drawn as one *ascending* family on purpose: flat plates, then a
+ * faceted crystal, then a struck star. A player should be able to tell which is the good one
+ * from the silhouette alone, at 13px, in a wallet chip.
+ */
+export const ScrapIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d="M4 9.5 8 6l4 3.5-4 3.5-4-3.5Z" />
+    <path d="M12 14.5 16 11l4 3.5-4 3.5-4-3.5Z" />
+    <path d="M12.5 6.5 15 4.5l2.5 2" />
+  </Glyph>
+);
+
+/** Essence. A faceted shard with its own light coming off it. */
+export const EssenceIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d="M12 3 17 9.5 12 21 7 9.5 12 3Z" />
+    <path d="M7 9.5h10M12 3v18" />
+  </Glyph>
+);
+
+/** Starmetal. A four-pointed star inside its impact ring — it came down, it did not grow here. */
+export const StarmetalIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d="M12 2.5 14 9l6.5 2-6.5 2-2 6.5-2-6.5L3.5 11 10 9l2-6.5Z" />
+    <path d="M19 4.5 20.5 3M4.5 20.5 3.2 21.8M19.5 19.5l1.3 1.3" />
+  </Glyph>
+);
+
 /**
  * The Vigor tankard — not a plain glyph: the ale level is the meter, so it takes a fill
  * ratio and renders a real liquid line (style guide §7 "meters").
@@ -393,6 +426,9 @@ export const ICONS = {
   spark: SparkIcon,
   key: KeyIcon,
   trophy: TrophyIcon,
+  scrap: ScrapIcon,
+  essence: EssenceIcon,
+  starmetal: StarmetalIcon,
   ...ITEM_ICONS,
 } satisfies Record<IconId, (props: IconProps) => React.ReactElement>;
 

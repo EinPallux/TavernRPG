@@ -7,6 +7,74 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 12: Gear Sets & the Emberforge (a chase, and a bench to cheat at it)
+- **Ten curated sets, two per class.** Helm, chest, gloves, boots, belt — the one item type in
+  the game whose statline is *authored* rather than rolled, because a set is a build and a build
+  cannot be a shrug of the dice. Oathsworn Bulwark and Wolfblood Warplate for the Warrior;
+  Maestro's Ensemble and Dawnchorus Attire for the Bard; Emberweave Vestments and Tidecaller's
+  Regalia for the Mage; Thornstalker's Guise and Galewind Harness for the Hunter; Corsair King's
+  Finery and Nighttide Silks for the Swashbuckler.
+- **Thirty bonuses at 2, 4 and 5 pieces, declared as data.** A bonus is a list of named
+  `SetEffect` levers that the engine folds into one `CombatModifiers` bag at build time; the
+  resolver reads that bag at the handful of places it matters. Thirty branches in `fight()` would
+  have been thirty places to get it wrong, and an eleventh set is now a data change.
+- **Five-piece bonuses that change how a fight goes, not how big it is.** Blocks that throw
+  damage back, dodges that answer with a free shot, crits that peel armour off, a flurry that can
+  chain a third strike, a shield that catches you the first time you drop under a third health,
+  a first blow that always crits, a damage floor that lifts — and, for the Maestro, **choosing
+  the Verse you open on**, the one bonus in the game that is a decision rather than a number.
+  All of them bounded by a once-a-battle limit or a stack cap; the harness holds a full-set
+  mirror inside 42–58%.
+- **The Emberforge, and Torvald.** Three benches under one roof because they are one loop.
+  The **crucible** takes ten pieces a day and pays materials (Scrap from Commons, Essence from
+  Rares, Starmetal from Epics and Sets); the **anvil** turns those materials into gear *in a slot
+  you choose*, at three published investment tiers; the **recipe shelf** turns them into a piece
+  of a specific set.
+- **Odds on the tile, always.** The rarity distribution the screen prints and the weights
+  `rollForgeRarity()` rolls against are the same object — there is no version of the screen that
+  can advertise a number the dice do not honour. So is the pity track: five Master forges banks a
+  guaranteed Epic, the meter is drawn as five pips, and the tile says "Strike (Epic)" when it is
+  ready. A floor nobody can see is indistinguishable from good luck.
+- **The forge moment.** Three hammer blows and a shower of sparks, then a rarity beam and the
+  card. The item is decided and written to the save *before* the first frame — closing the tab
+  mid-ceremony still leaves it in your bags — and the whole thing is skippable and
+  reduced-motion safe.
+- **Set pieces from the dark.** Below dungeon floor four a Set piece replaces an Epic one time in
+  five, and a cleared boss is a coin flip. Neither can ever hand over a piece you already own,
+  and a recipe craft always rolls a *missing* slot until the five are yours — then rolls a
+  level-refreshed copy, which is the documented path for a set you have outgrown.
+- **Set Collections, as a character-screen tab.** Five silhouettes per set that fill as you find
+  them, the 2/4/5 bonuses listed whether or not they are live, and a source line for what is
+  still out there. Owned and worn are counted **separately**, because "how far off am I?" and
+  "why is my four-piece not firing?" are different questions and a page that conflates them
+  answers neither. Worn pieces breathe gold on the paperdoll from two up, and every item card
+  carries its set's pip strip and next bonus.
+- **Save schema v12** — the materials wallet, the forge's daily counter, ember meter and recipes,
+  and the Bard's chosen opening Verse, with a v11 fixture captured five floors into the Rat
+  Cellars. Materials arrive deliberately **empty**: back-paying a returning player's stockpile
+  would hand them a Master forge on the visit where the room is introducing itself.
+
+### Fixed — Phase 12
+- **A `text-` → `bg-` string swap does not make a Tailwind class.** The published-odds bar built
+  its segment colours by rewriting the rarity text class at runtime, which produces names the v4
+  scanner never compiled — a bar of four invisible segments. Written out as literals.
+- **A spring cannot animate three keyframes.** The wallet chips pulse on change, and Motion drops
+  the animation entirely (with a console warning) when a there-and-back is handed a spring. They
+  use a tween now.
+- **`AnimatePresence mode="wait"` needs an exit that resolves.** Both new tab strips animated
+  their body with `variants={listItemIn}` and an inline `exit` — but `listItemIn` declares no
+  exit variant, so the underline moved and the panel never did.
+- **Stale phase copy on the character screen.** The derived-stats panel still promised that
+  "fights themselves arrive in Phase 3", and the empty backpack pointed at Phase 5 for loot.
+- **A hero creation that never reached disk.** Four e2e helpers created their hero and navigated
+  immediately; under parallel load the write was still in flight and the next page rendered the
+  class picker instead. The suite's own "mutate then navigate must flush" rule, applied to the
+  helpers that skipped it.
+- **"Continue" hid under the playback bar** on a tall battle result (Phase 11 surface, found by
+  the parallel run). The bar stays mounted after a fight so Replay is reachable, and a dungeon
+  result carrying a best-attempt bar or a clear ceremony grew until its button landed
+  underneath it.
+
 ### Added — Phase 11: Dungeons (three doors under the Tankard)
 - **The Undertavern.** Three key-gated, ten-floor gauntlets in the cellar: the Rat Cellars, the
   Barrowdeep Crypt and the Emberdeep Foundry. Thirty named floors, and every one of them stands

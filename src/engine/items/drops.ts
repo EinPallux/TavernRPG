@@ -181,6 +181,17 @@ export const DUNGEON_FLOOR_DROPS: DropTable = {
 export const DUNGEON_EPIC_CHANCE = 0.25;
 
 /**
+ * `[TUNE]` balancing §7 — how often an Epic from a dungeon is a Set piece instead.
+ *
+ * Set *replaces* Epic rather than adding a sixth rarity roll, which keeps the published item
+ * chance honest: a floor still drops what the table says it drops, and 20% of the good hits
+ * happen to be the good hits you have been chasing.
+ */
+export const SET_REPLACES_EPIC = 0.2;
+/** Floor 10 is a coin flip between the two (spec §2). */
+export const CLEAR_SET_CHANCE = 0.5;
+
+/**
  * Floor 10 hands over an Epic, always (spec §2).
  *
  * Published as "Epic **or** Set, 50/50", and it will be once Phase 12 ships the sets. Until then
@@ -221,6 +232,17 @@ export function rollDungeonDrops(
   }
 
   return drops;
+}
+
+/**
+ * Does this Epic come up as a Set piece instead?
+ *
+ * Its own fork, so adding sets to a dungeon that already existed did not shift a single one of
+ * its other rolls — the same reason every drop type here has its own stream. Floor 10's coin
+ * flip is a separate, kinder number: the finale is where a set is *supposed* to come from.
+ */
+export function rollSetInstead(floor: number, rng: RngStream): boolean {
+  return rng.bool(floor >= 10 ? CLEAR_SET_CHANCE : SET_REPLACES_EPIC);
 }
 
 /** Published-adjacent: the chance a drop lands in a given slot, for the dev tools. */

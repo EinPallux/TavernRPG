@@ -17,7 +17,7 @@ import { BANNER_COLOURS, GUILD_NAME_MAX, SIGIL_ICONS } from '@/data/guilds';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 11;
+export const CURRENT_SCHEMA_VERSION = 12;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -75,6 +75,16 @@ export const BACKPACK_SLOTS = 15;
 /** Overflow catch for loot that arrives with a full backpack. */
 export const SATCHEL_SLOTS = 5;
 
+export const materialsSchema = z.object({
+  scrap: z.number().int().min(0),
+  essence: z.number().int().min(0),
+  starmetal: z.number().int().min(0),
+});
+
+export const verseIdSchema = z.enum(['battle-hymn', 'ironsong', 'discord']);
+
+export const EMPTY_MATERIALS: Materials = { scrap: 0, essence: 0, starmetal: 0 };
+
 export const heroSchema = z.object({
   name: z.string().min(1).max(16),
   classId: classIdSchema,
@@ -90,6 +100,23 @@ export const heroSchema = z.object({
    * single arena session.
    */
   honor: z.number().min(0),
+  /**
+   * The forge's three tiers (schema v12).
+   *
+   * On the hero rather than in a forge slice, for the same reason gold is: materials are a
+   * currency the player carries, and the Emberforge is only the shop that takes them. Phase 7's
+   * scrap quote has been naming these numbers since the Armory opened; this is the purse they
+   * finally go into.
+   */
+  materials: materialsSchema,
+  /**
+   * The Verse a Bard opens on, once a Maestro five-piece has earned them the choice (schema v12).
+   *
+   * Null for everybody else, and harmless if it survives the set being taken off — `openingVerse`
+   * in `items/sets.ts` gates on the bonus being active, so a stale choice simply stops applying
+   * rather than needing to be cleared.
+   */
+  openingVerse: verseIdSchema.nullable(),
   /** Sparse by design: an empty slot is an absent key, not a null. */
   equipment: z.partialRecord(slotIdSchema, itemSchema),
   /** Fixed-length grid; null is an empty slot so positions stay stable. */
@@ -558,6 +585,29 @@ export const dungeonsSchema = z.object({
 
 export const DEFAULT_DUNGEONS: Dungeons = { keys: [], trophies: [], progress: {} };
 
+/* ── The Emberforge (schema v12) ──────────────────────────────────────────────────── */
+
+export const forgeSchema = z.object({
+  /** Scraps spent today, against the ten-a-day cap (crafting spec §2). Reset at midnight. */
+  scrapsUsedToday: z.number().int().min(0),
+  /**
+   * The ember meter: one per Master forge, and at five the next one is an Epic for certain
+   * (crafting spec §3). A pity track, so a run of bad luck has a floor under it.
+   */
+  emberMeter: z.number().int().min(0),
+  /** Set recipes found on dungeon floors 5 and 10. Each unlocks that set's guaranteed craft. */
+  recipes: z.array(z.string()),
+  /** Total forges struck, for the room to say something other than nothing on a first visit. */
+  crafted: z.number().int().min(0),
+});
+
+export const DEFAULT_FORGE: Forge = {
+  scrapsUsedToday: 0,
+  emberMeter: 0,
+  recipes: [],
+  crafted: 0,
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -580,11 +630,15 @@ export const saveFileSchema = z.object({
   guild: guildSchema,
   /** The Undertavern (schema v11). */
   dungeons: dungeonsSchema,
+  /** The Emberforge (schema v12). */
+  forge: forgeSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
 export type Settings = z.infer<typeof settingsSchema>;
 export type Hero = z.infer<typeof heroSchema>;
+export type Materials = z.infer<typeof materialsSchema>;
+export type Forge = z.infer<typeof forgeSchema>;
 export type Activity = z.infer<typeof activitySchema>;
 export type StoredMissionOffer = z.infer<typeof missionOfferSchema>;
 export type StoredActiveMission = z.infer<typeof activeMissionSchema>;
@@ -631,6 +685,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     arena: { ...DEFAULT_ARENA },
     guild: { ...DEFAULT_GUILD },
     dungeons: { ...DEFAULT_DUNGEONS },
+    forge: { ...DEFAULT_FORGE },
   };
 }
 

@@ -40,6 +40,8 @@ function render(log: readonly BattleEvent[]): string[] {
         return `${event.target} +${event.amount} => ${event.hpAfter}`;
       case 'harden':
         return `${event.side} harden +${Math.round(event.reduction * 100)}pp`;
+      case 'set_proc':
+        return `${event.side} set ${event.effect} ${event.amount}`;
       case 'damage':
         return `${event.target} -${event.amount} => ${event.hpAfter}`;
       case 'ko':

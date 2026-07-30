@@ -322,13 +322,14 @@ test.describe('house style', () => {
     await expect(page.getByTestId('place-undertavern')).toBeVisible({ timeout: SETUP_TIMEOUT });
 
     // CLAUDE.md hard rule 2: border-radius over 4px is banned.
-    const offenders = await page.evaluate(() =>
-      [...document.querySelectorAll('[data-testid="place-undertavern"] *')].filter((node) => {
-        const radius = getComputedStyle(node).borderRadius;
-        return radius
-          .split(' ')
-          .some((part) => part.endsWith('px') && Number.parseFloat(part) > 4);
-      }).length,
+    const offenders = await page.evaluate(
+      () =>
+        [...document.querySelectorAll('[data-testid="place-undertavern"] *')].filter((node) => {
+          const radius = getComputedStyle(node).borderRadius;
+          return radius
+            .split(' ')
+            .some((part) => part.endsWith('px') && Number.parseFloat(part) > 4);
+        }).length,
     );
     expect(offenders).toBe(0);
   });

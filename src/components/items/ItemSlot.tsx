@@ -36,6 +36,11 @@ export interface ItemSlotProps {
   /** Shown when empty; also drives the placeholder glyph. */
   slot: SlotId;
   comparison?: ComparisonDelta;
+  /**
+   * Pieces of this item's set the hero is wearing. Drives the paperdoll set glow and the card's
+   * set band (gear-sets spec §3). Undefined for anything that is not a set piece.
+   */
+  setWorn?: number;
   onClick?: () => void;
   onContextMenu?: (event: React.MouseEvent) => void;
   size?: 'md' | 'lg';
@@ -49,6 +54,7 @@ export function ItemSlot({
   item,
   slot,
   comparison,
+  setWorn,
   onClick,
   onContextMenu,
   size = 'md',
@@ -59,9 +65,22 @@ export function ItemSlot({
   const [hovered, setHovered] = useState(false);
   const styles = item ? rarityStyles(item.rarity) : null;
   const dimensions = size === 'lg' ? 'h-16 w-16' : 'h-14 w-14';
+  /* A worn set piece breathes. Only from two up: one piece is a gold item, not a set. */
+  const glowing = Boolean(item?.setId) && (setWorn ?? 0) >= 2;
 
   return (
     <div className="relative">
+      {/* The set glow sits behind the cell rather than on its border, so it reads as light
+          coming off the armour instead of a second frame. */}
+      {glowing && (
+        <motion.span
+          aria-hidden
+          animate={{ opacity: [0.35, 0.7, 0.35] }}
+          transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+          className="bg-rarity-set/40 pointer-events-none absolute -inset-1 blur-md"
+          data-testid="set-glow"
+        />
+      )}
       <motion.button
         type="button"
         onClick={onClick}
@@ -77,7 +96,7 @@ export function ItemSlot({
         aria-label={item ? `${item.name} (${SLOT_LABELS[slot]})` : `${SLOT_LABELS[slot]}, empty`}
         data-testid={rest['data-testid']}
         data-filled={item ? 'true' : 'false'}
-        className={`chamfer-sm ${dimensions} grid place-items-center border transition-colors ${
+        className={`chamfer-sm relative ${dimensions} grid place-items-center border transition-colors ${
           item
             ? `bg-wood-800 ${styles?.border} ${styles?.text} ${styles?.glow}`
             : 'border-parchment-500/15 bg-wood-900/60 text-parchment-500/20 hover:border-amber-500/40'
@@ -96,7 +115,11 @@ export function ItemSlot({
             exit={{ opacity: 0 }}
             className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2"
           >
-            <ItemCard item={item} {...(comparison ? { comparison } : {})} />
+            <ItemCard
+              item={item}
+              {...(comparison ? { comparison } : {})}
+              {...(setWorn !== undefined ? { setWorn } : {})}
+            />
           </motion.div>
         )}
       </AnimatePresence>

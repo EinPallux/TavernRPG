@@ -12,7 +12,8 @@ import { classDef } from '@/data/classes';
 import { archetype, type ArchetypeId } from '@/data/monsterArchetypes';
 import { deriveStats, type Equipment } from '@/engine/hero/derived';
 import type { Attributes } from '@/engine/progression/stats';
-import type { ClassId } from '@/engine/items/types';
+import type { ClassId, Item, SlotId } from '@/engine/items/types';
+import { NO_MODIFIERS, modifiersFor, openingVerse } from '@/engine/items/sets';
 import type { Hero } from '@/engine/save/schema';
 import type { Combatant, CombatProc } from './types';
 
@@ -77,19 +78,32 @@ export function buildHeroCombatant(hero: Hero, id = 'hero'): Combatant {
 
   const weapon = hero.equipment.weapon?.weapon ?? { min: 1, max: 2 };
 
+  /*
+   * Gear-set bonuses, folded once (gear-sets spec §4).
+   *
+   * The two that change the *snapshot* — armour and maximum health — are applied here rather
+   * than in the resolver, because they are properties of the fighter who walked in rather than
+   * of any moment in the fight. Everything else rides along in the bag for `fight()` to read at
+   * the point it matters.
+   */
+  const modifiers = modifiersFor(hero.equipment as Partial<Record<SlotId, Item>>);
+  const chosen = openingVerse(modifiers, hero.openingVerse);
+
   return {
     id,
     name: hero.name,
     kind: definition.name,
     level: hero.level,
-    maxHealth: derived.health,
+    maxHealth: Math.round(derived.health * (1 + modifiers.health)),
     attributes: derived.attributes,
     mainStat: definition.mainStat,
     weapon,
-    armour: derived.armour,
+    armour: Math.round(derived.armour * (1 + modifiers.armour)),
     damageReductionCap: definition.drCap,
     procs: procsForClass(hero.classId),
     portrait: definition.portrait,
+    ...(modifiers === NO_MODIFIERS ? {} : { modifiers }),
+    ...(chosen ? { openingVerse: chosen } : {}),
   };
 }
 

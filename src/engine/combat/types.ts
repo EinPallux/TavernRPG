@@ -85,6 +85,50 @@ export interface Combatant {
    * (dungeons spec §2).
    */
   readonly signature?: { readonly label: string; readonly explainer: string };
+  /**
+   * What this fighter's gear sets are worth, already folded to numbers (gear-sets spec §4).
+   *
+   * On the snapshot rather than looked up, for the same reason `signature` is: `fight()` never
+   * imports data. Absent for monsters and for anyone wearing no set, and the resolver reads it
+   * through `NO_MODIFIERS` so the common path costs nothing.
+   */
+  readonly modifiers?: CombatModifiers;
+  /** The Verse this fighter opens on, when a five-piece has earned them the choice. */
+  readonly openingVerse?: VerseId;
+}
+
+/**
+ * Everything a gear set can change about a fight (gear-sets spec §2).
+ *
+ * Declared here rather than in `items/sets.ts` so the combat contract owns its own vocabulary —
+ * the folding lives with the items, the *meaning* lives with the resolver that reads it.
+ */
+export interface CombatModifiers {
+  readonly damage: number;
+  readonly armour: number;
+  readonly health: number;
+  readonly crit: number;
+  readonly critDamage: number;
+  readonly block: number;
+  readonly dodge: number;
+  readonly doubleStrike: number;
+  readonly followUpDamage: number;
+  readonly healthyDamage: { readonly share: number; readonly above: number } | null;
+  readonly verseLength: number;
+  readonly verseDamage: number;
+  readonly verseHeal: number;
+  readonly discord: number;
+  readonly chooseVerse: boolean;
+  readonly reflect: number;
+  readonly lifesteal: number;
+  readonly absorb: { readonly threshold: number; readonly share: number } | null;
+  readonly dodgeFury: { readonly share: number; readonly stacks: number } | null;
+  readonly counter: number;
+  readonly shred: { readonly points: number; readonly stacks: number } | null;
+  readonly thirdStrike: { readonly chance: number; readonly share: number } | null;
+  readonly firstStrikeCrit: boolean;
+  readonly steady: number;
+  readonly execute: number;
 }
 
 export type BattleEvent =
@@ -134,6 +178,29 @@ export type BattleEvent =
     }
   /** Armour thickening by the round. `reduction` is the *total* extra cap, not the increment. */
   | { readonly t: 'harden'; readonly side: Side; readonly reduction: number }
+  /**
+   * A gear set doing something the player should see (gear-sets spec §3).
+   *
+   * One event for all of them rather than eight, because the scene draws them the same way — a
+   * named flourish over the fighter it fired for. The `effect` is what distinguishes them, and
+   * the label is already written in the set data.
+   */
+  | {
+      readonly t: 'set_proc';
+      readonly side: Side;
+      readonly effect:
+        | 'reflect'
+        | 'lifesteal'
+        | 'absorb'
+        | 'counter'
+        | 'shred'
+        | 'third-strike'
+        | 'execute'
+        | 'verse-heal';
+      readonly label: string;
+      /** Damage thrown, health mended or points stripped, depending on the effect. */
+      readonly amount: number;
+    }
   | {
       readonly t: 'battle_end';
       readonly winner: Side;

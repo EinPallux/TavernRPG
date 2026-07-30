@@ -23,6 +23,7 @@ import v7Phase7 from './fixtures/v7-phase7.json';
 import v8Phase8 from './fixtures/v8-phase8.json';
 import v9Phase9 from './fixtures/v9-phase9.json';
 import v10Phase10 from './fixtures/v10-phase10.json';
+import v11Phase11 from './fixtures/v11-phase11.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { migrateSave } from './migrations';
@@ -31,7 +32,9 @@ import {
   DEFAULT_ACTIVITY,
   DEFAULT_ARENA,
   DEFAULT_DUNGEONS,
+  DEFAULT_FORGE,
   DEFAULT_GUILD,
+  EMPTY_MATERIALS,
   DEFAULT_SETTINGS,
   type SaveFile,
 } from './schema';
@@ -390,6 +393,41 @@ describe('save fixtures — every shipped version still loads', () => {
     expect(result.save.hero?.honor).toBe(5_142);
     expect(result.save.world?.ladder.indexOf(PLAYER_LADDER_ID)).toBe(686);
     expect(result.save.activity.mount?.mountId).toBe('griffin');
+  });
+
+  it('opens a Phase 11 (v11) save mid-delve', () => {
+    const result = migrateSave(structuredClone(v11Phase11));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(11);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // Everything the v11 player had underground: two keys, five floors down, the attempt
+    // counter that keeps their next descent a different fight.
+    expect(result.save.dungeons.keys).toEqual(['rusty-key', 'bone-key']);
+    expect(result.save.dungeons.progress['rat-cellars']?.floorsCleared).toBe(5);
+    expect(result.save.dungeons.progress['rat-cellars']?.attempts).toBe(12);
+  });
+
+  it('gives a Phase 11 player an empty purse and a cold forge', () => {
+    const result = migrateSave(structuredClone(v11Phase11));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    /*
+     * Deliberately empty rather than generous. Phase 7's disposal quoted a scrap yield and then
+     * threw it away, because there was nowhere to put it — back-paying that stockpile would hand
+     * a returning player a Master forge on the visit where the room is introducing itself.
+     */
+    expect(result.save.hero?.materials).toEqual(EMPTY_MATERIALS);
+    expect(result.save.hero?.openingVerse).toBeNull();
+    expect(result.save.forge).toEqual(DEFAULT_FORGE);
+    // And nothing else moved.
+    expect(result.save.hero?.name).toBe('Bryn Halloway');
+    expect(result.save.guild.guildId).toBe(15);
+    expect(result.save.world?.ladder.indexOf(PLAYER_LADDER_ID)).toBe(686);
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

@@ -17,6 +17,7 @@
 import type { Hero } from '@/engine/save/schema';
 import { discardItem } from '@/engine/hero/actions';
 import type { Item, MaterialBundle, Rarity } from './types';
+import { addMaterials } from '@/engine/forge/forgeConfig';
 
 export type DisposeIntent = 'sell' | 'scrap';
 
@@ -135,9 +136,9 @@ export type DisposeOutcome =
 /**
  * Do it: remove the item from the bags and hand back what it was worth.
  *
- * Gold is credited here because it is the hero's own purse. Materials are *reported*, not
- * credited — the materials wallet arrives with the Emberforge in Phase 12, and inventing a
- * half-wallet now would be a persisted shape to migrate away from later.
+ * Both currencies are credited here, to the hero's own purse — gold since Phase 7, materials
+ * since Phase 12 opened the Emberforge and gave them somewhere to go. The quote has been naming
+ * the yield since the Armory opened; this is where it stops being a promise.
  */
 export function disposeItem(
   hero: Hero,
@@ -154,7 +155,11 @@ export function disposeItem(
   return {
     ok: true,
     quote,
-    hero: quote.gold > 0 ? { ...stripped, gold: stripped.gold + quote.gold } : stripped,
+    hero: {
+      ...stripped,
+      gold: stripped.gold + quote.gold,
+      materials: addMaterials(stripped.materials, quote.materials),
+    },
   };
 }
 

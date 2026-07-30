@@ -37,6 +37,7 @@ import {
   type Rarity,
   type SlotId,
 } from './types';
+import { gearSet, setPiece, type SetSlot } from '@/data/gearSets';
 
 /** `[TUNE]` balancing §8 — attribute points available to an item. */
 export function itemBudget(level: number, rarity: Rarity, slot: SlotId): number {
@@ -197,4 +198,59 @@ function rollSpecials(slot: SlotId, rarity: Rarity, rng: RngStream) {
   if (slot === 'trinket') return { goldFind: magnitude };
   if (slot === 'amulet') return { xpBonus: magnitude };
   return rng.bool(0.5) ? { goldFind: magnitude } : { xpBonus: magnitude };
+}
+
+/* ── Set pieces (gear-sets spec §1) ──────────────────────────────────────────────── */
+
+export interface GenerateSetPieceOptions {
+  readonly setId: string;
+  readonly slot: SetSlot;
+  readonly level: number;
+  readonly rng: RngStream;
+}
+
+/**
+ * A curated set piece, at the level it was found.
+ *
+ * The one item in the game whose *shape* is authored: an ordinary drop shuffles the attribute
+ * pool and splits the budget randomly, while a set piece spends the same Set-rarity budget over
+ * the exact attributes its set was designed around. That is the whole point — a set is a build,
+ * and a build cannot be a shrug of the dice.
+ *
+ * The size is still level-scaled like everything else (spec §1), so a piece found at level 30 is
+ * a level-30 piece forever. Out-levelled sets are refreshed at the forge, not retro-fitted.
+ */
+export function generateSetPiece({ setId, slot, level, rng }: GenerateSetPieceOptions): Item | null {
+  const definition = gearSet(setId);
+  const piece = definition ? setPiece(setId, slot) : null;
+  if (!definition || !piece) return null;
+
+  const safeLevel = Math.max(1, Math.floor(level));
+  const budget = itemBudget(safeLevel, 'set', slot);
+
+  // Curated: the weights say where the budget goes, and they sum to one by construction.
+  const attrs: Partial<Attributes> = {};
+  for (const [attribute, weight] of Object.entries(piece.weights) as [AttributeId, number][]) {
+    attrs[attribute] = Math.max(1, Math.round(budget * weight));
+  }
+
+  const base = pickBase(slot, definition.classId, rng);
+  return {
+    uid: `set-${rng.int(0, 0xffffff).toString(36)}-${rng.int(0, 0xffffff).toString(36)}`,
+    slot,
+    rarity: 'set',
+    level: safeLevel,
+    // Class-locked even though the slot is not: a set is its class's, and wearing half an
+    // Oathsworn kit as a Mage would be the loudest possible balance hole.
+    classLock: definition.classId,
+    name: piece.name,
+    iconId: base.iconId,
+    baseId: base.id,
+    attrs,
+    armour: armourValue(safeLevel, 'set', slot),
+    setId,
+    value: itemValue(safeLevel, 'set'),
+    scrapYield: scrapYieldFor('set', rng),
+    locked: false,
+  };
 }

@@ -71,7 +71,8 @@ test.describe('navigation', () => {
     // A fresh hero is level 1, so most of the town is still gated; open it all up first.
     await levelHeroToTen(page);
 
-    // Places still awaiting their phase render the dressed placeholder.
+    // Built rooms and dressed placeholders alike answer to `place-<id>`, so one loop covers
+    // the whole rail regardless of which phase each room belongs to.
     for (const id of [
       'tavern',
       'board',
@@ -100,14 +101,15 @@ test.describe('navigation', () => {
   });
 
   test('keepers explain why their rooms are unfinished', async ({ page }) => {
-    // The Armory used to stand in for this and became a real shop in Phase 7. Every remaining
-    // placeholder sits behind a gate, so the hero has to be levelled to reach one.
+    // This test walks forward a room at a time as the phases land: the Armory stood in for it
+    // until Phase 7, the Emberforge until Phase 12. Fortune's Table is the next one still
+    // dressed, and like every remaining placeholder it sits behind a gate.
     await ensureHero(page);
     await levelHeroToTen(page);
 
-    await page.goto('/forge');
-    await expect(page.getByTestId('bark-forge')).toContainText('Forge is cold');
-    await expect(page.getByTestId('place-forge')).toContainText('Phase 12');
+    await page.goto('/fortune');
+    await expect(page.getByTestId('bark-fortune')).toContainText('The cards say');
+    await expect(page.getByTestId('place-fortune')).toContainText('Phase 13');
   });
 
   test('rooms that have been built show the real thing instead', async ({ page }) => {
@@ -118,6 +120,11 @@ test.describe('navigation', () => {
     await expect(page.getByTestId('place-armory')).toBeVisible();
     await expect(page.getByTestId('shop-shelf')).toBeVisible();
     await expect(page.getByTestId('place-armory')).not.toContainText('Phase 7');
+
+    await page.goto('/forge');
+    await expect(page.getByTestId('place-forge')).toBeVisible();
+    await expect(page.getByTestId('forge-benches')).toBeVisible();
+    await expect(page.getByTestId('place-forge')).not.toContainText('Phase 12');
   });
 });
 

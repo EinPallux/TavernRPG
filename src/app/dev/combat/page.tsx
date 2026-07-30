@@ -66,6 +66,11 @@ function eventLine(event: BattleEvent): { text: string; tone: string } {
         text: `  ${event.side.toUpperCase()} hardens (+${Math.round(event.reduction * 100)}pp cap)`,
         tone: 'text-parchment-500/60',
       };
+    case 'set_proc':
+      return {
+        text: `  ${event.side.toUpperCase()} — ${event.label} (${event.effect} ${event.amount})`,
+        tone: 'text-amber-400',
+      };
     case 'damage':
       return {
         text: `      ${event.target.toUpperCase()} −${event.amount} → ${event.hpAfter} hp`,

@@ -88,6 +88,15 @@ import {
   type GuildRefusal,
 } from './guildActions';
 import { descend as descendOn, type DelveResult } from './dungeonActions';
+import {
+  craft as craftOn,
+  craftFromRecipe as craftFromRecipeOn,
+  scrap as scrapOn,
+  type CraftResultState,
+  type ScrapResult,
+} from './forgeActions';
+import type { ForgeTier } from '@/engine/forge/forgeConfig';
+import type { VerseId } from '@/engine/combat/types';
 import type { DungeonId } from '@/data/dungeons';
 import type { BountyChest } from '@/engine/guilds/bounty';
 import type { RaidResult } from '@/engine/arena/raids';
@@ -250,6 +259,16 @@ export interface GameStoreState {
    * "claim": a delve has no timer to wait on and nothing to collect later.
    */
   descendInto: (id: DungeonId) => DelveResult;
+
+  // ── The Emberforge (Phase 12) ────────────────────────────────────────────────────
+  /** Into the crucible. Returns what it paid, or why it would not take the piece. */
+  scrapItem: (uid: string) => ScrapResult;
+  /** Strike the anvil at a chosen tier and slot. */
+  craftItem: (tier: ForgeTier, slot: SlotId) => CraftResultState;
+  /** Spend a recipe: a guaranteed piece of that set. */
+  craftSetPiece: (setId: string) => CraftResultState;
+  /** The Verse a Maestro five-piece opens on. */
+  setOpeningVerse: (verse: VerseId) => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -891,6 +910,50 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       set({ save: result.save });
       void persistNow();
       return result;
+    },
+
+    scrapItem(uid) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = scrapOn(save, uid);
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    craftItem(tier, slot) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = craftOn(save, tier, slot);
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    craftSetPiece(setId) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = craftFromRecipeOn(save, setId);
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    setOpeningVerse(verse) {
+      const { save } = get();
+      if (!save?.hero) return;
+
+      set({ save: { ...save, hero: { ...save.hero, openingVerse: verse } } });
+      void persistNow();
     },
 
     markLadderSeen() {

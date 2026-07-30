@@ -59,6 +59,7 @@ export function beatDuration(event: BattleEvent, choreo: BattleChoreo): number {
       return choreo.swarmBeat;
     case 'heal':
     case 'harden':
+    case 'set_proc':
       return choreo.bossTickBeat;
     case 'ko':
       return choreo.knockoutBeat;

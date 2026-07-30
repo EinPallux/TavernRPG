@@ -14,6 +14,7 @@ import { ATTRIBUTE_LABELS, type AttributeId } from '@/engine/progression/stats';
 import { RARITY_LABELS, SLOT_LABELS, type Item, type Rarity } from '@/engine/items/types';
 import type { ComparisonDelta } from '@/engine/hero/derived';
 import { classDef } from '@/data/classes';
+import { gearSet } from '@/data/gearSets';
 import { snappy } from '@/styles/motion';
 
 const RARITY_STYLES: Record<Rarity, { text: string; border: string; glow: string }> = {
@@ -61,15 +62,60 @@ function Delta({ value, suffix = '' }: { value: number; suffix?: string }) {
   );
 }
 
+/**
+ * The set band: sigil, name, five pips, and the next bonus (gear-sets spec §3).
+ *
+ * Lives on the card rather than on a separate page because the question it answers — "does
+ * putting this on complete anything?" — is asked *while hovering a piece*, and an answer that
+ * requires a tab change is an answer nobody reads.
+ */
+function SetBand({ setId, worn }: { setId: string; worn: number }) {
+  const definition = gearSet(setId);
+  if (!definition) return null;
+
+  const total = definition.pieces.length;
+  const next = definition.bonuses.find((bonus) => bonus.pieces > worn);
+
+  return (
+    <div
+      className="border-rarity-set/25 mt-3 border-t pt-2.5"
+      data-testid={`set-band-${definition.id}`}
+    >
+      <p className="text-rarity-set flex items-center gap-1.5 text-[11px] font-semibold">
+        <Icon name={definition.sigil} size={13} />
+        {definition.name}
+        <span className="text-parchment-500/50 ml-auto tabular-nums">
+          {worn}/{total} worn
+        </span>
+      </p>
+
+      <div className="mt-1.5 flex gap-1">
+        {Array.from({ length: total }, (_, index) => (
+          <span
+            key={index}
+            className={`chamfer-sm h-1.5 flex-1 ${index < worn ? 'bg-rarity-set' : 'bg-parchment-500/25'}`}
+          />
+        ))}
+      </div>
+
+      <p className="text-parchment-500/55 mt-1.5 text-[10px] leading-snug">
+        {next ? `At ${next.pieces}: ${next.text}` : 'Every bonus is live.'}
+      </p>
+    </div>
+  );
+}
+
 export interface ItemCardProps {
   item: Item;
   /** Deltas versus what is worn in this slot; omit for a plain description. */
   comparison?: ComparisonDelta;
+  /** Pieces of this item's set the hero is *wearing*, for the set band. */
+  setWorn?: number;
   className?: string;
   'data-testid'?: string;
 }
 
-export function ItemCard({ item, comparison, className = '', ...rest }: ItemCardProps) {
+export function ItemCard({ item, comparison, setWorn, className = '', ...rest }: ItemCardProps) {
   const styles = RARITY_STYLES[item.rarity];
   const attributeLines = Object.entries(item.attrs) as [AttributeId, number][];
 
@@ -167,8 +213,12 @@ export function ItemCard({ item, comparison, className = '', ...rest }: ItemCard
         </div>
       )}
 
+      {item.setId && <SetBand setId={item.setId} worn={setWorn ?? 0} />}
+
       <footer className="border-parchment-500/15 text-parchment-500/50 mt-3 flex items-center justify-between border-t pt-2 text-[11px]">
-        <span>Worth {item.value.toLocaleString()} gold</span>
+        <span>
+          {item.rarity === 'set' ? 'Not for sale' : `Worth ${item.value.toLocaleString()} gold`}
+        </span>
         {item.locked && <span className="text-amber-500/70">Locked</span>}
       </footer>
     </motion.div>
