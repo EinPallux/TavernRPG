@@ -14,6 +14,7 @@
 
 import type { MissionDuration } from '@/engine/progression/rewards';
 import type { Rarity, SlotId } from '@/engine/items/types';
+import type { DungeonKeyId } from '@/data/dungeons';
 
 /** A job on the board. Cheap and disposable — the board redraws daily. */
 export interface MissionOffer {
@@ -54,6 +55,13 @@ export interface MissionSpoils {
   readonly ale: boolean;
   /** Description of the drop; the item itself is generated when it is granted. */
   readonly item: { readonly slot: SlotId; readonly rarity: Rarity } | null;
+  /**
+   * A dungeon key, on the six percent of winning missions that turn one up (dungeons spec §1).
+   *
+   * Alongside the item rather than instead of it: a key is an unlock, not loot, and rolling it
+   * out of the same draw would quietly cost the player a sword every time they found one.
+   */
+  readonly key: DungeonKeyId | null;
 }
 
 export type MissionPhase = 'idle' | 'running' | 'returned';

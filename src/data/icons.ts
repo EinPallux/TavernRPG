@@ -30,6 +30,8 @@ export const ICON_IDS = [
   'chevron',
   'hourglass',
   'spark',
+  'key',
+  'trophy',
   // weapons — class-restricted families (docs/design/systems/items-and-gear.md §1)
   'sword',
   'axe',

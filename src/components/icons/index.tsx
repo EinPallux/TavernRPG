@@ -277,6 +277,24 @@ export const SparkIcon = (props: IconProps) => (
   </Glyph>
 );
 
+/** A dungeon key. Bow, shank, two wards — the shape a locked door implies. */
+export const KeyIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <circle cx="7.5" cy="16.5" r="3.5" />
+    <path d="M10 14 20 4" />
+    <path d="M17 7l2.2 2.2M14.5 9.5l2.2 2.2" />
+  </Glyph>
+);
+
+/** A cleared dungeon's crest. Cup, stem, foot — a trophy at a glance, at 14px. */
+export const TrophyIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d="M7 4h10v4.5a5 5 0 0 1-10 0V4Z" />
+    <path d="M7 5.5H4.5v1.8A3.2 3.2 0 0 0 7.7 10.5M17 5.5h2.5v1.8a3.2 3.2 0 0 1-3.2 3.2" />
+    <path d="M12 13.5V17M8.5 20h7M9.5 20l.5-3h4l.5 3" />
+  </Glyph>
+);
+
 /**
  * The Vigor tankard — not a plain glyph: the ale level is the meter, so it takes a fill
  * ratio and renders a real liquid line (style guide §7 "meters").
@@ -373,6 +391,8 @@ export const ICONS = {
   chevron: ChevronIcon,
   hourglass: HourglassIcon,
   spark: SparkIcon,
+  key: KeyIcon,
+  trophy: TrophyIcon,
   ...ITEM_ICONS,
 } satisfies Record<IconId, (props: IconProps) => React.ReactElement>;
 

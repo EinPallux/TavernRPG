@@ -32,6 +32,14 @@ function render(log: readonly BattleEvent[]): string[] {
         return `${event.target} dodged`;
       case 'missed':
         return `${event.source} missed`;
+      case 'boss_trait':
+        return `${event.side} trait "${event.label}"`;
+      case 'swarm':
+        return `${event.source} swarm "${event.label}"`;
+      case 'heal':
+        return `${event.target} +${event.amount} => ${event.hpAfter}`;
+      case 'harden':
+        return `${event.side} harden +${Math.round(event.reduction * 100)}pp`;
       case 'damage':
         return `${event.target} -${event.amount} => ${event.hpAfter}`;
       case 'ko':

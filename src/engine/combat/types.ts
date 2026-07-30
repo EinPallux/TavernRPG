@@ -26,7 +26,26 @@ export type CombatProc =
   | { readonly kind: 'double-strike'; readonly chance: number; readonly damageMultiplier: number }
   | { readonly kind: 'verses' }
   /** Attacks cannot be blocked or dodged. */
-  | { readonly kind: 'arcane-certainty' };
+  | { readonly kind: 'arcane-certainty' }
+  /*
+   * ── Boss signatures (dungeons spec §2) ──────────────────────────────────────────
+   *
+   * Three abilities no ordinary monster has, and deliberately three *different shapes* of
+   * ability rather than three numbers: one adds damage on a rhythm, one punishes a defence, one
+   * ramps. A player who walls on floor 5 should be able to say what beat them, which is why each
+   * of these fires a visible event rather than quietly adjusting a multiplier.
+   */
+  /** An extra unavoidable hit on every `everyRounds`-th round. Riddletail's swarm. */
+  | {
+      readonly kind: 'swarm-call';
+      readonly everyRounds: number;
+      /** Share of a normal swing, before the target's armour. */
+      readonly damageShare: number;
+    }
+  /** Heals when the *opponent's* attack fails to land. The Margrave feeds on a miss. */
+  | { readonly kind: 'siphon'; readonly healShare: number }
+  /** Damage reduction cap grows every round. Vulkarr cools into his own armour. */
+  | { readonly kind: 'hardening'; readonly perRound: number; readonly cap: number };
 
 export interface CombatantCard {
   readonly id: string;
@@ -57,6 +76,15 @@ export interface Combatant {
   readonly damageReductionCap: number;
   readonly procs: readonly CombatProc[];
   readonly portrait?: string;
+  /**
+   * The one-line name and explanation of a signature ability, announced before the first blow.
+   *
+   * Content, carried on the snapshot rather than looked up by the resolver, so `fight()` keeps
+   * its "no data imports" rule. Present only on bosses: a floor-5 wall has to *teach*, and a
+   * player who cannot name the thing that killed them will bounce off the same floor twice
+   * (dungeons spec §2).
+   */
+  readonly signature?: { readonly label: string; readonly explainer: string };
 }
 
 export type BattleEvent =
@@ -89,6 +117,23 @@ export type BattleEvent =
       readonly overkill?: number;
     }
   | { readonly t: 'ko'; readonly target: Side }
+  /** A boss naming its trick, once, before the fight starts. */
+  | {
+      readonly t: 'boss_trait';
+      readonly side: Side;
+      readonly label: string;
+      readonly explainer: string;
+    }
+  /** The swarm arrives. Followed by a normal `damage` event, so health handling is unchanged. */
+  | { readonly t: 'swarm'; readonly source: Side; readonly label: string }
+  | {
+      readonly t: 'heal';
+      readonly target: Side;
+      readonly amount: number;
+      readonly hpAfter: number;
+    }
+  /** Armour thickening by the round. `reduction` is the *total* extra cap, not the increment. */
+  | { readonly t: 'harden'; readonly side: Side; readonly reduction: number }
   | {
       readonly t: 'battle_end';
       readonly winner: Side;

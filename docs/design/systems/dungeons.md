@@ -50,3 +50,31 @@ seals with a trophy crest; Town Crier headline; the trophy row shows on the play
 `DungeonDef` {id, gateLevel, keyItemId, floors: MonsterRef[10], theme}, `DungeonProgress`
 {floorsCleared, cooldownUntil, bestAttempts[]}. Floor fights use standard `fight()` with dungeon
 context seeds (`combat.md` §5).
+
+## 6. As built (Phase 11)
+
+`src/data/dungeons.ts` (three dungeons, thirty named floors, six boss signatures),
+`src/engine/dungeons/` — `floors` (combatant construction, budgets, payouts, best-attempt share),
+`delve` (the lifecycle), `keys`. Three new `CombatProc` kinds and their events live in
+`src/engine/combat/`; the store transitions in `src/state/dungeonActions.ts`; the room in
+`src/components/dungeons/`. Numbers and their derivations: `../balancing-formulas.md` §5.
+
+Five decisions worth not re-making:
+
+- **A floor's level is fixed and its reward is priced at that level.** Gold at the floor's own
+  level is what makes back-filling worthless without a rule against it; XP takes the *lower* of
+  the floor's and the hero's, because XP is a share of a level's requirement rather than an
+  absolute, and pricing it at the floor let a fresh delver leapfrog several levels in one visit.
+- **An attempt is seeded by its number, not by the floor.** The inverse of the mission rule, and
+  deliberately: a mission commits its seed at accept because its outcome must survive the timer,
+  while a floor is free and repeatable — a seed fixed per floor would make the wall you lost to
+  the same fight forever, with no reason to come back. The attempt counter lives in the save, so
+  replaying one descent is identical and the next one is genuinely different.
+- **Archetype order carries as much of the ramp as the level curve.** See balancing §5: twelve
+  levels of spread against eighteen levels of curve. Any new dungeon must be measured, not
+  authored on flavour alone, or it will get easier somewhere in the middle.
+- **Floor 5 teaches what floor 10 tests.** Each mid-boss carries a weaker version of its own
+  finale's signature, at the smaller ×1.5 budget. Meeting "it heals when you miss" for the first
+  time at the final boss is a lesson arriving too late to use.
+- **Losing leaves a number behind.** The share of the monster's health an attempt took off is the
+  only progress a loss produces, and the hub draws it straight onto the rung.

@@ -262,13 +262,20 @@ in the founding flow, economy sim pass 3, and save schema v10. Phase 8's generat
 twice on the way — it had never respected the twenty-five cap, and its seeded treasury predated
 `stepCost` and left all sixty halls at +1%.
 
-## Phase 11 — Dungeons (M) 🔲
+## Phase 11 — Dungeons (M) ✅
 Undertavern hub, 3 dungeons data (30 monsters incl. boss procs), key drops & gates, floor
 progression + chaining, loss cooldown, best-attempt bars, boss presentation (nameplates, stings,
 proc explainers), floor-10 ceremonies + trophies, dungeon loot tables (epic/set hooks live in P12
 — until then floor-10 grants Epic).
 **Accept:** all 30 floors fightable with tuned walls (harness win-rate bands per floor); progress/
 cooldowns persist; keys drop per spec; boss procs render with explainer lines.
+**Done 2026-07-30.** `data/dungeons.ts` (three dungeons, thirty named floors, six boss
+signatures), three new `CombatProc` kinds in the resolver with their own events, `engine/dungeons/`
+(`floors`, `delve`, `keys`), `state/dungeonActions.ts`, the Undertavern with its torch-lit descent
+and floor-10 ceremony, and save schema v11. The harness measured what nobody had: **archetype is
+worth up to twelve levels of difficulty at dungeon budget**, more than the level curve gains
+across six floors — so the first draft's flavour-first floor ordering had three places where the
+dungeon got *easier* as you went down.
 
 ## Phase 12 — Gear Sets & The Emberforge (L) 🔲
 10 launch sets (data + set-bonus procs in engine + sigil presentation), Set Collections page,

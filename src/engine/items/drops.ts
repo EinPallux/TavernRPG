@@ -158,6 +158,71 @@ export function rollMissionDrops(
   };
 }
 
+/* ── Dungeons (balancing §7, dungeons spec §2) ───────────────────────────────────── */
+
+/**
+ * A dungeon floor's drops.
+ *
+ * Two rolls, not one, and that is the point. The **normal** roll is a better mission roll: half
+ * the time something drops, weighted toward the good end. The **epic** roll is separate and
+ * additive — a quarter of floors hand over an Epic *on top*. A floor you had to gear up for
+ * three days to beat has to pay like one, and a single 50% roll that lands Common cannot do
+ * that however generous its weights are.
+ */
+export const DUNGEON_FLOOR_DROPS: DropTable = {
+  itemChance: 0.5,
+  rarityWeights: { common: 40, uncommon: 32, rare: 20, epic: 8, ...NO_SET },
+  // Dungeons are not a Golden Dice faucet — floor 10 pays them, in a lump, for finishing.
+  diceChance: 0,
+  aleChance: 0,
+};
+
+/** The separate Epic roll that rides alongside it on floors 1–9. */
+export const DUNGEON_EPIC_CHANCE = 0.25;
+
+/**
+ * Floor 10 hands over an Epic, always (spec §2).
+ *
+ * Published as "Epic **or** Set, 50/50", and it will be once Phase 12 ships the sets. Until then
+ * every hit is an Epic — stated here rather than silently, because "odds always visible" means
+ * the table and the roll are the same object and neither may quietly promise the other's future.
+ */
+export const DUNGEON_CLEAR_DROPS: DropTable = {
+  itemChance: 1,
+  rarityWeights: { common: 0, uncommon: 0, rare: 0, epic: 100, ...NO_SET },
+  diceChance: 0,
+  aleChance: 0,
+};
+
+export function dungeonDropTable(floor: number): DropTable {
+  return floor >= 10 ? DUNGEON_CLEAR_DROPS : DUNGEON_FLOOR_DROPS;
+}
+
+/**
+ * Roll a cleared floor's loot.
+ *
+ * Returns up to two items: whatever the normal table gave, and the separate Epic. Both are
+ * slot-weighted the same way a mission's is, so the weapon that decides the next floor is the
+ * likeliest thing to fall out of this one.
+ */
+export function rollDungeonDrops(
+  floor: number,
+  rng: RngStream,
+  context: DropContext = {},
+): readonly { readonly slot: SlotId; readonly rarity: Rarity }[] {
+  const table = dungeonDropTable(floor);
+  const normal = rollMissionDrops(table, rng.fork('floor'), context);
+  const drops = normal.item ? [normal.item] : [];
+
+  // The bonus Epic. Floor 10's guaranteed Epic comes out of the table above instead, so the
+  // clear pays one certain Epic rather than one certain plus one likely.
+  if (floor < 10 && rng.fork('epic').bool(DUNGEON_EPIC_CHANCE)) {
+    drops.push({ slot: rng.fork('epic-slot').weighted(SLOT_WEIGHTS), rarity: 'epic' });
+  }
+
+  return drops;
+}
+
 /** Published-adjacent: the chance a drop lands in a given slot, for the dev tools. */
 export function slotOdds(slot: SlotId): number {
   const total = SLOT_WEIGHTS.reduce((sum, entry) => sum + entry.weight, 0);

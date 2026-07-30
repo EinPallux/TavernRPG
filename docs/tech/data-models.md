@@ -76,7 +76,7 @@ interface ActivityState {
   patrol?: PatrolShift;             // { startedAt, endsAt, hours, heroLevel } — see below
   shops: Record<ShopId, ShopStock>; // v7: { day, items[6], sold[], rerollsToday }
   mount?: MountRental;              // v7: { mountId, rentedAt, expiresAt } — clock decides if live
-  arena: ArenaState; dungeons: Record<string, DungeonProgress>;
+  arena: ArenaState;                // (dungeon progress moved to its own v11 slice)
   forge: ForgeState; gacha: PityState & { history: GachaResult[] };
   board: DailyTasksState; calendar: CalendarState;
 }
@@ -143,6 +143,21 @@ interface SaveFile {
   activity: ActivityState;          // v5–v7: missions, patrol, shops, mount, arena
   world: WorldState | null;         // v8: raised on first entry, null until then
   guild: Guild;                     // v10
+  dungeons: Dungeons;               // v11
+}
+
+// ————— The Undertavern (v11) —————
+interface Dungeons {
+  keys: string[];                   // one-time unlocks; the door then stays open
+  trophies: string[];               // cleared-dungeon crests, shown on the profile
+  progress: Record<DungeonId, DungeonProgress>;   // absent = never entered
+}
+interface DungeonProgress {
+  floorsCleared: number;            // 0–10
+  cooldownUntil: Timestamp;         // 30 min after a loss; a win clears it outright
+  bestAttempts: number[];           // fixed 10; share 0–1 of the floor monster's health taken off
+  attempts: number;                 // seeds each descent, so the next one is a different fight
+  clearedAt: Timestamp | null;
 }
 ```
 

@@ -18,6 +18,7 @@ import { fight } from '@/engine/combat/fight';
 import { buildHeroCombatant, buildMonsterCombatant } from '@/engine/combat/combatant';
 import type { BattleResult } from '@/engine/combat/types';
 import { missionDropTable, rollMissionDrops } from '@/engine/items/drops';
+import { rollKeyDrop } from '@/engine/dungeons/keys';
 import { xpNeeded } from '@/engine/progression/xp';
 import {
   consolationPayout,
@@ -116,6 +117,8 @@ export function resolveMission(
   mission: ActiveMission,
   hero: Hero,
   bonus: PayoutBonus = NO_BONUS,
+  /** Keys already hanging on the hero's belt, so a second one is never rolled. */
+  ownedKeys: readonly string[] = [],
 ): MissionOutcome {
   const template = monsterDef(mission.offer.monsterId);
   const foe = buildMonsterCombatant({
@@ -140,15 +143,14 @@ export function resolveMission(
     const consolation = consolationPayout(full);
     return {
       battle,
-      spoils: { victory: false, ...consolation, dice: 0, ale: false, item: null },
+      spoils: { victory: false, ...consolation, dice: 0, ale: false, item: null, key: null },
     };
   }
 
-  const drops = rollMissionDrops(
-    missionDropTable(mission.duration),
-    createRng(deriveSeed(mission.offer.seed, 'drops'), `drops/${mission.offer.id}`),
-    { weaponLevelsBehind: hero.level - (hero.equipment.weapon?.level ?? 1) },
-  );
+  const dropStream = createRng(deriveSeed(mission.offer.seed, 'drops'), `drops/${mission.offer.id}`);
+  const drops = rollMissionDrops(missionDropTable(mission.duration), dropStream, {
+    weaponLevelsBehind: hero.level - (hero.equipment.weapon?.level ?? 1),
+  });
 
   return {
     battle,
@@ -159,6 +161,13 @@ export function resolveMission(
       dice: drops.dice,
       ale: drops.ale,
       item: drops.item,
+      // Its own fork of the mission's committed stream: the key is decided at accept like
+      // everything else, and adding it cannot shift a single existing drop.
+      key: rollKeyDrop({
+        heroLevel: hero.level,
+        owned: ownedKeys,
+        rng: dropStream.fork('dungeon-key'),
+      }),
     },
   };
 }

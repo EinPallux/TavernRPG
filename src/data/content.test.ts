@@ -20,6 +20,15 @@ import {
   type ChatSlots,
 } from './guildChat';
 import { BOUNTIES, BOUNTY_METRICS, bountyTarget, bountyTitle } from './bounties';
+import {
+  DUNGEONS,
+  FLOORS_PER_DUNGEON,
+  dungeonById,
+  dungeonForKey,
+  floorDef,
+  floorLevel,
+  isBossFloor,
+} from './dungeons';
 import { GUILD_NAME_MAX, SIGIL_ICONS, validateGuildName } from './guilds';
 import { ICON_IDS } from './icons';
 import { ARCHETYPES_BY_ID } from './monsterArchetypes';
@@ -147,6 +156,105 @@ describe('monsters', () => {
     for (const entry of MONSTERS) {
       expect(entry.flavor.length, entry.id).toBeGreaterThan(10);
     }
+  });
+});
+
+describe('dungeons', () => {
+  const allFloors = DUNGEONS.flatMap((entry) =>
+    entry.floors.map((floor) => ({ dungeonId: entry.id, ...floor })),
+  );
+
+  it('has unique ids, names and keys across all three', () => {
+    expect(new Set(DUNGEONS.map((entry) => entry.id)).size).toBe(DUNGEONS.length);
+    expect(new Set(DUNGEONS.map((entry) => entry.keyId)).size).toBe(DUNGEONS.length);
+    expect(new Set(DUNGEONS.map((entry) => entry.trophy.id)).size).toBe(DUNGEONS.length);
+    // Two identical nameplates read as a bug, and a duplicated floor id would break progress.
+    expect(new Set(allFloors.map((floor) => floor.id)).size).toBe(allFloors.length);
+    expect(new Set(allFloors.map((floor) => floor.name)).size).toBe(allFloors.length);
+  });
+
+  it('gives every dungeon exactly ten floors, numbered 1 to 10', () => {
+    for (const entry of DUNGEONS) {
+      expect(entry.floors.length, entry.id).toBe(FLOORS_PER_DUNGEON);
+      expect(entry.floors.map((floor) => floor.floor)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    }
+  });
+
+  it('opens its doors in order, and never before the floor it leads to', () => {
+    const gates = DUNGEONS.map((entry) => entry.gateLevel);
+    expect([...gates].sort((a, b) => a - b)).toEqual(gates);
+
+    for (const entry of DUNGEONS) {
+      // Floor 1 is above the gate — a dungeon you walk into and clear is not a dungeon.
+      expect(floorLevel(entry.id, 1), entry.id).toBeGreaterThan(entry.gateLevel);
+    }
+  });
+
+  it('climbs every floor and matches the levels balancing §5 published', () => {
+    for (const entry of DUNGEONS) {
+      for (let floor = 2; floor <= FLOORS_PER_DUNGEON; floor += 1) {
+        expect(floorLevel(entry.id, floor), `${entry.id} f${floor}`).toBeGreaterThan(
+          floorLevel(entry.id, floor - 1),
+        );
+      }
+    }
+
+    expect([floorLevel('rat-cellars', 1), floorLevel('rat-cellars', 10)]).toEqual([14, 32]);
+    expect([floorLevel('barrowdeep', 1), floorLevel('barrowdeep', 10)]).toEqual([31, 58]);
+    expect([floorLevel('emberdeep', 1), floorLevel('emberdeep', 10)]).toEqual([59, 95]);
+  });
+
+  it('puts a signature on the boss floors and nowhere else', () => {
+    // Both directions. A boss without one is a big monster; an ordinary floor with one is a
+    // difficulty spike nobody designed and nobody tuned.
+    for (const floor of allFloors) {
+      const where = `${floor.dungeonId} f${floor.floor}`;
+      expect(Boolean(floor.signature), where).toBe(isBossFloor(floor.floor));
+    }
+  });
+
+  it('explains every signature in words a player can act on', () => {
+    for (const floor of allFloors) {
+      if (!floor.signature) continue;
+      const where = `${floor.dungeonId} f${floor.floor}`;
+      expect(floor.signature.label.length, where).toBeGreaterThan(3);
+      // Long enough to say what to *do* about it, not just what it is called.
+      expect(floor.signature.explainer.length, where).toBeGreaterThan(40);
+      expect(floor.signature.explainer, where).toMatch(/[.!]$/);
+    }
+  });
+
+  it('uses all three signature shapes, so the bosses are not one boss three times', () => {
+    const kinds = allFloors.flatMap((floor) =>
+      floor.signature ? [floor.signature.proc.kind] : [],
+    );
+    expect(new Set(kinds)).toEqual(new Set(['swarm-call', 'siphon', 'hardening']));
+  });
+
+  it('gives every floor a line of flavour and a real archetype', () => {
+    for (const floor of allFloors) {
+      expect(floor.flavor.length, floor.id).toBeGreaterThan(10);
+      expect(ARCHETYPES_BY_ID[floor.archetypeId], floor.id).toBeDefined();
+    }
+  });
+
+  it('points at a backdrop that actually exists on disk', () => {
+    for (const entry of DUNGEONS) {
+      expect(existsSync(`public${entry.backdrop}`), entry.id).toBe(true);
+    }
+  });
+
+  it('finds a dungeon by its key, and refuses one that does not exist', () => {
+    expect(dungeonForKey('bone-key')?.id).toBe('barrowdeep');
+    expect(dungeonForKey('skeleton-key')).toBeNull();
+    expect(dungeonById('rat-cellars')?.name).toBe('The Rat Cellars');
+    expect(dungeonById('the-larder')).toBeNull();
+  });
+
+  it('clamps a floor lookup rather than inventing a level for floor 40', () => {
+    expect(floorLevel('rat-cellars', 99)).toBe(floorLevel('rat-cellars', 10));
+    expect(floorLevel('rat-cellars', 0)).toBe(floorLevel('rat-cellars', 1));
+    expect(floorDef('rat-cellars', 11)).toBeNull();
   });
 });
 

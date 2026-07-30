@@ -22,6 +22,7 @@ import v6Phase6 from './fixtures/v6-phase6.json';
 import v7Phase7 from './fixtures/v7-phase7.json';
 import v8Phase8 from './fixtures/v8-phase8.json';
 import v9Phase9 from './fixtures/v9-phase9.json';
+import v10Phase10 from './fixtures/v10-phase10.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { migrateSave } from './migrations';
@@ -29,6 +30,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   DEFAULT_ACTIVITY,
   DEFAULT_ARENA,
+  DEFAULT_DUNGEONS,
   DEFAULT_GUILD,
   DEFAULT_SETTINGS,
   type SaveFile,
@@ -351,6 +353,43 @@ describe('save fixtures — every shipped version still loads', () => {
     expect(result.save.hero?.name).toBe('Bryn Halloway');
     expect(result.save.activity.mount?.mountId).toBe('griffin');
     expect(result.save.activity.missionsCompleted).toBe(214);
+  });
+
+  it('opens a Phase 10 (v10) save mid-week in its hall', () => {
+    const result = migrateSave(structuredClone(v10Phase10));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(10);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // Everything the v10 player had in flight: a hall, a chat log, a bounty part-done, gold in
+    // the pot, and the high-water marks that stop any of it being re-rolled on the way in.
+    expect(result.save.guild.guildId).toBe(15);
+    expect(result.save.guild.chat.length).toBe(29);
+    expect(result.save.guild.bounty?.bountyId).toBe('climb');
+    expect(result.save.guild.bounty?.botUnits).toBe(18);
+    expect(result.save.guild.contributions['player']).toBe(12_500);
+    expect(result.save.guild.lastChatDay).toBeGreaterThan(0);
+    expect(result.save.guild.lastBountyDay).toBeGreaterThan(0);
+  });
+
+  it('gives a Phase 10 player an Undertavern with the doors still shut', () => {
+    const result = migrateSave(structuredClone(v10Phase10));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // Purely additive, and deliberately empty rather than generous. Handing a returning player
+    // the Rusty Key would skip the one drop the whole unlock is built around.
+    expect(result.save.dungeons).toEqual(DEFAULT_DUNGEONS);
+    expect(result.save.dungeons.keys).toEqual([]);
+    expect(result.save.dungeons.trophies).toEqual([]);
+    // And nothing else moved.
+    expect(result.save.hero?.name).toBe('Bryn Halloway');
+    expect(result.save.hero?.honor).toBe(5_142);
+    expect(result.save.world?.ladder.indexOf(PLAYER_LADDER_ID)).toBe(686);
+    expect(result.save.activity.mount?.mountId).toBe('griffin');
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

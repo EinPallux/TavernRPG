@@ -29,6 +29,18 @@ export interface BattleChoreo {
   readonly damageNumberLife: number;
   /** Health bar chip is instant; the ghost trail behind it drains over this. */
   readonly healthGhostDrain: number;
+  /**
+   * A boss announcing its signature, before the first blow (dungeons spec §2).
+   *
+   * The longest beat in the file after the entrance, and deliberately so: it is the only chance
+   * the fight gets to *teach*, and a player who reads "the Margrave feeds on your misses" here
+   * loses to it once instead of three times. Fixed — never compressed with the exchange.
+   */
+  readonly bossTraitBeat: number;
+  /** The swarm arriving. A telegraph, then the hit lands on the normal damage beat. */
+  readonly swarmBeat: number;
+  /** A boss healing off a failed attack, or its armour thickening for the round. */
+  readonly bossTickBeat: number;
   /** Knockout: slow-motion, desaturation, the fall. */
   readonly knockoutBeat: number;
   /** Beat after the last blow before the result screen slides in. */
@@ -50,6 +62,9 @@ export const DEFAULT_CHOREO: BattleChoreo = {
   verseBeat: 420,
   damageNumberLife: 900,
   healthGhostDrain: 300,
+  bossTraitBeat: 1_600,
+  swarmBeat: 260,
+  bossTickBeat: 220,
   knockoutBeat: 620,
   finishBeat: 420,
   shakeMagnitude: 4,
@@ -62,6 +77,23 @@ export const DEFAULT_CHOREO: BattleChoreo = {
  * toward this — see `PACE_FLOOR`.
  */
 export const TARGET_FIGHT_DURATION = 8_000;
+
+/**
+ * Longer targets for the Undertavern (dungeons spec §4).
+ *
+ * A dungeon floor carries a ×1.35 stat budget and its bosses ×1.6, which is mostly constitution —
+ * so the fights are genuinely longer than a mission's. Measured against an on-curve hero at the
+ * level that clears them, an ordinary floor runs 6–10 rounds but a tank floor runs 15–17 and a
+ * final boss 18. Squeezing eighteen rounds into eight seconds is not a fast fight, it is an
+ * unreadable one: `PACE_FLOOR` would clamp it and the whole exchange would arrive as a smear.
+ *
+ * The rounds themselves are not the problem — at the clear level the player wins about three
+ * fights in five, so every one of those rounds is tension rather than a wait, which is exactly
+ * the distinction the ~12-round archetype rule exists to protect. What has to give is the
+ * *target*, and it only has to give for the room where the long fights live.
+ */
+export const DUNGEON_FIGHT_DURATION = 11_000;
+export const BOSS_FIGHT_DURATION = 14_000;
 
 /**
  * How far the *compressible* part of a beat — anticipation, recovery, the pause on a round
@@ -87,6 +119,11 @@ export const REDUCED_CHOREO: BattleChoreo = {
   verseBeat: 220,
   damageNumberLife: 500,
   healthGhostDrain: 0,
+  // Shorter, but never *short*: the explainer is text to read, not motion to skip, and reduced
+  // motion is a request for less movement rather than for less information.
+  bossTraitBeat: 1_200,
+  swarmBeat: 160,
+  bossTickBeat: 130,
   knockoutBeat: 250,
   finishBeat: 250,
   shakeMagnitude: 0,

@@ -102,6 +102,8 @@ export interface MonsterSpec {
   readonly budgetMultiplier?: number;
   /** An extra signature ability, for bosses. */
   readonly extraProc?: CombatProc;
+  /** What that ability is called and what it does, announced before the fight. */
+  readonly signature?: { readonly label: string; readonly explainer: string };
 }
 
 export function buildMonsterCombatant({
@@ -111,6 +113,7 @@ export function buildMonsterCombatant({
   level,
   budgetMultiplier = 1,
   extraProc,
+  signature,
 }: MonsterSpec): Combatant {
   const template = archetype(archetypeId);
   const safeLevel = Math.max(1, Math.floor(level));
@@ -144,6 +147,7 @@ export function buildMonsterCombatant({
     armour: Math.round(baselineArmour(safeLevel) * template.armourFactor * budgetMultiplier),
     damageReductionCap: template.damageReductionCap,
     procs,
+    ...(signature ? { signature } : {}),
   };
 }
 
