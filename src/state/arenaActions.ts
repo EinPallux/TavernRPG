@@ -33,7 +33,7 @@ import { LEGENDS_SNAPSHOT_SIZE, weeklyPayouts, type WeeklyPayout } from '@/engin
 import { PLAYER_LADDER_ID, joinLadder, newcomerHonor } from '@/engine/world/ladder';
 import type { BotRecord, WorldState } from '@/engine/world/generate';
 import { updateRivals } from '@/engine/world/rivals';
-import { creditBounty } from './guildActions';
+import { creditAll } from './progressActions';
 import {
   LEGENDS_ARCHIVE_CAP,
   type Arena,
@@ -241,8 +241,12 @@ export function duel(save: SaveFile, opponentId: number, now: number): DuelOutco
   const bots = [...world.bots];
   bots[opponentId] = { ...opponent, honor: result.opponentHonor };
 
-  // A win in the sand counts toward the week's bounty, when that is what it is counting.
-  const credited = result.won ? creditBounty(save, 'arenaWins', 1) : save;
+  // A win in the sand counts toward the week's bounty and today's notices, through the one
+  // credit path that feeds both (daily-loop spec §1).
+  const credited = creditAll(save, [
+    ['arenaWins', result.won ? 1 : 0],
+    ['levelsGained', levelled.level - hero.level],
+  ]);
 
   return {
     ok: true,

@@ -331,13 +331,27 @@ caught it), `zoneMissions` counted attempts while its sibling counted victories,
 `goldFind`/`xpBonus` specials had been computed by `deriveStats` since Phase 2 and applied to
 nothing.
 
-## Phase 15 — Notice Board, Calendar & Daily Polish (M) 🔲
+## Phase 15 — Notice Board, Calendar & Daily Polish (M) ✅
 Daily task pool (feature-aware weighting), points/chests, weekly ladder chest, 28-day login
 calendar (pause-not-reset), overnight summary card final form, Reset Engine v2 (full §5 economy-
 doc ledger + reset moment UX), out-of-Vigor wind-down flow (Patrol CTA + tomorrow preview).
 **Accept:** all resets in one engine (audit: no feature reads clock independently — lint/grep
 gate); multi-day absence fixtures (2/9/40 days incl. DST) process correctly; dice paycheck
 (§13 tables) verified across a simulated month.
+**Done 2026-07-30.** `data/progress.ts` (one vocabulary for everything the game counts),
+`data/dailyTasks.ts` and `data/calendar.ts`, `engine/board/` (`tasks` — a day-seeded,
+feature-aware, neglect-weighted draw; `chest`), `engine/calendar/`, Reset Engine v2 with its
+ledger, `state/progressActions.ts` as the single credit path, `boardActions` + `calendarActions`,
+the two-faced Notice Board, the reset-moment flourish, the out-of-Vigor wind-down, and save
+schema v15. The Moss Tortoise and the Coin Toad are now obtainable.
+
+The shape worth copying: **one vocabulary, one credit path, many consumers.** The guild bounty
+and the daily tasks both ask the player to do countable things, and before this phase they would
+have kept separate lists of what those things are — the third occasion of a failure CLAUDE.md
+already records twice. Building it turned up that two of six bounty metrics had never been
+credited from the player's side at all. The reset audit (`engine/reset/audit.test.ts`) is the
+other piece worth keeping: it reads the source and fails on the *shape* a drift bug takes,
+because behaviour cannot catch two features that each decide it is tomorrow.
 
 ## Phase 16 — Tutorial & Onboarding (M) 🔲
 12 data-driven beats with spotlight system, tutorial-shortened first mission, gates enforcement

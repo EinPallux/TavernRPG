@@ -12,7 +12,15 @@
  * Pure data module.
  */
 
-/** What a bounty counts. Each maps to an event the simulation already emits. */
+import type { ProgressMetric } from './progress';
+
+/**
+ * What a bounty counts — a **subset of `PROGRESS_METRICS`**, not a list of its own.
+ *
+ * Typed as a subset so a bounty cannot name something the credit path has never heard of. The
+ * Notice Board narrows the same union from the other end; neither owns the vocabulary
+ * (`data/progress.ts` does), which is what stops the two drifting.
+ */
 export const BOUNTY_METRICS = [
   'missions',
   'arenaWins',
@@ -20,7 +28,7 @@ export const BOUNTY_METRICS = [
   'itemsScrapped',
   'levelsGained',
   'goldDonated',
-] as const;
+] as const satisfies readonly ProgressMetric[];
 export type BountyMetric = (typeof BOUNTY_METRICS)[number];
 
 export interface BountyDef {

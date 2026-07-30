@@ -23,7 +23,7 @@ import { parseDayKey, weekKeyFor, weekStartFor, type DayKey } from '@/engine/clo
 import { createRng, deriveSeed, type Seed } from '@/engine/rng';
 import { setsForClass, type GearSetDef, type SetSlot, SET_SLOTS } from '@/data/gearSets';
 import { banner, type BannerDef, type BannerId } from '@/data/banners';
-import { SLOT_LABELS, type ClassId, type SlotId } from '@/engine/items/types';
+import { SLOT_PLURALS, type ClassId, type SlotId } from '@/engine/items/types';
 
 /** The daily highlight is a slot, and any of the ten can come up. */
 export const DAILY_SLOTS: readonly SlotId[] = [
@@ -134,7 +134,7 @@ function featuredSlot(seed: Seed, period: string): SlotId {
 }
 
 function describe(id: BannerId, set: GearSetDef | null, slot: SlotId | null): string {
-  if (id === 'daily') return `${SLOT_LABELS[slot ?? 'weapon']}s`;
+  if (id === 'daily') return SLOT_PLURALS[slot ?? 'weapon'];
   return set?.name ?? 'A pattern nobody here can wear';
 }
 

@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 import { animate, motion, useMotionValue, useTransform, useReducedMotion } from 'motion/react';
 import { standard } from '@/styles/motion';
 
-export type MeterTone = 'xp' | 'vigor' | 'health' | 'neutral';
+export type MeterTone = 'xp' | 'vigor' | 'health' | 'success' | 'neutral';
 
 export interface MeterProps {
   value: number;
@@ -30,6 +30,9 @@ const TONE: Record<MeterTone, { fill: string; glow: string }> = {
   xp: { fill: 'bg-amber-500', glow: 'shadow-[0_0_12px_-2px_rgb(232_163_61/0.7)]' },
   vigor: { fill: 'bg-ember-600', glow: 'shadow-[0_0_12px_-2px_rgb(217_108_47/0.7)]' },
   health: { fill: 'bg-blood-600', glow: 'shadow-[0_0_12px_-2px_rgb(167_58_46/0.7)]' },
+  // Finished, not damaged. Before this existed the only full-bar colours were amber and red,
+  // so "done" had to borrow one of them and a completed task read as a wound.
+  success: { fill: 'bg-moss-600', glow: 'shadow-[0_0_12px_-2px_rgb(76_122_63/0.75)]' },
   neutral: { fill: 'bg-arcane-500', glow: 'shadow-[0_0_12px_-2px_rgb(63_167_160/0.6)]' },
 };
 

@@ -137,7 +137,7 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
 
 // ————— Save envelope —————
 interface SaveFile {
-  schemaVersion: 14; savedAt: Timestamp; slot: 1|2|3;
+  schemaVersion: 15; savedAt: Timestamp; slot: 1|2|3;
   worldSeed: Seed;                  // committed once; seeds the entire simulated world
   clock: { lastSeen: Timestamp; clampCount: number };
   settings: Settings;               // nav, motion, audio, battle playback (v4)
@@ -149,6 +149,8 @@ interface SaveFile {
   forge: ForgeState;                // v12
   gacha: GachaState;                // v13
   pets: Pets;                       // v14
+  tasks: Tasks;                     // v15
+  calendar: Calendar;               // v15
 }
 
 // ————— The Undertavern (v11) —————
@@ -216,6 +218,33 @@ interface PetProgress { level: number; rarity: PetRarity; fedToday: number; }
 //
 // The boost lands in one of two places, never both — attributes and armour go through
 // deriveStats(); goldFind and xpBonus become a PayoutBonus composed with the guild's.
+
+// ————— The Notice Board and the ledger (v15) —————
+type ProgressTally = Partial<Record<ProgressMetric, number>>;   // sparse
+interface Tasks {
+  taskIds: string[];                // the day's three, as ids; definitions are looked up
+  drawnFor: DayKey | null;          // a mismatch redraws lazily on next read
+  today: ProgressTally;             // cleared by the reset walk, never by a screen
+  lifetime: ProgressTally;          // feeds the draw's neglect weighting
+  lastChestDay: DayKey | null;      // high-water mark #7 — a chest pays once
+  lastWeeklyChestWeek: DayKey | null;  // #8, same rule at a coarser boundary
+  claimsThisWeek: number; claimsWeek: DayKey | null;   // the ladder's seven rungs
+  totalChests: number;              // lifetime; thirty earn the Coin Toad
+}
+interface Calendar {
+  day: number;                      // 0–28, a COUNT OF DAYS ATTENDED — not a streak
+  lastStampedDay: DayKey | null;    // one stamp per day, compared not incremented
+  cyclesCompleted: number;          // the first closed cycle earns the Moss Tortoise
+}
+// `today` is the one thing in the daily loop that must be *stored* rather than derived: a task
+// asks what you did today, and a lifetime total cannot answer that without a snapshot to diff
+// against — which is the same storage wearing a cleverer name.
+//
+// `Calendar` has no streak field, which is how "missing a day pauses rather than resets" is
+// implemented: there is nothing here an absence could reduce, so there is no branch to get wrong.
+//
+// `ProgressMetric` is the single vocabulary in data/progress.ts. BountyMetric is a subset of it,
+// and the daily tasks narrow the same union from the other end — neither owns it.
 
 // ————— Gear sets (content, v12) —————
 // A set *bonus* is data the engine folds, not a proc: `SetEffect` is a flat union of ~24 named

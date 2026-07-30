@@ -214,7 +214,13 @@ export function descend(save: SaveFile, id: DungeonId, now: number): DelveResult
       }
     }
 
-    return generateItem({ slot: drop.slot, rarity: drop.rarity, classId: hero.classId, level, rng });
+    return generateItem({
+      slot: drop.slot,
+      rarity: drop.rarity,
+      classId: hero.classId,
+      level,
+      rng,
+    });
   });
 
   const levelled = applyXp(hero.level, hero.xp, outcome.spoils.xp);

@@ -21,6 +21,7 @@ import {
 } from '@/engine/items/dispose';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
 import type { Item } from '@/engine/items/types';
+import { credit } from './progressActions';
 import type { SaveFile, StoredShopStock } from '@/engine/save/schema';
 
 export type ShopRefusal =
@@ -152,7 +153,11 @@ export function sellItem(save: SaveFile, uid: string): SaleTransition {
   const result = disposeItem(hero, uid, 'sell');
   if (!result.ok) return refuse({ kind: 'cannot-dispose', reason: result.refusal });
 
-  return { ok: true, save: { ...save, hero: result.hero }, quote: result.quote };
+  return {
+    ok: true,
+    save: credit({ ...save, hero: result.hero }, 'itemsSold', 1),
+    quote: result.quote,
+  };
 }
 
 /** What selling would pay and how hard to ask first — read-only, for the confirm dialog. */

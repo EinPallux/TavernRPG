@@ -38,6 +38,26 @@ export const SLOT_LABELS: Readonly<Record<SlotId, string>> = {
   trinket: 'Trinket',
 };
 
+/**
+ * The plural of each slot, written out rather than made with `+ 's'`.
+ *
+ * Two of the ten are already plural. The gacha's daily banner said "Bootss" and "Glovess" for
+ * three phases because a suffix looked like a safe shortcut, and it is exactly as safe as
+ * English ever is.
+ */
+export const SLOT_PLURALS: Readonly<Record<SlotId, string>> = {
+  weapon: 'Weapons',
+  offhand: 'Offhands',
+  helmet: 'Helmets',
+  chest: 'Chest pieces',
+  gloves: 'Gloves',
+  boots: 'Boots',
+  belt: 'Belts',
+  amulet: 'Amulets',
+  ring: 'Rings',
+  trinket: 'Trinkets',
+};
+
 /** Slots that carry an armour rating. */
 export const ARMOUR_SLOTS: readonly SlotId[] = ['helmet', 'chest', 'gloves', 'boots', 'belt'];
 /** Slots whose contents are class-locked (items spec §1, §5). */

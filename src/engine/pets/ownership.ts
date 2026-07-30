@@ -49,11 +49,20 @@ export function isEarned(source: PetSource, save: SaveFile): boolean {
     case 'egg':
       return false;
 
-    // The login calendar and the Notice Board's task streak are Phase 15's. Until they exist the
-    // honest answer is no — and the stall says exactly where the pet will come from, which is a
-    // better empty slot than an unexplained one.
+    /*
+     * The daily loop, wired in Phase 15 — and both halves are derivations rather than grants.
+     *
+     * The Moss Tortoise wants a *closed* cycle, not the twenty-eighth square specifically:
+     * `cyclesCompleted` only moves when a day-28 stamp lands, so it means exactly "you finished a
+     * ledger". The Coin Toad counts daily chests claimed, which the board already keeps as a
+     * lifetime total for its own reasons — thirty of them, from any thirty days, because the
+     * calendar's own promise is that absence pauses rather than punishes and a pet gated on
+     * thirty *consecutive* days would quietly contradict it.
+     */
     case 'daily-loop':
-      return false;
+      return source.feature === 'calendar'
+        ? save.calendar.cyclesCompleted >= 1
+        : save.tasks.totalChests >= 30;
   }
 }
 

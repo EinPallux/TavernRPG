@@ -20,10 +20,13 @@ import { canDrinkAle, processResets, vigorCeiling } from '@/engine/reset/resetEn
 import type { WeeklyPayout } from '@/engine/arena/payout';
 import type { BountyChest } from '@/engine/guilds/bounty';
 import { refreshArenaDay } from './arenaActions';
-import { creditBounty, refreshGuildDay } from './guildActions';
+import { refreshGuildDay } from './guildActions';
+import { creditAll } from './progressActions';
 import { refreshForgeDay } from './forgeActions';
 import { refreshGachaDay } from './gachaActions';
 import { creditMissionDrops, payoutBonus, petContribution, refreshPetDay } from './petActions';
+import { ensureTasks, refreshBoardDay } from './boardActions';
+import { stampToday, type StampTransition } from './calendarActions';
 import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
@@ -69,6 +72,10 @@ export function refreshDay(
   readonly payouts: readonly WeeklyPayout[];
   /** The guild bounty chest, if a Sunday passed and the hall earned one. */
   readonly chest: BountyChest | null;
+  /** Today's calendar square, if this refresh was the one that stamped it (spec §2). */
+  readonly calendarStamp: StampTransition | null;
+  /** Whole days the player was away — what the absence card counts. */
+  readonly daysAway: number;
 } {
   const outcome = processResets(save.activity, today, daysBetween);
   let next = { ...save, activity: outcome.state as Activity };
@@ -90,6 +97,27 @@ export function refreshDay(
 
   // Twelve empty bowls in the Menagerie (pets spec §2).
   if (outcome.didReset) next = refreshPetDay(next);
+
+  // Three fresh notices and an empty tally (daily-loop spec §1). The week's claim count rolls
+  // here too, which is why the board is handed `today` rather than working it out.
+  if (outcome.didReset) next = refreshBoardDay(next, today);
+
+  /*
+   * Then the ledger stamps itself.
+   *
+   * Auto-stamping on first load of the day is the spec's own wording (§2), and doing it inside
+   * the one reset walk rather than on the Notice Board screen is what makes it true: a player
+   * who logs in, runs a mission and closes the tab has still been marked present. `stampToday`
+   * is idempotent, so calling it on every refresh — which is every load and every tick — is
+   * exactly as safe as calling it once.
+   */
+  const stamped = stampToday(next, today);
+  const calendarStamp = stamped.ok ? stamped : null;
+  if (stamped.ok) next = stamped.save;
+
+  // The day's three are drawn lazily, after the reset and after the stamp, so a board drawn on
+  // the way in already reflects a level the calendar's reward might have paid for.
+  next = ensureTasks(next, today);
 
   // A board is drawn lazily: on the first visit of the day, after a reroll, or after a reset
   // nulled it. Drawing it here rather than at midnight means a player who never opens the
@@ -114,6 +142,8 @@ export function refreshDay(
     vigorForfeited: outcome.vigorForfeited,
     payouts: arenaDay.payouts,
     chest: guildDay.chest,
+    calendarStamp,
+    daysAway: outcome.daysAway,
   };
 }
 
@@ -302,13 +332,23 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
 
   const activity = save.activity;
   const gainedFreeAle = spoils.ale && activity.freeAlesToday < 1;
-  // A finished contract counts toward the week's bounty, if that is what it is counting.
-  const credited = creditMissionDrops(creditBounty(save, 'missions', 1), {
-    zoneId: mission.offer.zoneId,
-    victory: spoils.victory,
-    scraps: spoils.scraps,
-    egg: spoils.egg,
-  });
+  /*
+   * A won contract counts, and only a won one — the same units `activity.missionsCompleted` and
+   * `activity.zoneMissions` use. Three counters that mean "a contract you finished" have to be
+   * counted the same way or the gates built on them quietly disagree.
+   */
+  const credited = creditMissionDrops(
+    creditAll(save, [
+      ['missions', spoils.victory ? 1 : 0],
+      ['levelsGained', levelled.level - hero.level],
+    ]),
+    {
+      zoneId: mission.offer.zoneId,
+      victory: spoils.victory,
+      scraps: spoils.scraps,
+      egg: spoils.egg,
+    },
+  );
 
   return {
     save: {

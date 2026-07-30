@@ -16,10 +16,11 @@ import { CHAT_CATEGORIES } from '@/data/guildChat';
 import { BANNER_COLOURS, GUILD_NAME_MAX, SIGIL_ICONS } from '@/data/guilds';
 import { BANNER_IDS, ROLL_OUTCOMES } from '@/data/banners';
 import { PET_ID_LIST, PET_RARITIES } from '@/data/pets';
+import { PROGRESS_METRICS } from '@/data/progress';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 14;
+export const CURRENT_SCHEMA_VERSION = 15;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -738,6 +739,84 @@ export const DEFAULT_PETS: Pets = {
   seenCount: 0,
 };
 
+/* ── The Notice Board and the ledger (schema v15) ─────────────────────────────────── */
+
+/**
+ * Everything counted today, keyed by `ProgressMetric`.
+ *
+ * Sparse, and cleared at every day boundary. This is the one thing in the daily loop that has to
+ * be *stored* rather than derived: a task asks what you did **today**, and a lifetime total
+ * cannot answer that without a snapshot to diff against — which would be the same storage wearing
+ * a cleverer name.
+ */
+export const progressTallySchema = z.partialRecord(
+  z.enum(PROGRESS_METRICS),
+  z.number().int().min(0),
+);
+
+export const tasksSchema = z.object({
+  /** The day's three, as ids. Definitions, points and progress are all looked up. */
+  taskIds: z.array(z.string()).max(8),
+  /** Day the board was drawn for; a mismatch redraws lazily on the next read. */
+  drawnFor: dayKeySchema.nullable(),
+  /** Today's counters. Cleared by the Reset Engine, never by a screen. */
+  today: progressTallySchema,
+  /**
+   * Lifetime counters, for the draw's neglect weighting.
+   *
+   * Kept beside the daily tally rather than derived, because most of these metrics have no
+   * lifetime home anywhere else — nothing counts scrapped items or gold spent on training.
+   */
+  lifetime: progressTallySchema,
+  /**
+   * Day the daily chest was last paid. **A high-water mark, not a flag** — the seventh in
+   * CLAUDE.md's list, and it exists because a chest keyed on a day and applied to the save pays
+   * twice on reload without one.
+   */
+  lastChestDay: dayKeySchema.nullable(),
+  /** Week key the weekly chest was last paid for. Same rule, coarser boundary. */
+  lastWeeklyChestWeek: dayKeySchema.nullable(),
+  /** Daily chests claimed in the current week, against the seven the weekly chest wants. */
+  claimsThisWeek: z.number().int().min(0),
+  /** The week `claimsThisWeek` belongs to; a new week zeroes it. */
+  claimsWeek: dayKeySchema.nullable(),
+  /** Lifetime daily-chest claims. Thirty of them earn the Coin Toad (pets spec §1). */
+  totalChests: z.number().int().min(0),
+});
+
+export const DEFAULT_TASKS: Tasks = {
+  taskIds: [],
+  drawnFor: null,
+  today: {},
+  lifetime: {},
+  lastChestDay: null,
+  lastWeeklyChestWeek: null,
+  claimsThisWeek: 0,
+  claimsWeek: null,
+  totalChests: 0,
+};
+
+/**
+ * Marla's ledger (daily-loop spec §2).
+ *
+ * Note the absence of a streak. `day` is a **count of squares attended**, so missing a day
+ * pauses the calendar rather than resetting it — there is no field here a lapse could reduce,
+ * which is the rule implemented as a shape rather than as a branch.
+ */
+export const calendarSchema = z.object({
+  day: z.number().int().min(0).max(28),
+  /** The day the last stamp landed. One stamp per day, guarded by comparison. */
+  lastStampedDay: dayKeySchema.nullable(),
+  /** Closed 28-day cycles. The first one earns the Moss Tortoise (pets spec §1). */
+  cyclesCompleted: z.number().int().min(0),
+});
+
+export const DEFAULT_CALENDAR: Calendar = {
+  day: 0,
+  lastStampedDay: null,
+  cyclesCompleted: 0,
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -766,6 +845,10 @@ export const saveFileSchema = z.object({
   gacha: gachaSchema,
   /** The Menagerie (schema v14). */
   pets: petsSchema,
+  /** The Notice Board (schema v15). */
+  tasks: tasksSchema,
+  /** The login calendar (schema v15). */
+  calendar: calendarSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -775,6 +858,9 @@ export type Materials = z.infer<typeof materialsSchema>;
 export type Forge = z.infer<typeof forgeSchema>;
 export type Gacha = z.infer<typeof gachaSchema>;
 export type Pets = z.infer<typeof petsSchema>;
+export type Tasks = z.infer<typeof tasksSchema>;
+export type Calendar = z.infer<typeof calendarSchema>;
+export type StoredProgressTally = z.infer<typeof progressTallySchema>;
 export type StoredPetProgress = z.infer<typeof petProgressSchema>;
 export type StoredRollRecord = z.infer<typeof rollRecordSchema>;
 export type Activity = z.infer<typeof activitySchema>;
@@ -826,6 +912,8 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     forge: { ...DEFAULT_FORGE },
     gacha: { ...DEFAULT_GACHA },
     pets: { ...DEFAULT_PETS },
+    tasks: { ...DEFAULT_TASKS },
+    calendar: { ...DEFAULT_CALENDAR },
   };
 }
 

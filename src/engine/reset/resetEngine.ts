@@ -21,7 +21,9 @@
  * Pure module: no DOM, no storage, no live clock — the caller passes the time in.
  */
 
-import type { DayKey } from '@/engine/clock';
+import { weekKeyFor, type DayKey } from '@/engine/clock';
+import { isUnlocked } from '@/engine/progression/gates';
+import type { PlaceId } from '@/data/places';
 import { ALE_PER_DAY, VIGOR_PER_DAY } from '@/engine/progression/rewards';
 
 /** The slice of a save the reset engine may touch. */
@@ -47,6 +49,29 @@ export interface ResettableState {
   readonly shops: Readonly<Record<string, unknown>>;
 }
 
+/**
+ * What a crossed boundary refreshed, in the order the ritual shows it (spec §4).
+ *
+ * A structured ledger rather than a boolean, because two different surfaces need to say what
+ * happened and neither should be re-deriving it: the reset-moment card while the tab is open,
+ * and the overnight summary on first load. Both read this.
+ *
+ * Only systems the hero can actually reach appear — telling a level-4 player their Proving
+ * Grounds cooldowns refreshed is noise about a door they cannot open.
+ */
+export const RESET_SUBJECTS = [
+  'vigor',
+  'board',
+  'shops',
+  'forge',
+  'gacha',
+  'pets',
+  'tasks',
+  'calendar',
+  'arena',
+] as const;
+export type ResetSubject = (typeof RESET_SUBJECTS)[number];
+
 export interface ResetOutcome<T extends ResettableState> {
   readonly state: T;
   /** Boundaries crossed, oldest first. Empty when nothing changed. */
@@ -55,6 +80,22 @@ export interface ResetOutcome<T extends ResettableState> {
   readonly didReset: boolean;
   /** Vigor the player forfeited by not spending it. Feeds the "while you slept" card. */
   readonly vigorForfeited: number;
+  /**
+   * Whole days the player was away, beyond the one that just turned.
+   *
+   * Zero for an ordinary overnight. The absence card reads this rather than counting
+   * `daysProcessed`, because "you were gone for 8 days" and "8 boundaries were walked" are the
+   * same number only by coincidence and would stop being so the moment anything is coalesced.
+   */
+  readonly daysAway: number;
+  /**
+   * Week boundaries inside the absence — the Sunday keys that closed.
+   *
+   * Handed out rather than recomputed by each consumer, so the arena payout, the guild bounty
+   * and the Notice Board's weekly chest all agree on which weeks ended without three copies of
+   * the same `weekKeyFor` walk.
+   */
+  readonly weeksClosed: readonly string[];
 }
 
 /**
@@ -68,26 +109,28 @@ export function processResets<T extends ResettableState>(
   today: DayKey,
   daysBetween: (from: DayKey, to: DayKey) => readonly DayKey[],
 ): ResetOutcome<T> {
+  const quiet = (next: T): ResetOutcome<T> => ({
+    state: next,
+    daysProcessed: [],
+    didReset: false,
+    vigorForfeited: 0,
+    daysAway: 0,
+    weeksClosed: [],
+  });
+
   // A save that has never been processed adopts today without claiming a reset happened —
   // a brand-new hero has not "missed" anything.
   if (state.lastProcessedDay === null) {
-    return {
-      state: { ...state, lastProcessedDay: today },
-      daysProcessed: [],
-      didReset: false,
-      vigorForfeited: 0,
-    };
+    return quiet({ ...state, lastProcessedDay: today });
   }
 
-  if (state.lastProcessedDay === today) {
-    return { state, daysProcessed: [], didReset: false, vigorForfeited: 0 };
-  }
+  if (state.lastProcessedDay === today) return quiet(state);
 
   const boundaries = daysBetween(state.lastProcessedDay, today);
   if (boundaries.length === 0) {
     // The clock went backwards, or the keys are out of order. Hold the high-water mark rather
     // than rewinding the player's day — the same stance `GameClock` takes (architecture §Time).
-    return { state, daysProcessed: [], didReset: false, vigorForfeited: 0 };
+    return quiet(state);
   }
 
   // Vigor left on the table when the *first* boundary passed. Later boundaries forfeit a full
@@ -112,7 +155,58 @@ export function processResets<T extends ResettableState>(
     daysProcessed: boundaries,
     didReset: true,
     vigorForfeited,
+    // The first boundary is last night; anything beyond it is time the player was away.
+    daysAway: boundaries.length - 1,
+    weeksClosed: weeksClosedIn(boundaries),
   };
+}
+
+/**
+ * The Sunday keys inside a run of boundaries, oldest first and never repeated.
+ *
+ * A day *is* the end of its week when its own week key equals itself — the rule the arena payout
+ * and the guild bounty already use independently. Centralising it here is not tidiness: the two
+ * had to agree about a fortnight's absence and there was nothing making them.
+ */
+export function weeksClosedIn(days: readonly DayKey[]): readonly string[] {
+  const closed: string[] = [];
+  for (const day of days) {
+    const week = weekKeyFor(day);
+    if (week === day && !closed.includes(week)) closed.push(week);
+  }
+  return closed;
+}
+
+/** What each subject says when it refreshes, and the room it belongs to. */
+const SUBJECT_COPY: Readonly<Record<ResetSubject, { place: PlaceId; line: string }>> = {
+  vigor: { place: 'tavern', line: 'Vigor back to full' },
+  board: { place: 'tavern', line: 'Marla has pinned up fresh contracts' },
+  tasks: { place: 'board', line: 'Three new notices on the board' },
+  calendar: { place: 'board', line: 'The ledger is waiting for your mark' },
+  shops: { place: 'armory', line: 'Bram and Sela have restocked' },
+  forge: { place: 'forge', line: 'The crucible has cooled — ten melts again' },
+  gacha: { place: 'fortune', line: 'Vesna has a card on the house' },
+  pets: { place: 'menagerie', line: 'Twelve empty bowls in the Menagerie' },
+  arena: { place: 'arena', line: 'Your bouts and your revenge have reset' },
+};
+
+export interface ResetLine {
+  readonly subject: ResetSubject;
+  readonly line: string;
+}
+
+/**
+ * The reset ritual's lines, for this hero.
+ *
+ * Filtered by what the hero can reach: a level-4 player being told their Proving Grounds
+ * cooldowns refreshed is being told about a door they cannot open. The order is
+ * `RESET_SUBJECTS` — Vigor first because it is the one that decides what the next hour looks
+ * like, and everything else in the order you would walk the town.
+ */
+export function resetLines(heroLevel: number): readonly ResetLine[] {
+  return RESET_SUBJECTS.filter((subject) => isUnlocked(SUBJECT_COPY[subject].place, heroLevel)).map(
+    (subject) => ({ subject, line: SUBJECT_COPY[subject].line }),
+  );
 }
 
 /** Vigor ceiling right now: the daily allowance plus whatever Ale has been drunk today. */

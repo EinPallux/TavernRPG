@@ -103,6 +103,13 @@ import {
   upgradePet as upgradePetOn,
   type PetResult,
 } from './petActions';
+import { credit } from './progressActions';
+import {
+  claimDailyChest as claimDailyChestOn,
+  claimWeeklyChest as claimWeeklyChestOn,
+  type DailyClaimResult,
+  type WeeklyClaimResult,
+} from './boardActions';
 import type { BannerId } from '@/data/banners';
 import type { PetId } from '@/data/pets';
 import type { ForgeTier } from '@/engine/forge/forgeConfig';
@@ -293,6 +300,9 @@ export interface GameStoreState {
   setActivePet: (id: PetId | null) => void;
   /** Stop the rail saying something new is in the Menagerie. */
   markPetsSeen: () => void;
+  /** The Notice Board's two chests (daily-loop spec §1). */
+  claimDailyChest: () => DailyClaimResult;
+  claimWeeklyChest: () => WeeklyClaimResult;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -533,7 +543,15 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     },
 
     trainAttribute(attribute, count) {
-      updateHero((hero) => trainOnHero(hero, attribute, count).hero);
+      const { save } = get();
+      if (!save?.hero) return;
+
+      const result = trainOnHero(save.hero, attribute, count);
+      if (result.pointsBought === 0) return;
+
+      // Gold into the trainer is the game's primary sink, so the board is allowed to notice.
+      set({ save: credit({ ...save, hero: result.hero }, 'goldTrained', result.goldSpent) });
+      void persistNow();
     },
 
     toggleItemLock(uid) {
@@ -899,7 +917,24 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     },
 
     donateToGuild(options) {
-      return runGuild((save) => donateOn(save, options, gameNow()));
+      /*
+       * The one metric credited from two places, and deliberately so: `donate` already threads
+       * the bounty through a larger transaction (the hall's pot, the treasury track, the world
+       * record), so routing it back through `credit` would be circular. What the board needs is
+       * the tally, and that is added here — the value is whatever the donation was worth, which
+       * `donate` has already priced.
+       */
+      const before = get().save?.hero;
+      const refusal = runGuild((save) => donateOn(save, options, gameNow()));
+      if (refusal) return refusal;
+
+      const after = get().save;
+      const value = (before?.gold ?? 0) - (after?.hero?.gold ?? 0);
+      if (after && value > 0) {
+        set({ save: credit(after, 'goldDonated', value) });
+        void persistNow();
+      }
+      return null;
     },
 
     acceptGuildApplicant(botId) {
@@ -933,7 +968,9 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const result = descendOn(save, id, gameNow());
       if (!result.ok) return result;
 
-      set({ save: result.save });
+      set({
+        save: credit(result.save, 'dungeonFloors', result.outcome.cleared ? 1 : 0),
+      });
       void persistNow();
       return result;
     },
@@ -986,7 +1023,9 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       });
       if (!result.ok) return result;
 
-      set({ save: result.save });
+      // Every card counts, the free one included — the task says "draw a card", not "spend a die".
+      const drawn = result.save.gacha.rolls - save.gacha.rolls;
+      set({ save: credit(result.save, 'gachaRolls', drawn) });
       void persistNow();
       return result;
     },
@@ -998,7 +1037,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const result = feedPetOn(save, id);
       if (!result.ok) return result;
 
-      set({ save: result.save });
+      set({ save: credit(result.save, 'petsFed', 1) });
       void persistNow();
       return result;
     },
@@ -1035,6 +1074,32 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
       set({ save: next });
       void persistNow();
+    },
+
+    claimDailyChest() {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = claimDailyChestOn(save, currentDayKey());
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    claimWeeklyChest() {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = claimWeeklyChestOn(save, currentDayKey());
+      if (!result.ok) return result;
+
+      // The chest's item goes into the bags like any other drop, through the one path that
+      // knows what to do when they are full.
+      set({ save: { ...result.save, hero: addItemToHero(result.save.hero!, result.item).hero } });
+      void persistNow();
+      return result;
     },
 
     setOpeningVerse(verse) {

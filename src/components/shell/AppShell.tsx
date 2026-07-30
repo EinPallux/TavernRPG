@@ -11,6 +11,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { MotionConfig } from 'motion/react';
 import { NavRail } from './NavRail';
+import { ResetMoment } from './ResetMoment';
 import { TopHud } from './TopHud';
 import { PlaceStage } from './PlaceStage';
 import { ToastStack } from '@/components/ui/Toast';
@@ -71,6 +72,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </>
         )}
+        {/* The clock strikes over everything, but never over a fight — the battle scene raises
+            its own layer and the moment queues behind it (daily-loop spec §4). */}
+        {!needsHero && <ResetMoment />}
         <ToastStack />
       </div>
     </MotionConfig>

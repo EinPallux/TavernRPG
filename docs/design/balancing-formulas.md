@@ -419,7 +419,27 @@ change to player pacing re-paces the whole world with it rather than leaving 1,5
 
 ## 13. Daily/weekly reward tables
 
-- Daily tasks: 3 tasks → 40/30/30 points; chest at 100 pts: gold (= 60·goldPerVigor), materials,
-  **1 Golden Die**. Weekly chest (7 daily clears): 3 dice + Ale ×2 + guaranteed Rare+ item + Epic @ 25%.
-- Login calendar (28 days): gold/materials/Ale cadence, Dice on days 7/14/21, Epic item day 28.
-  Missing a day pauses (doesn't reset) the calendar. `[TUNE]`
+- Daily tasks: 3 tasks → 40/30/30 points; chest at 100 pts: gold (= 60·goldPerVigor), 4 Essence,
+  6 Scrap, **1 Golden Die**. All three tasks are required — 40+30+30 is exactly the chest line, and
+  a board where two of three suffices makes the third task a suggestion. Weekly chest (7 daily
+  clears): 3 dice + Ale ×2 + guaranteed Rare + Epic @ 25%.
+- Task draw: day-seeded from `(worldSeed, dayKey)`, one metric per slot, never a locked room.
+  Neglect weighting `1 + 0.85·(1 − familiarity)` where `familiarity = log10(1+done)/log10(501)`,
+  capped under 2× across the whole range `[TUNE]`.
+- Login calendar (28 days): gold/materials/Ale/Tavern-Scraps cadence, Dice on days 7/14/21, Epic
+  item + Moss Tortoise day 28. Gold denominated in **Vigor**, so a square holds its worth as the
+  hero climbs. Missing a day pauses (doesn't reset) the calendar. `[TUNE]`
+
+### The dice paycheck, counted (Phase 15)
+
+Golden Dice are never purchasable (rule 6), so the daily chest *is* the premium currency's supply
+line. Over a 28-day month of perfect attendance:
+
+| source | dice |
+|---|---|
+| daily chests (28 × 1) | **28** |
+| weekly chests (4 × 3) | **12** |
+| **month total** | **40** |
+
+Plus mission and calendar drops. If the daily figure moves, the whole Fortune's Table economy
+moves with it — `board.test.ts` asserts the month.

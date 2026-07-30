@@ -14,6 +14,8 @@ import { motion } from 'motion/react';
 import { GROUP_LABELS, NAV_GROUPS, PLACES, type PlaceDef } from '@/data/places';
 import { gateFor, nextUnlock } from '@/engine/progression/gates';
 import { newArrivals } from '@/engine/pets/ownership';
+import { boardHasClaim } from '@/state/boardActions';
+import { currentDayKey } from '@/state/clock';
 import { Icon, ChevronIcon, LockIcon } from '@/components/icons';
 import { useShellStore } from '@/state/shellStore';
 import { useGameStore } from '@/state/gameStore';
@@ -28,16 +30,20 @@ function RailItem({
   active,
   collapsed,
   badge = 0,
+  dot = false,
 }: {
   place: PlaceDef;
   level: number;
   active: boolean;
   collapsed: boolean;
-  /** Unattended arrivals waiting in this room — an ember dot, cleared by visiting. */
+  /** Unattended arrivals waiting in this room — a count, cleared by visiting. */
   badge?: number;
+  /** Something is claimable in here, but counting it would not tell you more than "yes". */
+  dot?: boolean;
 }) {
   const gate = gateFor(place.id, level);
   const flagged = gate.unlocked && badge > 0;
+  const dotted = gate.unlocked && dot;
 
   const body = (
     <>
@@ -86,17 +92,26 @@ function RailItem({
               {badge}
             </span>
           )}
+          {dotted && (
+            <motion.span
+              aria-hidden
+              animate={{ opacity: [1, 0.4, 1] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+              className="h-1.5 w-1.5 shrink-0 self-center rounded-full bg-amber-500"
+              data-testid={`nav-dot-${place.id}`}
+            />
+          )}
         </span>
       )}
 
       {/* Collapsed, the count has nowhere to go — the dot alone still says "look in here". */}
-      {collapsed && flagged && (
+      {collapsed && (flagged || dotted) && (
         <motion.span
           aria-hidden
           animate={{ opacity: [1, 0.45, 1] }}
           transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-amber-500"
-          data-testid={`nav-badge-${place.id}`}
+          data-testid={flagged ? `nav-badge-${place.id}` : `nav-dot-${place.id}`}
         />
       )}
     </>
@@ -153,6 +168,9 @@ export function NavRail() {
   // contract run — so without a cue the room only gets visited by players who already suspect.
   const save = useGameStore((state) => state.save);
   const arrivals = save ? newArrivals(save) : 0;
+  // An unclaimed chest on the Notice Board gets a dot rather than a count: "1" beside a room
+  // that only ever has one thing waiting is a number pretending to be information.
+  const chestWaiting = save ? boardHasClaim(save, currentDayKey()) : false;
 
   return (
     <motion.nav
@@ -209,6 +227,7 @@ export function NavRail() {
                     active={pathname === place.route}
                     collapsed={collapsed}
                     badge={place.id === 'menagerie' ? arrivals : 0}
+                    {...(place.id === 'board' && chestWaiting ? { dot: true } : {})}
                   />
                 ))}
               </ul>

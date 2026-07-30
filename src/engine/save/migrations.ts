@@ -16,7 +16,9 @@ import {
   DEFAULT_FORGE,
   DEFAULT_GACHA,
   DEFAULT_GUILD,
+  DEFAULT_CALENDAR,
   DEFAULT_PETS,
+  DEFAULT_TASKS,
   DEFAULT_SETTINGS,
   EMPTY_MATERIALS,
   saveFileSchema,
@@ -223,6 +225,31 @@ export const MIGRATIONS: readonly Migration[] = [
         ...data,
         activity: { ...activity, zoneMissions: {} },
         pets: { ...DEFAULT_PETS },
+      };
+    },
+  },
+  {
+    from: 14,
+    to: 15,
+    describe: 'Phase 15: the Notice Board and the login calendar',
+    migrate: (data) => {
+      /*
+       * Additive, and empty on purpose — including the calendar, which is the interesting call.
+       *
+       * A returning player has logged in on plenty of days, and it is tempting to hand them a
+       * ledger already several squares deep to acknowledge that. Two reasons not to. The save has
+       * never recorded *which* days they came, only the last one, so any number would be invented
+       * rather than earned — and the day-28 square grants a pet, which makes an invented number a
+       * fabricated fact in a system whose whole premise is that ownership is derived from things
+       * that really happened.
+       *
+       * The daily tally starts empty for the same reason `zoneMissions` did one migration ago:
+       * a counter that did not exist yesterday has nothing honest to say about yesterday.
+       */
+      return {
+        ...data,
+        tasks: { ...DEFAULT_TASKS },
+        calendar: { ...DEFAULT_CALENDAR },
       };
     },
   },

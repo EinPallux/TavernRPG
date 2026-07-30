@@ -7,6 +7,71 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 15: the Notice Board, the ledger, and one owner for midnight
+- **Three notices a day, and the board tracks them itself.** No per-task claim button, now or
+  ever: three notices with three claim buttons and then a chest button is four clicks for one
+  reward. The tasks fill as you play and the single claim moment is the chest. 40/30/30 means all
+  three are required, which is the point rather than an accident of arithmetic — a board where
+  two of three suffices is a board whose third task is a suggestion, and the third task is the one
+  that sends you somewhere you were not already going.
+- **The draw is feature-aware and leans toward neglect.** A task is never drawn for a room the
+  hero cannot enter, and `gateFor()` is the authority rather than a level written down twice. The
+  weighting climbs with how *little* of something the player has done — capped under 2× across
+  the whole range, because a board that leans harder becomes a list of everything they have
+  decided they do not enjoy. Every notice names the room it sends you to and links straight there.
+- **The dice paycheck.** One Golden Die a day for clearing the board, and three more for a
+  perfect week. Dice are never purchasable, so this and Vesna's free card are the entire supply —
+  which is why the die is named on the button rather than discovered inside it. Seven-of-seven for
+  the weekly chest, deliberately: six would be the kinder rule and the wrong one, because a weekly
+  bonus you get most weeks is a weekly bonus you stop noticing.
+- **Marla's ledger pauses; it never resets.** Twenty-eight squares, stamped automatically on the
+  first load of the day, with dice on 7/14/21 and an Epic plus the Moss Tortoise on 28. The state
+  is a *count of days attended* and the date of the last one — there is no streak field, so there
+  is nowhere for a "break the streak" branch to live. A player who vanishes for six weeks comes
+  back to day 19, because day 19 is what they earned. Gold on the ledger is denominated in Vigor,
+  so a square is worth the same share of a day's work at forty as it was at four.
+- **One vocabulary for everything the game counts.** The weekly Guild Bounty and the daily tasks
+  both ask for countable things, and each would have kept its own list of what those are — the
+  third occasion of a bug this project has already recorded twice. `data/progress.ts` owns the
+  union, each consumer narrows to its subset, and `credit()` is the only path from a player action
+  to a number.
+- **Reset Engine v2.** The walk now returns a ledger rather than a boolean: the boundaries
+  crossed, the days away, the Sundays that closed and the Vigor forfeited. `weeksClosed` is handed
+  out rather than recomputed, so the arena payout, the guild bounty and the weekly chest cannot
+  disagree about which Sundays a fortnight contained. A **source audit** enforces the rule the
+  engine exists for — one caller for `processResets`, one funnel for every per-feature refresh,
+  and no screen comparing a stored day key against today.
+- **The session bookends.** A minute before midnight the HUD says the tavern clock strikes soon;
+  when it does, a soft card names what refreshed — filtered to rooms this hero can actually walk
+  into, and never dropped over a fight in progress. And out of Vigor is no longer a dead end: the
+  Watch still pays tonight, and three lines say what is waiting at dawn.
+- **Save schema v15** — the day's tally, the lifetime tally, the two chest high-water marks, the
+  week's rungs, and the ledger — with a v14 fixture captured in the Menagerie. The calendar
+  migrates to **zero** on purpose: the save has never recorded which days a returning player came,
+  so any starting square would be invented rather than earned, and day 28 grants a pet.
+- **The Moss Tortoise and the Coin Toad are obtainable.** Both still derived rather than granted —
+  a closed ledger cycle and thirty daily chests. Thirty *chests*, not thirty consecutive days: a
+  pet gated on a streak would quietly contradict the calendar's own promise from the next room
+  over.
+
+### Fixed — Phase 15
+- **Two of the six guild bounty metrics were never credited from the player's side.**
+  `itemsScrapped` and `levelsGained` were only ever moved by the hall's own simulation, so a week
+  that drew either one gave the player nothing they could do about it and left the hall carrying
+  the bounty alone. Both now go through the shared credit path, along with selling, forging,
+  training, feeding, delving and rolling.
+- **Fortune's Table advertised "Bootss" and "Glovess".** A blanket `+ 's'` on slot labels, two of
+  which are already plural, since Phase 13. There is a `SLOT_PLURALS` map now.
+- **A finished ledger rendered as an empty page.** Sitting on day 28 with the roll pending cleared
+  every mark — so a player who had *just completed a twenty-eight-day ledger* was shown a blank
+  one. The completed page now stands until the next mark opens a new cycle.
+- **The three-keyframe spring, for the third time.** Springs take exactly two keyframes and drop
+  the animation silently when handed three; the board's completion tick joined the Phase 12
+  wallet pulse and the forge beam. Duration-based now, and the comment says why.
+- **A staggered list inside `AnimatePresence mode="wait"` needs somewhere to exit to.** Without an
+  exit variant the children never finish leaving, the wait never resolves, and the tab strip moves
+  over a blank panel. The Notice Board's notices needed `exit="hidden"`.
+
 ### Added — Phase 14: The Menagerie (twelve companions, one at your side)
 - **Ownership is derived, not stored.** There is no "pets owned" list anywhere in the save.
   `ownedPets()` answers the question from the facts that *earned* each pet — floors cleared,

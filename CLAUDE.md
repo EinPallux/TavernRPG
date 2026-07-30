@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–11 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–15 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -90,9 +90,14 @@ feedback, edge cases and tests. Deployed on Vercel.
   save schema v14. It also closed a twelve-phase-old gap: gear `goldFind`/`xpBonus` had been
   computed by `deriveStats` since Phase 2 and applied to nothing.
 
-1,038 unit tests + 163 e2e green. Next work: `ROADMAP.md` **Phase 15 (Notice Board, Calendar &
-Daily Polish)** — which is also what finally lights up the Moss Tortoise and the Coin Toad, the
-two pets Phase 14 declared and deliberately left unobtainable.
+- **Phase 15:** the daily loop — `data/progress.ts` (one vocabulary for everything the game
+  counts), `data/dailyTasks.ts`, `data/calendar.ts`, `engine/board/` (`tasks` — a day-seeded,
+  feature-aware, neglect-weighted draw; `chest`), `engine/calendar/`, **Reset Engine v2** with its
+  ledger and its source audit, `state/progressActions.ts` as the single credit path,
+  `boardActions` + `calendarActions`, the two-faced Notice Board, the reset-moment flourish, the
+  out-of-Vigor wind-down, and save schema v15. Every room in Emberhollow is now built.
+
+1,109 unit tests + 174 e2e green. Next work: `ROADMAP.md` **Phase 16 (Tutorial & Onboarding)**.
 
 **A dungeon floor's difficulty is level *and* archetype, and archetype is worth more than you
 think.** Twelve levels of spread at dungeon budget — swarm 27, caster 32, skirmisher 34, bruiser
@@ -169,6 +174,27 @@ made the Wisp of the Chapel's forty-at-one-zone gate easier than the Tankard Imp
 anywhere. Any new progress counter that sits beside an existing one inherits its units, or it is
 a balance bug wearing a plausible name.
 
+**There is one vocabulary for what the game counts, and one path to credit it.**
+`data/progress.ts` owns `ProgressMetric`; the guild bounty and the Notice Board each narrow it to
+a subset, and `state/progressActions.ts#credit` is the only way a player action becomes a number.
+This is the third occasion of the lesson above, and the fix was structural rather than careful:
+when Phase 15 unified them it found that `itemsScrapped` and `levelsGained` — two of six bounty
+metrics — had **never been credited from the player's side at all.** If you add a metric, credit
+it at the one place the action happens; if you add a consumer, edit `credit()`.
+
+**Every daily boundary goes through one walk, and a test reads the source to prove it.**
+`engine/reset/audit.test.ts` asserts that `processResets` has one caller, that every
+`refresh<Feature>Day` is called only from `refreshDay`, and that no screen compares a stored day
+key against today. Behaviour cannot catch two features that each decide it is tomorrow — they
+both work in isolation and drift at midnight, in production. If you add a feature with midnight
+work, it gets a `refresh<X>Day` and a line in `refreshDay`, and the audit will tell you if it
+does not.
+
+**A pause is a shape, not a branch.** The login calendar's state is `{ day, lastStampedDay,
+cyclesCompleted }` — a *count of days attended*, with no streak field — which is why "missing a
+day pauses rather than resets" has no code that could get it wrong. When a rule is about *not*
+doing something, prefer a state that cannot express the thing.
+
 **A cap the game cannot supply is a lie on the screen.** The Menagerie advertised "3/3 feeds left"
 against a Scrap drop rate that funded 0.8 feeds a day — a ceiling no player could ever reach, and
 a pet that took two months rather than the month the spec claimed. `npm run economy` found it; the
@@ -196,12 +222,14 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 `world/` (identity, generate, materialize, ladder, simulate, rivals, crier, halls), `arena/`
 (arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty),
 `dungeons/` (floors, delve, keys), `forge/` (forgeConfig, craft),
-`gacha/` (schedule, roll, track), `pets/` (ownership, feeding, boost, eggs), `economy/`, `reset/` ·
+`gacha/` (schedule, roll, track), `pets/` (ownership, feeding, boost, eggs),
+`board/` (tasks, chest), `calendar/`, `economy/`, `reset/` (resetEngine + the one-owner audit) ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
 patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, vesnaBarks, names, guilds, guildChat,
-bounties, dungeons, gearSets, banners, pets, legends, crierTemplates ·
+bounties, dungeons, gearSets, banners, pets, progress, dailyTasks, calendar, legends,
+crierTemplates ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets}/` ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,

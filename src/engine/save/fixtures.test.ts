@@ -26,6 +26,7 @@ import v10Phase10 from './fixtures/v10-phase10.json';
 import v11Phase11 from './fixtures/v11-phase11.json';
 import v12Phase12 from './fixtures/v12-phase12.json';
 import v13Phase13 from './fixtures/v13-phase13.json';
+import v14Phase14 from './fixtures/v14-phase14.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { ownedPets } from '@/engine/pets/ownership';
@@ -38,7 +39,9 @@ import {
   DEFAULT_FORGE,
   DEFAULT_GACHA,
   DEFAULT_GUILD,
+  DEFAULT_CALENDAR,
   DEFAULT_PETS,
+  DEFAULT_TASKS,
   EMPTY_MATERIALS,
   DEFAULT_SETTINGS,
   type SaveFile,
@@ -512,6 +515,46 @@ describe('save fixtures — every shipped version still loads', () => {
     // And nothing else moved.
     expect(result.save.hero?.name).toBe('Bryn Halloway');
     expect(result.save.hero?.classId).toBe('swashbuckler');
+  });
+
+  it('opens a Phase 14 (v14) save with a fed companion at its side', () => {
+    const result = migrateSave(structuredClone(v14Phase14));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(14);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // Three feeds into an Ember Pup, walking beside them, with two zones counted.
+    expect(result.save.pets.progress['ember-pup']).toEqual({
+      level: 4,
+      rarity: 'common',
+      fedToday: 3,
+    });
+    expect(result.save.pets.activeId).toBe('ember-pup');
+    expect(result.save.activity.zoneMissions['ember-caves']).toBe(12);
+  });
+
+  it('starts a Phase 14 player’s ledger at nothing, rather than inventing attendance', () => {
+    const result = migrateSave(structuredClone(v14Phase14));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    /*
+     * The tempting migration is the wrong one. This player has logged in on plenty of days, and
+     * the save has never recorded which — so any starting square would be invented rather than
+     * earned. Day 28 grants a pet, which would make an invented number into a fabricated fact in
+     * a system whose whole premise is that ownership comes from things that really happened.
+     */
+    expect(result.save.calendar).toEqual(DEFAULT_CALENDAR);
+    expect(result.save.tasks).toEqual(DEFAULT_TASKS);
+    expect(ownedPets(result.save).map((entry) => entry.id)).not.toContain('moss-tortoise');
+    expect(ownedPets(result.save).map((entry) => entry.id)).not.toContain('coin-toad');
+
+    // And the Menagerie it arrived with is untouched.
+    expect(result.save.pets.activeId).toBe('ember-pup');
+    expect(result.save.hero?.name).toBe('Bryn Halloway');
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

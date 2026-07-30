@@ -79,12 +79,12 @@ export type PetSource =
   /** A rare egg from a mission in one of these zones. */
   | { readonly kind: 'egg'; readonly zoneIds: readonly string[]; readonly chance: number }
   /**
-   * A daily-loop milestone that Phase 15 owns.
+   * A daily-loop milestone (Phase 15).
    *
-   * Declared now so the stall, the silhouette and the source hint are real from the day the room
-   * opens — a collection with two blank spaces and no explanation is worse than one with two
-   * spaces that name what will fill them. `ownedPets()` returns false for these until the login
-   * calendar and the Notice Board exist, which is the honest answer today.
+   * Declared in Phase 14 so the stall, the silhouette and the source hint were real from the day
+   * the room opened, and wired when the calendar and the Notice Board arrived. Both are still
+   * derivations — a closed ledger cycle and a lifetime count of daily chests — so neither pet is
+   * granted anywhere.
    */
   | { readonly kind: 'daily-loop'; readonly feature: 'calendar' | 'notice-board' };
 
@@ -117,7 +117,7 @@ export const PETS: readonly PetDef[] = [
     boost: 'con',
     iconId: 'petTortoise',
     source: { kind: 'daily-loop', feature: 'calendar' },
-    hint: 'Turns up for people who keep turning up — the login calendar, day 28.',
+    hint: 'Turns up for people who keep turning up — finish a 28-day ledger.',
   },
   {
     id: 'gloom-cat',
@@ -144,7 +144,7 @@ export const PETS: readonly PetDef[] = [
     boost: 'lck',
     iconId: 'petToad',
     source: { kind: 'daily-loop', feature: 'notice-board' },
-    hint: 'Thirty days of cleared tasks on the Notice Board.',
+    hint: 'Thirty daily chests claimed at the Notice Board.',
   },
   {
     id: 'brass-beetle',

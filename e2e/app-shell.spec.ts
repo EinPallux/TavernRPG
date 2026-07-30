@@ -122,18 +122,21 @@ test.describe('navigation', () => {
     /*
      * This test walked forward a room at a time as the phases landed — the Armory stood in for it
      * until Phase 7, the Emberforge until Phase 12, Fortune's Table until Phase 13, the Menagerie
-     * until Phase 14. **One room in Emberhollow is still boarded up**, and it is the last one:
-     * after the Notice Board opens in Phase 15 this test has nothing left to point at and retires
-     * with the placeholder it was written for.
+     * until Phase 14, the Notice Board until Phase 15. **Every room in Emberhollow is now built.**
+     *
+     * What is left is Settings, which is a different kind of placeholder: it is not an empty room
+     * waiting for a phase, it is a working panel that does not do everything yet. The test now
+     * guards the thing that still matters about the placeholder system — that an unfinished
+     * surface says so, and says when — and it will retire with Phase 18.
      */
     await ensureHero(page);
     await levelHeroToTen(page);
 
-    await page.goto('/board');
-    await expect(page.getByTestId('place-board')).toContainText('Phase 15');
-    await expect(page.getByTestId('place-board')).toContainText('woodworm');
+    await page.goto('/settings');
+    await expect(page.getByTestId('place-settings')).toContainText('Phase 18');
+    await expect(page.getByTestId('place-settings')).toContainText('Export and import');
     // No keeper, so no bubble — the room speaks for itself instead of inventing a proprietor.
-    await expect(page.getByTestId('bark-board')).toHaveCount(0);
+    await expect(page.getByTestId('bark-settings')).toHaveCount(0);
   });
 
   test('rooms that have been built show the real thing instead', async ({ page }) => {
@@ -154,6 +157,11 @@ test.describe('navigation', () => {
     await expect(page.getByTestId('place-menagerie')).toBeVisible();
     await expect(page.getByTestId('pet-stalls')).toBeVisible();
     await expect(page.getByTestId('place-menagerie')).not.toContainText('Phase 14');
+
+    await page.goto('/board');
+    await expect(page.getByTestId('place-board')).toBeVisible();
+    await expect(page.getByTestId('task-list')).toBeVisible();
+    await expect(page.getByTestId('place-board')).not.toContainText('Phase 15');
   });
 });
 
