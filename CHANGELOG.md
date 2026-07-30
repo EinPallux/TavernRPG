@@ -7,6 +7,59 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 10: Guilds (a hall with people in it)
+- **Sixty halls, and none of them is a row in a list.** Every card carries what the hall is
+  *like* — cosy, nocturnal, cutthroat, early risers — derived from the personalities of the
+  people actually in it, plus the level and honour it will ask of you and the buffs it pays.
+  Nothing about a hall is stored: name, banner, vibe, requirements and buff steps all fall out
+  of `(worldSeed, guildId, roster)`, so sixty guilds cost the save nothing.
+- **Apply, and wait.** A letter takes five to ninety minutes to answer, off how promptly that
+  hall's Guildmaster tends to reply. The answer is a written note, accepted or not, and it
+  arrives whether or not you were watching the screen.
+- **Or found the sixty-first.** Name it, cut its banner from a field colour, a charge colour and
+  a sigil with the real thing previewing as you choose, and pay for it. The name is checked as
+  you type — against the sixty and against your own — rather than after the gold has gone.
+- **The Treasury and the Drillmaster.** Two tracks, a hundred steps each, priced at `500 × n^1.7`
+  to a ceiling of +25% gold and +25% XP. Donations that cannot afford a step are *banked* rather
+  than lost, which is what makes a hall of three viable. Golden Dice are accepted at a stated
+  gold value and never sold — earn-only, as always.
+- **The buffs are real money.** They multiply the mission and patrol payouts the player is
+  actually shown, through the same `PayoutBonus` the economy simulation runs 30 days of days
+  against. A full hall is worth roughly a tenth of your income.
+- **The hall talks, and only about things that happened.** 162 slotted templates across eleven
+  categories, inheriting the Town Crier's rule: a line either names something the simulation did
+  or is tagged as colour. Members speak in their own voice, sleep in their own timezone, and
+  answer you — greeting for greeting, congratulations or a ribbing for a brag.
+- **The weekly Guild Bounty.** Posted Monday, judged Sunday, counted off things everybody was
+  doing anyway. Targets scale per member so a hall of three is not asked for a hall of
+  twenty-five's numbers, and the hall's own week is simulated off its members' dedication — so
+  the bounty is genuinely co-operative: they get you past the half-chest line, your week is the
+  difference between half a chest and all of it.
+- **Guildmaster's desk** — applicants with resumes, promote, kick, and the motto — visible only
+  to the player who founded the hall.
+- **Save schema v10** — the guild slice, with a v9 fixture captured from real engine output.
+
+### Fixed — Phase 10
+- **The hall never worked on its own bounty.** Bot output was floored per member per day, and
+  most bounties count in small whole numbers — three arena wins a week is under half a win a day,
+  so every member rounded to nothing and a hall of twenty-two posted 0/44 all week. The fraction
+  is now carried as the *odds* of a whole unit, which keeps the expected value exact and still
+  replays identically. The private per-week table that made this possible to miss is gone; bot
+  output reads off the bounty's own `perMember`, so target and simulation cannot drift apart.
+- **The hall repeated itself.** Colour is drawn from thirty-two lines narrowed again by voice, so
+  a three-day catch-up put the same greeting on screen four times — the loudest possible tell
+  that nobody is home. A line is now off the table until it scrolls out of a twelve-message
+  window, and nobody follows themselves while anyone else is awake.
+- **Donating to one of the sixty looked like nothing happened.** Their pot has seven digits in it
+  and the next step costs six, so ten thousand gold moved no number on the screen. The remainder
+  toward the next step is now derived back out of the treasury and shown on a bar, the same one a
+  founded hall has.
+- **Guild halls advertised "78/25 members".** Phase 8's world generator predated the capacity
+  rule and packed the popular halls well past it.
+- **All sixty halls paid +1%.** Phase 8 seeded guild treasuries at 900 gold a member, a number
+  chosen before `stepCost` existed — step 60 actually costs about twelve million. Retuned, the
+  sixty now spread from +4.5% to +13%, which makes the browse list a decision.
+
 ### Added — Phase 9: Arena & Hall of Fame (the ladder you have been watching)
 - **You are on the ladder now.** 1,501 rungs, and the bottom one is yours from the moment the
   world is raised — not from the moment the arena unlocks. That one change switched on a feature

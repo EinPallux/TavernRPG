@@ -29,6 +29,7 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { BannerIcon, HeroIcon, LaurelIcon } from '@/components/icons';
 import { dramatic, listItemIn, snappy, staggerChildren } from '@/styles/motion';
 import { LadderList, RankDelta, type LadderEntry } from './LadderList';
+import { GuildBanner } from '@/components/guild/GuildBanner';
 
 const PLACE = PLACES_BY_ID.hall;
 
@@ -307,7 +308,7 @@ export function HallOfFame() {
                             <span className="font-display text-parchment-500/60 w-10 shrink-0 text-right text-xs font-bold tabular-nums">
                               #{index + 1}
                             </span>
-                            {banner && <Banner field={banner.field} charge={banner.charge} />}
+                            {banner && <GuildBanner field={banner.field} charge={banner.charge} size={20} />}
                             <span className="min-w-0 flex-1">
                               <span className="font-display text-parchment-300 block truncate text-sm font-bold">
                                 {standing.name}
@@ -395,26 +396,6 @@ export function HallOfFame() {
         </div>
       </AmbientStage>
     </div>
-  );
-}
-
-/** A guild's two-tone banner, drawn from its colours rather than an asset. */
-function Banner({ field, charge }: { field: string; charge: string }) {
-  const swatch: Readonly<Record<string, string>> = {
-    amber: '#e8a33d',
-    blood: '#a73a2e',
-    moss: '#4c7a3f',
-    arcane: '#6b5b95',
-    ink: '#241b12',
-    bone: '#d8cbb4',
-    ember: '#d96c2f',
-    slate: '#4a5560',
-  };
-  return (
-    <svg viewBox="0 0 16 20" className="h-6 w-5 shrink-0" aria-hidden>
-      <path d="M0 0h16v15l-8 5-8-5V0Z" fill={swatch[field] ?? '#4a5560'} />
-      <path d="M8 3.5 11 9H5l3-5.5Z" fill={swatch[charge] ?? '#d8cbb4'} />
-    </svg>
   );
 }
 

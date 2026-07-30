@@ -141,6 +141,38 @@ export function parseDayKey(key: DayKey): Timestamp | null {
   return Number.isNaN(date.getTime()) ? null : date.getTime();
 }
 
+/**
+ * The week a day belongs to, identified by the date of the Sunday that *ends* it.
+ *
+ * Lives here rather than beside either of the weekly features that use it — the arena payout and
+ * the guild bounty — because two implementations of "which week is this?" is precisely the drift
+ * the Reset Engine exists to prevent, one layer up. One owner, one answer.
+ *
+ * Parsed as local **midday** rather than midnight: a `YYYY-MM-DD` string parsed as local midnight
+ * can land on the missing hour of a spring-forward and roll into the previous day, which would
+ * hand two different days the same week key. Midday is never ambiguous.
+ */
+export function weekKeyFor(dayKey: DayKey): string {
+  const [year, month, day] = dayKey.split('-').map(Number);
+  const date = new Date(year!, month! - 1, day!, 12, 0, 0, 0);
+
+  // Advance to the coming Sunday. `getDay()` is 0 on Sunday, so a Sunday is already its own key.
+  const daysUntilSunday = (7 - date.getDay()) % 7;
+  date.setDate(date.getDate() + daysUntilSunday);
+
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** The Monday a week key's week began on — the day a bounty is posted (guilds spec §4). */
+export function weekStartFor(weekKey: string): DayKey {
+  const [year, month, day] = weekKey.split('-').map(Number);
+  const date = new Date(year!, month! - 1, day!, 12, 0, 0, 0);
+  date.setDate(date.getDate() - 6);
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 /** A clock that reports whatever time the test tells it to. */
 export function createFixedWallClock(startAt: Timestamp): WallClock & {
   set(at: Timestamp): void;

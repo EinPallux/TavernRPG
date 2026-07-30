@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–9 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–10 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -59,7 +59,25 @@ feedback, edge cases and tests. Deployed on Vercel.
   the Hall of Fame's three tabs over a hand-rolled virtualized list, `engine/world/halls.ts`, and
   save schema v9. Three real bugs fell out of building it — see the CHANGELOG's Phase 9 *Fixed*.
 
-752 unit tests + 113 e2e green. Next work: `ROADMAP.md` **Phase 10 (Guilds)**.
+- **Phase 10:** guilds — `engine/guilds/` (`membership` derives everything about one of the sixty
+  from `(worldSeed, guildId, roster)`, so a hall stores nothing; `buffs`; `chat`; `bounty`),
+  `data/guildChat.ts` (162 slotted templates) and `data/bounties.ts`, `state/guildActions.ts`,
+  the two-faced Guild Hall, economy sim pass 3, and save schema v10. Building it forced two
+  retunes of the *Phase 8* generator: it had never respected `GUILD_CAPACITY` (halls advertised
+  "78/25 members"), and its seeded treasury predated `stepCost`, leaving all sixty on +1%.
+
+864 unit tests + 122 e2e green. Next work: `ROADMAP.md` **Phase 11 (Dungeons)**.
+
+**A day-keyed roll is reproducible, which is the opposite of idempotent.** Four high-water marks
+now exist for this one bug — `arena.lastRaidDay`, `guild.lastApplicantDay`, `lastChatDay`,
+`lastBountyDay`. If you add anything seeded by a day index whose *effect* is applied to the save,
+it needs a fifth. The tell is that it looks right on first load and doubles on reload.
+
+**Guild bounty numbers are two-sided.** `HALL_EFFORT` (what the hall manages alone) is tuned
+against the bounty targets in `data/bounties.ts`, and `simulateBotContribution` reads those
+targets directly rather than keeping its own copy — which it did, briefly, until the two
+disagreed and the hall contributed nothing. Whole-number metrics round *stochastically*; flooring
+a member's 0.27 arena wins a day takes an entire hall to zero. `guilds.test.ts` asserts the band.
 
 **Two arena rules that look like tidiness and are not.** A day's raid is seeded by its day index,
 so re-running it replays the same fight *and re-applies the honor loss* — `arena.lastRaidDay` is
@@ -94,11 +112,12 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 (xp, stats, gates, rewards), `items/` (types, generate, drops, starterKit), `hero/`
 (actions, derived), `combat/`, `missions/` (board, lifecycle), `patrol/`, `shops/`, `stables/`,
 `world/` (identity, generate, materialize, ladder, simulate, rivals, crier, halls), `arena/`
-(arena, duel, raids, payout), `economy/`, `reset/` ·
+(arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty), `economy/`, `reset/` ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
-patrolLog, mounts, shopBarks, arenaBarks, names, guilds, legends, crierTemplates ·
+patrolLog, mounts, shopBarks, arenaBarks, names, guilds, guildChat, bounties, legends,
+crierTemplates ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena}/` ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,

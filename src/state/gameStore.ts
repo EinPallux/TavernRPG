@@ -71,6 +71,23 @@ import {
   type ArenaRefusal,
   type DuelTransition,
 } from './arenaActions';
+import {
+  acceptApplicant as acceptApplicantOn,
+  applyTo as applyToOn,
+  checkApplication,
+  declineApplicant as declineApplicantOn,
+  donate as donateOn,
+  editMotto as editMottoOn,
+  foundGuild as foundGuildOn,
+  kickMember as kickMemberOn,
+  leaveGuild as leaveGuildOn,
+  postMessage as postMessageOn,
+  promoteMember as promoteMemberOn,
+  type DonateOptions,
+  type FoundOptions,
+  type GuildRefusal,
+} from './guildActions';
+import type { BountyChest } from '@/engine/guilds/bounty';
 import type { RaidResult } from '@/engine/arena/raids';
 import type { WeeklyPayout } from '@/engine/arena/payout';
 import type { AbsenceSummary } from '@/engine/world/crier';
@@ -201,6 +218,26 @@ export interface GameStoreState {
   dismissPayouts: () => void;
   /** Remember the rank the Hall of Fame was last opened at, for the "▲ 12" chip. */
   markLadderSeen: () => void;
+
+  // ── The Guild Hall (Phase 10) ────────────────────────────────────────────────────
+  /** Bring the day up to date and see whether a hall has answered. Idempotent. */
+  openGuildHall: () => void;
+  /** The answer to a pending application, once, so the screen can show it and move on. */
+  guildDecision: { readonly accepted: boolean; readonly reason: string } | null;
+  dismissGuildDecision: () => void;
+  /** The bounty chest, if a Sunday passed while they were away. */
+  guildChest: BountyChest | null;
+  dismissGuildChest: () => void;
+  applyToGuild: (guildId: number) => GuildRefusal | null;
+  foundGuild: (options: FoundOptions) => GuildRefusal | null;
+  leaveGuild: () => GuildRefusal | null;
+  donateToGuild: (options: DonateOptions) => GuildRefusal | null;
+  acceptGuildApplicant: (botId: number) => GuildRefusal | null;
+  declineGuildApplicant: (botId: number) => GuildRefusal | null;
+  promoteGuildMember: (botId: number) => GuildRefusal | null;
+  kickGuildMember: (botId: number) => GuildRefusal | null;
+  setGuildMotto: (motto: string) => GuildRefusal | null;
+  postGuildMessage: (text: string) => GuildRefusal | null;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -287,6 +324,28 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
     set({ save: { ...save, hero } });
     void persistNow();
+  };
+
+  /**
+   * Run a guild transition and persist it, or hand the refusal back for the screen to phrase.
+   *
+   * The guild actions all share one result shape, which they got by being written after the
+   * shop and arena ones had already made the case for it — so unlike those, they need exactly
+   * one adapter rather than a dozen near-identical bodies.
+   */
+  const runGuild = (
+    transition: (save: SaveFile) => { ok: true; save: SaveFile } | { ok: false; refusal: GuildRefusal },
+  ): GuildRefusal | null => {
+    const { save } = get();
+    if (!save) return { kind: 'no-hero' };
+
+    const result = transition(save);
+    if (!result.ok) return result.refusal;
+    if (result.save === save) return null;
+
+    set({ save: result.save });
+    void persistNow();
+    return null;
   };
 
   /** One last write when the tab goes away, in case anything is still in flight. */
@@ -738,6 +797,76 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       set({ save: result.save });
       void persistNow();
       return null;
+    },
+
+    // ── The Guild Hall (Phase 10) ──────────────────────────────────────────────────
+
+    guildDecision: null,
+    guildChest: null,
+
+    dismissGuildDecision() {
+      set({ guildDecision: null });
+    },
+
+    dismissGuildChest() {
+      set({ guildChest: null });
+    },
+
+    openGuildHall() {
+      const { save } = get();
+      if (!save) return;
+
+      // The day first, so a bounty that closed overnight is settled before the screen reads it.
+      const day = refreshDay(save, currentDayKey(), dayKeysBetween);
+      const answered = checkApplication(day.save, gameNow());
+      if (answered.save === save && !answered.decision && !day.chest) return;
+
+      set({
+        save: answered.save,
+        ...(answered.decision ? { guildDecision: answered.decision } : {}),
+        ...(day.chest && day.chest.gold > 0 ? { guildChest: day.chest } : {}),
+      });
+      void persistNow();
+    },
+
+    applyToGuild(guildId) {
+      return runGuild((save) => applyToOn(save, guildId, gameNow()));
+    },
+
+    foundGuild(options) {
+      return runGuild((save) => foundGuildOn(save, options, gameNow()));
+    },
+
+    leaveGuild() {
+      return runGuild((save) => leaveGuildOn(save, gameNow()));
+    },
+
+    donateToGuild(options) {
+      return runGuild((save) => donateOn(save, options, gameNow()));
+    },
+
+    acceptGuildApplicant(botId) {
+      return runGuild((save) => acceptApplicantOn(save, botId, gameNow()));
+    },
+
+    declineGuildApplicant(botId) {
+      return runGuild((save) => declineApplicantOn(save, botId));
+    },
+
+    promoteGuildMember(botId) {
+      return runGuild((save) => promoteMemberOn(save, botId, gameNow()));
+    },
+
+    kickGuildMember(botId) {
+      return runGuild((save) => kickMemberOn(save, botId, gameNow()));
+    },
+
+    setGuildMotto(motto) {
+      return runGuild((save) => editMottoOn(save, motto));
+    },
+
+    postGuildMessage(text) {
+      return runGuild((save) => postMessageOn(save, text, gameNow()));
     },
 
     markLadderSeen() {

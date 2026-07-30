@@ -18,7 +18,12 @@
  * Pure module.
  */
 
-import { goldPatrolPerHour, xpPatrolPerHour } from '@/engine/progression/rewards';
+import {
+  goldPatrolPerHour,
+  xpPatrolPerHour,
+  NO_BONUS,
+  type PayoutBonus,
+} from '@/engine/progression/rewards';
 
 const MS_PER_MINUTE = 60_000;
 const MS_PER_HOUR = 3_600_000;
@@ -125,14 +130,15 @@ export function patrolEarnings(
   shift: PatrolShift,
   now: number,
   xpNeededForLevel: number,
+  bonus: PayoutBonus = NO_BONUS,
 ): PatrolPayout {
   const minutes = minutesServed(shift, now);
   const hours = minutes / 60;
 
   return {
     minutes,
-    gold: Math.floor(goldPatrolPerHour(shift.heroLevel) * hours),
-    xp: Math.floor(xpPatrolPerHour(shift.heroLevel, xpNeededForLevel) * hours),
+    gold: Math.floor(goldPatrolPerHour(shift.heroLevel) * hours * bonus.gold),
+    xp: Math.floor(xpPatrolPerHour(shift.heroLevel, xpNeededForLevel) * hours * bonus.xp),
   };
 }
 
@@ -141,11 +147,12 @@ export function previewEarnings(
   hours: number,
   heroLevel: number,
   xpNeededForLevel: number,
+  bonus: PayoutBonus = NO_BONUS,
 ): PatrolPayout {
   const whole = Math.max(MIN_SHIFT_HOURS, Math.min(MAX_SHIFT_HOURS, Math.round(hours)));
   return {
     minutes: whole * 60,
-    gold: Math.floor(goldPatrolPerHour(heroLevel) * whole),
-    xp: Math.floor(xpPatrolPerHour(heroLevel, xpNeededForLevel) * whole),
+    gold: Math.floor(goldPatrolPerHour(heroLevel) * whole * bonus.gold),
+    xp: Math.floor(xpPatrolPerHour(heroLevel, xpNeededForLevel) * whole * bonus.xp),
   };
 }

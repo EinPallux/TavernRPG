@@ -83,18 +83,34 @@ export interface MissionPayout {
 }
 
 /**
- * What a mission of this length pays a hero of this level, before drops and guild bonuses.
+ * A multiplicative bonus on a payout. Guild tracks are the first source (guilds spec §2); pets
+ * and set bonuses will be the next, and they compose by multiplying rather than by summing.
+ */
+export interface PayoutBonus {
+  readonly gold: number;
+  readonly xp: number;
+}
+
+export const NO_BONUS: PayoutBonus = { gold: 1, xp: 1 };
+
+/**
+ * What a mission of this length pays a hero of this level, before drops.
  * `vigorCost` and the duration are the same number by design (§6) — the parameter is separate
  * only so a future effect can discount one without silently discounting the other.
+ *
+ * The bonus is applied **here rather than at the till** so that every quote the player is shown
+ * — the mission card's preview, the result screen, the economy simulation — is the same number
+ * they are actually paid. A buff applied only on collection is a buff nobody believes in.
  */
 export function missionPayout(
   level: number,
   duration: MissionDuration,
   xpNeededForLevel: number,
+  bonus: PayoutBonus = NO_BONUS,
 ): MissionPayout {
   return {
-    gold: Math.round(goldPerVigor(level) * duration),
-    xp: Math.round(xpPerVigor(level, xpNeededForLevel) * duration),
+    gold: Math.round(goldPerVigor(level) * duration * bonus.gold),
+    xp: Math.round(xpPerVigor(level, xpNeededForLevel) * duration * bonus.xp),
   };
 }
 

@@ -435,3 +435,70 @@ export const GUILD_COUNT = GUILD_LIST.length;
 export function guild(id: number): GuildDef | null {
   return GUILDS[id] ?? null;
 }
+
+/* ── Founding a hall of your own (guilds spec §1) ──────────────────────────────── */
+
+/** The player's guild id. Bot guilds are 0…59; the founded one is this. */
+export const PLAYER_GUILD_ID = 1_000;
+
+/**
+ * Members a hall holds (guilds spec §1: "member count /25").
+ *
+ * Lives here rather than in `engine/guilds/` because the *world generator* has to respect it
+ * too, and generate → membership → generate would be a cycle. It was not a shared constant in
+ * Phase 8, and the result was five halls on the browse list reading "78/25 members".
+ */
+export const GUILD_CAPACITY = 25;
+
+/** Sigils the banner builder offers. Drawn from the icon family, not a new asset set. */
+export const SIGIL_ICONS = [
+  'sword',
+  'axe',
+  'shield',
+  'staff',
+  'crossbow',
+  'lute',
+  'anvil',
+  'gem',
+  'laurel',
+  'tankard',
+  'spark',
+  'paw',
+] as const;
+export type SigilIcon = (typeof SIGIL_ICONS)[number];
+
+export const GUILD_NAME_MIN = 3;
+export const GUILD_NAME_MAX = 28;
+
+export type GuildNameRefusal =
+  | { readonly kind: 'too-short'; readonly min: number }
+  | { readonly kind: 'too-long'; readonly max: number }
+  | { readonly kind: 'bad-characters' }
+  | { readonly kind: 'taken'; readonly by: string };
+
+/**
+ * Is this a name the player may found under?
+ *
+ * The collision check is the point. Sixty halls are authored here and the *generator* can produce
+ * thousands more as bot guilds churn, so a player who founds "The Amber Blades" would eventually
+ * find themselves sharing a name with a guild the simulation invented — and every chat line,
+ * Crier headline and Hall row that names a guild would become ambiguous. Cheaper to refuse once.
+ */
+export function validateGuildName(raw: string): { ok: true } | { ok: false; refusal: GuildNameRefusal } {
+  const name = raw.trim();
+  if (name.length < GUILD_NAME_MIN) return { ok: false, refusal: { kind: 'too-short', min: GUILD_NAME_MIN } };
+  if (name.length > GUILD_NAME_MAX) return { ok: false, refusal: { kind: 'too-long', max: GUILD_NAME_MAX } };
+  // Letters, digits, spaces and the punctuation the authored names already use.
+  if (!/^[\p{L}\p{N} '’.\-]+$/u.test(name)) return { ok: false, refusal: { kind: 'bad-characters' } };
+
+  const folded = foldName(name);
+  const clash = GUILDS.find((hall) => foldName(hall.name) === folded);
+  if (clash) return { ok: false, refusal: { kind: 'taken', by: clash.name } };
+
+  return { ok: true };
+}
+
+/** Case, spacing and curly-quote insensitive, so "the amber blades" is still taken. */
+function foldName(name: string): string {
+  return name.toLowerCase().replace(/[’']/g, '').replace(/\s+/g, ' ').trim();
+}

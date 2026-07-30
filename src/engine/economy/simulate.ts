@@ -28,6 +28,7 @@ import { missionDropTable } from '@/engine/items/drops';
 import { SHOP_PRICE_MULTIPLIER, SHOP_RARITY_WEIGHTS } from '@/engine/shops/stock';
 import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
 import { MOUNTS_BY_ID, type MountId } from '@/data/mounts';
+import { guildMultipliers } from '@/engine/guilds/buffs';
 import { RARITIES, type Rarity } from '@/engine/items/types';
 
 /**
@@ -91,6 +92,15 @@ export interface PlayStyle {
   readonly shopBuysPerWeek: number;
   /** Which stall they keep, or null for the ones who walk. */
   readonly mountId: MountId | null;
+  /**
+   * The hall's two tracks, as steps (Phase 10). Zero for the unguilded.
+   *
+   * Modelled rather than assumed away, because the buffs are large: a maxed pair is +25% on both
+   * gold and XP, which is a bigger swing than any other lever in this file. A band tuned against
+   * an unguilded player would quietly go slack the moment anyone joined a guild.
+   */
+  readonly treasuryStep?: number;
+  readonly drillmasterStep?: number;
 }
 
 export const ACTIVE_PLAYER: PlayStyle = {
@@ -171,10 +181,17 @@ export function simulateEconomy({
     const vigorBudget = Math.floor(VIGOR_PER_DAY * style.vigorUsed);
     const missionsRun = Math.floor(vigorBudget / style.duration);
 
+    // A guilded player is paid more for the same day's work, everywhere it applies.
+    const bonus = guildMultipliers({
+      isMember: (style.treasuryStep ?? 0) > 0 || (style.drillmasterStep ?? 0) > 0,
+      treasuryStep: style.treasuryStep ?? 0,
+      drillmasterStep: style.drillmasterStep ?? 0,
+    });
+
     let missionGold = 0;
     let xpEarned = 0;
     for (let i = 0; i < missionsRun; i += 1) {
-      const payout = missionPayout(level, style.duration, xpNeeded(level));
+      const payout = missionPayout(level, style.duration, xpNeeded(level), bonus);
       missionGold += payout.gold;
       xpEarned += payout.xp;
 
@@ -185,7 +202,7 @@ export function simulateEconomy({
       xp = levelled.xp;
     }
 
-    const patrolGold = Math.floor(goldPatrolPerHour(level) * style.patrolHours);
+    const patrolGold = Math.floor(goldPatrolPerHour(level) * style.patrolHours * bonus.gold);
 
     // Loot sold. Every mission has a chance of an item; the player wears the occasional
     // upgrade and sells the rest, which is the same thing at this resolution.

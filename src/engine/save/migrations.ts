@@ -12,6 +12,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   DEFAULT_ACTIVITY,
   DEFAULT_ARENA,
+  DEFAULT_GUILD,
   DEFAULT_SETTINGS,
   saveFileSchema,
   type SaveFile,
@@ -127,6 +128,17 @@ export const MIGRATIONS: readonly Migration[] = [
         ...(hero ? { hero: { ...hero, honor: 0 } } : {}),
         arena: { ...DEFAULT_ARENA },
       };
+    },
+  },
+  {
+    from: 9,
+    to: 10,
+    describe: 'Phase 10: the Guild Hall — membership, the two tracks, chat and the bounty',
+    migrate: (data) => {
+      // Purely additive: an existing player is simply unguilded, which is the same state a new
+      // hero starts in. Nothing about their hero, world or arena changes, and the sixty halls
+      // they can now apply to were already in the world slice — they just had no door until now.
+      return { ...data, guild: { ...DEFAULT_GUILD } };
     },
   },
 ];

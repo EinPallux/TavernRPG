@@ -16,6 +16,7 @@ import {
 } from '@/engine/patrol/patrol';
 import { applyXp, xpNeeded } from '@/engine/progression/xp';
 import type { SaveFile } from '@/engine/save/schema';
+import { creditBounty, guildBonus } from './guildActions';
 
 /** Everything that can stop a shift starting, phrased for the player. */
 export type PatrolRefusalReason = PatrolRefusal | { readonly kind: 'no-hero' };
@@ -67,12 +68,15 @@ export function collectPatrol(save: SaveFile, now: number): PatrolCollection | n
   if (!hero || !activity.patrol) return null;
 
   const shift = activity.patrol;
-  const earned = patrolEarnings(shift, now, xpNeeded(shift.heroLevel));
+  const earned = patrolEarnings(shift, now, xpNeeded(shift.heroLevel), guildBonus(save));
   const levelled = applyXp(hero.level, hero.xp, earned.xp);
+
+  // Hours on the Watch count toward the week's bounty when that is the target.
+  const credited = creditBounty(save, 'patrolHours', Math.floor(earned.minutes / 60));
 
   return {
     save: {
-      ...save,
+      ...credited,
       hero: {
         ...hero,
         level: levelled.level,

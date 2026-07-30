@@ -247,13 +247,20 @@ on the ladder at world-raise, `state/arenaActions.ts`, the Proving Grounds with 
 and the rank swap shown as sliding rungs, the Hall of Fame's three tabs over a hand-rolled
 virtualized list (35 rows mounted of 1,501), `engine/world/halls.ts`, and save schema v9.
 
-## Phase 10 — Guilds (L) 🔲
+## Phase 10 — Guilds (L) ✅
 Browse/apply/join (bot decision delays), founding flow (banner builder), roster & roles, Treasury/
 Drillmaster donations + buffs into economy multipliers, guild chat (template corpus + event-driven
 chatter + player-message responses), weekly Guild Bounty, guild HoF integration, Guildmaster tools.
 **Accept:** join AND found paths fully playable; buffs verifiably applied to mission/patrol
 payouts; chat references real events only; bounty completes/partials across a simulated week;
 bots apply to player guilds at spec'd rates (statistical test).
+**Done 2026-07-30.** `engine/guilds/` (`membership` — everything about a hall derived from
+`(worldSeed, guildId, roster)` so sixty halls need no stored state; `buffs` — two tracks priced
+superlinearly to +25%; `chat`; `bounty`), `data/guildChat.ts` (162 slotted templates) and
+`data/bounties.ts`, `state/guildActions.ts`, the two-faced Guild Hall with a live banner preview
+in the founding flow, economy sim pass 3, and save schema v10. Phase 8's generator was retuned
+twice on the way — it had never respected the twenty-five cap, and its seeded treasury predated
+`stepCost` and left all sixty halls at +1%.
 
 ## Phase 11 — Dungeons (M) 🔲
 Undertavern hub, 3 dungeons data (30 monsters incl. boss procs), key drops & gates, floor

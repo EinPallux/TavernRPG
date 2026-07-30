@@ -10,6 +10,18 @@
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { HILDY_ARENA_LINES, hildySays, type ArenaMoment } from './arenaBarks';
+import {
+  CHAT_CATEGORIES,
+  CHAT_TEMPLATES,
+  chatLineAt,
+  renderChatLine,
+  usableChatLines,
+  type ChatSlot,
+  type ChatSlots,
+} from './guildChat';
+import { BOUNTIES, BOUNTY_METRICS, bountyTarget, bountyTitle } from './bounties';
+import { GUILD_NAME_MAX, SIGIL_ICONS, validateGuildName } from './guilds';
+import { ICON_IDS } from './icons';
 import { ARCHETYPES_BY_ID } from './monsterArchetypes';
 import { MISSION_BLURBS, blurbsForDuration, renderBlurb } from './missionBlurbs';
 import { MONSTERS, monstersInZone } from './monsters';
@@ -209,6 +221,162 @@ describe('Hildy at the Proving Grounds', () => {
       for (const line of lines) {
         expect(line, line).not.toMatch(/\d/);
       }
+    }
+  });
+});
+
+describe('guild chat corpus', () => {
+  it('carries the volume the content plan asks for', () => {
+    // ≥150 lines across the categories (content plan §5). Below that the same joke comes round
+    // twice a day and the hall stops sounding like people.
+    expect(CHAT_TEMPLATES.length).toBeGreaterThanOrEqual(150);
+    expect(new Set(CHAT_TEMPLATES.map((line) => line.id)).size).toBe(CHAT_TEMPLATES.length);
+  });
+
+  it('has lines in every category', () => {
+    for (const category of CHAT_CATEGORIES) {
+      const lines = CHAT_TEMPLATES.filter((line) => line.category === category);
+      expect(lines.length, category).toBeGreaterThanOrEqual(6);
+    }
+  });
+
+  it('declares every placeholder it uses', () => {
+    // The whole honesty guarantee: a line that wants {other} must say so, or the generator will
+    // happily pick it with nothing to put there and ship a message with a hole in it.
+    for (const line of CHAT_TEMPLATES) {
+      for (const token of line.text.match(/\{([a-z]+)\}/g) ?? []) {
+        const slot = token.slice(1, -1) as ChatSlot;
+        expect(line.needs, `${line.id} uses ${token}`).toContain(slot);
+      }
+    }
+  });
+
+  it('never declares a slot it does not use', () => {
+    for (const line of CHAT_TEMPLATES) {
+      for (const slot of line.needs) {
+        expect(line.text, `${line.id} needs ${slot}`).toContain(`{${slot}}`);
+      }
+    }
+  });
+
+  it('leaves no hole once rendered', () => {
+    const slots: ChatSlots = {
+      hero: 'Kargath',
+      other: 'Serathiel the Unbowed',
+      guild: 'The Amber Blades',
+      level: 42,
+      rank: 118,
+      count: 7,
+      gold: 4_200,
+      item: 'Emberforged Maul',
+      zone: 'Fogmoor Marsh',
+      bounty: 'Complete 120 contracts',
+      percent: 64,
+    };
+    for (const line of CHAT_TEMPLATES) {
+      expect(renderChatLine(line, slots), line.id).not.toMatch(/\{[a-z]+\}/);
+    }
+  });
+
+  it('never states a specific it did not get from a slot', () => {
+    // The honesty rule, in the form that is actually checkable. Mood is fine — "Long week, that
+    // is all" cannot be false. A *quantity* cannot be: a line that says "six missions" when the
+    // speaker ran two is the corpus lying, and the fix is to take the number from a slot so the
+    // generator cannot pick the line without one.
+    for (const line of CHAT_TEMPLATES) {
+      const withoutSlots = line.text.replace(/\{[a-z]+\}/g, '');
+      expect(withoutSlots, `${line.id} states a bare number`).not.toMatch(/\d/);
+      // "one" is left out on purpose — it is almost always idiomatic here ("nice one", "the
+      // lesser one") rather than a count, and banning it would cost more voice than it buys.
+      expect(withoutSlots, `${line.id} spells out a quantity`).not.toMatch(
+        /\b(two|three|four|five|six|seven|eight|nine|ten|dozen|fortnight)\b/i,
+      );
+    }
+  });
+
+  it('keeps `idle` free of any claim at all', () => {
+    // The Crier's `flavour` carve-out, in guild form: colour about the hall, never about a hero.
+    const idle = CHAT_TEMPLATES.filter((line) => line.category === 'idle');
+    expect(idle.every((line) => line.needs.length === 0)).toBe(true);
+  });
+
+  it('always has something usable, even with nothing to say', () => {
+    // A hall with no news still has to be able to open its mouth.
+    expect(usableChatLines('idle', {}).length).toBeGreaterThan(0);
+    expect(usableChatLines('greeting', {}).length).toBeGreaterThan(0);
+    expect(usableChatLines('reply', {}).length).toBeGreaterThan(0);
+    // And a category that needs a name has nothing to say without one.
+    expect(usableChatLines('welcome', {})).toEqual([]);
+    expect(usableChatLines('welcome', { hero: 'Kargath' }).length).toBeGreaterThan(0);
+  });
+
+  it('keeps a voice in its own mouth', () => {
+    const gruff = usableChatLines('greeting', { hero: 'Kargath', guild: 'X' }, 'gruff');
+    expect(gruff.every((line) => line.voice === undefined || line.voice === 'gruff')).toBe(true);
+  });
+
+  it('picks by index, never rolls', () => {
+    const lines = usableChatLines('idle', {});
+    expect(chatLineAt(lines, 3)).toBe(chatLineAt(lines, 3));
+    expect(chatLineAt(lines, lines.length)).toBe(chatLineAt(lines, 0));
+    expect(chatLineAt([], 0)).toBeNull();
+  });
+});
+
+describe('the weekly bounty pool', () => {
+  it('covers every metric it declares', () => {
+    for (const metric of BOUNTY_METRICS) {
+      expect(BOUNTIES.some((bounty) => bounty.metric === metric), metric).toBe(true);
+    }
+    expect(new Set(BOUNTIES.map((bounty) => bounty.id)).size).toBe(BOUNTIES.length);
+  });
+
+  it('scales with the roster but never below its floor', () => {
+    for (const bounty of BOUNTIES) {
+      // A guild of five and a guild of twenty-five should both finish a good week.
+      expect(bountyTarget(bounty, 1)).toBe(bounty.floor);
+      expect(bountyTarget(bounty, 25)).toBeGreaterThan(bountyTarget(bounty, 5));
+      expect(bountyTarget(bounty, 5)).toBeGreaterThanOrEqual(bounty.floor);
+    }
+  });
+
+  it('puts the number on the poster', () => {
+    for (const bounty of BOUNTIES) {
+      const title = bountyTitle(bounty, bountyTarget(bounty, 12));
+      expect(title, bounty.id).not.toContain('{target}');
+      expect(title, bounty.id).toMatch(/\d/);
+    }
+  });
+});
+
+describe('founding a hall', () => {
+  it('refuses a name one of the sixty already has', () => {
+    const taken = validateGuildName('The Amber Blades');
+    expect(taken.ok).toBe(false);
+    if (taken.ok) return;
+    expect(taken.refusal.kind).toBe('taken');
+  });
+
+  it('folds case, spacing and curly quotes before comparing', () => {
+    // Otherwise "the  amber blades" founds a second one and every line that names a guild
+    // becomes ambiguous.
+    expect(validateGuildName('the  amber   blades').ok).toBe(false);
+    expect(validateGuildName('Serathiels Own').ok).toBe(false);
+  });
+
+  it('accepts an original name', () => {
+    expect(validateGuildName('The Quiet Kettle').ok).toBe(true);
+  });
+
+  it('refuses lengths and characters outside the house style', () => {
+    expect(validateGuildName('ab').ok).toBe(false);
+    expect(validateGuildName('x'.repeat(GUILD_NAME_MAX + 1)).ok).toBe(false);
+    expect(validateGuildName('The <script> Company').ok).toBe(false);
+  });
+
+  it('offers sigils the icon family can actually draw', () => {
+    for (const sigil of SIGIL_ICONS) {
+      expect(ICON_IDS, sigil).toContain(sigil);
     }
   });
 });
