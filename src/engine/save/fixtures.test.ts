@@ -12,8 +12,9 @@ import { describe, expect, it } from 'vitest';
 import v1Phase0 from './fixtures/v1-phase0.json';
 import v2Phase1 from './fixtures/v2-phase1.json';
 import v3Phase3 from './fixtures/v3-phase3.json';
+import v4Phase4 from './fixtures/v4-phase4.json';
 import { migrateSave } from './migrations';
-import { CURRENT_SCHEMA_VERSION, DEFAULT_SETTINGS } from './schema';
+import { CURRENT_SCHEMA_VERSION, DEFAULT_ACTIVITY, DEFAULT_SETTINGS } from './schema';
 
 describe('save fixtures — every shipped version still loads', () => {
   it('opens a Phase 0 (v1) save and upgrades it to the current format', () => {
@@ -120,6 +121,37 @@ describe('save fixtures — every shipped version still loads', () => {
       battleSpeed: 1,
       battleSkipDefault: false,
     });
+  });
+
+  it('opens a Phase 4 (v4) save with its playback preference intact', () => {
+    const result = migrateSave(structuredClone(v4Phase4));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(4);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+    expect(result.save.settings.battleSpeed).toBe(4);
+    expect(result.save.settings.battleSkipDefault).toBe(true);
+    expect(result.save.hero?.name).toBe('Bram Halloway');
+    expect(result.save.hero?.level).toBe(27);
+    // Six pieces worn, four in the bags, and the locked one still locked.
+    expect(Object.keys(result.save.hero?.equipment ?? {})).toHaveLength(6);
+    expect(result.save.hero?.backpack.filter(Boolean)).toHaveLength(4);
+    expect(result.save.hero?.backpack.find((entry) => entry?.locked)).toBeDefined();
+  });
+
+  it('gives a pre-Phase-5 save a full day of Vigor and an empty board', () => {
+    const result = migrateSave(structuredClone(v4Phase4));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // Additive migration: they wake up exactly as they would after any midnight.
+    expect(result.save.activity).toEqual(DEFAULT_ACTIVITY);
+    expect(result.save.activity.vigor).toBe(100);
+    expect(result.save.activity.mission).toBeNull();
+    // A null board day is what forces the redraw on first read.
+    expect(result.save.activity.boardDay).toBeNull();
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

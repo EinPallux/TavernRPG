@@ -26,8 +26,15 @@ feedback, edge cases and tests. Deployed on Vercel.
   (persisted playback speed). Nothing in `src/engine/combat/` changed to render the log — as
   designed — but the phase did force a **tank archetype retune** (see balancing §5).
 
-270 unit tests + 38 e2e green. Next work: `ROADMAP.md` **Phase 5 (Tavern & Missions)** — the core
-loop. Mount `BattleScene` exactly as `/dev/battle` does; it needs a log, a backdrop and a result.
+- **Phase 5:** the core loop — zones/monsters/blurbs as data, the seeded mission board, the
+  accept → wait → resolve lifecycle, the Reset Engine (one owner for every daily boundary), drop
+  tables, the Gilded Tankard screen with the fight mounted at the door, and save schema v5
+  (activity). Two long-standing gaps closed here: new heroes now get a **starter kit** (an
+  unarmed hero cannot win anything), and the low-level monster **jitter grace band** keeps a
+  brand-new player's first missions winnable.
+
+385 unit tests + 52 e2e green. Next work: `ROADMAP.md` **Phase 6 (Patrol & Economy Pass 1)** —
+Hildy's shift screen, mission↔patrol exclusivity, and the first economy simulation.
 
 **Before touching class constants or monster archetypes:** run `npm run balance`. The numbers in
 `src/data/classes.ts` were solved for, not chosen, and the bands in
@@ -36,13 +43,20 @@ Archetypes carry a second constraint that the harness does *not* check: a median
 on-curve hero should stay under ~12 rounds. `src/components/battle/timeline.test.ts` catches it
 from the pacing side.
 
+**"On curve" means gear *and* training.** `buildReferenceCombatant` models a player who both
+equips their drops and spends gold on attributes. A test hero with perfect gear and untouched
+attributes sits well under the line the monsters are built against — that mistake cost an hour in
+Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
+`src/engine/missions/missions.test.ts` over a hand-built one at a flattering level.
+
 ## Where things live (as built)
 
 `src/engine/` pure logic — `rng`, `clock`, `save/` (schema + migrations), `progression/`
-(xp, stats, gates), `items/` (types, generate), `hero/` (actions, derived) ·
-`src/data/` content — places, classes, itemBases, icon vocabulary ·
+(xp, stats, gates, rewards), `items/` (types, generate, drops, starterKit), `hero/`
+(actions, derived), `combat/`, `missions/` (board, lifecycle), `reset/` ·
+`src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle}/` · `src/app/(game)/<place>/` one route per
+`src/components/{ui,shell,icons,items,hero,battle,tavern}/` · `src/app/(game)/<place>/` one route per
 place · `src/styles/motion.ts` springs.
 Run `/dev/kit` for every component state; the character screen's dev drawer conjures gear,
 levels and gold while loot sources are still being built.

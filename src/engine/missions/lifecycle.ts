@@ -1,0 +1,152 @@
+/**
+ * Mission lifecycle: accept → wait → resolve (docs/design/systems/tavern-and-patrol.md §3).
+ *
+ * The functions here are the whole core loop, minus the drawing of it. Each one takes the world
+ * as arguments and returns the new world; none of them read a clock, a store or a save. That is
+ * what makes "does a mission survive a reload mid-timer?" a question with an obvious answer:
+ * there is no in-memory state to lose, only two timestamps in the save.
+ *
+ * **Missions never auto-resolve.** A timer that expires while the tab is closed leaves the fight
+ * waiting at the board. The battle is the payoff moment (spec §3) — resolving it in the
+ * background would hand the player a result they never got to watch.
+ *
+ * Pure module.
+ */
+
+import { createRng, deriveSeed } from '@/engine/rng';
+import { fight } from '@/engine/combat/fight';
+import { buildHeroCombatant, buildMonsterCombatant } from '@/engine/combat/combatant';
+import type { BattleResult } from '@/engine/combat/types';
+import { missionDropTable, rollMissionDrops } from '@/engine/items/drops';
+import { xpNeeded } from '@/engine/progression/xp';
+import {
+  consolationPayout,
+  missionPayout,
+  type MissionDuration,
+} from '@/engine/progression/rewards';
+import type { Hero } from '@/engine/save/schema';
+import { monster as monsterDef } from '@/data/monsters';
+import type { ActiveMission, MissionOffer, MissionSpoils } from './types';
+
+const MS_PER_MINUTE = 60_000;
+
+export type AcceptFailure =
+  | { readonly kind: 'no-hero' }
+  | { readonly kind: 'mission-running' }
+  | { readonly kind: 'insufficient-vigor'; readonly needed: number; readonly available: number };
+
+export type AcceptResult =
+  | { readonly ok: true; readonly mission: ActiveMission; readonly vigorSpent: number }
+  | { readonly ok: false; readonly failure: AcceptFailure };
+
+export interface AcceptOptions {
+  readonly offer: MissionOffer;
+  readonly duration: MissionDuration;
+  readonly heroLevel: number;
+  readonly vigor: number;
+  readonly now: number;
+  /** Already on a job? Only one at a time (spec §3). */
+  readonly missionRunning: boolean;
+  /** Mount reduction, 0–1, applied to the *timer only* — never to cost or rewards (§6). */
+  readonly durationMultiplier?: number;
+}
+
+/**
+ * Sign the contract.
+ *
+ * Vigor is spent here, at accept, which is why a mission accepted at 23:58 is unaffected by the
+ * midnight reset four minutes later (spec §6) — the player already paid.
+ */
+export function acceptMission({
+  offer,
+  duration,
+  heroLevel,
+  vigor,
+  now,
+  missionRunning,
+  durationMultiplier = 1,
+}: AcceptOptions): AcceptResult {
+  if (missionRunning) return { ok: false, failure: { kind: 'mission-running' } };
+
+  const cost = duration;
+  if (vigor < cost) {
+    return {
+      ok: false,
+      failure: { kind: 'insufficient-vigor', needed: cost, available: vigor },
+    };
+  }
+
+  const realMinutes = duration * Math.min(1, Math.max(0.1, durationMultiplier));
+
+  return {
+    ok: true,
+    vigorSpent: cost,
+    mission: {
+      offer,
+      duration,
+      startedAt: now,
+      endsAt: now + Math.round(realMinutes * MS_PER_MINUTE),
+      vigorSpent: cost,
+      heroLevel,
+    },
+  };
+}
+
+/** Bring the hero home early, for a Golden Die (spec §3). */
+export function skipMissionTimer(mission: ActiveMission, now: number): ActiveMission {
+  return { ...mission, endsAt: Math.min(mission.endsAt, now) };
+}
+
+export interface MissionOutcome {
+  readonly battle: BattleResult;
+  readonly spoils: MissionSpoils;
+}
+
+/**
+ * Fight the mission and total up what it paid.
+ *
+ * Deterministic in the mission's committed seed: the same mission always produces the same
+ * battle log and the same loot, however many times this is called. The UI leans on that — it
+ * resolves once to show the fight, and the store resolves again to grant the rewards, and the
+ * two must agree.
+ */
+export function resolveMission(mission: ActiveMission, hero: Hero): MissionOutcome {
+  const template = monsterDef(mission.offer.monsterId);
+  const foe = buildMonsterCombatant({
+    id: mission.offer.monsterId,
+    name: template?.name ?? 'Something in the dark',
+    archetypeId: template?.archetypeId ?? 'bruiser',
+    level: mission.offer.monsterLevel,
+  });
+
+  const battle = fight(buildHeroCombatant(hero), foe, deriveSeed(mission.offer.seed, 'fight'));
+
+  const victory = battle.winner === 'a';
+  // Priced at the level the contract was signed at, so levelling mid-mission never pays less.
+  const full = missionPayout(mission.heroLevel, mission.duration, xpNeeded(mission.heroLevel));
+
+  if (!victory) {
+    const consolation = consolationPayout(full);
+    return {
+      battle,
+      spoils: { victory: false, ...consolation, dice: 0, ale: false, item: null },
+    };
+  }
+
+  const drops = rollMissionDrops(
+    missionDropTable(mission.duration),
+    createRng(deriveSeed(mission.offer.seed, 'drops'), `drops/${mission.offer.id}`),
+  );
+
+  return {
+    battle,
+    spoils: {
+      victory: true,
+      gold: full.gold,
+      xp: full.xp,
+      dice: drops.dice,
+      ale: drops.ale,
+      item: drops.item,
+    },
+  };
+}

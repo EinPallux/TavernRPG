@@ -16,6 +16,8 @@ import {
   type Attributes,
 } from '@/engine/progression/stats';
 import { BACKPACK_SLOTS, SATCHEL_SLOTS, type Hero } from '@/engine/save/schema';
+import { starterKit } from '@/engine/items/starterKit';
+import type { RngStream } from '@/engine/rng';
 import type { ClassId, Item, SlotId } from '@/engine/items/types';
 
 export interface HeroCreationInput {
@@ -24,10 +26,21 @@ export interface HeroCreationInput {
   readonly now: number;
   /** Starting purse — enough to feel the training loop immediately (tutorial spec §2 beat 5). */
   readonly startingGold?: number;
+  /**
+   * Seeded stream for the starting kit. Omit and the hero starts empty-handed, which is only
+   * ever right for tests that are measuring something else — a real hero needs a weapon.
+   */
+  readonly rng?: RngStream;
 }
 
-export function createHero({ name, classId, now, startingGold = 100 }: HeroCreationInput): Hero {
-  return {
+export function createHero({
+  name,
+  classId,
+  now,
+  startingGold = 100,
+  rng,
+}: HeroCreationInput): Hero {
+  const blank: Hero = {
     name: name.trim(),
     classId,
     level: 1,
@@ -40,6 +53,15 @@ export function createHero({ name, classId, now, startingGold = 100 }: HeroCreat
     satchel: [],
     createdAt: now,
   };
+
+  if (!rng) return blank;
+
+  // Kit goes straight onto the body, not into the bags: nobody's first act should be
+  // opening the backpack to put their own trousers on.
+  return starterKit(classId, rng).reduce(
+    (hero, item) => equipItem(addItem(hero, item).hero, item),
+    blank,
+  );
 }
 
 export const NAME_RULES = {

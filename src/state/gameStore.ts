@@ -15,6 +15,7 @@ import {
   type SaveFile,
   type SaveSlot,
   type Settings,
+  type StoredActiveMission,
 } from '@/engine/save/schema';
 import {
   addItem as addItemToHero,
@@ -28,7 +29,28 @@ import {
 import { applyXp } from '@/engine/progression/xp';
 import type { AttributeId } from '@/engine/progression/stats';
 import type { ClassId, Item, SlotId } from '@/engine/items/types';
-import { clockSnapshot, gameNow, resetClockForTests, restoreClock } from './clock';
+import type { MissionDuration } from '@/engine/progression/rewards';
+import { createRng, deriveSeed } from '@/engine/rng';
+import {
+  accept as acceptOffer,
+  buyAle as buyAleOn,
+  claimMission as claimOn,
+  drinkAle as drinkAleOn,
+  landMission as landOn,
+  refreshDay,
+  rerollBoard as rerollOn,
+  skipTimer as skipOn,
+  type ClaimResult,
+  type MissionRefusal,
+} from './missionActions';
+import {
+  clockSnapshot,
+  currentDayKey,
+  dayKeysBetween,
+  gameNow,
+  resetClockForTests,
+  restoreClock,
+} from './clock';
 import { readSave, writeSave } from './persistence';
 
 /**
@@ -88,6 +110,22 @@ export interface GameStoreState {
    * should never race a settings screen writing the other keys.
    */
   setBattleSpeed: (speed: Settings['battleSpeed']) => void;
+
+  // ── The core loop (Phase 5) ──────────────────────────────────────────────────────
+  /**
+   * Bring the save up to date with the clock and make sure today's board exists.
+   * Every daily rule funnels through here; no screen checks the date itself.
+   */
+  refreshDay: () => void;
+  acceptMission: (offerId: string, duration: MissionDuration) => MissionRefusal | null;
+  rerollBoard: () => MissionRefusal | null;
+  skipMissionTimer: () => MissionRefusal | null;
+  /** Move a finished mission into "waiting to be watched". Idempotent. */
+  landMission: () => void;
+  /** Bank a watched mission and return what it paid, for the result screen. */
+  claimMission: (mission: StoredActiveMission) => ClaimResult | null;
+  buyAle: () => MissionRefusal | null;
+  drinkAle: () => MissionRefusal | null;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -226,8 +264,19 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const { save } = get();
       if (!save) return;
 
-      const hero = createHero({ name, classId, now: gameNow() });
-      set({ save: { ...save, hero } });
+      // Kit is seeded from the world, so re-rolling a character in the same world is
+      // reproducible and two players with the same seed start identically.
+      const hero = createHero({
+        name,
+        classId,
+        now: gameNow(),
+        rng: createRng(deriveSeed(save.worldSeed, 'starter-kit', classId), 'starter-kit'),
+      });
+
+      // Draw the opening board straight away: creation ends at the tavern, and an empty
+      // quest table would be the first thing a new player saw.
+      const seeded = refreshDay({ ...save, hero }, currentDayKey(), dayKeysBetween).save;
+      set({ save: seeded });
       await persistNow();
     },
 
@@ -296,6 +345,110 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       void persistNow();
     },
 
+    refreshDay() {
+      const { save } = get();
+      if (!save) return;
+
+      const result = refreshDay(save, currentDayKey(), dayKeysBetween);
+      if (result.save === save) return;
+
+      set({
+        save: result.save,
+        ...(result.didReset
+          ? {
+              notice:
+                result.vigorForfeited > 0
+                  ? `A new day at the Gilded Tankard. ${result.vigorForfeited} Vigor went unspent.`
+                  : 'A new day at the Gilded Tankard. Your Vigor is full again.',
+            }
+          : {}),
+      });
+      void persistNow();
+    },
+
+    acceptMission(offerId, duration) {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = acceptOffer(save, offerId, duration, gameNow());
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return null;
+    },
+
+    rerollBoard() {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = rerollOn(save, currentDayKey());
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return null;
+    },
+
+    skipMissionTimer() {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = skipOn(save, gameNow());
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return null;
+    },
+
+    landMission() {
+      const { save } = get();
+      if (!save) return;
+
+      const next = landOn(save, gameNow());
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    claimMission(mission) {
+      const { save } = get();
+      if (!save) return null;
+
+      const result = claimOn(save, mission);
+      if (!result) return null;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    buyAle() {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = buyAleOn(save);
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return null;
+    },
+
+    drinkAle() {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = drinkAleOn(save);
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return null;
+    },
+
     setBattleSpeed(battleSpeed) {
       const { save } = get();
       if (!save || save.settings.battleSpeed === battleSpeed) return;
@@ -305,6 +458,22 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     },
   };
 });
+
+/**
+ * End-to-end test seam.
+ *
+ * Real missions run for 5–20 wall-clock minutes, which no browser test can sit through. The
+ * alternative — mocking the clock — would stop exercising the thing that actually matters, the
+ * *stored* timestamps. So the suite reaches in here and pulls a finish line into the past,
+ * which is precisely what a closed tab does anyway.
+ *
+ * Not gated behind an env flag on purpose: this exposes the same store the page already holds,
+ * on a single-player local-first game whose save the player owns outright (Q15 — no anti-cheat).
+ * Pretending otherwise would be security theatre.
+ */
+if (typeof window !== 'undefined') {
+  (window as unknown as { __tavernStore: typeof useGameStore }).__tavernStore = useGameStore;
+}
 
 /** Test seam: drops module-scoped clock/timer state between cases. */
 export function resetGameStoreForTests(): void {
