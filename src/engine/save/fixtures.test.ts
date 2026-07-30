@@ -13,6 +13,7 @@ import v1Phase0 from './fixtures/v1-phase0.json';
 import v2Phase1 from './fixtures/v2-phase1.json';
 import v3Phase3 from './fixtures/v3-phase3.json';
 import v4Phase4 from './fixtures/v4-phase4.json';
+import v5Phase5 from './fixtures/v5-phase5.json';
 import { migrateSave } from './migrations';
 import { CURRENT_SCHEMA_VERSION, DEFAULT_ACTIVITY, DEFAULT_SETTINGS } from './schema';
 
@@ -152,6 +153,39 @@ describe('save fixtures — every shipped version still loads', () => {
     expect(result.save.activity.mission).toBeNull();
     // A null board day is what forces the redraw on first read.
     expect(result.save.activity.boardDay).toBeNull();
+  });
+
+  it('opens a Phase 5 (v5) save with a mission still running', () => {
+    const result = migrateSave(structuredClone(v5Phase5));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(5);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // A mission in flight is the thing most likely to be broken by a careless migration.
+    const activity = result.save.activity;
+    expect(activity.mission).not.toBeNull();
+    expect(activity.mission?.offer.monsterId).toBe('sunken-drover');
+    expect(activity.mission?.duration).toBe(15);
+    expect(activity.vigor).toBe(85);
+    expect(activity.board).toHaveLength(2);
+    expect(activity.boardRerollsToday).toBe(1);
+    expect(activity.alesHeld).toBe(2);
+    expect(activity.missionsCompleted).toBe(37);
+    expect(result.save.hero?.name).toBe('Odo Marchand');
+  });
+
+  it('gives a pre-Phase-6 save an empty patrol slot without disturbing anything else', () => {
+    const result = migrateSave(structuredClone(v5Phase5));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.save.activity.patrol).toBeNull();
+    expect(result.save.activity.patrolsCompleted).toBe(0);
+    // The additive migration reaches *inside* the activity slice, so the rest must be intact.
+    expect(result.save.activity.lastProcessedDay).toBe('2026-08-14');
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

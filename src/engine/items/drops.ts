@@ -67,19 +67,51 @@ export function missionDropTable(duration: number): DropTable {
   return MISSION_DROPS[duration] ?? MISSION_DROPS[5]!;
 }
 
-/** Every slot an item can drop into. Weapons and offhands lock to the hero's class downstream. */
-const DROPPABLE_SLOTS: readonly SlotId[] = [
-  'weapon',
-  'offhand',
-  'helmet',
-  'chest',
-  'gloves',
-  'boots',
-  'belt',
-  'amulet',
-  'ring',
-  'trinket',
+/**
+ * Which slot an item drops into, and how often.
+ *
+ * **Weighted, not uniform** (Phase 6). Damage is linear in the weapon, so a hero whose weapon
+ * has fallen behind loses regardless of what else they are wearing — and with ten slots and a
+ * one-in-four drop chance, a uniform roll gives a weapon about once every forty missions. Once
+ * Phase 6 sped levelling up to its intended pace, that measured out as a hero at level 13 still
+ * swinging their level-1 starter blade, and a win rate sliding from 100% to 40% across a week.
+ *
+ * Weighting the slots that decide a fight is the smallest fix that holds the loop together. It
+ * changes nothing the mission card publishes — the card prints *item chance* and *rarity*, both
+ * untouched — and it is still seeded, so a mission's drop is as fixed as ever.
+ *
+ * The real answer is a shop you can buy a weapon from, which is Phase 7.
+ */
+const SLOT_WEIGHTS: readonly { readonly value: SlotId; readonly weight: number }[] = [
+  { value: 'weapon', weight: 22 },
+  { value: 'chest', weight: 14 },
+  { value: 'offhand', weight: 10 },
+  { value: 'helmet', weight: 9 },
+  { value: 'gloves', weight: 9 },
+  { value: 'boots', weight: 9 },
+  { value: 'belt', weight: 9 },
+  { value: 'amulet', weight: 6 },
+  { value: 'ring', weight: 6 },
+  { value: 'trinket', weight: 6 },
 ];
+
+/**
+ * How far behind the hero's weapon may fall before the next drop is guaranteed to be one.
+ *
+ * Weighting the slot table raises the *rate* of weapon drops but cannot put a floor under it:
+ * across a fixed week of missions, some players simply see none, and a hero swinging a level-1
+ * blade at level 13 loses every fight regardless of what else they are wearing. Measured at
+ * every weapon weight from 22 to 40, at least one class in five still ended a 60-mission run
+ * on its starter weapon.
+ *
+ * Pity is the answer, and it is already this game's answer elsewhere — Fortune's Table has run
+ * on a pity counter since the design doc (gacha spec, pity 20). This is the same idea with a
+ * smaller number: fall far enough behind and the world stops rolling the dice on you.
+ *
+ * It becomes largely academic once Bram's Armory opens in Phase 7 and gold can simply buy a
+ * weapon; it stays as the floor for a player who never shops.
+ */
+export const WEAPON_PITY_LEVELS = 5;
 
 export interface DropRoll {
   /** Null when nothing dropped, which is the common case. */
@@ -94,20 +126,42 @@ export interface DropRoll {
  * Each roll draws from its own forked stream, so adding a new drop type later cannot shift the
  * results of the existing ones — the same reason the RNG forks by name rather than by position.
  */
-export function rollMissionDrops(table: DropTable, rng: RngStream): DropRoll {
+export interface DropContext {
+  /**
+   * How many levels the hero's weapon is behind them. Drives the pity floor; omit it and the
+   * roll is purely seeded, which is what the drop-rate tests want.
+   */
+  readonly weaponLevelsBehind?: number;
+}
+
+export function rollMissionDrops(
+  table: DropTable,
+  rng: RngStream,
+  context: DropContext = {},
+): DropRoll {
   const itemStream = rng.fork('item');
   const gotItem = itemStream.bool(table.itemChance);
+
+  // Pity does not conjure a drop out of nothing — it only decides *what* a drop is. The
+  // published item chance is therefore untouched, and the card still tells the truth.
+  const pityWeapon = (context.weaponLevelsBehind ?? 0) >= WEAPON_PITY_LEVELS;
 
   return {
     item: gotItem
       ? {
-          slot: itemStream.pick(DROPPABLE_SLOTS),
+          slot: pityWeapon ? 'weapon' : itemStream.weighted(SLOT_WEIGHTS),
           rarity: rollRarity(table.rarityWeights, itemStream),
         }
       : null,
     dice: rng.fork('dice').bool(table.diceChance) ? 1 : 0,
     ale: rng.fork('ale').bool(table.aleChance),
   };
+}
+
+/** Published-adjacent: the chance a drop lands in a given slot, for the dev tools. */
+export function slotOdds(slot: SlotId): number {
+  const total = SLOT_WEIGHTS.reduce((sum, entry) => sum + entry.weight, 0);
+  return (SLOT_WEIGHTS.find((entry) => entry.value === slot)?.weight ?? 0) / total;
 }
 
 export function rollRarity(weights: RarityWeights, rng: RngStream): Rarity {

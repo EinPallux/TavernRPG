@@ -13,7 +13,7 @@ import { ICON_IDS } from '@/data/icons';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -157,8 +157,20 @@ export const activeMissionSchema = z.object({
 });
 
 /**
+ * A City Watch shift. Three numbers and a level: what it has earned is computed from the clock,
+ * never accumulated, which is why it survives a closed tab without a background timer.
+ */
+export const patrolShiftSchema = z.object({
+  startedAt: timestampSchema,
+  endsAt: timestampSchema,
+  hours: z.number().int().min(1).max(12),
+  /** Level at signing — the shift pays what it was worth when it started. */
+  heroLevel: z.number().int().min(1),
+});
+
+/**
  * Everything time-bound about the player's day. Added in schema v5 (Phase 5), when missions
- * gave the game its first thing that happens while you are not looking.
+ * gave the game its first thing that happens while you are not looking; patrol joined in v6.
  */
 export const activitySchema = z.object({
   vigor: z.number().min(0),
@@ -185,6 +197,13 @@ export const activitySchema = z.object({
   lastProcessedDay: dayKeySchema.nullable(),
   /** Lifetime counter, for tasks and the "closest moment" flavour. */
   missionsCompleted: z.number().int().min(0),
+  /**
+   * The City Watch shift in progress, if any (schema v6). Mutually exclusive with `mission` —
+   * the hero cannot be in two places at once (tavern spec §5).
+   */
+  patrol: patrolShiftSchema.nullable(),
+  /** Lifetime counter, for tasks and Hildy's regard. */
+  patrolsCompleted: z.number().int().min(0),
 });
 
 export const DEFAULT_ACTIVITY: Activity = {
@@ -199,6 +218,8 @@ export const DEFAULT_ACTIVITY: Activity = {
   pendingMission: null,
   lastProcessedDay: null,
   missionsCompleted: 0,
+  patrol: null,
+  patrolsCompleted: 0,
 };
 
 export const saveFileSchema = z.object({
@@ -220,6 +241,7 @@ export type Hero = z.infer<typeof heroSchema>;
 export type Activity = z.infer<typeof activitySchema>;
 export type StoredMissionOffer = z.infer<typeof missionOfferSchema>;
 export type StoredActiveMission = z.infer<typeof activeMissionSchema>;
+export type StoredPatrolShift = z.infer<typeof patrolShiftSchema>;
 export type SaveFile = z.infer<typeof saveFileSchema>;
 
 export interface NewSaveOptions {

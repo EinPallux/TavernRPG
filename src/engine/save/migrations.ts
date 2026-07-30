@@ -79,6 +79,17 @@ export const MIGRATIONS: readonly Migration[] = [
       return { ...data, activity: { ...DEFAULT_ACTIVITY } };
     },
   },
+  {
+    from: 5,
+    to: 6,
+    describe: 'Phase 6: add the City Watch patrol shift',
+    migrate: (data) => {
+      // Additive, and additive *inside* the activity slice — everything the player has in
+      // flight (their board, a running mission, their Vigor) carries through untouched.
+      const activity = (data['activity'] ?? { ...DEFAULT_ACTIVITY }) as Record<string, unknown>;
+      return { ...data, activity: { ...activity, patrol: null, patrolsCompleted: 0 } };
+    },
+  },
 ];
 
 export type MigrationFailure =

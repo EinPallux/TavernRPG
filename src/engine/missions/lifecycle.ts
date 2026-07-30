@@ -136,6 +136,7 @@ export function resolveMission(mission: ActiveMission, hero: Hero): MissionOutco
   const drops = rollMissionDrops(
     missionDropTable(mission.duration),
     createRng(deriveSeed(mission.offer.seed, 'drops'), `drops/${mission.offer.id}`),
+    { weaponLevelsBehind: hero.level - (hero.equipment.weapon?.level ?? 1) },
   );
 
   return {

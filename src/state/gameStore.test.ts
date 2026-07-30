@@ -418,3 +418,139 @@ describe('gameStore — the core loop', () => {
     expect(store().drinkAle()).toEqual({ kind: 'no-ale-held' });
   });
 });
+
+describe('gameStore — the City Watch', () => {
+  beforeEach(async () => {
+    await store().hydrate(1);
+    await store().createHero('Kargath', 'warrior');
+  });
+
+  const activity = () => store().save!.activity;
+  const board = () => activity().board;
+
+  /**
+   * Wind a running shift back in time, so "now" is `minutes` into it. Both stamps move: the
+   * shift keeps its length and simply started earlier, which is exactly what a closed tab
+   * looks like from the save's point of view.
+   */
+  const ageShift = (minutes: number) => {
+    const shift = activity().patrol!;
+    const by = minutes * 60_000;
+    useGameStore.setState({
+      save: {
+        ...store().save!,
+        activity: {
+          ...activity(),
+          patrol: { ...shift, startedAt: shift.startedAt - by, endsAt: shift.endsAt - by },
+        },
+      },
+    });
+  };
+
+  it('clocks the hero on for the chosen shift', () => {
+    expect(store().startPatrol(6)).toBeNull();
+
+    expect(activity().patrol?.hours).toBe(6);
+    expect(activity().patrol!.endsAt - activity().patrol!.startedAt).toBe(6 * 3_600_000);
+  });
+
+  it('refuses a shift while a mission is out — the hero cannot be in two places', () => {
+    store().acceptMission(board()[0]!.id, 5);
+    expect(store().startPatrol(4)).toEqual({ kind: 'mission-running' });
+    expect(activity().patrol).toBeNull();
+  });
+
+  it('refuses a shift while a fight is waiting to be watched', () => {
+    // The hero is at the door, not on the beat; starting patrol would strand the fight.
+    store().acceptMission(board()[0]!.id, 5);
+    useGameStore.setState({
+      save: {
+        ...store().save!,
+        activity: { ...activity(), mission: { ...activity().mission!, endsAt: 1 } },
+      },
+    });
+    store().landMission();
+    expect(activity().pendingMission).not.toBeNull();
+
+    expect(store().startPatrol(4)).toEqual({ kind: 'mission-running' });
+  });
+
+  it('refuses a mission while on the beat — exclusivity runs both ways', () => {
+    store().startPatrol(8);
+    expect(store().acceptMission(board()[0]!.id, 5)).toEqual({ kind: 'mission-running' });
+    expect(activity().mission).toBeNull();
+    // And no Vigor was spent on the refusal.
+    expect(activity().vigor).toBe(100);
+  });
+
+  it('refuses a second shift on top of the first', () => {
+    store().startPatrol(2);
+    expect(store().startPatrol(2)).toEqual({ kind: 'already-on-duty' });
+  });
+
+  it('pays out on collection and clears the beat', () => {
+    const goldBefore = store().save!.hero!.gold;
+    store().startPatrol(4);
+    ageShift(4 * 60);
+
+    const collected = store().collectPatrol()!;
+
+    expect(collected.gold).toBeGreaterThan(0);
+    expect(collected.minutes).toBe(240);
+    expect(collected.early).toBe(false);
+    expect(store().save!.hero!.gold).toBe(goldBefore + collected.gold);
+    expect(activity().patrol).toBeNull();
+    expect(activity().patrolsCompleted).toBe(1);
+  });
+
+  it('pro-rates a shift walked off early, and does not count it as completed', () => {
+    store().startPatrol(8);
+    ageShift(120); // two hours in
+
+    const collected = store().collectPatrol()!;
+
+    expect(collected.early).toBe(true);
+    expect(collected.minutes).toBe(120);
+    expect(collected.gold).toBeGreaterThan(0);
+    // Two hours of an eight-hour shift pays about a quarter.
+    expect(activity().patrolsCompleted).toBe(0);
+  });
+
+  it('pays nothing for a shift abandoned immediately', () => {
+    const goldBefore = store().save!.hero!.gold;
+    store().startPatrol(4);
+
+    const collected = store().collectPatrol()!;
+    expect(collected.minutes).toBe(0);
+    expect(collected.gold).toBe(0);
+    expect(store().save!.hero!.gold).toBe(goldBefore);
+  });
+
+  it('survives a reload mid-shift and still pays for the time away', async () => {
+    store().startPatrol(6);
+    ageShift(180);
+    const endsAt = activity().patrol!.endsAt;
+    await store().flush();
+
+    resetGameStoreForTests();
+    await store().hydrate(1);
+
+    // The shift is timestamps in the save; three hours of it already happened.
+    expect(activity().patrol?.endsAt).toBe(endsAt);
+    const collected = store().collectPatrol()!;
+    expect(collected.minutes).toBe(180);
+    expect(collected.gold).toBeGreaterThan(0);
+  });
+
+  it('frees the hero for missions again once collected', () => {
+    store().startPatrol(1);
+    ageShift(60);
+    store().collectPatrol();
+
+    expect(store().acceptMission(board()[0]!.id, 5)).toBeNull();
+  });
+
+  it('has nothing to collect when off duty', () => {
+    expect(store().collectPatrol()).toBeNull();
+  });
+});
