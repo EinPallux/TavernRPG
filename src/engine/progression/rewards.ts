@@ -29,15 +29,36 @@ export function isMissionDuration(value: number): value is MissionDuration {
 }
 
 /**
+ * How many points of Vigor buy one level, at that level.
+ *
+ * **Retuned in Phase 6.** The published formula was a flat `xpNeeded(L) / 320`, which put
+ * 100 Vigor at 0.31 levels a day *forever* — level 10, where every remaining feature unlocks,
+ * arrived on **day 29** against a design target of day 2–3. (Balancing §1's own prose said
+ * "~3.2 levels/day early game", which is `/32`: the shipped constant had an extra zero.)
+ *
+ * A flat divisor cannot be right in either direction, because it makes levels-per-day constant
+ * — the hundredth level costs the same number of missions as the second. Growing the divisor
+ * with level is what produces a curve: fast onboarding, a long tail.
+ *
+ * Measured against balancing §0 (missions only, 100 Vigor/day): L10 day 4, L25 day 11,
+ * L55 day 34. The §0 table also wants L100 around day 180, which no simple divisor reaches
+ * from these three — see the note in balancing §1.
+ */
+export const XP_DIVISOR_BASE = 28;
+export const XP_DIVISOR_PER_LEVEL = 1.2;
+
+export function vigorPerLevel(level: number): number {
+  return XP_DIVISOR_BASE + XP_DIVISOR_PER_LEVEL * Math.max(1, level);
+}
+
+/**
  * XP earned per point of Vigor at a given level.
  *
- * Expressed as a share of the level's own XP requirement, which is what makes the curve
- * self-correcting: early levels fall in a few missions, later ones take days, and no absolute
- * number ever needs re-tuning when `xpNeeded` changes.
+ * Expressed as a share of the level's own XP requirement, which is what keeps the curve
+ * self-correcting: no absolute number needs re-tuning when `xpNeeded` changes.
  */
 export function xpPerVigor(level: number, xpNeededForLevel: number): number {
-  void level;
-  return xpNeededForLevel / 320;
+  return xpNeededForLevel / vigorPerLevel(level);
 }
 
 /** Gold earned per point of Vigor at a given level (§2). */

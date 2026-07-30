@@ -7,6 +7,87 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 7: Shops & Stables
+- **The Armory and the Gilded Facet are open.** Six pieces on the shelf every morning, drawn from
+  the day's seed. Bram always has a weapon and an offhand for your class plus three armour
+  pieces; Sela always has two rings, two amulets and a trinket. Only the sixth slot is a
+  wildcard — a shop that *might* have nothing you can use is a shop you learn to skip.
+- **The shelf answers the question you walked in with.** Every card shows what it would do to
+  your hero against what you are wearing, on the card rather than behind a hover.
+- **Buying is a splurge, selling is income** — 3.2× value out, 100% of value back. Sold slots
+  leave a wrapped parcel in the gap so the shelf does not reflow under your cursor, and the
+  restock clock says exactly how long until Bram unpacks the next cart.
+- **A fresh shelf costs a Golden Die**, with no free one. The mission board gets a free daily
+  reroll because the day's *work* must always be there; a shop shelf is a convenience.
+- **One way to get rid of an item** (`disposeItem`), shared by both keepers and, later, the
+  forge. Junk goes with a click; a Rare or an Epic asks once; a locked piece is refused; and a
+  Set piece is not merchandise at any price. The service quotes before it acts, so the confirm
+  you see is the rule the engine enforces rather than a screen's opinion.
+- **The Wandering Stables.** Four stalls, seven-day rentals, one at a time: Pack Mule −10%,
+  Dappled Courser −20%, Armoured Warhorse −30%, and the Royal Griffin at −50% for six earned
+  Golden Dice. Each stall shows what it does to a mission in minutes, not percentages.
+- **A mount shortens the road and nothing else** — mission timers only, never Vigor, never
+  rewards, never patrol. It rides on the HUD beside whatever is running and beside the mission
+  timer itself, and pulses in its last day.
+- **Renewing extends, switching replaces.** Paying for the mount you already have adds a week to
+  the week you have left rather than throwing it away; taking a different animal forfeits the
+  remainder and says how many days that is before you confirm.
+- **Save schema v7** carries both shelves and the stall, with a v6 fixture caught mid-shift.
+- The economy simulation now models shop purchases, mount upkeep and loot sales, and
+  `/dev/economy` shows them per day.
+
+### Changed — Phase 7
+- Shop restock joins the Reset Engine rather than each shop checking the date. A shop that
+  notices its own stored day is yesterday's is exactly the second clock that module exists to
+  prevent.
+- The top HUD's mount chip is real rather than a preview value, and the mission card names the
+  animal that shortened the road.
+
+### Added — Phase 6: Patrol & Economy Pass 1
+- **The City Watch is open.** Sign on for 1–12 hours with Hildy, watch the lantern move along the
+  route, and clock off for the pay. It is the "I'm done for today" button: a floor under a bad
+  day, deliberately the worse deal so it never becomes the optimal way to play.
+- **A shift is time, not a session.** What it has earned is computed from the clock rather than
+  accumulated by a ticker, so closing the tab for six hours works with no background timer, and a
+  rewound device clock cannot mint gold. Reload mid-shift, come back tomorrow — the numbers are
+  the same either way.
+- **Walk off early and you are paid for what you walked**, pro-rated to the minute, with a report
+  that says so. Collecting and cancelling are literally the same call, so an abandoned shift can
+  never be paid by different rules than a completed one.
+- **The shift report**: hours signed off, the pay counted out, and a few lines from the beat. The
+  night lines only appear on shifts long enough to have a night in them, and a longer shift tells
+  more of the story.
+- **One place at a time.** A hero on the beat cannot take a job and a hero on a job cannot sign
+  on — enforced in the engine, so it holds for every caller and not just for the button that
+  happens to check. A mission waiting to be watched counts as still out.
+- **The economy simulation** (`engine/economy/simulate.ts`) plays modeled days through the real
+  reward curves and records every coin in and out. 15 CI bands cover pacing, the "always slightly
+  broke" purse and patrol staying the fallback; `/dev/economy` shows the same ledger day by day.
+  It models only what exists — shops and mounts join as they ship.
+- **Save schema v6** carries the shift, with a v5 fixture caught mid-mission.
+
+### Changed — Phase 6
+- **Levelling was about ten times too slow, and now is not.** `xpPerVigor` divided by a flat 320,
+  which makes levels-per-day *constant* — the hundredth level costing exactly as much play as the
+  second — and put level 10, where the last feature gate opens, on day 29 against a target of day
+  2–3. It is now a curve (`28 + 1.2L`): level 10 on day 4, 25 on day 11, 55 on day 34. Reaching
+  100 still arrives well ahead of its target; that needs a deceleration no single divisor gives,
+  and is flagged for the Phase 17 balance pass with the sim measuring it every build.
+- **Gear now keeps up with levelling.** Faster levels exposed a supply problem the slow curve was
+  hiding: a level-13 hero still swinging their level-1 starter weapon, win-rate sliding from 100%
+  to 40%. Drops are slot-weighted toward weapons, and carry a **pity floor** — five levels behind
+  and the next drop is a weapon. Pity decides what a drop is, never whether one happens. Shops
+  (Phase 7) are the real fix.
+- Feature gates are enforced where a room renders, not only where the nav rail links to it. That
+  was fine while every locked place was a placeholder; the watch house pays real gold, and
+  `/patrol` was reachable at level 1 by typing the URL.
+
+### Fixed — Phase 6
+- Two Phase 5 tests were asserting a fiction. The "playthrough" hero never spent gold on
+  attributes and only equipped into empty slots, and `isUpgrade` ignored weapon damage entirely —
+  so a strictly better weapon stayed in the backpack, and the losses that followed read as a
+  balance problem rather than a test bug.
+
 ### Added — Phase 5: Tavern & Missions (the core loop)
 - **The loop is playable**: accept a job → wait out a real timer → watch the fight → take the
   loot → spend it on training → go again. The Gilded Tankard is a real screen now, not a dressed

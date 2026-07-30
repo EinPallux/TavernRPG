@@ -100,10 +100,24 @@ test.describe('navigation', () => {
   });
 
   test('keepers explain why their rooms are unfinished', async ({ page }) => {
+    // The Armory used to stand in for this and became a real shop in Phase 7. Every remaining
+    // placeholder sits behind a gate, so the hero has to be levelled to reach one.
     await ensureHero(page);
+    await levelHeroToTen(page);
+
+    await page.goto('/forge');
+    await expect(page.getByTestId('bark-forge')).toContainText('Forge is cold');
+    await expect(page.getByTestId('place-forge')).toContainText('Phase 12');
+  });
+
+  test('rooms that have been built show the real thing instead', async ({ page }) => {
+    await ensureHero(page);
+    await levelHeroToTen(page);
+
     await page.goto('/armory');
-    await expect(page.getByTestId('bark-armory')).toContainText('Shelves are bare');
-    await expect(page.getByTestId('place-armory')).toContainText('Phase 7');
+    await expect(page.getByTestId('place-armory')).toBeVisible();
+    await expect(page.getByTestId('shop-shelf')).toBeVisible();
+    await expect(page.getByTestId('place-armory')).not.toContainText('Phase 7');
   });
 });
 

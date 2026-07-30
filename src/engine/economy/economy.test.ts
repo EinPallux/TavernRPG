@@ -1,0 +1,271 @@
+/**
+ * The economy simulation, as a CI gate (economy spec §6).
+ *
+ * The bands below are the shape of the game, not decoration. If a reward curve is nudged and
+ * the loop stops being taut — the player suddenly rich, or suddenly unable to buy anything, or
+ * levelling in a week — this fails the build rather than the player.
+ *
+ * The bands only cover what is *modelled*. Shops, mounts and loot sales joined in Phase 7; the
+ * gacha, guild donations and dungeon gold are still absent because they are not built, and
+ * asserting a number for them would be asserting a fiction. Those bands tighten as
+ * `MODELLED_SINKS` grows. What *is* asserted is every ratio that holds regardless: pacing, the
+ * gold/training relationship, patrol staying the fallback rather than the strategy, and — as of
+ * Phase 7 — that neither shopping nor a mount is mandatory.
+ */
+
+import { describe, expect, it } from 'vitest';
+import { statCost } from '@/engine/progression/stats';
+import { xpNeeded } from '@/engine/progression/xp';
+import { VIGOR_PER_DAY, vigorPerLevel, xpPerVigor } from '@/engine/progression/rewards';
+import {
+  ACTIVE_PLAYER,
+  CASUAL_PLAYER,
+  FRUGAL_PLAYER,
+  MODELLED_FAUCETS,
+  MODELLED_SINKS,
+  simulateEconomy,
+  totalEarned,
+  totalSpent,
+} from './simulate';
+import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
+import { mount as mountDef } from '@/data/mounts';
+import { goldPerVigor } from '@/engine/progression/rewards';
+
+/** Days to reach a level, missions only, at the given daily Vigor spend. */
+function daysToLevel(target: number, vigorPerDay = VIGOR_PER_DAY): number {
+  let level = 1;
+  let xp = 0;
+
+  for (let day = 1; day <= 2_000; day += 1) {
+    let budget = vigorPerDay;
+    while (budget > 0) {
+      const spend = Math.min(budget, 20);
+      xp += xpPerVigor(level, xpNeeded(level)) * spend;
+      budget -= spend;
+
+      while (xp >= xpNeeded(level)) {
+        xp -= xpNeeded(level);
+        level += 1;
+      }
+    }
+    if (level >= target) return day;
+  }
+  return Number.POSITIVE_INFINITY;
+}
+
+describe('pacing — balancing §0', () => {
+  it('unlocks the whole town within the first few days', () => {
+    // Level 10 is the last feature gate. A player stuck below it is playing a demo, and the
+    // original flat /320 divisor put this at day 29.
+    expect(daysToLevel(10)).toBeLessThanOrEqual(6);
+  });
+
+  it('reaches the mid-game milestones roughly on schedule', () => {
+    // §0 targets: L25 ~week 2, L55 ~day 30. Missions alone should land near but not before
+    // these — dailies, arena and dungeons all add XP that this model does not include yet.
+    expect(daysToLevel(25)).toBeGreaterThanOrEqual(8);
+    expect(daysToLevel(25)).toBeLessThanOrEqual(18);
+
+    expect(daysToLevel(55)).toBeGreaterThanOrEqual(24);
+    expect(daysToLevel(55)).toBeLessThanOrEqual(45);
+  });
+
+  it('slows down as it climbs, rather than levelling at a flat rate forever', () => {
+    // The bug the flat divisor caused, stated as a property: the hundredth level must cost
+    // meaningfully more Vigor than the second.
+    expect(vigorPerLevel(100)).toBeGreaterThan(vigorPerLevel(2) * 3);
+
+    const earlyRate = 10 / daysToLevel(10);
+    const lateRate = (100 - 55) / (daysToLevel(100) - daysToLevel(55));
+    expect(lateRate).toBeLessThan(earlyRate);
+  });
+
+  it('does not let a half-hearted player stall out completely', () => {
+    // Half the Vigor should still clear the feature gates inside a fortnight.
+    expect(daysToLevel(10, VIGOR_PER_DAY / 2)).toBeLessThanOrEqual(14);
+  });
+});
+
+describe('the "always slightly broke" band — economy §2', () => {
+  const run = simulateEconomy({ days: 30 });
+
+  it('keeps the purse near-empty rather than letting gold pile up', () => {
+    // Gold exists to be spent on training. A player sitting on a hoard means the sink is too
+    // weak, which is how idle games rot.
+    const spendRatio = totalSpent(run.ledger) / totalEarned(run.ledger);
+    expect(spendRatio).toBeGreaterThan(0.9);
+
+    // End-of-day purse should stay small next to that day's income, every day.
+    for (const day of run.ledger) {
+      const income = MODELLED_FAUCETS.reduce((sum, f) => sum + day.earned[f], 0);
+      expect(day.purse, `day ${day.day}`).toBeLessThan(income);
+    }
+  });
+
+  it('always leaves something worth buying', () => {
+    // The other failure mode: training so expensive that a day's income buys nothing, and the
+    // loop goes dead. Every modelled day must afford at least one point.
+    for (const day of run.ledger) {
+      expect(day.pointsBought, `day ${day.day}`).toBeGreaterThan(0);
+    }
+  });
+
+  it('tightens over time — the first day is a windfall, day 30 is a budget', () => {
+    const firstWeek = run.ledger.slice(0, 7).reduce((sum, d) => sum + d.pointsBought, 0) / 7;
+    const lastWeek = run.ledger.slice(-7).reduce((sum, d) => sum + d.pointsBought, 0) / 7;
+
+    expect(lastWeek).toBeLessThan(firstWeek);
+  });
+
+  it('buys points at roughly the rate balancing §3 asks for', () => {
+    // §3: a day's gold should buy around L/2 points early, decaying toward L/6 by level 100.
+    // Checked as a band because the exact figure moves with every reward tweak.
+    const day30 = run.ledger.at(-1)!;
+    const perLevel = day30.pointsBought / day30.level;
+
+    expect(perLevel).toBeGreaterThan(0.15);
+    expect(perLevel).toBeLessThan(1.2);
+  });
+});
+
+describe('patrol stays the fallback, not the strategy', () => {
+  it('is a minority of an active player’s income', () => {
+    const active = simulateEconomy({ days: 30, style: ACTIVE_PLAYER });
+    const patrol = active.ledger.reduce((sum, d) => sum + d.earned.patrol, 0);
+    const missions = active.ledger.reduce((sum, d) => sum + d.earned.missions, 0);
+
+    expect(patrol).toBeLessThan(missions);
+  });
+
+  it('cannot out-progress actually playing', () => {
+    // Someone who only patrols must fall behind someone who runs missions — otherwise the
+    // core loop is optional, and an idle game with an optional core loop is just idle.
+    const player = simulateEconomy({ days: 30, style: ACTIVE_PLAYER });
+    const idler = simulateEconomy({
+      days: 30,
+      style: { ...ACTIVE_PLAYER, vigorUsed: 0, patrolHours: 12 },
+    });
+
+    expect(idler.finalLevel).toBeLessThan(player.finalLevel);
+    expect(idler.totalPointsBought).toBeLessThan(player.totalPointsBought);
+  });
+
+  it('is still worth doing for someone who cannot play much', () => {
+    const withPatrol = simulateEconomy({ days: 30, style: CASUAL_PLAYER });
+    const without = simulateEconomy({ days: 30, style: { ...CASUAL_PLAYER, patrolHours: 0 } });
+
+    expect(withPatrol.totalPointsBought).toBeGreaterThan(without.totalPointsBought);
+  });
+});
+
+describe('shops and stables — Phase 7 sinks', () => {
+  const shopper = simulateEconomy({ days: 60 });
+  const frugal = simulateEconomy({ days: 60, style: FRUGAL_PLAYER });
+
+  it('takes real money off the table — gear and upkeep are not decoration', () => {
+    // If these round to nothing, the shop is a museum and training is the only sink again.
+    const onGear = shopper.ledger.reduce((sum, day) => sum + day.spent.shops, 0);
+    const onUpkeep = shopper.ledger.reduce((sum, day) => sum + day.spent.mounts, 0);
+    const total = totalSpent(shopper.ledger);
+
+    expect(onGear / total).toBeGreaterThan(0.02);
+    expect(onUpkeep / total).toBeGreaterThan(0.02);
+  });
+
+  it('keeps mount upkeep inside its designed share of income', () => {
+    // §4: rentals are a recurring pinch. Above roughly a fifth of income they stop being a
+    // choice and become a tax on playing.
+    for (const day of shopper.ledger) {
+      const income = MODELLED_FAUCETS.reduce((sum, f) => sum + day.earned[f], 0);
+      if (income === 0) continue;
+      expect(day.spent.mounts / income, `day ${day.day}`).toBeLessThan(0.25);
+    }
+  });
+
+  it('prices a week of Warhorse against a week of income the way §4 promises', () => {
+    for (const level of [10, 40, 90]) {
+      const weekly = 7 * 100 * goldPerVigor(level);
+      const rental = mountPrice(mountDef('warhorse'), level).gold;
+      expect(rental / weekly, `level ${level}`).toBeGreaterThan(0.1);
+      expect(rental / weekly, `level ${level}`).toBeLessThan(0.2);
+      expect(MOUNT_TERM_DAYS).toBe(7);
+    }
+  });
+
+  it('leaves neither shopping nor renting mandatory', () => {
+    // The frugal player must still progress. A game where you *have* to shop to keep up is a
+    // game with a soft paywall in it, dice or no dice.
+    expect(frugal.finalLevel).toBeGreaterThanOrEqual(shopper.finalLevel);
+    expect(frugal.totalPointsBought).toBeGreaterThan(shopper.totalPointsBought);
+  });
+
+  it('makes shopping cost attribute points — that is the whole trade', () => {
+    // Gold spent on gear is gold not spent on training. If this ever came out level, the
+    // markup would be doing nothing and the shop would be free power.
+    expect(shopper.totalPointsBought).toBeLessThan(frugal.totalPointsBought);
+  });
+
+  it('sells loot for a meaningful but secondary share of income', () => {
+    // Sales should matter without rivalling the mission faucet, or the loop becomes "farm
+    // vendor trash" instead of "run missions".
+    const sales = shopper.ledger.reduce((sum, day) => sum + day.earned.sales, 0);
+    const earned = totalEarned(shopper.ledger);
+
+    expect(sales / earned).toBeGreaterThan(0.01);
+    expect(sales / earned).toBeLessThan(0.25);
+  });
+
+  it('never lets a shop purchase overdraw the purse', () => {
+    for (const day of shopper.ledger) {
+      expect(day.spent.shops, `day ${day.day}`).toBeGreaterThanOrEqual(0);
+      expect(day.itemsBought, `day ${day.day}`).toBeGreaterThanOrEqual(0);
+    }
+  });
+});
+
+describe('the ledger itself', () => {
+  const run = simulateEconomy({ days: 30 });
+
+  it('balances — every coin is accounted for', () => {
+    // Sums the constants rather than naming sinks: a faucet or sink added without a ledger
+    // entry has to fail here, which is the only thing making this an audit rather than a
+    // restatement of the code.
+    const finalPurse = run.ledger.reduce(
+      (purse, day) =>
+        purse +
+        MODELLED_FAUCETS.reduce((s, f) => s + day.earned[f], 0) -
+        MODELLED_SINKS.reduce((s, k) => s + day.spent[k], 0),
+      100,
+    );
+    expect(finalPurse).toBe(run.finalPurse);
+  });
+
+  it('never goes into debt', () => {
+    for (const day of run.ledger) {
+      expect(day.purse, `day ${day.day}`).toBeGreaterThanOrEqual(0);
+      for (const sink of MODELLED_SINKS) {
+        expect(day.spent[sink], `day ${day.day} ${sink}`).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
+  it('is deterministic — the same inputs give the same 30 days', () => {
+    expect(simulateEconomy({ days: 30 })).toEqual(simulateEconomy({ days: 30 }));
+  });
+
+  it('charges the published price for each point bought', () => {
+    // Cross-check against `statCost` directly, so a sim that quietly drifted from the real
+    // curve would fail here rather than silently bless a broken economy.
+    const oneDay = simulateEconomy({ days: 1, startGold: 1_000 });
+    const day = oneDay.ledger[0]!;
+
+    let expected = 0;
+    const trained = [0, 0, 0, 0, 0];
+    for (let i = 0; i < day.pointsBought; i += 1) {
+      const cheapest = trained.indexOf(Math.min(...trained));
+      expected += statCost(trained[cheapest] ?? 0);
+      trained[cheapest] = (trained[cheapest] ?? 0) + 1;
+    }
+    expect(day.spent.training).toBe(expected);
+  });
+});

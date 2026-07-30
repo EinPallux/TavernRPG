@@ -19,6 +19,7 @@ import { resolveMission, type MissionOutcome } from '@/engine/missions/lifecycle
 import type { ActiveMission } from '@/engine/missions/types';
 import { rerollCost } from '@/engine/missions/board';
 import { ALE_DICE_COST, type MissionDuration } from '@/engine/progression/rewards';
+import { activeMount } from '@/engine/stables/mounts';
 import type { StoredActiveMission } from '@/engine/save/schema';
 import { bark, type BarkMoment } from '@/data/barks';
 import { monster as monsterById } from '@/data/monsters';
@@ -30,6 +31,7 @@ import { KeeperBark } from '@/components/ui/KeeperBark';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { useGameStore } from '@/state/gameStore';
+import { gameNow } from '@/state/clock';
 import type { ClaimResult } from '@/state/missionActions';
 import { MissionCard } from './MissionCard';
 import { MissionProgress } from './MissionProgress';
@@ -258,6 +260,7 @@ export function TavernScreen() {
               dice={hero.dice}
               onSkip={handleSkip}
               onArrived={landMission}
+              mount={activeMount(activity.mount, gameNow())}
             />
           )}
 

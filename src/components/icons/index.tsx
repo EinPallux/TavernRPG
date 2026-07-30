@@ -111,6 +111,73 @@ export const StablesIcon = (props: IconProps) => (
   </Glyph>
 );
 
+/* ── The stalls ──────────────────────────────────────────────────────────────────
+ *
+ * Four animals that have to be told apart in a row at ~34px. Whole-body horses do not survive
+ * that size — the legs collapse into hatching — so all four are **head profiles** on a shared
+ * silhouette, differentiated by the one feature each is named for: the mule's ears, the
+ * courser's mane, the warhorse's chanfron, the griffin's beak and wing. Same trick as the
+ * horseshoe standing in for the Stables itself.
+ *
+ * Real mount art drops in over these via the override manifest (`art/mounts/<id>.png`,
+ * asset-pipeline §3).
+ */
+
+/**
+ * The shared face, seen head-on. Front-on beats a profile here: at 34px a profile's jaw and
+ * neck merge into one blob, while two eyes and a muzzle stay legible down to about 16px.
+ */
+const FACE = 'M8 7.4q4-1.9 8 0l-1 8.2q-3 3.3-6 0Z';
+const EYES = 'M10.2 9.9h.01M13.8 9.9h.01';
+const NOSTRILS = 'M11 14.6h.01M13 14.6h.01';
+
+/** Pack Mule — the ears are the whole joke, and the only thing that needs to survive 34px. */
+export const MuleIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d={FACE} />
+    <path d={EYES} strokeWidth={2.2} />
+    <path d={NOSTRILS} strokeWidth={1.8} opacity={0.6} />
+    {/* Absurdly tall, and leaning out. */}
+    <path d="M8.4 7.6Q5.2 4 6 1.4q2.9 1.1 4 5M15.6 7.6Q18.8 4 18 1.4q-2.9 1.1-4 5" />
+  </Glyph>
+);
+
+/** Dappled Courser — short pricked ears and a forelock; nothing to slow her down. */
+export const CourserIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d={FACE} />
+    <path d={EYES} strokeWidth={2.2} />
+    <path d={NOSTRILS} strokeWidth={1.8} opacity={0.6} />
+    <path d="M8.8 7.1 8 3.2l2.9 3M15.2 7.1 16 3.2l-2.9 3" />
+    {/* Forelock, swept by the wind she makes. */}
+    <path d="M12 6.2q.4-2.6 2.6-3.6" opacity={0.75} />
+  </Glyph>
+);
+
+/** Armoured Warhorse — a chanfron down the face and a plume over it. */
+export const WarhorseIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d={FACE} />
+    {/* The plate reads as armour even when nothing else does. */}
+    <path d="M10.3 7.6h3.4l-.7 8.2h-2Z" />
+    <path d="M8.8 7.1 8 3.4l2.6 2.8M15.2 7.1 16 3.4l-2.6 2.8" />
+    <path d="M12 6q0-3.4 2.8-4.4-.3 3.2-1.4 4.6" />
+  </Glyph>
+);
+
+/** Royal Griffin — a hooked beak where the muzzle should be, and the wing you paid for. */
+export const GriffinIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d="M7.6 8.6q4.4-3 8.8 0-.4 5-4.4 6-4-1-4.4-6Z" />
+    <path d="M9.8 10.4h.01M14.2 10.4h.01" strokeWidth={2.2} />
+    {/* Beak — the one stroke that says "not a horse". */}
+    <path d="M12 13.4v4.4q2.2-.6 2-3" />
+    {/* Brow, and the raised wing. */}
+    <path d="M8.6 9.2q3.4-1.6 6.8 0" opacity={0.6} />
+    <path d="M16.4 8.2q2-3.6 5.4-4.4-.6 4.6-3.4 7" />
+  </Glyph>
+);
+
 export const PawIcon = (props: IconProps) => (
   <Glyph {...props}>
     <ellipse cx="8" cy="7.5" rx="2" ry="2.5" />
@@ -290,6 +357,10 @@ export const ICONS = {
   gem: GemIcon,
   anvil: AnvilIcon,
   stables: StablesIcon,
+  mule: MuleIcon,
+  courser: CourserIcon,
+  warhorse: WarhorseIcon,
+  griffin: GriffinIcon,
   paw: PawIcon,
   arena: ArenaIcon,
   laurel: LaurelIcon,

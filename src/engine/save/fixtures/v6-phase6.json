@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 6,
+  "savedAt": 1786542000000,
+  "slot": 1,
+  "worldSeed": 559012338,
+  "clock": {
+    "lastSeen": 1786542000000,
+    "clampCount": 0
+  },
+  "settings": {
+    "navCollapsed": true,
+    "motion": "system",
+    "sfxEnabled": true,
+    "musicEnabled": true,
+    "volume": 0.7,
+    "battleSpeed": 2,
+    "battleSkipDefault": false
+  },
+  "hero": {
+    "name": "Odo Marchand",
+    "classId": "bard",
+    "level": 18,
+    "xp": 22400,
+    "trained": {
+      "str": 0,
+      "dex": 0,
+      "int": 22,
+      "con": 0,
+      "lck": 0
+    },
+    "gold": 8786,
+    "dice": 4,
+    "equipment": {
+      "weapon": {
+        "uid": "itm-6fqpt-2r84k",
+        "slot": "weapon",
+        "rarity": "rare",
+        "level": 18,
+        "classLock": "bard",
+        "name": "Silverpine Tabor of the Ember",
+        "iconId": "drum",
+        "baseId": "b-tabor",
+        "attrs": {
+          "int": 16,
+          "str": 9
+        },
+        "weapon": {
+          "min": 49,
+          "max": 82
+        },
+        "value": 1485,
+        "scrapYield": {
+          "scrap": 0,
+          "essence": 4,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      "chest": {
+        "uid": "itm-srgi-4j3mx",
+        "slot": "chest",
+        "rarity": "uncommon",
+        "level": 18,
+        "name": "Sturdy Hauberk of the Owl",
+        "iconId": "chestplate",
+        "baseId": "g-hauberk",
+        "attrs": {
+          "int": 17
+        },
+        "armour": 142,
+        "value": 653,
+        "scrapYield": {
+          "scrap": 8,
+          "essence": 0,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      "boots": {
+        "uid": "itm-9pdjs-3bvnv",
+        "slot": "boots",
+        "rarity": "rare",
+        "level": 18,
+        "name": "Storm-touched Sabatons of the Magpie",
+        "iconId": "boots",
+        "baseId": "g-sabatons",
+        "attrs": {
+          "lck": 14,
+          "int": 7
+        },
+        "armour": 88,
+        "value": 1485,
+        "scrapYield": {
+          "scrap": 0,
+          "essence": 4,
+          "starmetal": 0
+        },
+        "locked": false
+      }
+    },
+    "backpack": [
+      {
+        "uid": "itm-6ifft-2cp0u",
+        "slot": "weapon",
+        "rarity": "common",
+        "level": 1,
+        "classLock": "bard",
+        "name": "Chipped Warhorn",
+        "iconId": "horn",
+        "baseId": "b-warhorn",
+        "attrs": {
+          "con": 2
+        },
+        "weapon": {
+          "min": 4,
+          "max": 6
+        },
+        "value": 6,
+        "scrapYield": {
+          "scrap": 3,
+          "essence": 0,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      {
+        "uid": "itm-57ijr-3a8km",
+        "slot": "chest",
+        "rarity": "common",
+        "level": 1,
+        "name": "Plain Jerkin",
+        "iconId": "chestplate",
+        "baseId": "g-jerkin",
+        "attrs": {
+          "str": 2
+        },
+        "armour": 6,
+        "value": 6,
+        "scrapYield": {
+          "scrap": 4,
+          "essence": 0,
+          "starmetal": 0
+        },
+        "locked": false
+      },
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "satchel": [],
+    "createdAt": 1786531200000
+  },
+  "activity": {
+    "vigor": 40,
+    "alesToday": 1,
+    "freeAlesToday": 0,
+    "alesHeld": 2,
+    "board": [
+      {
+        "id": "2026-08-14:0:fogmoor-marsh:hags-errand",
+        "zoneId": "fogmoor-marsh",
+        "monsterId": "hags-errand",
+        "blurbId": "old-debt",
+        "backdropIndex": 51,
+        "seed": 4164915122,
+        "monsterLevel": 18
+      },
+      {
+        "id": "2026-08-14:2:old-kings-road:toll-gang",
+        "zoneId": "old-kings-road",
+        "monsterId": "toll-gang",
+        "blurbId": "rumour",
+        "backdropIndex": 60,
+        "seed": 2174219222,
+        "monsterLevel": 20
+      }
+    ],
+    "boardDay": "2026-08-14",
+    "boardRerollsToday": 1,
+    "mission": null,
+    "pendingMission": null,
+    "lastProcessedDay": "2026-08-14",
+    "missionsCompleted": 37,
+    "patrol": {
+      "startedAt": 1786531200000,
+      "endsAt": 1786560000000,
+      "hours": 8,
+      "heroLevel": 18
+    },
+    "patrolsCompleted": 4
+  }
+}

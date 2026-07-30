@@ -17,6 +17,7 @@ import { acceptMission, resolveMission, skipMissionTimer } from '@/engine/missio
 import { missionPhase, type MissionSpoils } from '@/engine/missions/types';
 import { ALE_DICE_COST, ALE_VIGOR, type MissionDuration } from '@/engine/progression/rewards';
 import { canDrinkAle, processResets, vigorCeiling } from '@/engine/reset/resetEngine';
+import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
 import type { BattleResult } from '@/engine/combat/types';
@@ -91,6 +92,10 @@ export function accept(
   const offer = activity.board.find((entry) => entry.id === offerId);
   if (!offer) return refuse({ kind: 'nothing-to-do' });
 
+  // A mount shortens the road and nothing else: the Vigor cost below is still `duration`, and
+  // `resolveMission` still prices the rewards off `duration` (shops spec §4).
+  const mount = activeMount(activity.mount, now);
+
   const result = acceptMission({
     offer,
     duration,
@@ -98,6 +103,7 @@ export function accept(
     vigor: activity.vigor,
     now,
     missionRunning: false,
+    ...(mount ? { durationMultiplier: 1 - mount.speedBonus } : {}),
   });
 
   if (!result.ok) {

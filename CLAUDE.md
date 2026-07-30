@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–3 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–7 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -33,8 +33,22 @@ feedback, edge cases and tests. Deployed on Vercel.
   unarmed hero cannot win anything), and the low-level monster **jitter grace band** keeps a
   brand-new player's first missions winnable.
 
-385 unit tests + 52 e2e green. Next work: `ROADMAP.md` **Phase 6 (Patrol & Economy Pass 1)** —
-Hildy's shift screen, mission↔patrol exclusivity, and the first economy simulation.
+- **Phase 6:** the City Watch and the first economy simulation — `engine/patrol/` (a shift is
+  three numbers and a level; earnings are *computed from the clock, never accumulated*),
+  `state/patrolActions.ts`, the two-faced patrol screen, `engine/economy/simulate.ts` + 15 CI
+  bands, `/dev/economy`, `GatedPlace` (gates enforced where a room renders, not only where the
+  nav rail links), and save schema v6. The sim found the XP curve was ~10× too slow and, once
+  fixed, that gear supply could not keep up — hence the weapon pity floor in `items/drops.ts`.
+
+- **Phase 7:** commerce — `engine/shops/stock.ts` (day-seeded shelves with a *guaranteed* mix, so
+  Bram always has a weapon), `engine/items/dispose.ts` (one path for sell + scrap that quotes
+  before it acts), `engine/stables/mounts.ts` (7-day rentals; renewing extends, switching
+  replaces), one `ShopScreen` serving both keepers, the Stables, economy sim pass 2, and save
+  schema v7. Shop restock joined the Reset Engine rather than each shop checking the date.
+
+552 unit tests + 91 e2e green. Next work: `ROADMAP.md` **Phase 8 (World Simulation Core)** —
+1,500 seeded bots, 60 guilds, progression ticks with LoD reconciliation, the ladder service and
+the Town Crier feed.
 
 **Before touching class constants or monster archetypes:** run `npm run balance`. The numbers in
 `src/data/classes.ts` were solved for, not chosen, and the bands in
@@ -53,13 +67,16 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 
 `src/engine/` pure logic — `rng`, `clock`, `save/` (schema + migrations), `progression/`
 (xp, stats, gates, rewards), `items/` (types, generate, drops, starterKit), `hero/`
-(actions, derived), `combat/`, `missions/` (board, lifecycle), `reset/` ·
-`src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks ·
+(actions, derived), `combat/`, `missions/` (board, lifecycle), `patrol/`, `shops/`, `stables/`,
+`economy/`, `reset/` ·
+`src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
+patrolLog, mounts, shopBarks ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern}/` · `src/app/(game)/<place>/` one route per
-place · `src/styles/motion.ts` springs.
-Run `/dev/kit` for every component state; the character screen's dev drawer conjures gear,
-levels and gold while loot sources are still being built.
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables}/` ·
+`src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
+Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
+(the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts). The character screen's
+dev drawer conjures gear, levels and gold while loot sources are still being built.
 
 ## Read before working (in order)
 
@@ -109,8 +126,9 @@ levels and gold while loot sources are still being built.
   (Keep-a-Changelog).
 - Phase "done" = acceptance criteria in `ROADMAP.md` demonstrated + tests green + docs updated +
   deployed preview plays clean.
-- Commands (after Phase 0 lands): `npm run dev` / `build` / `test` / `test:e2e` / `lint` /
-  `assets:manifest` — keep this list current as scripts appear.
+- Commands: `npm run dev` / `build` / `test` / `test:e2e` / `lint` / `typecheck` / `format` /
+  `verify` (typecheck → lint → test → build) / `balance` (combat harness) / `economy` (economy
+  sim) / `assets:sync` — keep this list current as scripts appear.
 
 ## Canon quick-reference (avoid re-deciding)
 

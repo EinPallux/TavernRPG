@@ -79,6 +79,28 @@ export const MIGRATIONS: readonly Migration[] = [
       return { ...data, activity: { ...DEFAULT_ACTIVITY } };
     },
   },
+  {
+    from: 5,
+    to: 6,
+    describe: 'Phase 6: add the City Watch patrol shift',
+    migrate: (data) => {
+      // Additive, and additive *inside* the activity slice — everything the player has in
+      // flight (their board, a running mission, their Vigor) carries through untouched.
+      const activity = (data['activity'] ?? { ...DEFAULT_ACTIVITY }) as Record<string, unknown>;
+      return { ...data, activity: { ...activity, patrol: null, patrolsCompleted: 0 } };
+    },
+  },
+  {
+    from: 6,
+    to: 7,
+    describe: 'Phase 7: add shop shelves and the mount stall',
+    migrate: (data) => {
+      // Additive again. An empty `shops` map is exactly what a player sees the morning after a
+      // restock — the shelves draw lazily on first visit — so nobody arrives to a broken shop.
+      const activity = (data['activity'] ?? { ...DEFAULT_ACTIVITY }) as Record<string, unknown>;
+      return { ...data, activity: { ...activity, shops: {}, mount: null } };
+    },
+  },
 ];
 
 export type MigrationFailure =

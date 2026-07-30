@@ -9,7 +9,8 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { addItem, createHero, equipItem } from '@/engine/hero/actions';
+import { addItem, createHero, equipItem, trainAttribute } from '@/engine/hero/actions';
+import { compareItem } from '@/engine/hero/derived';
 import { generateItem } from '@/engine/items/generate';
 import { createRng } from '@/engine/rng';
 import { monsterStatBudget } from '@/engine/combat/combatant';
@@ -29,6 +30,20 @@ const NOW = new Date('2026-07-29T10:00:00').getTime();
 
 const board = (heroLevel = 12, rerollCount = 0) =>
   drawBoard({ worldSeed: WORLD_SEED, dayKey: DAY, heroLevel, rerollCount });
+
+/**
+ * Would wearing this beat what is already in the slot? The judgement a player makes on sight.
+ *
+ * Damage is weighted heavily on purpose: it is linear in the weapon and it is what actually
+ * decides fights. An earlier version of this helper summed only health, armour and attributes,
+ * so a hero would leave a vastly better weapon sitting in their bag — and the test dutifully
+ * reported the resulting losses as a balance problem.
+ */
+function isUpgrade(hero: ReturnType<typeof heroAt>, item: Parameters<typeof equipItem>[1]) {
+  const delta = compareItem(hero, item);
+  const attrs = Object.values(delta.attributes ?? {}).reduce<number>((s, v) => s + (v ?? 0), 0);
+  return delta.health + delta.armour + delta.damageAverage * 20 + attrs > 0;
+}
 
 /** A hero as the game actually creates one: with their starter kit on. */
 function heroAt(level: number, classId: ClassId = 'hunter') {
@@ -429,7 +444,15 @@ describe('resolveMission', () => {
         const levelled = applyXp(hero.level, hero.xp, spoils.xp);
         hero = { ...hero, level: levelled.level, xp: levelled.xp };
 
-        // Equip the drop when it is an upgrade, which is what any player does.
+        // Take the gold and spend it, which is the other half of staying on curve. A hero who
+        // banks their winnings is not a player, and Phase 6's faster levelling makes the
+        // difference stark: they outrun their own gear inside a fortnight.
+        hero = { ...hero, gold: hero.gold + spoils.gold };
+        const attribute = CLASSES.find((c) => c.id === definition.id)!.mainStat;
+        hero = trainAttribute(hero, i % 3 === 0 ? 'con' : attribute, 50).hero;
+
+        // Equip the drop when it is an upgrade — including over something already worn, which
+        // is the whole point of a drop.
         if (spoils.item) {
           const item = generateItem({
             slot: spoils.item.slot,
@@ -439,7 +462,9 @@ describe('resolveMission', () => {
             rng: createRng(i + 1, 'playthrough:item'),
           });
           hero = addItem(hero, item).hero;
-          if (!hero.equipment[item.slot]) hero = equipItem(hero, item);
+
+          const worn = hero.equipment[item.slot];
+          if (!worn || isUpgrade(hero, item)) hero = equipItem(hero, item);
         }
       }
 

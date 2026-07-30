@@ -19,6 +19,7 @@ import {
   goldPerVigor,
   isMissionDuration,
   missionPayout,
+  vigorPerLevel,
   xpPatrolPerHour,
   xpPerVigor,
 } from './rewards';
@@ -48,18 +49,31 @@ describe('goldPerVigor', () => {
 });
 
 describe('xpPerVigor', () => {
-  it('is a fixed share of the level’s own requirement', () => {
+  it('is a share of the level’s own requirement, set by the Vigor-per-level curve', () => {
     for (const level of [1, 10, 25, 50, 100]) {
-      expect(xpPerVigor(level, xpNeeded(level))).toBeCloseTo(xpNeeded(level) / 320, 6);
+      expect(xpPerVigor(level, xpNeeded(level))).toBeCloseTo(
+        xpNeeded(level) / vigorPerLevel(level),
+        6,
+      );
     }
   });
 
-  it('spends a full day of Vigor for roughly a third of a level', () => {
-    // 100 Vigor / 320 ≈ 0.31 of a level per day from missions alone, at every level.
-    for (const level of [1, 20, 60, 120]) {
-      const dailyXp = xpPerVigor(level, xpNeeded(level)) * VIGOR_PER_DAY;
-      expect(dailyXp / xpNeeded(level)).toBeCloseTo(0.3125, 4);
+  it('costs more Vigor per level the higher you climb', () => {
+    // Retuned in Phase 6. The old flat /320 made every level cost the same number of
+    // missions, which is not a curve — and put level 10 on day 29.
+    for (const level of [1, 10, 40, 90]) {
+      expect(vigorPerLevel(level + 10)).toBeGreaterThan(vigorPerLevel(level));
     }
+    expect(vigorPerLevel(100)).toBeGreaterThan(vigorPerLevel(1) * 3);
+  });
+
+  it('clears the first level inside a day, and the fiftieth in rather more', () => {
+    const earlyShare = (xpPerVigor(1, xpNeeded(1)) * VIGOR_PER_DAY) / xpNeeded(1);
+    const lateShare = (xpPerVigor(50, xpNeeded(50)) * VIGOR_PER_DAY) / xpNeeded(50);
+
+    expect(earlyShare).toBeGreaterThan(1);
+    expect(lateShare).toBeLessThan(earlyShare);
+    expect(lateShare).toBeGreaterThan(0.5);
   });
 });
 

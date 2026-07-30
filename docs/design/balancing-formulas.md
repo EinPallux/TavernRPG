@@ -23,8 +23,19 @@
   - (Exact values, asserted by `src/engine/progression/progression.test.ts`.)
 - No level cap. Level-up: full heal in dungeon context, celebratory FX, +0 free stat points
   (stats are bought with gold — S&F model).
-- Mission XP per Vigor point at level `L`: `xpPerVigor(L) = xpNeeded(L) / 320` `[TUNE]`
-  → ~3.2 levels/day early game from missions alone, slowing naturally as `xpNeeded` outgrows income.
+- Mission XP per Vigor point at level `L`: `xpPerVigor(L) = xpNeeded(L) / vigorPerLevel(L)`,
+  where `vigorPerLevel(L) = 28 + 1.2·L` `[TUNE]`
+  - **Retuned in Phase 6.** The original was a flat `/320`, which made levels-per-day *constant*
+    (100 Vigor → 0.31 levels, at level 2 and at level 200 alike) and put **level 10 — where the
+    last feature gate opens — on day 29**. The prose beside it said "~3.2 levels/day early game",
+    which is `/32`: the shipped constant had an extra zero, and neither value produces a curve.
+  - Growing the divisor with level is what makes it a curve: fast onboarding, a long tail.
+    Measured against §0, missions only, 100 Vigor/day — **L10 day 4 · L25 day 11 · L55 day 34**.
+  - **Known gap:** §0 also wants L100 around day 180. Missions alone reach it around day 88, and
+    no simple divisor fits both ends — §0 implies 1.8 levels/day to L55 and then 0.3 to L100, a
+    6× deceleration. Dailies, arena and dungeons all add XP and will pull every figure *earlier*,
+    so the endgame curve is re-fit in Phase 17 once they are in the economy model. The
+    simulation (`src/engine/economy/economy.test.ts`) measures all four milestones every build.
 - Arena win XP: `12 × xpPerVigor(L)` (first 10 wins/day). Dungeon floor win: `90 × xpPerVigor(L)`.
 - Patrol XP: `4 × xpPerVigor(L)` per hour (deliberately weak vs. missions).
 
@@ -120,6 +131,27 @@ counter triangle exists: Bard > Mage > Hunter > Bard. CI asserts all of it
 | Golden Die from mission | 1.5% per 20-min mission, 0.6% others | — |
 | Dungeon key drop | 6% per mission once dungeon level-gate reached (until key owned) | — |
 | Ale drop | 2% per mission, cap 1/day | — |
+
+**Drop slot weighting and the weapon floor (Phase 6).** Item chance and rarity are as published
+above; *which slot* a drop lands in is not uniform. Weapon 22 / chest 14 / offhand 10 / helmet,
+gloves, boots, belt 9 each / amulet, ring, trinket 6. Damage is linear in the weapon, so a hero
+whose weapon lags loses regardless of the rest of their kit — and with ten slots at a 25% drop
+chance, a uniform roll yields a weapon roughly once every forty missions.
+
+Weighting raises the rate but cannot put a floor under it: measured at every weapon weight from
+22 to 40, at least one class in five still finished a 60-mission run on its **starter weapon**,
+with its win rate sliding from 100% to 40%. So a **pity rule** applies — a hero whose weapon is
+5+ levels behind gets a weapon on their next drop. Pity decides *what* a drop is, never *whether*
+one happens, so the published item chance is untouched. It matters less once Bram's Armory opens
+in Phase 7 and gold can simply buy a weapon; it remains the floor for a player who never shops.
+
+**Shop shelves as built (Phase 7).** Bram's six slots are a *guaranteed mix*, not six rolls:
+1 weapon + 1 offhand (class-locked) + 3 distinct armour pieces + 1 wildcard. Sela's are 2 rings +
+2 amulets + 1 trinket + 1 wildcard jewellery. Only rarity is rolled, off the table above. The
+guarantee is what makes the shop a *fix* for gear supply rather than a second slot machine — a
+player whose weapon has fallen behind can buy one on any day, at any level, for
+`3.2 × itemValue`. Reroll is 1 Golden Die with no free one (unlike the mission board, whose free
+daily reroll exists because the day's *work* must always be there).
 | Pet egg | dungeon firsts & fixed milestones (deterministic, no RNG) | — |
 
 ## 8. Item stat budgets
@@ -141,6 +173,28 @@ mission drops ~0.15 · arena/dungeon/guild milestones ~0.1 amortized.
 **Sinks:** gacha roll 1 · Ale 1 · shop reroll 1 · arena cooldown skip 1 (max 3/day) · Royal Griffin
 6 per 7 days · backpack +5 slots: 10/20/40 (one-time ×3). Target: meaningful weekly tension between
 "roll the banner" vs "ride the Griffin" vs "one more Ale". `[TUNE]`
+
+### Measured shares, Phase 7 (`npm run economy`)
+
+Sixty modelled days, active player (all Vigor, 8h patrol, a Warhorse, two shop pieces a week):
+
+| | share |
+|---|---|
+| **In:** missions | 58.7% |
+| **In:** patrol | 36.9% |
+| **In:** loot sales | 4.4% |
+| **Out:** attribute training | 85.8% |
+| **Out:** mount upkeep | 11.2% |
+| **Out:** shop purchases | 3.1% |
+
+Two things to read off this. Training dominating is **correct** — §2 calls it "the endless one",
+and `statCost`'s `n^1.65` outruns every other sink by design. But **shops at 3.1% are close to
+decoration**: at two pieces a week the markup barely dents a purse that is mostly going into
+attributes anyway. That is not obviously wrong (buying gear is meant to be optional, and the
+frugal control reaches the same level with *more* attribute points), but it means the Armory is
+currently a gear-supply fix rather than a gold sink. `[TUNE]` — revisit in the Phase 17 balance
+pass once the gacha, mounts-at-scale and guild donations are also in `MODELLED_SINKS`; if shops
+should carry more of the sink load, the lever is the 3.2× multiplier, not the stock size.
 
 ## 10. Honor & ladder
 

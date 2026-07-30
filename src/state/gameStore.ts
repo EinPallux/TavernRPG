@@ -32,6 +32,24 @@ import type { ClassId, Item, SlotId } from '@/engine/items/types';
 import type { MissionDuration } from '@/engine/progression/rewards';
 import { createRng, deriveSeed } from '@/engine/rng';
 import {
+  beginPatrol,
+  collectPatrol,
+  type PatrolCollection,
+  type PatrolRefusalReason,
+} from './patrolActions';
+import {
+  buyItem as buyFromShop,
+  refreshShop,
+  rerollShop,
+  sellItem as sellToShop,
+  type PurchaseResult,
+  type SaleResult,
+  type ShopRefusal,
+} from './shopActions';
+import { takeMount, type RentalResult, type StableRefusal } from './stableActions';
+import type { ShopId } from '@/engine/shops/stock';
+import type { MountId } from '@/data/mounts';
+import {
   accept as acceptOffer,
   buyAle as buyAleOn,
   claimMission as claimOn,
@@ -126,6 +144,23 @@ export interface GameStoreState {
   claimMission: (mission: StoredActiveMission) => ClaimResult | null;
   buyAle: () => MissionRefusal | null;
   drinkAle: () => MissionRefusal | null;
+
+  // ── City Watch (Phase 6) ─────────────────────────────────────────────────────────
+  /** Clock on for a 1–12 hour shift. Returns the refusal, or null on success. */
+  startPatrol: (hours: number) => PatrolRefusalReason | null;
+  /** Clock off. Serves both "collect" and "cancel early"; the clock decides which. */
+  collectPatrol: () => PatrolCollection | null;
+
+  // ── Shops & Stables (Phase 7) ────────────────────────────────────────────────────
+  /** Make sure the shop's shelf exists for today. Idempotent; draws lazily on first visit. */
+  openShop: (shopId: ShopId) => void;
+  buyStockItem: (shopId: ShopId, index: number, price: number) => PurchaseResult | ShopRefusal;
+  /** Sell out of the bags. Both shops share the one `disposeItem` backend. */
+  sellItem: (uid: string) => SaleResult | ShopRefusal;
+  /** A fresh shelf for a Golden Die. No free one — unlike the mission board. */
+  rerollShopStock: (shopId: ShopId) => ShopRefusal | null;
+  /** Take a stall at the Stables. Returns the quote so the UI can report what it displaced. */
+  rentMount: (mountId: MountId) => RentalResult | StableRefusal;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -369,6 +404,8 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     acceptMission(offerId, duration) {
       const { save } = get();
       if (!save) return { kind: 'no-hero' };
+      // The other half of exclusivity: a hero on the beat cannot take a contract.
+      if (save.activity.patrol) return { kind: 'mission-running' };
 
       const result = acceptOffer(save, offerId, duration, gameNow());
       if (!result.ok) return result.refusal;
@@ -447,6 +484,89 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       set({ save: result.save });
       void persistNow();
       return null;
+    },
+
+    startPatrol(hours) {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = beginPatrol(save, hours, gameNow());
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return null;
+    },
+
+    collectPatrol() {
+      const { save } = get();
+      if (!save) return null;
+
+      const result = collectPatrol(save, gameNow());
+      if (!result) return null;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    openShop(shopId) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = refreshShop(save, shopId, currentDayKey());
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    buyStockItem(shopId, index, price) {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = buyFromShop(save, shopId, index, price);
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    sellItem(uid) {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = sellToShop(save, uid);
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    rerollShopStock(shopId) {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = rerollShop(save, shopId, currentDayKey());
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return null;
+    },
+
+    rentMount(mountId) {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = takeMount(save, mountId, gameNow());
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
     },
 
     setBattleSpeed(battleSpeed) {

@@ -90,6 +90,49 @@ Backdrop: `patrol_background.png`. Guard-captain **Hildy** hosts.
 - Insufficient Vigor **disables the accept button with a reason on it** rather than failing on
   click — style guide §8. The shorter durations stay live, so the card is never a dead end.
 
+## 6c. As built (Phase 6 — patrol)
+
+- **A shift is three numbers and a level** (`startedAt`, `endsAt`, `hours`, `heroLevel`), and what
+  it has earned is *computed from the clock, never accumulated*. That is the whole reason patrol
+  survives a closed tab with no background timer, and the reason a rewound device clock cannot
+  mint gold — `patrolEarnings` clamps to `[startedAt, endsAt]` at both ends.
+- **Cancelling and collecting are the same call.** The only difference is how much time had been
+  served. An abandoned shift can therefore never be paid by a different rule than a completed
+  one; the report just labels itself `data-early` and says "paid for what you walked".
+- **The level is recorded at signing.** A shift pays what it was worth when it started, so
+  levelling mid-shift neither inflates nor devalues the hours already walked.
+- **Exclusivity lives in the engine, not in a button.** `startShift` refuses while a mission is
+  out and `acceptMission` refuses while on the beat, so the rule holds for every caller rather
+  than only for the control that happens to check. A mission *waiting to be watched* counts as
+  still out — the hero is at the door, not on the beat, and letting patrol start would strand an
+  unwatched fight.
+- **The screen's honesty rule:** the slider's promise must be the payout. `previewEarnings` and
+  `patrolEarnings` are pinned to each other by a unit test at every hour and several levels. A
+  preview that over-promises is worse than no preview.
+- **The gate is enforced where the room renders,** not only where it is linked
+  (`components/shell/GatedPlace.tsx`). The nav rail refusing to link to the watch house was
+  enough while every gated place was a dressed placeholder; it stopped being enough the moment
+  one of them paid real gold, because `/patrol` was still reachable by typing the URL.
+- **Only completed shifts count toward `patrolsCompleted`** — walking off at 90 minutes of twelve
+  is not a shift served, whatever it pays.
+- Log lines are gated by shift length (`data/patrolLog.ts`): the night lines only appear on shifts
+  long enough to have a night in them, and a longer shift tells more of the story. Lines are
+  picked by index off a stable seed, never rolled — same rule as barks.
+
+## 6d. As built (Phase 6 — economy pass 1)
+
+- `engine/economy/simulate.ts` plays modeled days through the **real** formulas and records every
+  coin. It calls the same functions the game does; nothing re-implements a curve. 15 CI bands in
+  `economy.test.ts` cover pacing milestones, the "always slightly broke" purse, patrol staying the
+  fallback, and ledger integrity. `/dev/economy` renders the same ledger day by day.
+- **Pass 1 models only what exists** — missions, patrol, training. Shops (Phase 7), mounts, the
+  gacha and guild bonuses are absent because they are not built, and a sim that invents numbers
+  for unbuilt systems asserts a fiction. Each is added to `MODELLED_FAUCETS`/`MODELLED_SINKS` as
+  it lands, and the bands tighten with it.
+- The sim found the **XP curve was ~10× too slow** on its first run (balancing §1) and, once that
+  was fixed, that **gear supply could not keep up** with the faster levelling — which is what the
+  weapon pity floor in `items/drops.ts` is for until Phase 7's shops close the gap properly.
+
 ## 7. Data hooks
 
 `MissionOffer` {id, zoneId, blurbId, monsterId, seed, durations, rewardsPreview},
