@@ -62,6 +62,17 @@ import {
   type MissionRefusal,
 } from './missionActions';
 import { catchUpWorld, ensureWorld } from './worldActions';
+import {
+  duel as duelWith,
+  rankOfPlayer,
+  refreshDraw,
+  rerollDraw,
+  skipCooldown,
+  type ArenaRefusal,
+  type DuelTransition,
+} from './arenaActions';
+import type { RaidResult } from '@/engine/arena/raids';
+import type { WeeklyPayout } from '@/engine/arena/payout';
 import type { AbsenceSummary } from '@/engine/world/crier';
 import {
   clockSnapshot,
@@ -173,6 +184,23 @@ export interface GameStoreState {
   dismissAbsenceSummary: () => void;
   /** Advance the simulation to now. The online tick; also safe to call idly. */
   tickWorld: () => void;
+  /** The attacks the player slept through, set alongside the absence card. */
+  overnightRaids: RaidResult | null;
+
+  // ── The Proving Grounds (Phase 9) ────────────────────────────────────────────────
+  /** Make sure today's three opponents exist. Idempotent; draws lazily on first visit. */
+  openArena: () => void;
+  /** Fight one of them, or a revenge target. Returns the log for the scene to play. */
+  fightOpponent: (opponentId: number) => DuelTransition | ArenaRefusal;
+  /** A fresh three. Free once the cooldown has run out, a die before that. */
+  rerollArenaDraw: () => ArenaRefusal | null;
+  /** Buy past the cooldown: one die, three times a day. */
+  skipArenaCooldown: () => ArenaRefusal | null;
+  /** Dice paid out for weeks that closed while the player was away, for the Sunday card. */
+  pendingPayouts: readonly WeeklyPayout[];
+  dismissPayouts: () => void;
+  /** Remember the rank the Hall of Fame was last opened at, for the "▲ 12" chip. */
+  markLadderSeen: () => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -337,7 +365,12 @@ export const useGameStore = create<GameStoreState>((set, get) => {
           const caught = catchUpWorld(ensureWorld(current, gameNow()), gameNow());
           if (caught.save === current) return;
 
-          set({ save: caught.save, absenceSummary: caught.summary });
+          set({
+            save: caught.save,
+            absenceSummary: caught.summary,
+            // Only worth reporting if someone actually came for them.
+            overnightRaids: caught.raids && caught.raids.grudges.length > 0 ? caught.raids : null,
+          });
         }, 0);
       } catch (cause) {
         set({
@@ -456,6 +489,11 @@ export const useGameStore = create<GameStoreState>((set, get) => {
                   ? `A new day at the Gilded Tankard. ${result.vigorForfeited} Vigor went unspent.`
                   : 'A new day at the Gilded Tankard. Your Vigor is full again.',
             }
+          : {}),
+        // Queued rather than announced: the Sunday purse deserves its own card, not a toast that
+        // races the new-day one.
+        ...(result.payouts.length > 0
+          ? { pendingPayouts: [...get().pendingPayouts, ...result.payouts] }
           : {}),
       });
       void persistNow();
@@ -630,9 +668,10 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     },
 
     absenceSummary: null,
+    overnightRaids: null,
 
     dismissAbsenceSummary() {
-      set({ absenceSummary: null });
+      set({ absenceSummary: null, overnightRaids: null });
     },
 
     tickWorld() {
@@ -643,6 +682,72 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       if (caught.save === save) return;
 
       set({ save: caught.save });
+      void persistNow();
+    },
+
+    // ── The Proving Grounds (Phase 9) ──────────────────────────────────────────────
+
+    pendingPayouts: [],
+
+    dismissPayouts() {
+      set({ pendingPayouts: [] });
+    },
+
+    openArena() {
+      const { save } = get();
+      if (!save) return;
+
+      const next = refreshDraw(save, currentDayKey(), gameNow());
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    fightOpponent(opponentId) {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const outcome = duelWith(save, opponentId, gameNow());
+      if (!outcome.ok) return outcome.refusal;
+
+      set({ save: outcome.transition.save });
+      void persistNow();
+      return outcome.transition;
+    },
+
+    rerollArenaDraw() {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = rerollDraw(save, currentDayKey(), gameNow());
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return null;
+    },
+
+    skipArenaCooldown() {
+      const { save } = get();
+      if (!save) return { kind: 'no-hero' };
+
+      const result = skipCooldown(save, gameNow());
+      if (!result.ok) return result.refusal;
+
+      set({ save: result.save });
+      void persistNow();
+      return null;
+    },
+
+    markLadderSeen() {
+      const { save } = get();
+      if (!save) return;
+
+      const rank = rankOfPlayer(save);
+      if (rank === 0 || save.arena.lastSeenRank === rank) return;
+
+      set({ save: { ...save, arena: { ...save.arena, lastSeenRank: rank } } });
       void persistNow();
     },
 

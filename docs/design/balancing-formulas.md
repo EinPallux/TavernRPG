@@ -210,6 +210,34 @@ sorted by honor, and rank 1 may hold less than rank 3. That is correct, not a bu
 position, honor is the score.** They only coincide at world generation, where the ladder is
 seeded from honor.
 
+**As built (Phase 9) — the player's side of it.**
+
+| Lever | Value | Where |
+| --- | --- | --- |
+| Opponents drawn | 3, one above / level / below | `arena/arena.ts` `DRAW_SIZE` |
+| Draw band | ±4% of ladder position, floor 8 rungs | `DRAW_BAND_SHARE`, `MIN_DRAW_BAND` |
+| Cooldown | 10 min; skip 1 die, 3/day | `COOLDOWN_MS`, `MAX_SKIPS_PER_DAY` |
+| Reroll | free after the bell, else 1 die | `rerollCost` |
+| Rewarded wins | 10/day; past that the rank still swaps | `REWARDED_WINS_PER_DAY` |
+| Arena win purse | `25 × goldPerVigor(L)`, `12 × xpPerVigor(L)` | `arena/duel.ts` |
+| Milestone dice | 500→1, 100→2, 10→3, 1→5, once ever | `MILESTONE_DICE` |
+| Bot attacks | 1/day base, hard cap 2, scaled by rivalry heat | `arena/raids.ts` |
+| Revenge queue | 5 unanswered losses | `REVENGE_QUEUE_CAP` |
+| Weekly payout | Sunday: rank 1→5, ≤10→3, ≤100→2, ≤500→1 dice | `arena/payout.ts` |
+| Guild honor | sum of the **top twenty** members `[TUNE]` | `world/halls.ts` |
+| Newcomer honor | `max(10, round(50 − size·0.002))` | `world/ladder.ts` |
+
+Two rules the numbers above do not show:
+
+- **A day of raids rolls once, ever.** The attack is seeded by the day index, so re-running a day
+  picks the same attacker and replays the same fight — which *applies the honor loss again*.
+  `arena.lastRaidDay` is the high-water mark that stops a page reload being an attack.
+- **Who may attack whom is asymmetric.** The band is 60 rungs up and 15 down, so "the ranks I can
+  reach" (`attackableRanks`) and "the ranks that can reach me" (`attackersOf`) are different sets.
+  A player at the very foot of the ladder has nobody below them and is left alone, which is right
+  twice over: beating last place gains a bot nothing, and a new hero should not be raided on their
+  first morning.
+
 ## 11. Guild economics
 
 - Treasury/Drillmaster: 100 upgrade steps each; step `s` costs `500 · s^1.7` gold donated (any

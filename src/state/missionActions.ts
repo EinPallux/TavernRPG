@@ -17,6 +17,8 @@ import { acceptMission, resolveMission, skipMissionTimer } from '@/engine/missio
 import { missionPhase, type MissionSpoils } from '@/engine/missions/types';
 import { ALE_DICE_COST, ALE_VIGOR, type MissionDuration } from '@/engine/progression/rewards';
 import { canDrinkAle, processResets, vigorCeiling } from '@/engine/reset/resetEngine';
+import type { WeeklyPayout } from '@/engine/arena/payout';
+import { refreshArenaDay } from './arenaActions';
 import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
@@ -54,9 +56,20 @@ export function refreshDay(
   save: SaveFile,
   today: string,
   daysBetween: (from: string, to: string) => readonly string[],
-): { readonly save: SaveFile; readonly didReset: boolean; readonly vigorForfeited: number } {
+): {
+  readonly save: SaveFile;
+  readonly didReset: boolean;
+  readonly vigorForfeited: number;
+  /** Weeks that closed while the player was away (arena spec §3). Usually empty. */
+  readonly payouts: readonly WeeklyPayout[];
+} {
   const outcome = processResets(save.activity, today, daysBetween);
   let next = { ...save, activity: outcome.state as Activity };
+
+  // The arena's counters and the Sunday payout hang off the same boundaries. They are handed the
+  // list rather than asking the clock: one owner decides it is tomorrow (daily-loop spec §4).
+  const arenaDay = refreshArenaDay(next, outcome.daysProcessed, outcome.didReset);
+  next = arenaDay.save;
 
   // A board is drawn lazily: on the first visit of the day, after a reroll, or after a reset
   // nulled it. Drawing it here rather than at midnight means a player who never opens the
@@ -75,7 +88,12 @@ export function refreshDay(
     });
   }
 
-  return { save: next, didReset: outcome.didReset, vigorForfeited: outcome.vigorForfeited };
+  return {
+    save: next,
+    didReset: outcome.didReset,
+    vigorForfeited: outcome.vigorForfeited,
+    payouts: arenaDay.payouts,
+  };
 }
 
 /** Sign a contract: spend the Vigor, start the clock. */

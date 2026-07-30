@@ -235,13 +235,17 @@ Three things the phase forced outside its own scope:
 - A new hero met a blank Crier board, so the world is now generated with its clock a day back and
   that day is simulated on arrival.
 
-## Phase 9 — Arena & Hall of Fame (M) 🔲
+## Phase 9 — Arena & Hall of Fame (M) ✅
 Opponent draw (±rank band), threat reads, cooldown/skip, rewarded-wins caps, rank-swap + honor
 math via ladder service, revenge queue (sim attacks land Phase 8's hooks), HoF tabs (virtualized
 heroes list, guilds, legends archive), weekly payout, milestone stingers.
 **Accept:** fighting a bot uses its materialized combatant (spot-check fairness harness); ladder
 churn visible overnight; 1,501-row list scrolls at 60fps; weekly payout fires exactly once across
 DST/multi-day absence fixtures.
+**Done 2026-07-30.** `engine/arena/` (draw, threat reads, duel, raids, payout), the player seated
+on the ladder at world-raise, `state/arenaActions.ts`, the Proving Grounds with duelling posters
+and the rank swap shown as sliding rungs, the Hall of Fame's three tabs over a hand-rolled
+virtualized list (35 rows mounted of 1,501), `engine/world/halls.ts`, and save schema v9.
 
 ## Phase 10 — Guilds (L) 🔲
 Browse/apply/join (bot decision delays), founding flow (banner builder), roster & roles, Treasury/

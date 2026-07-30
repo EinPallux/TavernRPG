@@ -24,6 +24,8 @@ import {
   type FeedEntry,
 } from '@/engine/world/crier';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
+import { applyRaids, invalidateDrawOnDrift, seatPlayer } from './arenaActions';
+import type { RaidResult } from '@/engine/arena/raids';
 import type { SaveFile, StoredWorld } from '@/engine/save/schema';
 
 const DAY = 86_400_000;
@@ -86,12 +88,18 @@ export function playerRank(world: StoredWorld | null): number {
  */
 export const WORLD_WARMUP_MS = DAY;
 
-/** Raise the world if this save has none. Idempotent. */
+/**
+ * Raise the world if this save has none, and make sure the player has a seat on the ladder.
+ *
+ * Both halves are idempotent, and the seating half runs even when the world already exists —
+ * every save written before Phase 9 has 1,500 heroes and no room for the player among them.
+ */
 export function ensureWorld(save: SaveFile, now: number): SaveFile {
-  if (save.world || !save.hero) return save;
+  if (!save.hero) return save;
+  if (save.world) return seatPlayer(save);
 
   const world = generateWorld(save.worldSeed, now - WORLD_WARMUP_MS);
-  return { ...save, world: toStored(world, [], []) };
+  return seatPlayer({ ...save, world: toStored(world, [], []) });
 }
 
 export interface CatchUp {
@@ -99,6 +107,8 @@ export interface CatchUp {
   /** Null when nothing was simulated. */
   readonly summary: AbsenceSummary | null;
   readonly events: readonly SimEvent[];
+  /** The attacks the player slept through, if any (arena spec §3). */
+  readonly raids: RaidResult | null;
   /** Wall-clock cost, so the dev harness can show the budget being met. */
   readonly elapsedMs: number;
 }
@@ -112,14 +122,14 @@ export interface CatchUp {
 export function catchUpWorld(save: SaveFile, now: number): CatchUp {
   const stored = save.world;
   if (!stored || !save.hero) {
-    return { save, summary: null, events: [], elapsedMs: 0 };
+    return { save, summary: null, events: [], raids: null, elapsedMs: 0 };
   }
 
   const startedAt = performance.now();
   const engine = toEngine(stored);
   const absence = now - engine.lastSimAt;
   if (absence <= 0) {
-    return { save, summary: null, events: [], elapsedMs: 0 };
+    return { save, summary: null, events: [], raids: null, elapsedMs: 0 };
   }
 
   const rank = playerRank(stored);
@@ -158,8 +168,18 @@ export function catchUpWorld(save: SaveFile, now: number): CatchUp {
     days: Math.max(1, Math.ceil(days)),
   });
 
-  // Rank drift: standing still on a moving ladder costs places, and the card should say so.
-  const rankAfter = result.world.ladder.indexOf(PLAYER_LADDER_ID);
+  // The bots that came for the player specifically, after the sim has moved everyone else. They
+  // resolve last so the attackers are drawn from the ladder as it actually ended up.
+  const simulated: SaveFile = {
+    ...save,
+    world: toStored(result.world, rivalUpdate.rivals, feed),
+  };
+  const raided = applyRaids(simulated, engine.lastSimAt, now);
+
+  // Rank drift: standing still on a moving ladder costs places, and the card should say so. Read
+  // after the raids, because being knocked down three rungs overnight is exactly the drift the
+  // player wants accounted for.
+  const rankAfter = raided.save.world?.ladder.indexOf(PLAYER_LADDER_ID) ?? -1;
   const drift = rank > 0 && rankAfter !== -1 ? rank - (rankAfter + 1) : 0;
 
   const summary =
@@ -168,9 +188,13 @@ export function catchUpWorld(save: SaveFile, now: number): CatchUp {
       : null;
 
   return {
-    save: { ...save, world: toStored(result.world, rivalUpdate.rivals, feed) },
+    // A rank that moved leaves the arena board stale — it was drawn from a band around where the
+    // player used to be. Cleared here rather than in the screen so it holds however the player
+    // arrives.
+    save: invalidateDrawOnDrift(raided.save, rank),
     summary,
     events: result.events,
+    raids: raided.raids,
     elapsedMs: performance.now() - startedAt,
   };
 }

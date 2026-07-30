@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–8 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–9 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -52,8 +52,20 @@ feedback, edge cases and tests. Deployed on Vercel.
   board, the absence card, `/dev/world`, and save schema v8. Also fixed the autosave, which was
   losing writes once the save grew (see below).
 
-651 unit tests + 104 e2e green. Next work: `ROADMAP.md` **Phase 9 (Arena & Hall of Fame)** — the
-player joins the ladder they have been watching.
+- **Phase 9:** the player joins the ladder — `engine/arena/` (`arena` draw + threat reads,
+  `duel` through the same `resolveLadderFight` the sim uses, `raids`, `payout`), the seat itself
+  (`seatPlayer` at world-raise, which is what finally switched *rivals* on), `state/arenaActions.ts`,
+  the Proving Grounds (duelling posters, the rank swap shown as sliding rungs, milestone stingers),
+  the Hall of Fame's three tabs over a hand-rolled virtualized list, `engine/world/halls.ts`, and
+  save schema v9. Three real bugs fell out of building it — see the CHANGELOG's Phase 9 *Fixed*.
+
+752 unit tests + 113 e2e green. Next work: `ROADMAP.md` **Phase 10 (Guilds)**.
+
+**Two arena rules that look like tidiness and are not.** A day's raid is seeded by its day index,
+so re-running it replays the same fight *and re-applies the honor loss* — `arena.lastRaidDay` is
+what stops a page reload being an attack. And the attack band is asymmetric (60 rungs up, 15
+down), so `attackableRanks` (who I can reach) and `attackersOf` (who can reach me) are genuinely
+different functions; using one for the other is a mistake that reads as correct.
 
 **The autosave is serialised and coalescing** (`gameStore.ts`). It was parallel with a guard that
 protected the store but not the disk; at 145 KB an older write landed last and ate a level. If
@@ -81,11 +93,12 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 `src/engine/` pure logic — `rng`, `clock`, `save/` (schema + migrations), `progression/`
 (xp, stats, gates, rewards), `items/` (types, generate, drops, starterKit), `hero/`
 (actions, derived), `combat/`, `missions/` (board, lifecycle), `patrol/`, `shops/`, `stables/`,
-`world/` (identity, generate, materialize, ladder, simulate, rivals, crier), `economy/`, `reset/` ·
+`world/` (identity, generate, materialize, ladder, simulate, rivals, crier, halls), `arena/`
+(arena, duel, raids, payout), `economy/`, `reset/` ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
-patrolLog, mounts, shopBarks, names, guilds, legends, crierTemplates ·
+patrolLog, mounts, shopBarks, arenaBarks, names, guilds, legends, crierTemplates ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world}/` ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,
