@@ -65,6 +65,20 @@ export const ICON_IDS = [
   'amulet',
   'ring',
   'trinket',
+  // the twelve companions (pets spec §1) — drawn for silhouette legibility, since the
+  // Menagerie shows every unowned pet as a dimmed outline
+  'petPup',
+  'petTortoise',
+  'petCat',
+  'petOwl',
+  'petToad',
+  'petBeetle',
+  'petImp',
+  'petRaven',
+  'petFox',
+  'petRatKing',
+  'petWisp',
+  'petSnail',
   // the stalls at the Wandering Stables
   'mule',
   'courser',

@@ -15,10 +15,11 @@ import { CRIER_CATEGORIES, RIVAL_ARCHETYPES } from '@/data/crierTemplates';
 import { CHAT_CATEGORIES } from '@/data/guildChat';
 import { BANNER_COLOURS, GUILD_NAME_MAX, SIGIL_ICONS } from '@/data/guilds';
 import { BANNER_IDS, ROLL_OUTCOMES } from '@/data/banners';
+import { PET_ID_LIST, PET_RARITIES } from '@/data/pets';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 13;
+export const CURRENT_SCHEMA_VERSION = 14;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -275,6 +276,14 @@ export const activitySchema = z.object({
   shops: z.record(z.string(), shopStockSchema),
   /** The mount in the stall, if any (schema v7). */
   mount: mountRentalSchema.nullable(),
+  /**
+   * Missions completed per zone (schema v14).
+   *
+   * Exists for one pet — the Wisp wants forty contracts at the Sunken Chapel — but it is a
+   * *counter of things the player did*, which is the shape every derived-ownership source has to
+   * take. Sparse: a zone the hero has never visited is an absent key, not a zero.
+   */
+  zoneMissions: z.record(z.string(), z.number().int().min(0)),
 });
 
 export const DEFAULT_ACTIVITY: Activity = {
@@ -293,6 +302,7 @@ export const DEFAULT_ACTIVITY: Activity = {
   patrolsCompleted: 0,
   shops: {},
   mount: null,
+  zoneMissions: {},
 };
 
 /* ── The simulated world (schema v8) ───────────────────────────────────────────── */
@@ -683,6 +693,51 @@ export const DEFAULT_GACHA: Gacha = {
   history: [],
 };
 
+/* ── The Menagerie (schema v14) ────────────────────────────────────────────────── */
+
+export const petProgressSchema = z.object({
+  /** 1–50; one feed, one level (pets spec §2). */
+  level: z.number().int().min(1),
+  rarity: z.enum(PET_RARITIES),
+  /** Feeds taken today, against the three-a-day cap. Cleared by the Reset Engine. */
+  fedToday: z.number().int().min(0),
+});
+
+export const petsSchema = z.object({
+  /**
+   * Per-pet progress, **sparse**: a pet that has never been fed has no entry, and reads as
+   * level 1 / common / unfed. Writing twelve default rows into every save to say "nothing has
+   * happened" would be twelve rows of nothing.
+   *
+   * Note what is *not* here: ownership. `engine/pets/ownership.ts` derives that from the facts
+   * that earned each pet — floors cleared, missions run, best rank, what Vesna handed over —
+   * so there is no second list to reconcile and a player who cleared Barrowdeep in Phase 11
+   * owns the Gloom Cat the moment this room opens.
+   */
+  progress: z.record(z.string(), petProgressSchema),
+  /** The one at your side, or null. Switching is free and instant (spec §2). */
+  activeId: z.enum(PET_ID_LIST).nullable(),
+  /** Tavern Scraps — pet food, from missions and the daily loop. */
+  scraps: z.number().int().min(0),
+  /**
+   * Pets that hatched rather than being earned.
+   *
+   * The one place ownership *is* stored, because for a 0.5% egg the luck itself is the fact —
+   * there is nothing else in the save to derive it from.
+   */
+  eggs: z.array(z.enum(PET_ID_LIST)),
+  /** Pets the player had last time they looked, for the "something new" cue on the rail. */
+  seenCount: z.number().int().min(0),
+});
+
+export const DEFAULT_PETS: Pets = {
+  progress: {},
+  activeId: null,
+  scraps: 0,
+  eggs: [],
+  seenCount: 0,
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -709,6 +764,8 @@ export const saveFileSchema = z.object({
   forge: forgeSchema,
   /** Fortune's Table (schema v13). */
   gacha: gachaSchema,
+  /** The Menagerie (schema v14). */
+  pets: petsSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -717,6 +774,8 @@ export type Hero = z.infer<typeof heroSchema>;
 export type Materials = z.infer<typeof materialsSchema>;
 export type Forge = z.infer<typeof forgeSchema>;
 export type Gacha = z.infer<typeof gachaSchema>;
+export type Pets = z.infer<typeof petsSchema>;
+export type StoredPetProgress = z.infer<typeof petProgressSchema>;
 export type StoredRollRecord = z.infer<typeof rollRecordSchema>;
 export type Activity = z.infer<typeof activitySchema>;
 export type StoredMissionOffer = z.infer<typeof missionOfferSchema>;
@@ -766,6 +825,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     dungeons: { ...DEFAULT_DUNGEONS },
     forge: { ...DEFAULT_FORGE },
     gacha: { ...DEFAULT_GACHA },
+    pets: { ...DEFAULT_PETS },
   };
 }
 

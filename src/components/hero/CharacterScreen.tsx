@@ -19,6 +19,9 @@ import { compareItem, deriveStats, type Equipment } from '@/engine/hero/derived'
 import { canEquip } from '@/engine/hero/actions';
 import { levelProgress, xpNeeded } from '@/engine/progression/xp';
 import { equippedSetCounts } from '@/engine/items/sets';
+import { boostedArmour, boostedAttribute } from '@/engine/pets/boost';
+import { BOOST_LABELS } from '@/data/pets';
+import { currentBoost } from '@/state/petActions';
 import { SLOT_LABELS, type Item, type SlotId } from '@/engine/items/types';
 import type { Hero } from '@/engine/save/schema';
 import { TavernPanel } from '@/components/ui/TavernPanel';
@@ -26,6 +29,7 @@ import { Meter } from '@/components/ui/Meter';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { ItemSlot } from '@/components/items/ItemSlot';
+import { Icon } from '@/components/icons';
 import { AttributePanel } from './AttributePanel';
 import { DevItemDrawer } from './DevItemDrawer';
 import { SetCollections } from './SetCollections';
@@ -61,6 +65,15 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
   const discardItem = useGameStore((state) => state.discardItem);
   const setOpeningVerse = useGameStore((state) => state.setOpeningVerse);
   /**
+   * The companion at your side (pets spec §2).
+   *
+   * Read here rather than passed in so the breakdown, the derived panel and the fight all see
+   * the same number — `deriveStats` is the one place a hero's stats are computed, and the pet
+   * goes in through the same door as gear.
+   */
+  const save = useGameStore((state) => state.save);
+  const pet = save ? currentBoost(save) : null;
+  /**
    * Track the selection by uid, not by object: locking or equipping replaces the item in the
    * store, and a held snapshot would go stale (a just-locked item still offering "Discard").
    */
@@ -79,6 +92,13 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
   const withSetGlow = (item: Item | null | undefined) =>
     item?.setId ? { setWorn: setCounts.get(item.setId) ?? 0 } : {};
 
+  const petBoost = useMemo(() => {
+    const attribute = boostedAttribute(pet);
+    if (attribute) return { stat: attribute.stat, share: attribute.share } as const;
+    const armour = boostedArmour(pet);
+    return armour > 0 ? ({ stat: 'armour', share: armour } as const) : null;
+  }, [pet]);
+
   const derived = useMemo(
     () =>
       deriveStats({
@@ -86,8 +106,9 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
         level: hero.level,
         trained: hero.trained,
         equipment,
+        petBoost,
       }),
-    [hero.classId, hero.level, hero.trained, equipment],
+    [hero.classId, hero.level, hero.trained, equipment, petBoost],
   );
 
   const comparisonFor = (item: Item) =>
@@ -241,6 +262,31 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                       ))}
                     </div>
                   </div>
+
+                  {/* The companion sits with the gear because that is what it is: a worn thing
+                      you chose. Small, because the boost is small by design (pets spec §3). */}
+                  {pet && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={snappy}
+                      className="chamfer-sm mt-4 flex items-center gap-2.5 border border-amber-500/35 bg-amber-500/8 px-2.5 py-2"
+                      data-testid="pet-chip"
+                    >
+                      <span className="text-amber-400">
+                        <Icon name={pet.definition.iconId} size={20} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="text-parchment-300 block truncate text-xs font-semibold">
+                          {pet.name}
+                        </span>
+                        <span className="text-parchment-500/55 block text-[10px]">
+                          {BOOST_LABELS[pet.stat]} +{(pet.share * 100).toFixed(1)}% · level{' '}
+                          {pet.progress.level}
+                        </span>
+                      </span>
+                    </motion.div>
+                  )}
 
                   <div className="mt-5">
                     <Meter

@@ -27,6 +27,7 @@ import {
   totalEarned,
   totalSpent,
 } from './simulate';
+import { PET_MAX_LEVEL } from '@/data/pets';
 import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
 import { mount as mountDef } from '@/data/mounts';
 import { goldPerVigor } from '@/engine/progression/rewards';
@@ -343,5 +344,57 @@ describe('a hall changes the numbers — Phase 10', () => {
     for (const day of late) {
       expect(day.purse, `day ${day.day}`).toBeLessThan(day.earned.missions * 6);
     }
+  });
+});
+
+describe('the Menagerie is a habit, not a bill — Phase 14', () => {
+  const run = simulateEconomy({ days: 35 });
+
+  it('takes one companion to the ceiling in about a month', () => {
+    // The claim `data/pets.ts` makes out loud, measured against the actual Scrap supply rather
+    // than against the three-a-day cap. At 8% × 2 this test would have read ~62 days, which is
+    // how the Phase 14 pass found the rate was half what the copy promised.
+    const maxedOn = run.ledger.findIndex((day) => day.petLevel >= PET_MAX_LEVEL) + 1;
+    expect(maxedOn).toBeGreaterThan(24);
+    expect(maxedOn).toBeLessThan(38);
+  });
+
+  it('is the smallest sink on the board, by a wide margin', () => {
+    // Feeding must never compete with training. If this band breaks upward, the pet has stopped
+    // being "deliberately minor" in the only currency the player actually feels.
+    const pets = run.ledger.reduce((sum, day) => sum + day.spent.pets, 0);
+    const share = pets / totalSpent(run.ledger);
+    expect(share).toBeGreaterThan(0);
+    expect(share).toBeLessThan(0.03);
+
+    for (const sink of ['training', 'shops', 'mounts'] as const) {
+      const other = run.ledger.reduce((sum, day) => sum + day.spent[sink], 0);
+      expect(other, sink).toBeGreaterThan(pets);
+    }
+  });
+
+  it('costs a growing pet more, so late feeds are a real decision', () => {
+    const early = run.ledger.slice(0, 5).reduce((sum, day) => sum + day.spent.pets, 0);
+    const late = run.ledger.slice(20, 25).reduce((sum, day) => sum + day.spent.pets, 0);
+    expect(late).toBeGreaterThan(early * 3);
+  });
+
+  it('stops charging once the pet is grown', () => {
+    const grown = run.ledger.filter((day) => day.petLevel >= PET_MAX_LEVEL);
+    expect(grown.length).toBeGreaterThan(0);
+    // Every day after the ceiling is a free day — a feed that charges for nothing would be the
+    // sort of leak the ledger exists to catch.
+    for (const day of grown.slice(1)) expect(day.spent.pets, `day ${day.day}`).toBe(0);
+  });
+
+  it('leaves a player who never visits the Menagerie exactly where they were', () => {
+    // Same guard as the guild lever: every band above this one is tuned against a player who
+    // does feed, and the room must stay optional.
+    const skipped = simulateEconomy({ days: 35, style: { ...ACTIVE_PLAYER, feedsPets: false } });
+    expect(skipped.finalPetLevel).toBe(1);
+    expect(skipped.ledger.every((day) => day.spent.pets === 0)).toBe(true);
+    // Not feeding leaves you slightly richer, and therefore slightly better trained. Slightly.
+    expect(skipped.totalPointsBought).toBeGreaterThanOrEqual(run.totalPointsBought);
+    expect(skipped.finalLevel).toBe(run.finalLevel);
   });
 });

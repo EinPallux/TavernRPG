@@ -157,7 +157,9 @@ levels per clear — the four floors behind the Rusty Key would have taken them 
 | Golden Die from mission | 1.5% per 20-min mission, 0.6% others | — |
 | Dungeon key drop | 6% per mission once dungeon level-gate reached (until key owned) | — |
 | Ale drop | 2% per mission, cap 1/day | — |
-| Pet egg | dungeon firsts & fixed milestones (deterministic, no RNG) | — |
+| Tavern Scraps | 16% per mission, 2 at a time `[TUNE]` | — |
+| Frost Fox egg | 0.5% per mission in Silverpine Pass / Frostfell Ridge, once only | — |
+| Pet unlocks (the other eleven) | dungeon firsts & fixed milestones (deterministic, no RNG) | — |
 
 **Drop slot weighting and the weapon floor (Phase 6).** Item chance and rarity are as published
 above; *which slot* a drop lands in is not uniform. Weapon 22 / chest 14 / offhand 10 / helmet,
@@ -246,6 +248,28 @@ Sixty modelled days, active player, now including 1.6 cards a day at Fortune's T
 The band asserts gacha stays under 12% and below the mission faucet. The room is a *dice* sink
 first; if rolling ever paid better per day than running missions, the correct play would be to
 stop playing the game and spin the wheel.
+
+### The Menagerie, Phase 14 (`npm run economy`)
+
+Scraps are the pace, not the three-a-day cap. At 16% × 2 a player spending 100 Vigor on 20-minute
+contracts banks ~1.6 a day, which takes one companion from level 1 to 50 in **31 modelled days** —
+the "a month per pet" the spec claims. The rate was 8% until this pass measured it: a pet took
+62 days and the published cap was unreachable, so the stall's "3/3 feeds left" was advertising a
+pace the game could not supply.
+
+| pet lever | value |
+|---|---|
+| boost curve | `1% + 0.08%/level` → **4.9%** at 50 `[TUNE]` |
+| half rate (armour, gold find, XP) | half the level term, **not** the rarity bonus |
+| rarity bonus | **+0.5%** flat per step, at levels 15 / 30 / 45 `[TUNE]` |
+| ceiling (level 50, Epic, full rate) | **+6.4%** |
+| reference: average Rare chest main-stat line, level 30 | **+6.6%** |
+| feed cost | `18 × pet level` gold + 1 Scrap `[TUNE]` |
+| feeding as a share of all gold sinks | **0.5–1.2%** |
+
+The ceiling clears the one-gear-upgrade bar by two tenths of a percent, on purpose.
+`pets.test.ts` measures **both** sides against the live generators rather than freezing either
+number, so tuning gear down is caught as readily as tuning pets up.
 
 ## 8. Item stat budgets
 

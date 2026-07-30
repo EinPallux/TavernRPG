@@ -19,6 +19,8 @@ import { buildHeroCombatant, buildMonsterCombatant } from '@/engine/combat/comba
 import type { BattleResult } from '@/engine/combat/types';
 import { missionDropTable, rollMissionDrops } from '@/engine/items/drops';
 import { rollKeyDrop } from '@/engine/dungeons/keys';
+import { rollEgg, rollScraps } from '@/engine/pets/eggs';
+import type { PetContribution } from '@/engine/combat/combatant';
 import { xpNeeded } from '@/engine/progression/xp';
 import {
   consolationPayout,
@@ -119,6 +121,10 @@ export function resolveMission(
   bonus: PayoutBonus = NO_BONUS,
   /** Keys already hanging on the hero's belt, so a second one is never rolled. */
   ownedKeys: readonly string[] = [],
+  /** The active pet, if any — it fights alongside (pets spec §2). */
+  petBoost: PetContribution | null = null,
+  /** Eggs already hatched, so the rarest drop in the game is never a duplicate. */
+  ownedEggs: readonly string[] = [],
 ): MissionOutcome {
   const template = monsterDef(mission.offer.monsterId);
   const foe = buildMonsterCombatant({
@@ -128,7 +134,11 @@ export function resolveMission(
     level: mission.offer.monsterLevel,
   });
 
-  const battle = fight(buildHeroCombatant(hero), foe, deriveSeed(mission.offer.seed, 'fight'));
+  const battle = fight(
+    buildHeroCombatant(hero, 'hero', petBoost),
+    foe,
+    deriveSeed(mission.offer.seed, 'fight'),
+  );
 
   const victory = battle.winner === 'a';
   // Priced at the level the contract was signed at, so levelling mid-mission never pays less.
@@ -143,7 +153,16 @@ export function resolveMission(
     const consolation = consolationPayout(full);
     return {
       battle,
-      spoils: { victory: false, ...consolation, dice: 0, ale: false, item: null, key: null },
+      spoils: {
+        victory: false,
+        ...consolation,
+        dice: 0,
+        ale: false,
+        item: null,
+        key: null,
+        scraps: 0,
+        egg: null,
+      },
     };
   }
 
@@ -167,6 +186,15 @@ export function resolveMission(
         heroLevel: hero.level,
         owned: ownedKeys,
         rng: dropStream.fork('dungeon-key'),
+      }),
+      // Two more forks, for the same reason the key got one: a new drop must not move an
+      // existing one. Scraps and the egg are decided by the mission's committed seed like
+      // everything else, so watching the fight twice cannot roll a second Frost Fox.
+      scraps: rollScraps(dropStream.fork('scraps')),
+      egg: rollEgg({
+        zoneId: mission.offer.zoneId,
+        owned: ownedEggs,
+        rng: dropStream.fork('egg'),
       }),
     },
   };

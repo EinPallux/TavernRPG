@@ -31,18 +31,20 @@ import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
 import { MOUNTS_BY_ID, type MountId } from '@/data/mounts';
 import { guildMultipliers } from '@/engine/guilds/buffs';
 import { GOLD_CACHE_VIGOR, banner, outcomeOdds, type RollOutcome } from '@/data/banners';
+import { FEEDS_PER_DAY, SCRAPS_PER_DROP, SCRAPS_PER_FEED, SCRAP_DROP_CHANCE } from '@/data/pets';
+import { PET_MAX_LEVEL, feedGoldCost } from '@/engine/pets/feeding';
 import { RARITIES, type Rarity } from '@/engine/items/types';
 
 /**
  * Faucets and sinks the model currently understands. Grows as systems ship.
  *
  * `sales` and `shops`/`mounts` joined in Phase 7 when the Armory, the Facet and the Stables
- * opened; `gacha` in Phase 13 with Fortune's Table. Still absent: guild donations, pet feeding,
- * dungeon gold — each lands with its system, because a sim that invents numbers for unbuilt
- * features asserts a fiction.
+ * opened; `gacha` in Phase 13 with Fortune's Table; `pets` in Phase 14 with the Menagerie. Still
+ * absent: guild donations and dungeon gold — each lands with its system, because a sim that
+ * invents numbers for unbuilt features asserts a fiction.
  */
 export const MODELLED_FAUCETS = ['missions', 'patrol', 'sales', 'gacha'] as const;
-export const MODELLED_SINKS = ['training', 'shops', 'mounts'] as const;
+export const MODELLED_SINKS = ['training', 'shops', 'mounts', 'pets'] as const;
 
 export type Faucet = (typeof MODELLED_FAUCETS)[number];
 export type Sink = (typeof MODELLED_SINKS)[number];
@@ -63,6 +65,8 @@ export interface DayLedger {
   readonly vigorUnspent: number;
   /** Gear bought from a shop today (Phase 7). */
   readonly itemsBought: number;
+  /** The focused companion's level at end of day (Phase 14). */
+  readonly petLevel: number;
 }
 
 /**
@@ -133,6 +137,14 @@ export interface PlayStyle {
    * active player converting some of a ~1.6/day income into rolls lands a little over one.
    */
   readonly gachaRollsPerDay?: number;
+  /**
+   * Whether this player keeps a companion fed (Phase 14). Default true.
+   *
+   * Not a rate, because the pace is not the player's to choose: three feeds a day is the ceiling
+   * and Tavern Scraps are the floor, so the model feeds as often as the bag allows and the
+   * *drop rate* is what the band is really measuring.
+   */
+  readonly feedsPets?: boolean;
 }
 
 export const ACTIVE_PLAYER: PlayStyle = {
@@ -181,6 +193,8 @@ export interface SimResult {
   readonly finalLevel: number;
   readonly finalPurse: number;
   readonly totalPointsBought: number;
+  /** Where one focused companion got to (Phase 14). */
+  readonly finalPetLevel: number;
 }
 
 /**
@@ -212,6 +226,13 @@ export function simulateEconomy({
   const trained = { str: 0, dex: 0, int: 0, con: 0, lck: 0 };
   const attributes = Object.keys(trained) as (keyof typeof trained)[];
   let totalPointsBought = 0;
+
+  // One companion, taken from level 1 toward the ceiling. Modelling a *focused* player rather
+  // than one feeding all twelve is the honest read: the boost is one pet at a time, so there is
+  // no reason to spread Scraps thin, and it is the pace of the single pet the spec makes a
+  // claim about ("a month per pet").
+  let scraps = 0;
+  let petLevel = 1;
 
   for (let day = 1; day <= days; day += 1) {
     const vigorBudget = Math.floor(VIGOR_PER_DAY * style.vigorUsed);
@@ -258,6 +279,22 @@ export function simulateEconomy({
     const mountSpend = Math.min(purse, dailyMountCost);
     purse -= mountSpend;
 
+    // ── The Menagerie, same shape: a small standing habit, paid before the discretionary spend.
+    // Scraps accumulate from the day's contracts and are spent as soon as there are enough,
+    // which makes the *drop rate* — not the player's patience — the thing the band measures.
+    scraps += missionsRun * SCRAP_DROP_CHANCE * SCRAPS_PER_DROP;
+    let petSpend = 0;
+    if (style.feedsPets !== false) {
+      for (let fed = 0; fed < FEEDS_PER_DAY && petLevel < PET_MAX_LEVEL; fed += 1) {
+        const cost = feedGoldCost(petLevel);
+        if (scraps < SCRAPS_PER_FEED || purse < cost) break;
+        scraps -= SCRAPS_PER_FEED;
+        purse -= cost;
+        petSpend += cost;
+        petLevel += 1;
+      }
+    }
+
     // ── Then gear. Shop pieces cost 3.2× value, which is what makes buying a real decision. ──
     const shelfPrice = Math.round(averageValue(level, SHOP_RARITY_WEIGHTS) * SHOP_PRICE_MULTIPLIER);
     // Fractional buys per day are fine: the ledger is a rate, not a shopping list.
@@ -292,13 +329,19 @@ export function simulateEconomy({
       day,
       level,
       earned: { missions: missionGold, patrol: patrolGold, sales: salesGold, gacha: gachaGold },
-      spent: { training: spentOnTraining, shops: shopSpend, mounts: mountSpend },
+      spent: {
+        training: spentOnTraining,
+        shops: shopSpend,
+        mounts: mountSpend,
+        pets: petSpend,
+      },
       xpEarned,
       pointsBought,
       purse,
       missionsRun,
       vigorUnspent: VIGOR_PER_DAY - vigorBudget,
       itemsBought: affordableBuys,
+      petLevel,
     });
   }
 
@@ -307,6 +350,7 @@ export function simulateEconomy({
     finalLevel: level,
     finalPurse: purse,
     totalPointsBought,
+    finalPetLevel: petLevel,
   };
 }
 

@@ -310,12 +310,26 @@ dice read the same object. Building it also caught that the entire e2e suite had
 1280×720 while the config claimed 1080p — `devices['Desktop Chrome']` brings its own viewport and
 a project-level `use` beats the top-level one.
 
-## Phase 14 — The Menagerie (S) 🔲
+## Phase 14 — The Menagerie (S) ✅
 12 pets (data, acquisition wiring to dungeon firsts/milestones/banner slots/egg drops), stalls UI
 with idle animations, feeding (caps, food economy), rarity upgrades, active-pet boost into
 `buildCombatant`/economy multipliers, collection silhouettes.
 **Accept:** every pet acquirable via its documented source (integration tests for deterministic
 ones, rate tests for RNG ones); boosts apply and display with breakdowns; feed caps reset properly.
+**Done 2026-07-30.** `data/pets.ts` (twelve companions whose *source* is a closed union of the
+facts that earn them), `engine/pets/` (`ownership` — derived, never stored; `feeding`; `boost`;
+`eggs`), `state/petActions.ts`, the Menagerie with its twelve stalls, the active-pet chip on the
+character screen, the nav rail's arrivals badge, economy sim pass 4, and save schema v14.
+
+The shape worth copying: **ownership is derived from the history that earned it.** There is no
+"pets owned" list, so a player who cleared Barrowdeep floor 5 in Phase 11 owns the Gloom Cat the
+moment the room opens — no migration, no reconciliation pass, and no stored copy to disagree
+with the fact. Only the two luck-based pets store their grant, because for a 0.5% roll the luck
+*is* the fact. Building it turned up three things: the Scrap drop rate was half what the copy
+promised (a pet took two months and the three-a-day cap was literally unreachable — the sim
+caught it), `zoneMissions` counted attempts while its sibling counted victories, and the gear
+`goldFind`/`xpBonus` specials had been computed by `deriveStats` since Phase 2 and applied to
+nothing.
 
 ## Phase 15 — Notice Board, Calendar & Daily Polish (M) 🔲
 Daily task pool (feature-aware weighting), points/chests, weekly ladder chest, 28-day login

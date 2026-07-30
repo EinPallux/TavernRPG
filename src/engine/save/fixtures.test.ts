@@ -25,8 +25,10 @@ import v9Phase9 from './fixtures/v9-phase9.json';
 import v10Phase10 from './fixtures/v10-phase10.json';
 import v11Phase11 from './fixtures/v11-phase11.json';
 import v12Phase12 from './fixtures/v12-phase12.json';
+import v13Phase13 from './fixtures/v13-phase13.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
+import { ownedPets } from '@/engine/pets/ownership';
 import { migrateSave } from './migrations';
 import {
   CURRENT_SCHEMA_VERSION,
@@ -36,6 +38,7 @@ import {
   DEFAULT_FORGE,
   DEFAULT_GACHA,
   DEFAULT_GUILD,
+  DEFAULT_PETS,
   EMPTY_MATERIALS,
   DEFAULT_SETTINGS,
   type SaveFile,
@@ -468,6 +471,47 @@ describe('save fixtures — every shipped version still loads', () => {
     expect(result.save.hero?.name).toBe('Bryn Halloway');
     expect(result.save.hero?.classId).toBe('swashbuckler');
     expect(result.save.dungeons.keys).toEqual(['rusty-key', 'bone-key']);
+  });
+
+  it('opens a Phase 13 (v13) save with an evening at the table behind it', () => {
+    const result = migrateSave(structuredClone(v13Phase13));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(13);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // Fifteen cards, four banked toward the Corsair set, the free daily card spent, and a
+    // pattern the ten-card spread's track paid out.
+    expect(result.save.gacha.rolls).toBe(15);
+    expect(result.save.gacha.weeklyPity).toBe(4);
+    expect(result.save.gacha.weeklyPitySet).toBe('corsair-kings-finery');
+    expect(result.save.gacha.freeRollsToday).toBe(1);
+    expect(result.save.gacha.history).toHaveLength(15);
+    expect(result.save.forge.recipes).toHaveLength(1);
+  });
+
+  it('hands a Phase 13 player the pets their history already earned', () => {
+    const result = migrateSave(structuredClone(v13Phase13));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    /*
+     * The one migration in the chain that is *not* empty-handed, and it did not have to grant
+     * anything to manage it. Ownership is derived from the facts that earn each pet, and this
+     * save has been five floors into the Rat Cellars since Phase 11 — so the Ember Pup is simply
+     * there, with no back-fill and no reconciliation.
+     */
+    expect(result.save.dungeons.progress['rat-cellars']?.floorsCleared).toBe(5);
+    expect(ownedPets(result.save).map((entry) => entry.id)).toContain('ember-pup');
+
+    // What the slice actually adds is progress, and that genuinely starts at nothing.
+    expect(result.save.pets).toEqual(DEFAULT_PETS);
+    expect(result.save.activity.zoneMissions).toEqual({});
+    // And nothing else moved.
+    expect(result.save.hero?.name).toBe('Bryn Halloway');
+    expect(result.save.hero?.classId).toBe('swashbuckler');
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

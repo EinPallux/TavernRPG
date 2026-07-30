@@ -11,7 +11,7 @@
 import { classDef } from '@/data/classes';
 import { archetype, type ArchetypeId } from '@/data/monsterArchetypes';
 import { deriveStats, type Equipment } from '@/engine/hero/derived';
-import type { Attributes } from '@/engine/progression/stats';
+import type { Attributes, AttributeId } from '@/engine/progression/stats';
 import type { ClassId, Item, SlotId } from '@/engine/items/types';
 import { NO_MODIFIERS, modifiersFor, openingVerse } from '@/engine/items/sets';
 import type { Hero } from '@/engine/save/schema';
@@ -67,13 +67,27 @@ export function procsForClass(classId: ClassId): CombatProc[] {
   }
 }
 
-export function buildHeroCombatant(hero: Hero, id = 'hero'): Combatant {
+/**
+ * The active pet's contribution, if any (pets spec §2).
+ *
+ * Passed in rather than read from a save, because `combatant.ts` builds fighters and knows
+ * nothing about slices. Optional, so every existing caller — the golden logs among them —
+ * produces exactly the fighter it produced before pets existed.
+ */
+export type PetContribution = { readonly stat: AttributeId | 'armour'; readonly share: number };
+
+export function buildHeroCombatant(
+  hero: Hero,
+  id = 'hero',
+  petBoost: PetContribution | null = null,
+): Combatant {
   const definition = classDef(hero.classId);
   const derived = deriveStats({
     classId: hero.classId,
     level: hero.level,
     trained: hero.trained,
     equipment: hero.equipment as Equipment,
+    petBoost,
   });
 
   const weapon = hero.equipment.weapon?.weapon ?? { min: 1, max: 2 };

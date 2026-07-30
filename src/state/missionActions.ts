@@ -20,9 +20,10 @@ import { canDrinkAle, processResets, vigorCeiling } from '@/engine/reset/resetEn
 import type { WeeklyPayout } from '@/engine/arena/payout';
 import type { BountyChest } from '@/engine/guilds/bounty';
 import { refreshArenaDay } from './arenaActions';
-import { creditBounty, guildBonus, refreshGuildDay } from './guildActions';
+import { creditBounty, refreshGuildDay } from './guildActions';
 import { refreshForgeDay } from './forgeActions';
 import { refreshGachaDay } from './gachaActions';
+import { creditMissionDrops, payoutBonus, petContribution, refreshPetDay } from './petActions';
 import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
@@ -86,6 +87,9 @@ export function refreshDay(
 
   // And Vesna deals a fresh card on the house. Same boundary, same owner (gacha spec §3).
   if (outcome.didReset) next = refreshGachaDay(next);
+
+  // Twelve empty bowls in the Menagerie (pets spec §2).
+  if (outcome.didReset) next = refreshPetDay(next);
 
   // A board is drawn lazily: on the first visit of the day, after a reroll, or after a reset
   // nulled it. Drawing it here rather than at midnight means a player who never opens the
@@ -262,7 +266,20 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
 
   // The hall's cut, applied where the payout is computed so the result screen and the ledger
   // agree with the quote (guilds spec §2).
-  const { spoils, battle } = resolveMission(mission, hero, guildBonus(save), save.dungeons.keys);
+  /*
+   * Every multiplier the hero has earned, and the companion at their side.
+   *
+   * `payoutBonus` rather than `guildBonus` since Phase 14: it composes the hall's cut with the
+   * pet's and with the gear specials that had been computed and thrown away since Phase 2.
+   */
+  const { spoils, battle } = resolveMission(
+    mission,
+    hero,
+    payoutBonus(save),
+    save.dungeons.keys,
+    petContribution(save),
+    save.pets.eggs,
+  );
   const item = spoils.item
     ? generateItem({
         slot: spoils.item.slot,
@@ -286,14 +303,19 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
   const activity = save.activity;
   const gainedFreeAle = spoils.ale && activity.freeAlesToday < 1;
   // A finished contract counts toward the week's bounty, if that is what it is counting.
-  const credited = creditBounty(save, 'missions', 1);
+  const credited = creditMissionDrops(creditBounty(save, 'missions', 1), {
+    zoneId: mission.offer.zoneId,
+    victory: spoils.victory,
+    scraps: spoils.scraps,
+    egg: spoils.egg,
+  });
 
   return {
     save: {
       ...credited,
       hero: next,
       activity: {
-        ...activity,
+        ...credited.activity,
         pendingMission: null,
         missionsCompleted: activity.missionsCompleted + (spoils.victory ? 1 : 0),
         ...(gainedFreeAle

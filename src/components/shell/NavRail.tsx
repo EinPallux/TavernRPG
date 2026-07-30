@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'motion/react';
 import { GROUP_LABELS, NAV_GROUPS, PLACES, type PlaceDef } from '@/data/places';
 import { gateFor, nextUnlock } from '@/engine/progression/gates';
+import { newArrivals } from '@/engine/pets/ownership';
 import { Icon, ChevronIcon, LockIcon } from '@/components/icons';
 import { useShellStore } from '@/state/shellStore';
 import { useGameStore } from '@/state/gameStore';
@@ -26,13 +27,17 @@ function RailItem({
   level,
   active,
   collapsed,
+  badge = 0,
 }: {
   place: PlaceDef;
   level: number;
   active: boolean;
   collapsed: boolean;
+  /** Unattended arrivals waiting in this room — an ember dot, cleared by visiting. */
+  badge?: number;
 }) {
   const gate = gateFor(place.id, level);
+  const flagged = gate.unlocked && badge > 0;
 
   const body = (
     <>
@@ -73,7 +78,26 @@ function RailItem({
               Lv {gate.gateLevel}
             </span>
           )}
+          {flagged && (
+            <span
+              className="chamfer-sm shrink-0 bg-amber-500 px-1.5 text-[10px] leading-[15px] font-bold text-black tabular-nums"
+              data-testid={`nav-badge-${place.id}`}
+            >
+              {badge}
+            </span>
+          )}
         </span>
+      )}
+
+      {/* Collapsed, the count has nowhere to go — the dot alone still says "look in here". */}
+      {collapsed && flagged && (
+        <motion.span
+          aria-hidden
+          animate={{ opacity: [1, 0.45, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-amber-500"
+          data-testid={`nav-badge-${place.id}`}
+        />
       )}
     </>
   );
@@ -124,6 +148,11 @@ export function NavRail() {
 
   const upcoming = nextUnlock(level);
   const settingsPlace = PLACES.find((place) => place.id === 'settings');
+
+  // Companions arrive *while you are somewhere else* — a floor cleared, a rank held, a hundredth
+  // contract run — so without a cue the room only gets visited by players who already suspect.
+  const save = useGameStore((state) => state.save);
+  const arrivals = save ? newArrivals(save) : 0;
 
   return (
     <motion.nav
@@ -179,6 +208,7 @@ export function NavRail() {
                     level={level}
                     active={pathname === place.route}
                     collapsed={collapsed}
+                    badge={place.id === 'menagerie' ? arrivals : 0}
                   />
                 ))}
               </ul>

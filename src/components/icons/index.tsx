@@ -13,9 +13,11 @@
 import type { SVGProps } from 'react';
 import type { IconId } from '@/data/icons';
 import { ITEM_ICONS } from './items';
+import { PET_ICONS } from './pets';
 
 export type { IconId };
 export * from './items';
+export * from './pets';
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'children'> {
   size?: number;
@@ -430,6 +432,7 @@ export const ICONS = {
   essence: EssenceIcon,
   starmetal: StarmetalIcon,
   ...ITEM_ICONS,
+  ...PET_ICONS,
 } satisfies Record<IconId, (props: IconProps) => React.ReactElement>;
 
 export function Icon({ name, ...props }: IconProps & { name: IconId }) {

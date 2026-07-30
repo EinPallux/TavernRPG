@@ -79,6 +79,8 @@ interface ActivityState {
   arena: ArenaState;                // (dungeon progress moved to its own v11 slice)
   forge: ForgeState; gacha: PityState & { history: GachaResult[] };
   board: DailyTasksState; calendar: CalendarState;
+  missionsCompleted: number;        // lifetime VICTORIES; a pet source
+  zoneMissions: Record<ZoneId, number>;  // v14: per-zone victories; sparse, same units as above
 }
 
 // ————— World simulation (persisted as divergence; identity derives from seed) —————
@@ -135,7 +137,7 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
 
 // ————— Save envelope —————
 interface SaveFile {
-  schemaVersion: 13; savedAt: Timestamp; slot: 1|2|3;
+  schemaVersion: 14; savedAt: Timestamp; slot: 1|2|3;
   worldSeed: Seed;                  // committed once; seeds the entire simulated world
   clock: { lastSeen: Timestamp; clampCount: number };
   settings: Settings;               // nav, motion, audio, battle playback (v4)
@@ -146,6 +148,7 @@ interface SaveFile {
   dungeons: Dungeons;               // v11
   forge: ForgeState;                // v12
   gacha: GachaState;                // v13
+  pets: Pets;                       // v14
 }
 
 // ————— The Undertavern (v11) —————
@@ -190,9 +193,29 @@ interface RollRecord { at: Timestamp; bannerId: BannerId; outcome: RollOutcome;
   label: string; pitied: boolean; free: boolean; }
 // The banner *schedule* is deliberately absent: it is a pure function of (dayKey, worldSeed,
 // classId), so a save that missed a fortnight already knows what was featured on every day of it.
-// `pets` records what this room handed over, not what the player owns. The Menagerie (v14)
-// derives ownership of all twelve from their documented sources — dungeon trophies,
-// missionsCompleted, arena rank, the login calendar — each of which is already a fact in the save.
+// `pets` records what this room handed over, not what the player owns — see Pets below.
+
+// ————— The Menagerie (v14) —————
+interface Pets {
+  progress: Record<PetId, PetProgress>;  // SPARSE: a pet never fed stores nothing at all
+  activeId: PetId | null;                // one at a time; free to switch, no cooldown
+  scraps: number;                        // Tavern Scraps, the feeding currency
+  eggs: PetId[];                         // hatched — the ONE stored grant, see below
+  seenCount: number;                     // owned-count high-water mark, for the rail's badge
+}
+interface PetProgress { level: number; rarity: PetRarity; fedToday: number; }
+// There is NO "owned" field, here or anywhere. `ownedPets(save)` derives all twelve from the
+// facts that earned them — dungeons.progress[id].floorsCleared, activity.missionsCompleted,
+// activity.zoneMissions[zoneId] (v14, victories only), arena.bestRank. Every one of those was
+// already in the save before this slice existed, which is why a Phase 11 player owns their
+// dungeon pets retroactively with no migration and no reconciliation pass.
+//
+// The two exceptions are the luck-based pets, and they are stored *because* they are luck: a
+// 0.5% egg and Vesna's 1% slot have nothing else in the save to be read back from. Those live in
+// `pets.eggs` and `gacha.pets`, beside the systems that produce them.
+//
+// The boost lands in one of two places, never both — attributes and armour go through
+// deriveStats(); goldFind and xpBonus become a PayoutBonus composed with the guild's.
 
 // ————— Gear sets (content, v12) —————
 // A set *bonus* is data the engine folds, not a proc: `SetEffect` is a flat union of ~24 named

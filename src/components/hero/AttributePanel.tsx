@@ -82,6 +82,7 @@ export function AttributePanel({ hero, derived, mainStat, onTrain }: AttributePa
                     {breakdown.base} base
                     {breakdown.trained > 0 && ` · ${breakdown.trained} trained`}
                     {breakdown.gear > 0 && ` · ${breakdown.gear} gear`}
+                    {breakdown.pet > 0 && ` · ${breakdown.pet} companion`}
                   </p>
                 </div>
               </div>

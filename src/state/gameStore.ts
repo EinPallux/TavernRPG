@@ -96,7 +96,15 @@ import {
   type ScrapResult,
 } from './forgeActions';
 import { roll as rollOn, type RollResultState } from './gachaActions';
+import {
+  feedPet as feedPetOn,
+  markPetsSeen as markPetsSeenOn,
+  setActivePet as setActivePetOn,
+  upgradePet as upgradePetOn,
+  type PetResult,
+} from './petActions';
 import type { BannerId } from '@/data/banners';
+import type { PetId } from '@/data/pets';
 import type { ForgeTier } from '@/engine/forge/forgeConfig';
 import type { VerseId } from '@/engine/combat/types';
 import type { DungeonId } from '@/data/dungeons';
@@ -275,6 +283,16 @@ export interface GameStoreState {
   // ── Fortune's Table (Phase 13) ───────────────────────────────────────────────────
   /** One card, or ten on the Grand Reading. The free daily card costs nothing. */
   rollBanner: (bannerId: BannerId, ten?: boolean) => RollResultState;
+
+  // ── The Menagerie (Phase 14) ─────────────────────────────────────────────────────
+  /** A scrap and some gold for a level. Three a day, per pet. */
+  feedPet: (id: PetId) => PetResult;
+  /** Materials for a frame, a trail and half a percent. */
+  upgradePet: (id: PetId) => PetResult;
+  /** Put one at your side, or none. Free and instant. */
+  setActivePet: (id: PetId | null) => void;
+  /** Stop the rail saying something new is in the Menagerie. */
+  markPetsSeen: () => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -971,6 +989,52 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       set({ save: result.save });
       void persistNow();
       return result;
+    },
+
+    feedPet(id) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = feedPetOn(save, id);
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    upgradePet(id) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = upgradePetOn(save, id);
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    setActivePet(id) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = setActivePetOn(save, id);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    markPetsSeen() {
+      const { save } = get();
+      if (!save) return;
+
+      const next = markPetsSeenOn(save);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
     },
 
     setOpeningVerse(verse) {

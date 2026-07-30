@@ -16,7 +16,7 @@
 
 import { createRng, deriveSeed } from '@/engine/rng';
 import { fight } from '@/engine/combat/fight';
-import { buildHeroCombatant } from '@/engine/combat/combatant';
+import { buildHeroCombatant, type PetContribution } from '@/engine/combat/combatant';
 import type { BattleResult } from '@/engine/combat/types';
 import { goldPerVigor, xpPerVigor } from '@/engine/progression/rewards';
 import { xpNeeded } from '@/engine/progression/xp';
@@ -83,6 +83,8 @@ export interface DuelOptions {
   readonly bestRank: number;
   /** Committed seed. The same duel always plays out the same way. */
   readonly seed: number;
+  /** The active pet, if any — it comes into the sand too (pets spec §2). */
+  readonly petBoost?: PetContribution | null;
 }
 
 /**
@@ -98,8 +100,9 @@ export function resolveDuel({
   rewardedWinsToday,
   bestRank,
   seed,
+  petBoost = null,
 }: DuelOptions): DuelResult {
-  const playerSide = buildHeroCombatant(hero, 'player');
+  const playerSide = buildHeroCombatant(hero, 'player', petBoost);
   const opponentSide = materializeBot(world.seed, opponent);
 
   const rng = createRng(deriveSeed(seed, 'duel', opponent.id), `duel:${opponent.id}`);
@@ -167,13 +170,16 @@ export function resolveBotAttack({
   world,
   attacker,
   seed,
+  petBoost = null,
 }: {
   hero: Hero;
   world: WorldState;
   attacker: BotRecord;
   seed: number;
+  /** The pet defends too — it was at home when they came knocking. */
+  petBoost?: PetContribution | null;
 }): DuelResult {
-  const playerSide = buildHeroCombatant(hero, 'player');
+  const playerSide = buildHeroCombatant(hero, 'player', petBoost);
   const attackerSide = materializeBot(world.seed, attacker);
 
   const rng = createRng(deriveSeed(seed, 'raid', attacker.id), `raid:${attacker.id}`);

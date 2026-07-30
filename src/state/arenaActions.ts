@@ -27,6 +27,7 @@ import {
   rerollCost,
 } from '@/engine/arena/arena';
 import { resolveDuel, type DuelResult } from '@/engine/arena/duel';
+import { petContribution } from './petActions';
 import { clearGrudge, queueGrudges, runRaids, type RaidResult } from '@/engine/arena/raids';
 import { LEGENDS_SNAPSHOT_SIZE, weeklyPayouts, type WeeklyPayout } from '@/engine/arena/payout';
 import { PLAYER_LADDER_ID, joinLadder, newcomerHonor } from '@/engine/world/ladder';
@@ -231,6 +232,7 @@ export function duel(save: SaveFile, opponentId: number, now: number): DuelOutco
     // Committed: the same duel, replayed, plays out the same way. The cooldown is in the seed so
     // two fights against the same opponent are not the same fight twice.
     seed: opponentId * 7919 + Math.floor(now / 1000),
+    petBoost: petContribution(save),
   });
 
   const levelled = applyXp(hero.level, hero.xp, result.rewards.xp);
@@ -333,6 +335,7 @@ export function applyRaids(save: SaveFile, from: number, to: number): RaidsAppli
     from,
     to,
     lastRaidDay: save.arena.lastRaidDay,
+    petBoost: petContribution(save),
   });
 
   const bots = [...world.bots];

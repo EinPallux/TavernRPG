@@ -7,6 +7,72 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 14: The Menagerie (twelve companions, one at your side)
+- **Ownership is derived, not stored.** There is no "pets owned" list anywhere in the save.
+  `ownedPets()` answers the question from the facts that *earned* each pet — floors cleared,
+  contracts won, the best ladder rank ever held — every one of which was already in the save
+  before this phase existed. A player who took Barrowdeep to its fifth floor back in Phase 11
+  owns the Gloom Cat the moment the room opens: no migration, no reconciliation pass, and no
+  second copy of the truth to drift from the first. The counters are totals rather than
+  increments on a boundary, so the day-keyed double-pay bug CLAUDE.md warns about five times over
+  simply has nowhere to live here.
+- **A pet's source is data, and the silhouette reads from it.** `PetSource` is a closed union, so
+  a thirteenth companion with a new kind of source is a type error until the engine handles it —
+  and the `hint` an empty stall shows is authored beside the check it describes. A collection page
+  whose empty slots are question marks makes the player feel behind; one whose empty slots are
+  *directions* gives them somewhere to go. `pets.test.ts` matches every dungeon and zone id in the
+  table against the real content, because a hint naming a floor nothing looks at is exactly the
+  drift this shape exists to prevent.
+- **The two luck-based pets store their luck**, and only those two. For a coin-flip that lands
+  once in two hundred there is nothing else in the save to read it back from, so the Frost Fox's
+  egg and Vesna's grants are facts rather than derivations.
+- **Feeding, and the ceiling it climbs to.** A Scrap and some gold buys a level; the boost runs
+  1% at level one to 4.9% at fifty, half rate for armour, gold-find and experience because those
+  three multiply things already multiplied elsewhere. Three rarity upgrades buy a frame, a trail
+  and half a percent each — deliberately skippable, which is what lets the materials price be
+  steep. The whole system caps at **+6.4%** against the **+6.6%** an average Rare chest line is
+  worth at level 30, and the test measures *both* sides against the live generators rather than
+  freezing either number.
+- **One at a time, and free to switch.** Attribute and armour boosts go through `deriveStats`, so
+  the paperdoll, the compare tooltips and the fight all read one figure and a pet cannot be worth
+  more in a battle than it says on the chip. Gold-find and experience become a `PayoutBonus`
+  composed with the guild's. Switching costs nothing and never will: a switching cost would make
+  the player think hard about something the design has deliberately made not worth thinking hard
+  about.
+- **The room.** Twelve stalls, owned ones breathing on their own cycles so the grid is never in
+  lockstep, yours sorted to the front. A feed chomps and flashes the number it moved. The exact
+  boost is on every tile, the upgrade button names the frame it buys and its price, and every
+  refusal is a sentence written by the same function that would decline it.
+- **The rail says when something arrived.** Companions are earned while the player is somewhere
+  else — a floor cleared, a rank held, a hundredth contract — so without a cue the room only gets
+  visited by players who already suspect. The badge counts against a remembered number and clears
+  itself by being looked at.
+- **Save schema v14** — the sparse pet-progress record, the active id, Tavern Scraps, hatched
+  eggs, the seen-count and a per-zone mission counter — with a v13 fixture captured at Vesna's
+  table. The migration grants nothing, which is the whole point: the history already earns the
+  pets.
+
+### Changed — Phase 14
+- **Tavern Scraps drop at 16%, not 8%.** The economy sim's fourth pass measured the old rate at
+  0.8 Scraps a day, which took a companion two months to grow and made the published three-a-day
+  feed cap literally unreachable — the stall was advertising "3/3 feeds left" for a pace the game
+  could not supply. At 16% × 2 a companion reaches fifty in **31 modelled days**, and the cap
+  becomes what it was always meant to be: a burst allowance for a player who banked Scraps while
+  away, not a daily target.
+- **The economy sim gains a pet sink**, held under 3% of all gold out and measured at 0.5–1.2%.
+  Feeding must never compete with training, and a band is a better guarantee of that than an
+  intention.
+
+### Fixed — Phase 14
+- **Gear `goldFind` and `xpBonus` had been decorative since Phase 2.** `deriveStats` has computed
+  them for twelve phases and no payout ever read the numbers, so an amulet advertising "+3% gold
+  found" was advertising nothing. `payoutBonus()` now composes the hall's cut, the pet's and the
+  gear's into one object — one function, so no call site can quietly assemble a subset.
+- **The per-zone mission counter counted attempts; its sibling counted victories.** The Wisp of
+  the Chapel asks for forty contracts at the Sunken Chapel and the Tankard Imp asks for a hundred
+  anywhere — and one of those being satisfiable by *losing* made the harder-sounding gate the
+  easier one.
+
 ### Added — Phase 13: Fortune's Table (a gacha that tells you the truth)
 - **Three banners, and the calendar decides them.** The Daily Draw highlights a slot, Set of the
   Week puts one of your class's two sets on the table until Monday, and Vesna's Grand Reading

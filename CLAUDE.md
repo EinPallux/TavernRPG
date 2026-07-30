@@ -83,7 +83,16 @@ feedback, edge cases and tests. Deployed on Vercel.
   `state/gachaActions.ts`, the room with its always-visible odds panel, public pity meter, tarot
   ceremony and history log, an economy-sim gacha faucet, and save schema v13.
 
-984 unit tests + 153 e2e green. Next work: `ROADMAP.md` **Phase 14 (The Menagerie)**.
+- **Phase 14:** the Menagerie — `data/pets.ts` (twelve companions whose `source` is a closed union
+  of the facts that earn them), `engine/pets/` (`ownership` derives who you have and stores
+  nothing; `feeding`; `boost`; `eggs`), `state/petActions.ts`, the room with its twelve stalls,
+  the character screen's companion chip, the nav rail's arrivals badge, economy sim pass 4, and
+  save schema v14. It also closed a twelve-phase-old gap: gear `goldFind`/`xpBonus` had been
+  computed by `deriveStats` since Phase 2 and applied to nothing.
+
+1,038 unit tests + 163 e2e green. Next work: `ROADMAP.md` **Phase 15 (Notice Board, Calendar &
+Daily Polish)** — which is also what finally lights up the Moss Tortoise and the Coin Toad, the
+two pets Phase 14 declared and deliberately left unobtainable.
 
 **A dungeon floor's difficulty is level *and* archetype, and archetype is worth more than you
 think.** Twelve levels of spread at dungeon budget — swarm 27, caster 32, skirmisher 34, bruiser
@@ -132,8 +141,8 @@ bounty already taught this lesson once, from the other direction.
 `engine/gacha/schedule.ts` derives all three banners from `(dayKey, worldSeed, classId)` and keys
 each seed on its *period* (the day, the week's Monday, the month) rather than the day — a weekly
 banner seeded by the day re-rolls every morning. Nothing stores or advances it, which keeps the
-Reset Engine the only thing that decides it is tomorrow. Phase 14's banner slots should follow
-the same shape.
+Reset Engine the only thing that decides it is tomorrow. Pet ownership (Phase 14) is the same
+idea one step further: derived from the *save's own history* rather than from the calendar.
 
 **The gacha's pity counter follows the set, not the week** (`gacha.weeklyPitySet`). Rolls banked
 toward Oathsworn survive a Wolfblood week — but `pityFor()` reports **zero** on a week that will
@@ -145,6 +154,26 @@ six days. The two behaviours look contradictory and are both required.
 one is denominated in *rolls*, not rungs, and is the shape to copy: rungs are
 `floor(rolls / 15)` arithmetic on totals rather than an increment on a boundary, so replaying it
 cannot double-pay.
+
+**Don't store what the save can already answer.** `engine/pets/ownership.ts` keeps no list of who
+you have; it reads the floors you cleared, the contracts you won and the rank you held. That is
+why a Phase 11 player owns their dungeon pets the day the room opens — no migration, no
+reconciliation pass, and nothing that can disagree with the history that produced it. The price
+is that *granting* a pet means making its source true, which is why the two luck-based ones
+(`pets.eggs`, `gacha.pets`) are stored: for a 0.5% roll the luck **is** the fact. Before adding a
+`somethingOwned: string[]`, check whether the thing that earned it is already written down.
+
+**Two counters that mean the same thing must be counted the same way.** `activity.zoneMissions`
+shipped counting *attempts* while `activity.missionsCompleted` counted *victories* — which quietly
+made the Wisp of the Chapel's forty-at-one-zone gate easier than the Tankard Imp's hundred-
+anywhere. Any new progress counter that sits beside an existing one inherits its units, or it is
+a balance bug wearing a plausible name.
+
+**A cap the game cannot supply is a lie on the screen.** The Menagerie advertised "3/3 feeds left"
+against a Scrap drop rate that funded 0.8 feeds a day — a ceiling no player could ever reach, and
+a pet that took two months rather than the month the spec claimed. `npm run economy` found it; the
+band in `economy.test.ts` now measures **days to grow one companion**, not the cap. When you
+publish a rate limit, make the sim prove the supply can approach it.
 
 **Before touching class constants or monster archetypes:** run `npm run balance`. The numbers in
 `src/data/classes.ts` were solved for, not chosen, and the bands in
@@ -167,12 +196,12 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 `world/` (identity, generate, materialize, ladder, simulate, rivals, crier, halls), `arena/`
 (arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty),
 `dungeons/` (floors, delve, keys), `forge/` (forgeConfig, craft),
-`gacha/` (schedule, roll, track), `economy/`, `reset/` ·
+`gacha/` (schedule, roll, track), `pets/` (ownership, feeding, boost, eggs), `economy/`, `reset/` ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
 patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, vesnaBarks, names, guilds, guildChat,
-bounties, dungeons, gearSets, banners, legends, crierTemplates ·
+bounties, dungeons, gearSets, banners, pets, legends, crierTemplates ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha}/` ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,

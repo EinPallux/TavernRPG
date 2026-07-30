@@ -16,6 +16,7 @@ import {
   DEFAULT_FORGE,
   DEFAULT_GACHA,
   DEFAULT_GUILD,
+  DEFAULT_PETS,
   DEFAULT_SETTINGS,
   EMPTY_MATERIALS,
   saveFileSchema,
@@ -195,6 +196,34 @@ export const MIGRATIONS: readonly Migration[] = [
        * track is that the number on screen is the number that was earned.
        */
       return { ...data, gacha: { ...DEFAULT_GACHA } };
+    },
+  },
+  {
+    from: 13,
+    to: 14,
+    describe: 'Phase 14: the Menagerie — pet progress, Tavern Scraps and per-zone mission counts',
+    migrate: (data) => {
+      /*
+       * Additive, and for once **not** empty-handed.
+       *
+       * Pet *ownership* is derived rather than stored (`engine/pets/ownership.ts`), so a player
+       * who cleared the Rat Cellars in Phase 11 or reached the top 500 in Phase 9 walks into the
+       * Menagerie already owning those pets — the facts that earn them have been in the save for
+       * three phases. Nothing is granted here because nothing needs to be; the room simply reads
+       * the history that was always there. What the slice adds is *progress*: levels, feeds and
+       * the food to pay for them, all of which genuinely start at zero.
+       *
+       * `zoneMissions` starts empty and cannot be back-filled — the save has never recorded which
+       * zone a mission was run in, only how many were run. The Wisp's forty contracts therefore
+       * begin counting today for everyone, which is the honest reading of a counter that did not
+       * exist yesterday.
+       */
+      const activity = (data['activity'] ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        activity: { ...activity, zoneMissions: {} },
+        pets: { ...DEFAULT_PETS },
+      };
     },
   },
 ];
