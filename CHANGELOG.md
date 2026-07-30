@@ -7,6 +7,51 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 6: Patrol & Economy Pass 1
+- **The City Watch is open.** Sign on for 1–12 hours with Hildy, watch the lantern move along the
+  route, and clock off for the pay. It is the "I'm done for today" button: a floor under a bad
+  day, deliberately the worse deal so it never becomes the optimal way to play.
+- **A shift is time, not a session.** What it has earned is computed from the clock rather than
+  accumulated by a ticker, so closing the tab for six hours works with no background timer, and a
+  rewound device clock cannot mint gold. Reload mid-shift, come back tomorrow — the numbers are
+  the same either way.
+- **Walk off early and you are paid for what you walked**, pro-rated to the minute, with a report
+  that says so. Collecting and cancelling are literally the same call, so an abandoned shift can
+  never be paid by different rules than a completed one.
+- **The shift report**: hours signed off, the pay counted out, and a few lines from the beat. The
+  night lines only appear on shifts long enough to have a night in them, and a longer shift tells
+  more of the story.
+- **One place at a time.** A hero on the beat cannot take a job and a hero on a job cannot sign
+  on — enforced in the engine, so it holds for every caller and not just for the button that
+  happens to check. A mission waiting to be watched counts as still out.
+- **The economy simulation** (`engine/economy/simulate.ts`) plays modeled days through the real
+  reward curves and records every coin in and out. 15 CI bands cover pacing, the "always slightly
+  broke" purse and patrol staying the fallback; `/dev/economy` shows the same ledger day by day.
+  It models only what exists — shops and mounts join as they ship.
+- **Save schema v6** carries the shift, with a v5 fixture caught mid-mission.
+
+### Changed — Phase 6
+- **Levelling was about ten times too slow, and now is not.** `xpPerVigor` divided by a flat 320,
+  which makes levels-per-day *constant* — the hundredth level costing exactly as much play as the
+  second — and put level 10, where the last feature gate opens, on day 29 against a target of day
+  2–3. It is now a curve (`28 + 1.2L`): level 10 on day 4, 25 on day 11, 55 on day 34. Reaching
+  100 still arrives well ahead of its target; that needs a deceleration no single divisor gives,
+  and is flagged for the Phase 17 balance pass with the sim measuring it every build.
+- **Gear now keeps up with levelling.** Faster levels exposed a supply problem the slow curve was
+  hiding: a level-13 hero still swinging their level-1 starter weapon, win-rate sliding from 100%
+  to 40%. Drops are slot-weighted toward weapons, and carry a **pity floor** — five levels behind
+  and the next drop is a weapon. Pity decides what a drop is, never whether one happens. Shops
+  (Phase 7) are the real fix.
+- Feature gates are enforced where a room renders, not only where the nav rail links to it. That
+  was fine while every locked place was a placeholder; the watch house pays real gold, and
+  `/patrol` was reachable at level 1 by typing the URL.
+
+### Fixed — Phase 6
+- Two Phase 5 tests were asserting a fiction. The "playthrough" hero never spent gold on
+  attributes and only equipped into empty slots, and `isUpgrade` ignored weapon damage entirely —
+  so a strictly better weapon stayed in the backpack, and the losses that followed read as a
+  balance problem rather than a test bug.
+
 ### Added — Phase 5: Tavern & Missions (the core loop)
 - **The loop is playable**: accept a job → wait out a real timer → watch the fight → take the
   loot → spend it on training → go again. The Gilded Tankard is a real screen now, not a dressed

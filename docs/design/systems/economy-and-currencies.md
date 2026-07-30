@@ -58,5 +58,29 @@ payout. Monthly (1st): grand banner. One reset engine owns this table (`daily-lo
   same `goldPerVigor`/`statCost` primitives — ratios, not absolutes, are the tuned quantities).
 - Item sale values pinned to level at *generation* (old loot deflates naturally — no stockpiling exploit).
 - Dice have no exchange rate, so premium can't inflate.
-- The CI economy simulation (`sim:economy` test) replays 90 modeled days each build and asserts
-  ratio drift stays within bands — economy regressions fail the build, not the player.
+- The CI economy simulation (`npm run economy`, also part of `npm test`) replays modeled days each
+  build and asserts ratio drift stays within bands — economy regressions fail the build, not the
+  player.
+
+## 6b. As built — the simulation (Phase 6, pass 1)
+
+`src/engine/economy/simulate.ts` plays modeled days through the **real** reward curves and records
+every coin in and every coin out as a per-day `DayLedger`. Two rules keep it honest:
+
+- **It calls the same functions the game does.** Nothing in it re-implements a curve, so a change
+  to `missionPayout`, `goldPatrolPerHour` or `statCost` moves the sim the same day it moves the
+  game. The moment the sim carries its own copy of a formula it starts asserting its own past.
+- **It models only what exists.** Pass 1 covers missions and patrol as faucets, training as the
+  sink (`MODELLED_FAUCETS` / `MODELLED_SINKS`). Shops (Phase 7), mount upkeep, the gacha and guild
+  bonuses are absent because they are not built — a sim that invents numbers for unbuilt systems
+  asserts a fiction, and the §2 health check above only becomes fully checkable once they land.
+  Each is added to the constant as it ships, and the bands tighten with it.
+
+15 CI bands in `economy.test.ts`: the §0 pacing milestones, the "always slightly broke" purse (the
+tuned quantity is *attribute points a day's income buys*, not a gold figure — a ratio survives
+every reward-curve change an absolute would not), patrol staying strictly the fallback, and
+ledger integrity. `/dev/economy` renders the same ledger day by day, so a red band can be traced
+to the day and the faucet that broke it.
+
+Two problems it found on its first run — a levelling curve ~10× too slow, and the gear-supply gap
+that fix exposed — are recorded in `../balancing-formulas.md` §1 and §7.

@@ -130,12 +130,42 @@ Four things the phase forced that were not in the plan:
 Also fixed: `claimMission` would pay twice if called twice (a double-clicked Continue). It now
 refuses anything that is not the pending mission.
 
-## Phase 6 — Patrol & Economy Pass 1 (S) 🔲
+## Phase 6 — Patrol & Economy Pass 1 (S) ✅
 Patrol screen (Hildy, shift slider, offline accrual, cancel pro-rating, shift report), mission↔
 patrol exclusivity, gold faucet/sink instrumentation (dev economy dashboard, flagged), first
 economy CI sim (30 modeled days) asserting the "always slightly broke" band.
 **Accept:** patrol collects correctly across reloads/offline; economy sim green; dashboards show
 faucet/sink ledger per modeled day.
+
+**Delivered.** A shift is three numbers and a level in the save; what it has earned is *computed
+from the clock, never accumulated*, which is what makes closing the tab for six hours work with no
+background timer and a rewound clock unable to mint gold. Collecting and cancelling are the same
+call — an abandoned shift can never be paid by different rules than a completed one. Exclusivity
+lives in the engine (`startShift` / `acceptMission` both refuse), not in a disabled button. Save
+schema **v6** carries the shift, with a v5 fixture that has a mission mid-flight. `/dev/economy`
+renders the CI sim's ledger day by day. 438 unit + 67 e2e green.
+
+The sim is the story of the phase — it found two real problems on its first run:
+- **Levelling was ~10× too slow.** `xpPerVigor` was a flat `xpNeeded(L)/320`, which makes
+  levels-per-day *constant* (the hundredth level costing the same as the second) and put level 10
+  — where the last feature gate opens — on **day 29** against a design target of day 2–3. Now
+  `28 + 1.2L`: L10 day 4, L25 day 11, L55 day 34. The §0 table's L100 target needs a 6× deceleration
+  no simple divisor gives; flagged for Phase 17, and the dashboard measures all four milestones
+  every build.
+- **Faster levelling exposed gear supply.** A level-13 hero was still swinging the level-1 starter
+  weapon, with win-rate sliding 100% → 40%. Slot weighting alone did not fix it (the problem is
+  variance, not rate), so drops now carry a **weapon pity floor** — five levels behind and the next
+  drop is a weapon. Pity decides *what* a drop is, never *whether* one happens. Phase 7's shops are
+  the real fix.
+
+Two more things the phase forced:
+- **The gate only existed in the nav rail.** `/patrol` rendered fine at level 1 by URL, and it pays
+  real gold. `GatedPlace` now enforces `gateFor()` where the room renders, wrapping the screen
+  rather than modifying it.
+- Two Phase 5 tests were quietly fiction — the "playthrough" hero never trained and only equipped
+  into empty slots, and `isUpgrade` ignored weapon damage entirely, so better weapons stayed in the
+  bag and the resulting losses read as a balance problem. Both fixed; see CLAUDE.md on what
+  "on curve" means.
 
 ## Phase 7 — Shops & Stables (M) 🔲
 Armory + Gilded Facet (day-seed stock, guaranteed-mix rules, reroll, buy/sell with confirms),

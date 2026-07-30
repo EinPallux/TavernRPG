@@ -73,7 +73,7 @@ interface Hero {
 }
 interface ActivityState {
   mission?: ActiveMission;          // { offerSnapshot, duration, startedAt, endsAt, seed }
-  patrol?: PatrolShift;             // { startedAt, hours }
+  patrol?: PatrolShift;             // { startedAt, endsAt, hours, heroLevel } — see below
   arena: ArenaState; dungeons: Record<string, DungeonProgress>;
   forge: ForgeState; gacha: PityState & { history: GachaResult[] };
   board: DailyTasksState; calendar: CalendarState;

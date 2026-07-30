@@ -22,6 +22,7 @@ import { useGameStore } from '@/state/gameStore';
 import { classDef } from '@/data/classes';
 import { xpNeeded } from '@/engine/progression/xp';
 import { vigorCeiling } from '@/engine/reset/resetEngine';
+import { gameNow } from '@/state/clock';
 import { snappy } from '@/styles/motion';
 
 function CurrencyChip({
@@ -80,6 +81,10 @@ export function TopHud() {
   // A landed mission has no countdown left to show — it shows a "go and see" chip instead.
   const missionEndsAt = activity?.mission?.endsAt ?? null;
   const missionWaiting = Boolean(activity?.pendingMission);
+
+  // Patrol mirrors the mission chip (spec §5). Only one can ever run, so they never collide.
+  const patrol = activity?.patrol ?? null;
+  const patrolDone = patrol !== null && gameNow() >= patrol.endsAt;
 
   return (
     <header className="surface-timber bg-wood-800/95 relative z-30 flex h-[72px] items-center gap-6 border-b border-amber-500/20 px-5">
@@ -170,6 +175,16 @@ export function TopHud() {
           </Link>
         ) : missionEndsAt !== null ? (
           <TimerChip endsAt={missionEndsAt} label="Mission" data-testid="hud-activity" />
+        ) : patrolDone ? (
+          <Link
+            href="/patrol"
+            className="chamfer-sm font-display animate-pulse border border-amber-500/60 bg-amber-500/15 px-3 py-1.5 text-xs tracking-widest text-amber-400 uppercase"
+            data-testid="hud-patrol-done"
+          >
+            Shift complete
+          </Link>
+        ) : patrol !== null ? (
+          <TimerChip endsAt={patrol.endsAt} label="Watch" data-testid="hud-patrol" />
         ) : (
           preview.activityEndsAt !== null && (
             <TimerChip

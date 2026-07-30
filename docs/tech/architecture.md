@@ -86,6 +86,11 @@ walking-skeleton screen that Phase 1 replaces with the real app shell.
   records, world-sim §7 — target < 1 MB/slot).
 - **Migrations:** `migrations/vN.ts` chain, pure functions with Vitest fixtures per version;
   loading any historical save from 1.0-beta onward must succeed (CI keeps fixture saves).
+  Shipped so far: **v1** walking skeleton · **v2** settings · **v3** hero · **v4** battle playback
+  preferences · **v5** activity (Vigor, mission) · **v6** patrol shift. Every one ships a captured
+  fixture of the *previous* version, and a fixture is captured in the least convenient state the
+  version can be in rather than at rest — v5's carries a mission mid-timer, because a migration
+  that only handles the idle save is a migration that has not been tested.
 - **Export/import:** deflate-compressed base64 `.tavernsave` file; import validates via Zod and
   reports version/corruption in human language. Tampering is the player's right (Q15) — import
   never crashes, worst case rejects politely.
