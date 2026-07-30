@@ -48,6 +48,9 @@ export function createHero({
     trained: { str: 0, dex: 0, int: 0, con: 0, lck: 0 },
     gold: startingGold,
     dice: 0,
+    // Set properly when the world raises and the player takes the bottom rung; zero until then
+    // means "not yet on the ladder" rather than "worst hero alive".
+    honor: 0,
     equipment: {},
     backpack: Array.from({ length: BACKPACK_SLOTS }, () => null),
     satchel: [],

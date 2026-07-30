@@ -7,6 +7,49 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 9: Arena & Hall of Fame (the ladder you have been watching)
+- **You are on the ladder now.** 1,501 rungs, and the bottom one is yours from the moment the
+  world is raised — not from the moment the arena unlocks. That one change switched on a feature
+  Phase 8 had shipped dormant: rivals are drawn from the band around your *rank*, so until you
+  had one, nobody ever became a rival and the Crier never had a personal line to write.
+- **The Proving Grounds.** Three opponents on nailed parchment with a wax seal for their rank,
+  one above you, one level, one below. A ten-minute bell between fights, free rerolls once it has
+  rung, and a Golden Die if you cannot wait.
+- **Threat reads in the world's voice, never in numbers.** "Their armour looks far heavier than
+  yours", not "armour 412". Scouting is post-1.0, and a read you can act on with certainty is a
+  spreadsheet lookup rather than a judgement.
+- **A duel is the same fight a bot has.** The real `fight()` against the opponent's materialized
+  combatant, settled through the same ladder service the simulation calls thousands of times a
+  day. Nothing is faked and no outcome is pre-decided — that is what "bots are fair" has to mean.
+- **The climb is shown, not numbered.** Win and the ladder rows physically trade places on the
+  result screen, past the neighbours you were already looking at on the board. Rank 500, 100, 10
+  and 1 take the whole screen with a crowd-roar stinger and a one-time purse of Golden Dice.
+- **They come for you while you sleep.** One or two bot attacks a day, more when a rivalry is hot,
+  resolved against your snapshot during catch-up. Losses become revenge chips you can settle.
+- **The weekly ladder payout**, Sunday midnight, by bracket. Fires **exactly once** across a
+  fortnight away, a month away, and both directions of a daylight-saving change — because a week
+  is identified by the date of the Sunday that ends it, and a date cannot be ambiguous.
+- **The Hall of Fame.** All 1,501 heroes honour-sorted with search and jump-to-rank, your row
+  pinned and carrying a "▲ 12" chip since your last visit; sixty guilds ranked by the honour of
+  their best twenty; and a weekly Legends archive. Only ~35 rows are ever mounted, so it scrolls.
+- **Save schema v9** — hero honour, the arena slice, and the Legends archive, with a v8 fixture
+  captured mid-mission from real engine output.
+
+### Fixed — Phase 9
+- **Bot attacks fired again on every page reload.** A day's raid is seeded by its day index, so
+  re-running it picks the same attacker and replays the same fight — which sounds idempotent and
+  is the opposite, because the honour loss lands a second time. An e2e reload caught two honour
+  going missing; `arena.lastRaidDay` is the high-water mark that fixes it.
+- **The attack band was inverted.** Raids asked "who can *I* reach?" instead of "who can reach
+  me?" — a difference that matters because the band is asymmetric (60 rungs up, 15 down), and
+  getting it backwards left the player attackable only by people already behind them.
+- **A milestone leap paid one rank and banked the other.** A first arena win landing inside the
+  top 100 clears 500 on the way; it now pays both and fires the stinger for the better one.
+- **`worldSchema.ladder` rejected the player.** The ladder floor was 0 and the player's id is -1,
+  so the save would have failed validation the first time anyone took their seat.
+- **The board went stale when the ladder moved.** Overnight drift left three cards drawn around a
+  rung the player no longer stood on; the draw is now discarded when their rank changes.
+
 ### Added — Phase 8: World Simulation Core (the 1,500)
 - **Aldenvale has people in it.** Fifteen hundred simulated heroes, spread across sixty guilds,
   on a ladder that already looks ninety days old when you arrive. They level, they fight each

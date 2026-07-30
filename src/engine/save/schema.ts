@@ -15,7 +15,7 @@ import { CRIER_CATEGORIES, RIVAL_ARCHETYPES } from '@/data/crierTemplates';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 8;
+export const CURRENT_SCHEMA_VERSION = 9;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -82,6 +82,12 @@ export const heroSchema = z.object({
   trained: attributesSchema,
   gold: z.number().min(0),
   dice: z.number().int().min(0),
+  /**
+   * Ladder honor (schema v9). Lives on the hero rather than in the arena slice because it is a
+   * player stat like gold — the Hall of Fame shows it beside the level, and it outlives any
+   * single arena session.
+   */
+  honor: z.number().min(0),
   /** Sparse by design: an empty slot is an absent key, not a null. */
   equipment: z.partialRecord(slotIdSchema, itemSchema),
   /** Fixed-length grid; null is an empty slot so positions stay stable. */
@@ -321,12 +327,89 @@ export const worldSchema = z.object({
   lastSimAt: timestampSchema,
   bots: z.array(botRecordSchema),
   guilds: z.array(guildRecordSchema),
-  /** Bot ids in ladder order, best first. */
-  ladder: z.array(z.number().int().min(0)),
+  /**
+   * Ladder order, best first. Bots are 0…1,499; **-1 is the player** (`PLAYER_LADDER_ID`), who
+   * takes their seat when the world is raised. The floor is -1 rather than 0 for exactly that
+   * reason — a `min(0)` here would reject every save the moment the arena opened.
+   */
+  ladder: z.array(z.number().int().min(-1)),
   rivals: z.array(rivalSchema),
   /** Newest first, capped at 300 (spec §7). */
   feed: z.array(feedEntrySchema),
 });
+
+/* ── The arena (schema v9) ─────────────────────────────────────────────────────── */
+
+/** A bot attack the player has not answered yet (arena spec §1 step 6). */
+export const grudgeSchema = z.object({
+  botId: z.number().int().min(0),
+  at: timestampSchema,
+  /** True when the bot won, which is what earns the revenge chip. */
+  lost: z.boolean(),
+  /** Ranks the attack cost, for the "they took rank 412 off you" line. */
+  ranksLost: z.number().int().min(0),
+});
+
+/** One week's closing top ten, archived for the Hall of Fame's Legends tab (spec §2). */
+export const legendsWeekSchema = z.object({
+  /** The Sunday the week closed on. */
+  weekKey: z.string().min(1),
+  /** Ladder ids, best first. -1 is the player, on the week they managed it. */
+  ids: z.array(z.number().int().min(-1)),
+  /** The player's own rank that week, so the archive reads as their history too. */
+  playerRank: z.number().int().min(0),
+});
+
+export const arenaSchema = z.object({
+  /** The three opponents on offer. Empty until the first draw of the day. */
+  draw: z.array(z.number().int().min(0)),
+  /** Day the draw belongs to; a different day redraws. */
+  drawDay: dayKeySchema.nullable(),
+  /** Rerolls bought today. Part of the draw seed, and priced after the free one. */
+  rerollsToday: z.number().int().min(0),
+  /** Next moment a fight is allowed. */
+  cooldownUntil: timestampSchema,
+  /** Wins that still paid gold and XP today, against the daily cap. */
+  rewardedWinsToday: z.number().int().min(0),
+  /** Cooldown skips bought today, against the 3/day cap. */
+  skipsToday: z.number().int().min(0),
+  /** Unanswered bot attacks, newest first. */
+  revengeQueue: z.array(grudgeSchema),
+  /** Best rank ever held, for milestone stingers that must fire only once. */
+  bestRank: z.number().int().min(0),
+  /** Rank at the last visit to the Hall of Fame, for the "▲ 12 overnight" chip. */
+  lastSeenRank: z.number().int().min(0),
+  /** Last week key the ladder payout was made for (arena spec §3). */
+  lastPayoutWeek: z.string().nullable(),
+  /**
+   * Last day index (days since the epoch) whose bot attacks have been rolled.
+   *
+   * A day's raid is seeded by its index, so re-running it picks the same attacker and replays the
+   * same fight — which applies the honor loss a second time. This is the high-water mark that
+   * stops a reload being an attack.
+   */
+  lastRaidDay: z.number().int().min(0),
+  /** Newest first, capped — the Legends tab is an archive, not a ledger. */
+  legends: z.array(legendsWeekSchema),
+});
+
+/** Weeks kept in the Legends archive. A year of Sundays is plenty of history to browse. */
+export const LEGENDS_ARCHIVE_CAP = 52;
+
+export const DEFAULT_ARENA: Arena = {
+  draw: [],
+  drawDay: null,
+  rerollsToday: 0,
+  cooldownUntil: 0,
+  rewardedWinsToday: 0,
+  skipsToday: 0,
+  revengeQueue: [],
+  bestRank: 0,
+  lastSeenRank: 0,
+  lastPayoutWeek: null,
+  lastRaidDay: 0,
+  legends: [],
+};
 
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
@@ -344,6 +427,8 @@ export const saveFileSchema = z.object({
    * a save with no hero has no world to simulate.
    */
   world: worldSchema.nullable(),
+  /** The Proving Grounds (schema v9). */
+  arena: arenaSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -359,6 +444,9 @@ export type StoredWorld = z.infer<typeof worldSchema>;
 export type StoredBotRecord = z.infer<typeof botRecordSchema>;
 export type StoredFeedEntry = z.infer<typeof feedEntrySchema>;
 export type StoredRival = z.infer<typeof rivalSchema>;
+export type Arena = z.infer<typeof arenaSchema>;
+export type Grudge = z.infer<typeof grudgeSchema>;
+export type LegendsWeek = z.infer<typeof legendsWeekSchema>;
 export type SaveFile = z.infer<typeof saveFileSchema>;
 
 export interface NewSaveOptions {
@@ -381,6 +469,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     // The world is generated at hero creation: a save with no hero has nothing to simulate
     // around, and no rank for the level-of-detail bands to centre on.
     world: null,
+    arena: { ...DEFAULT_ARENA },
   };
 }
 

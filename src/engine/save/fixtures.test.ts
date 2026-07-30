@@ -6,6 +6,10 @@
  * format, this test fails instead of a player's save.
  *
  * When bumping the schema: add a fixture for the *previous* version here, never edit an old one.
+ *
+ * `v8-phase8.json` is minified where the earlier ones are pretty-printed: a real Phase 8 save
+ * carries the whole 1,500-hero world and runs to 184 KB, which no one is going to read either
+ * way. The compact form at least makes it obvious it is machine output.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -16,8 +20,17 @@ import v4Phase4 from './fixtures/v4-phase4.json';
 import v5Phase5 from './fixtures/v5-phase5.json';
 import v6Phase6 from './fixtures/v6-phase6.json';
 import v7Phase7 from './fixtures/v7-phase7.json';
+import v8Phase8 from './fixtures/v8-phase8.json';
+import { BOT_COUNT } from '@/engine/world/identity';
+import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { migrateSave } from './migrations';
-import { CURRENT_SCHEMA_VERSION, DEFAULT_ACTIVITY, DEFAULT_SETTINGS } from './schema';
+import {
+  CURRENT_SCHEMA_VERSION,
+  DEFAULT_ACTIVITY,
+  DEFAULT_ARENA,
+  DEFAULT_SETTINGS,
+  type SaveFile,
+} from './schema';
 
 describe('save fixtures — every shipped version still loads', () => {
   it('opens a Phase 0 (v1) save and upgrades it to the current format', () => {
@@ -249,6 +262,58 @@ describe('save fixtures — every shipped version still loads', () => {
     // existing hero without a world is exactly the case the load path already handles.
     expect(result.save.world).toBeNull();
     expect(result.save.hero?.name).toBe('Odo Marchand');
+  });
+
+  it('opens a Phase 8 (v8) save with all 1,500 of them still standing', () => {
+    const result = migrateSave(structuredClone(v8Phase8));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(8);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // The world is the bulk of a real save — 184 KB of it — and the migration must not so much
+    // as reorder it. If a bot, a guild roll or a rung of the ladder went missing here, the
+    // player's Hall of Fame would quietly disagree with itself.
+    const world = result.save.world;
+    expect(world?.bots).toHaveLength(BOT_COUNT);
+    expect(world?.guilds).toHaveLength(60);
+    expect(world?.ladder).toHaveLength(BOT_COUNT);
+    expect(world?.feed.length).toBeGreaterThan(0);
+    expect(world?.ladder).toEqual((v8Phase8 as unknown as SaveFile).world?.ladder);
+  });
+
+  it('gives a Phase 8 hero the honor and the arena slice they were missing', () => {
+    const result = migrateSave(structuredClone(v8Phase8));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // Zero, not a seeded rank's worth: honor is earned in the arena, and a hero who has never
+    // fought there has none. `joinLadder` seats them when they first walk into the Proving
+    // Grounds, which is a load-path decision and not a migration's business.
+    expect(result.save.hero?.honor).toBe(0);
+    expect(result.save.arena).toEqual(DEFAULT_ARENA);
+
+    // Everything the v8 player was mid-way through survives intact.
+    expect(result.save.hero?.name).toBe('Sela Thornwick');
+    expect(result.save.hero?.level).toBe(24);
+    expect(result.save.activity.mission?.offer.monsterId).toBe('fen-stalker');
+    expect(result.save.activity.patrol?.hours).toBe(8);
+    expect(result.save.activity.mount?.mountId).toBe('courser');
+    expect(result.save.activity.shops['facet']?.rerollsToday).toBe(2);
+  });
+
+  it('leaves a v8 player off the ladder, exactly as v8 left them', () => {
+    const result = migrateSave(structuredClone(v8Phase8));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // Phase 8 shipped a world the player watched but never entered, so their saved ladder has no
+    // seat for them and — because rivals are drawn from the band around the player's rank — no
+    // rivals either. Phase 9 is what changes that, on load rather than in the migration.
+    expect(result.save.world?.ladder).not.toContain(PLAYER_LADDER_ID);
+    expect(result.save.world?.rivals).toEqual([]);
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

@@ -59,6 +59,27 @@ export function rankIn(order: readonly number[], id: number): number {
 }
 
 /**
+ * Put the player on the ladder, at the bottom.
+ *
+ * They join the moment the world is raised rather than when the arena unlocks at level 4. Being
+ * *on* the ladder and being able to *fight* on it are different things, and the difference
+ * matters: from the first session the player has a rank, neighbours the Crier can name, and a
+ * rank that drifts while they are away. A player who only appears at level 4 has been standing
+ * outside a world that was supposedly already running.
+ *
+ * Idempotent — a save that already has them stays as it is.
+ */
+export function joinLadder(order: readonly number[], id = PLAYER_LADDER_ID): number[] {
+  return order.includes(id) ? [...order] : [...order, id];
+}
+
+/** Seeded honor for a newcomer at the foot of a ladder of `size`. */
+export function newcomerHonor(size: number): number {
+  // Just under the bottom rung, so the first win is a real climb rather than a formality.
+  return Math.max(10, Math.round(50 - size * 0.002));
+}
+
+/**
  * Apply one fight to the ladder.
  *
  * Honor never goes below zero and ranks are only ever exchanged between the two fighters — no
@@ -153,5 +174,20 @@ export function attackableRanks(rank: number, size: number): { from: number; to:
   return {
     from: Math.max(1, rank - ATTACK_BAND_UP),
     to: Math.min(size, rank + ATTACK_BAND_DOWN),
+  };
+}
+
+/**
+ * Who may attack a fighter at this rank — the exact inverse of `attackableRanks`.
+ *
+ * Worth its own function rather than reusing the other one with the sign flipped, which is a
+ * mistake that reads as correct: the band is asymmetric (60 up, 15 down), so "the ranks I can
+ * reach" and "the ranks that can reach me" are different sets. Getting it backwards makes the
+ * player attackable only by people they are already ahead of, which is to say almost nobody.
+ */
+export function attackersOf(rank: number, size: number): { from: number; to: number } {
+  return {
+    from: Math.max(1, rank - ATTACK_BAND_DOWN),
+    to: Math.min(size, rank + ATTACK_BAND_UP),
   };
 }

@@ -81,8 +81,11 @@ test.describe('the world exists', () => {
 
     expect(world).not.toBeNull();
     expect(world!.bots).toHaveLength(1_500);
-    expect(world!.ladder).toHaveLength(1_500);
-    expect(new Set(world!.ladder).size).toBe(1_500);
+    // 1,501 rungs since Phase 9: the player takes their seat the moment the world is raised,
+    // which is what gives them a rank, rivals and a Crier that can name them.
+    expect(world!.ladder).toHaveLength(1_501);
+    expect(new Set(world!.ladder).size).toBe(1_501);
+    expect(world!.ladder).toContain(-1);
   });
 
   test('greets a new hero with a Crier board that already has news on it', async ({ page }) => {
@@ -144,8 +147,10 @@ test.describe('the world keeps moving', () => {
     await expect(page.getByTestId('place-tavern')).toBeVisible({ timeout: SETUP_TIMEOUT });
 
     const world = await readWorld(page);
-    expect(world!.ladder).toHaveLength(1_500);
-    expect(new Set(world!.ladder).size).toBe(1_500);
+    expect(world!.ladder).toHaveLength(1_501);
+    expect(new Set(world!.ladder).size).toBe(1_501);
+    // The player is churned along with everyone else and never churned *out*.
+    expect(world!.ladder).toContain(-1);
     for (const bot of world!.bots) expect(bot.honor).toBeGreaterThanOrEqual(0);
   });
 

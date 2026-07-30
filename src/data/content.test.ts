@@ -9,6 +9,7 @@
 
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { HILDY_ARENA_LINES, hildySays, type ArenaMoment } from './arenaBarks';
 import { ARCHETYPES_BY_ID } from './monsterArchetypes';
 import { MISSION_BLURBS, blurbsForDuration, renderBlurb } from './missionBlurbs';
 import { MONSTERS, monstersInZone } from './monsters';
@@ -166,5 +167,48 @@ describe('mission blurbs', () => {
     // Short missions must not draw the "you will not be home before dark" lines.
     expect(blurbsForDuration(5).some((blurb) => blurb.minMinutes)).toBe(false);
     expect(blurbsForDuration(20).length).toBeGreaterThan(blurbsForDuration(5).length);
+  });
+});
+
+describe('Hildy at the Proving Grounds', () => {
+  const MOMENTS: readonly ArenaMoment[] = [
+    'browse',
+    'waiting',
+    'won',
+    'lost',
+    'past-cap',
+    'milestone',
+    'rerolled',
+    'broke',
+    'raided',
+    'revenge',
+    'newcomer',
+  ];
+
+  it('has something to say at every moment', () => {
+    for (const moment of MOMENTS) {
+      expect(HILDY_ARENA_LINES[moment], moment).toBeDefined();
+      expect(HILDY_ARENA_LINES[moment]!.length, moment).toBeGreaterThan(0);
+    }
+  });
+
+  it('picks by index rather than rolling — the same tick is the same line', () => {
+    for (const moment of MOMENTS) {
+      expect(hildySays(moment, 3)).toBe(hildySays(moment, 3));
+      const pool = HILDY_ARENA_LINES[moment]!;
+      expect(hildySays(moment, pool.length)).toBe(hildySays(moment, 0));
+    }
+  });
+
+  it('falls back rather than rendering nothing for an unknown moment', () => {
+    expect(hildySays('nonsense' as ArenaMoment, 0)).toBe(hildySays('browse', 0));
+  });
+
+  it('never puts a number in the player’s ear — the arena is read, not calculated', () => {
+    for (const lines of Object.values(HILDY_ARENA_LINES)) {
+      for (const line of lines) {
+        expect(line, line).not.toMatch(/\d/);
+      }
+    }
   });
 });

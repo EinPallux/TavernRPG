@@ -11,6 +11,7 @@
 import {
   CURRENT_SCHEMA_VERSION,
   DEFAULT_ACTIVITY,
+  DEFAULT_ARENA,
   DEFAULT_SETTINGS,
   saveFileSchema,
   type SaveFile,
@@ -110,6 +111,22 @@ export const MIGRATIONS: readonly Migration[] = [
       // not have, and the load path already knows how to raise a world for a hero who has none
       // — which is exactly what an existing player is.
       return { ...data, world: null };
+    },
+  },
+  {
+    from: 8,
+    to: 9,
+    describe: 'Phase 9: the player joins the ladder — honor, arena state, weekly payout',
+    migrate: (data) => {
+      // Honor starts at zero and the load path seats the hero at the foot of the ladder, the
+      // same way it does for a brand-new world. An existing player is a newcomer to the arena
+      // even if they are not a newcomer to the game.
+      const hero = data['hero'] as Record<string, unknown> | null;
+      return {
+        ...data,
+        ...(hero ? { hero: { ...hero, honor: 0 } } : {}),
+        arena: { ...DEFAULT_ARENA },
+      };
     },
   },
 ];

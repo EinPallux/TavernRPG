@@ -52,3 +52,35 @@ stinger + Town Crier headline + one-time dice bonus.
 `ArenaState` {draw: [botId×3], drawSeed, cooldownUntil, rewardedWinsToday, skipsToday, revengeQueue},
 honor mutations via ladder service (single authority over rank swaps, used by player fights AND
 world-sim bot fights — one code path, no divergence).
+
+---
+
+## As built (Phase 9)
+
+**The player joins the ladder when the world is raised, not when the arena unlocks.** Phase 8
+shipped a world the player could watch but not enter, and it quietly disabled a feature: rivals
+are drawn from the band around the player's *rank*, and `updateRivals` bails when that rank is
+zero — so nobody ever got a rival and the Crier never had a personal line to write. A seat costs
+nothing before the Proving Grounds opens at level 4, and everything downstream of rank works the
+moment they have one. `arena.lastRaidDay` and the attack band keep a bottom-ranked newcomer from
+being raided on their first morning.
+
+**One code path for every fight.** `resolveDuel` runs the real `fight()` against `materializeBot`
+and settles it through `resolveLadderFight` — the same call the world simulation makes thousands
+of times a day. The only thing the player's fights add is a purse, because bots have no gold.
+
+**Two changes to the design above, both forced by building it:**
+
+- **The three cards are labelled by rung gap, not by slot.** The draw still aims for one above,
+  one level and one below, but a player at the foot of the ladder has nobody below and one at the
+  top has nobody above — so a fixed "The climb / A fair fight / Safe points" caption becomes three
+  identical labels exactly when the player most needs to tell the cards apart. "17 rungs up" is
+  always true and always distinguishes.
+- **Milestones pay every rank they clear, not the first one found.** A first-ever arena win that
+  lands inside the top 100 has passed 500 on the way. Paying one and banking the other for
+  whatever fight happens next reads as a bug from the player's chair.
+
+**Not built, and why:** the profile card has no honor-history sparkline. The save keeps one honor
+figure per bot, not a series, and a fortnight of samples for 1,500 heroes would add roughly 40 KB
+to every write — for a line nobody makes a decision on. If it comes back, it wants a downsampled
+weekly series on the ~60 heroes near the player, not all 1,500.
