@@ -118,25 +118,55 @@ test.describe('navigation', () => {
     await expect(page.getByTestId('nav-character')).toHaveAttribute('aria-current', 'page');
   });
 
-  test('rooms still under construction say so, and say when', async ({ page }) => {
+  test('an unfinished surface still says so, and says when', async ({ page }) => {
     /*
      * This test walked forward a room at a time as the phases landed — the Armory stood in for it
      * until Phase 7, the Emberforge until Phase 12, Fortune's Table until Phase 13, the Menagerie
-     * until Phase 14, the Notice Board until Phase 15. **Every room in Emberhollow is now built.**
+     * until Phase 14, the Notice Board until Phase 15, Settings until Phase 17. There is no
+     * placeholder *room* left in Emberhollow.
      *
-     * What is left is Settings, which is a different kind of placeholder: it is not an empty room
-     * waiting for a phase, it is a working panel that does not do everything yet. The test now
-     * guards the thing that still matters about the placeholder system — that an unfinished
-     * surface says so, and says when — and it will retire with Phase 18.
+     * What survives is the rule the placeholder system existed for: a surface that does not do
+     * everything yet says which phase finishes it. Settings is a working panel with a line at the
+     * foot naming what is still coming, and this guards that line until Phase 18 removes it.
      */
     await ensureHero(page);
     await levelHeroToTen(page);
 
     await page.goto('/settings');
-    await expect(page.getByTestId('place-settings')).toContainText('Phase 18');
-    await expect(page.getByTestId('place-settings')).toContainText('Export and import');
+    await expect(page.getByTestId('settings-later')).toContainText('Phase 18');
+    await expect(page.getByTestId('settings-later')).toContainText('export and import');
     // No keeper, so no bubble — the room speaks for itself instead of inventing a proprietor.
     await expect(page.getByTestId('bark-settings')).toHaveCount(0);
+  });
+
+  test('Settings turns the things it offers', async ({ page }) => {
+    await ensureHero(page);
+    await page.goto('/settings');
+
+    // The rows that became real in Phase 17. Music is absent unless somebody dropped a file in,
+    // which is the documented default — so the panel explains itself rather than greying out.
+    await expect(page.getByTestId('row-sfx')).toBeVisible();
+    await expect(page.getByTestId('row-motion')).toBeVisible();
+    await expect(page.getByTestId('row-speed')).toBeVisible();
+    await expect(page.getByTestId('music-absent')).toBeVisible();
+
+    const sfx = page.getByTestId('toggle-sfx');
+    await expect(sfx).toHaveAttribute('aria-checked', 'true');
+    await sfx.click();
+    await expect(sfx).toHaveAttribute('aria-checked', 'false');
+
+    // Settings live in the save, so the choice survives the trip.
+    await page.getByTestId('choice-speed-4').click();
+    await page.evaluate(async () => {
+      await (
+        window as unknown as { __tavernStore: { getState: () => { flush: () => Promise<void> } } }
+      ).__tavernStore
+        .getState()
+        .flush();
+    });
+    await page.reload();
+    await expect(page.getByTestId('choice-speed-4')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('toggle-sfx')).toHaveAttribute('aria-checked', 'false');
   });
 
   test('rooms that have been built show the real thing instead', async ({ page }) => {

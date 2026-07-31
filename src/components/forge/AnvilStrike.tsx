@@ -21,6 +21,8 @@ import { ItemCard, rarityStyles } from '@/components/items/ItemCard';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Icon, SparkIcon } from '@/components/icons';
 import { dramatic, snappy, standard } from '@/styles/motion';
+import { lootCue } from '@/data/sfx';
+import { play } from '@/state/sfx';
 
 /** Strike beats, in ms from the overlay mounting. Three blows, then the reveal. */
 const STRIKES = [140, 520, 900] as const;
@@ -60,13 +62,29 @@ export function AnvilStrike({ item, pitied, refresh = false, onDone }: AnvilStri
   }, [onDone]);
 
   useEffect(() => {
-    if (reduced) return;
+    /*
+     * Reduced motion is not reduced *sound*. The overlay opens already revealed, so the reveal
+     * cue is all there is to play — skipping it too would quietly make the setting mean
+     * something it does not say.
+     */
+    if (reduced) {
+      play(lootCue(item.rarity));
+      return;
+    }
     const timers = [
-      ...STRIKES.map((at, index) => setTimeout(() => setBeat(index + 1), at)),
-      setTimeout(() => setBeat(3), REVEAL_AT),
+      ...STRIKES.map((at, index) =>
+        setTimeout(() => {
+          play('anvil');
+          setBeat(index + 1);
+        }, at),
+      ),
+      setTimeout(() => {
+        play(lootCue(item.rarity));
+        setBeat(3);
+      }, REVEAL_AT),
     ];
     return () => timers.forEach(clearTimeout);
-  }, [reduced]);
+  }, [reduced, item.rarity]);
 
   const revealed = beat >= 3;
 
@@ -78,7 +96,15 @@ export function AnvilStrike({ item, pitied, refresh = false, onDone }: AnvilStri
       transition={standard}
       className="bg-wood-900/94 absolute inset-0 z-40 grid place-items-center backdrop-blur-sm"
       data-testid="anvil-strike"
-      onClick={() => (revealed ? done.current() : setBeat(3))}
+      onClick={() => {
+        if (revealed) {
+          done.current();
+          return;
+        }
+        // Skipping the strikes still lands on the reveal, so it still earns the reveal's cue.
+        play(lootCue(item.rarity));
+        setBeat(3);
+      }}
     >
       <div className="relative grid place-items-center">
         {/* The beam: only after the strikes, and only as bright as the rarity deserves. */}

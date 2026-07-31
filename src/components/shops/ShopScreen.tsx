@@ -23,6 +23,7 @@ import { bramSays, selaSays, type ShopMoment } from '@/data/shopBarks';
 import { PLACES_BY_ID, type PlaceDef } from '@/data/places';
 import { quoteSale, shopStock } from '@/state/shopActions';
 import { useGameStore } from '@/state/gameStore';
+import { play } from '@/state/sfx';
 import { gameNow } from '@/state/clock';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { KeeperBark } from '@/components/ui/KeeperBark';
@@ -113,11 +114,15 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
               : 'That one has gone.',
         );
         say(result.kind === 'insufficient-gold' ? 'broke' : 'browse');
+        // A refusal gets a sound too. Silence reads as a dropped click, and the player's next
+        // move is to press the same button harder.
+        play('refuse');
         return;
       }
 
       setMessage(null);
       say('bought');
+      play('buy');
     },
     [buyStockItem, say, shopId],
   );
@@ -129,11 +134,13 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
         const heirloom = result.kind === 'cannot-dispose' && result.reason.kind === 'set-piece';
         setMessage(heirloom ? 'That is a set piece. It is not for sale.' : 'That cannot be sold.');
         say(heirloom ? 'heirloom' : 'browse');
+        play('refuse');
         return;
       }
 
       setMessage(null);
       say('sold');
+      play('sell');
     },
     [say, sellItem],
   );

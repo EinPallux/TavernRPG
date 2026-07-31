@@ -21,6 +21,7 @@ import { msUntilNextReset } from '@/engine/reset/resetEngine';
 import type { Item, MaterialBundle, SlotId } from '@/engine/items/types';
 import { quoteScrap, type ForgeRefusal } from '@/state/forgeActions';
 import { useGameStore } from '@/state/gameStore';
+import { play } from '@/state/sfx';
 import { gameNow } from '@/state/clock';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { KeeperBark } from '@/components/ui/KeeperBark';
@@ -145,6 +146,7 @@ export function ForgeScreen() {
       if (!result.ok) {
         setMessage(phrase(result.refusal));
         say(result.refusal.kind === 'scrap-limit' ? 'capped' : 'browse');
+        play('refuse');
         return;
       }
 
@@ -152,6 +154,7 @@ export function ForgeScreen() {
       smeltCount.current += 1;
       setSmelted({ id: smeltCount.current, gained: result.gained });
       say('smelted');
+      play('smelt');
     },
     [say, scrapItem],
   );

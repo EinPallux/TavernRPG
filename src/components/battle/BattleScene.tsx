@@ -22,6 +22,7 @@ import { DamageNumbers } from './DamageNumbers';
 import { ParticleLayer } from './ParticleLayer';
 import { SPEED_OPTIONS, type PlaybackSpeed } from './battleChoreo';
 import { useBattlePlayback } from './useBattlePlayback';
+import { useBattleSfx } from './useBattleSfx';
 
 export interface BattleSceneProps {
   readonly log: readonly BattleEvent[];
@@ -152,6 +153,10 @@ export function BattleScene({
     ...(pace === undefined ? {} : { targetDuration: pace }),
   });
   const { frame, isFinished, progress } = playback;
+
+  // The scene draws the frame; this hears it. Edge-triggered inside the hook, so the component
+  // stays a renderer (combat spec §4).
+  useBattleSfx(frame, isFinished);
 
   // `battle_start` carries both nameplates; without it there is nothing to draw.
   const opening = useMemo(() => log.find((event) => event.t === 'battle_start'), [log]);

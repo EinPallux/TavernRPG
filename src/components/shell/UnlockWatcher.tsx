@@ -21,6 +21,14 @@ import { useEffect, useRef } from 'react';
 import { placesUnlockedAt } from '@/engine/progression/gates';
 import { useGameStore } from '@/state/gameStore';
 import { useShellStore } from '@/state/shellStore';
+import { play } from '@/state/sfx';
+
+/**
+ * `[TUNE]` How long the unlock cue waits behind the level-up, in ms.
+ *
+ * Just past the level-up's own 700ms, so the two read as one phrase rather than one sound.
+ */
+const UNLOCK_CUE_DELAY_MS = 760;
 
 export function UnlockWatcher() {
   const level = useGameStore((state) => state.save?.hero?.level ?? null);
@@ -42,10 +50,26 @@ export function UnlockWatcher() {
     previous.current = level;
     if (before === null || level <= before) return;
 
+    /*
+     * The level-up cue lives here rather than on the character screen, because this is the one
+     * place that knows a level *rose* rather than merely is. It fires wherever the player was
+     * standing when the XP landed — which is usually the tavern, watching a fight end.
+     */
+    play('level-up');
+
     const opened = [];
     for (let step = before + 1; step <= level; step += 1) opened.push(...placesUnlockedAt(step));
     if (opened.length === 0) return;
 
+    /*
+     * One cue however many doors opened at once — a level that opens three rooms should sound
+     * like an event, not like three events — and *after* the level-up rather than under it.
+     *
+     * Both are `reward` cues, so firing them in the same tick means the 60ms throttle drops the
+     * second one: the unlock would go unheard on precisely the levels it exists for. Offsetting
+     * it past the level-up's own length turns a collision into a phrase.
+     */
+    const chime = setTimeout(() => play('unlock'), UNLOCK_CUE_DELAY_MS);
     noteUnlocks(opened.map((place) => place.id));
     for (const place of opened) {
       pushToast({
@@ -57,6 +81,8 @@ export function UnlockWatcher() {
         ttl: 7000,
       });
     }
+
+    return () => clearTimeout(chime);
   }, [level, noteUnlocks, pushToast]);
 
   return null;

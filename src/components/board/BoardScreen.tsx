@@ -20,6 +20,7 @@ import { boardView } from '@/state/boardActions';
 import { ledger } from '@/state/calendarActions';
 import { currentDayKey } from '@/state/clock';
 import { useGameStore } from '@/state/gameStore';
+import { play } from '@/state/sfx';
 import type { DailyChest, WeeklyChest } from '@/engine/board/chest';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { TavernPanel } from '@/components/ui/TavernPanel';
@@ -64,20 +65,25 @@ export function BoardScreen() {
     const result = claimDailyChest();
     if (!result.ok) {
       setMessage('Not yet — all three notices first.');
+      play('refuse');
       return;
     }
     setMessage(null);
     setOpened({ kind: 'daily', chest: result.chest });
+    play('coin');
   }, [claimDailyChest]);
 
   const handleWeekly = useCallback(() => {
     const result = claimWeeklyChest();
     if (!result.ok) {
       setMessage('The ladder wants all seven rungs.');
+      play('refuse');
       return;
     }
     setMessage(null);
     setOpenedWeekly({ kind: 'weekly', chest: result.chest });
+    // The week's chest pays Golden Dice, and the premium currency has its own three notes.
+    play('dice');
   }, [claimWeeklyChest]);
 
   const clearBurst = useCallback(() => {

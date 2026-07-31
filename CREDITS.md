@@ -26,6 +26,14 @@ commonly used from that site include (non-exhaustive, filled in as icons are ven
 Lorc, Delapouite, John Colburn, Felbrigg, Skoll, Sbed, Willdabeast, Carl Olsen — all licensed
 under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 
+### Sound effects
+
+**No audio files ship with the game and no sound is licensed from anyone.** Every one of the 24
+cues is synthesized in the browser from an oscillator recipe in `src/data/sfx.ts`
+(`docs/tech/asset-pipeline.md` §6) — the plan named Kenney's CC0 audio pack, and the built game
+uses none of it. This row exists to say so: an attribution list is only useful if it is also
+accurate about what is *not* in it.
+
 ### Background music
 
 The game plays an optional player-supplied `public/assets/audio/bgm.mp3` if present

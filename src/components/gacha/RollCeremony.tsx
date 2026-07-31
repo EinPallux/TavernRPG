@@ -21,6 +21,7 @@ import { GACHA_PET_NAMES } from '@/data/banners';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { DiceIcon, SparkIcon } from '@/components/icons';
 import { dramatic, standard } from '@/styles/motion';
+import { play } from '@/state/sfx';
 import { TarotCard, toneOf } from './TarotCard';
 
 /** Tumble, then deal. `[TUNE]` — spec §6 asks for ~1.4s and this is it, split in two. */
@@ -62,10 +63,21 @@ export function RollCeremony({ results, extras, onDone }: RollCeremonyProps) {
   useEffect(() => {
     if (reduced) return;
     const timers: ReturnType<typeof setTimeout>[] = [
-      setTimeout(() => setPhase('dealt'), TUMBLE_MS),
+      setTimeout(() => {
+        play('dice');
+        setPhase('dealt');
+      }, TUMBLE_MS),
     ];
     for (let i = 0; i < results.length; i += 1) {
-      timers.push(setTimeout(() => setFlipped(i + 1), TUMBLE_MS + DEAL_MS + i * FLIP_STEP_MS));
+      timers.push(
+        setTimeout(
+          () => {
+            play('card');
+            setFlipped(i + 1);
+          },
+          TUMBLE_MS + DEAL_MS + i * FLIP_STEP_MS,
+        ),
+      );
     }
     return () => timers.forEach(clearTimeout);
   }, [reduced, results.length]);

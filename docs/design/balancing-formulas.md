@@ -485,3 +485,37 @@ cost the economy nothing and the sim never sees them. It fires once per save
 unspent stat points that will still be unspent tomorrow, even though the stat points are worth
 more — the chip's job is to catch the thing you would regret missing. The order is the list in
 `engine/tutorial/hints.ts#RULES`, and the first rule that has something to say wins.
+
+## 15. Sound (Phase 17)
+
+Nothing here touches the economy, but every value is a `[TUNE]` because "how loud" and "how often"
+are exactly the kind of number that gets set once by whoever wrote the feature and never revisited.
+
+| constant | value | where | why |
+|---|---|---|---|
+| `THROTTLE_MS.ui` | 45 ms `[TUNE]` | `data/sfx.ts` | A pointer sweeping a list asks for thirty ticks a second. |
+| `THROTTLE_MS.combat` | 30 ms `[TUNE]` | `data/sfx.ts` | The loosest, because a fight is *meant* to be busy. |
+| `THROTTLE_MS.reward` | 60 ms `[TUNE]` | `data/sfx.ts` | Rewards arrive in bursts (a chest is gold *and* dice *and* materials); one sound is the event. |
+| `THROTTLE_MS.forge` | 80 ms `[TUNE]` | `data/sfx.ts` | Anvil strikes are 380 ms apart by design, so this only ever catches a double-click. |
+| cue ceiling | 900 ms | `data/sfx.test.ts` | The Epic reveal, and nothing longer. |
+| interface ceiling | 150 ms | `data/sfx.test.ts` | The four cues that fire on every click. |
+| `BGM_SHARE` | 0.45 `[TUNE]` | `components/shell/AppShell.tsx` | Music rides at 45% of the master. One slider, two jobs: a loop as loud as a crit buries the crit. |
+| `FADE_IN_MS` | 1,600 ms `[TUNE]` | `state/bgm.ts` | Long enough to read as a fade. |
+| `FADE_OUT_MS` | 600 ms `[TUNE]` | `state/bgm.ts` | Faster than the fade in — leaving a tab should feel like a door closing, not a dissolve. |
+| `UNLOCK_CUE_DELAY_MS` | 760 ms `[TUNE]` | `components/shell/UnlockWatcher.tsx` | See below. |
+
+**Throttling is per family, and that is the whole design.** One global gate would mean the first
+cue in a tick silences the rest — so on the exact frame a crit lands during a flurry of interface
+ticks, the thing the player is watching loses to the thing they are only touching. Keyed on
+`SfxCategory`, the two never compete. `state/sfx.test.ts` asserts it directly.
+
+**Two reward cues in one tick is a collision, not a chord.** A level that opens a room fires
+`level-up` and `unlock` in the same handler, and at a 60 ms gap the second is simply dropped —
+the unlock cue would go unheard on precisely the levels it exists for. `UNLOCK_CUE_DELAY_MS`
+parks it just past the level-up's own 700 ms length, which turns the collision into a phrase.
+Anything else that wants to play two cues of one family at a moment needs the same treatment.
+
+**The throttle runs on `ctx.currentTime`, not a wall clock.** It is the same time base the cues
+are scheduled in, it is monotonic, and it does not care what the tab was doing. It is also the
+only clock available: `Date.now` is lint-banned outside GameClock, and rightly — nothing about
+gameplay should be able to read the wall time through the speaker.
