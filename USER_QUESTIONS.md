@@ -154,3 +154,15 @@ and the F2P promise — so it is yours:
 or the loop's loot table, and the deterministic path is already built. Nothing is blocked either
 way; `pacing.test.ts` asserts today's number so the change is visible when it happens.
 → `docs/design/systems/gear-sets.md`, `docs/design/balancing-formulas.md` §0
+
+> **Resolved 2026-07-31 under the stated default (option 2), and the diagnosis was incomplete.**
+> The 125 days was not only the gacha's rate. The sim *excluded the forge* — on the reasoning
+> that a deterministic craft would flatter the number — and the forge route was itself
+> unreachable: a recipe costs 2 Starmetal, Starmetal comes only from scrapping an Epic, and an
+> Epic scrap paid an average of **half of one**, pricing the "guaranteed path" at ~210 days.
+> Each fact concealed the other. The sim now costs the recipe route from the real material
+> budget, and an Epic scrap yields **1–2** Starmetal. A full set closes at **day 51.5** against
+> the 52-day target. No published rate moved and the mission loot table is untouched, which is
+> what option 2 asked for. Recorded in balancing §16.1.
+
+---

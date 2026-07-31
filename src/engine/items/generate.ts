@@ -78,20 +78,50 @@ export function weaponDamage(
   };
 }
 
-/** `[TUNE]` crafting spec §1 — what scrapping this item returns. */
+/**
+ * `[TUNE]` crafting spec §1 — what scrapping this item returns, as ranges.
+ *
+ * Exported as *data* rather than lived inside the switch below, because the pacing sim has to
+ * cost the recipe route and a second copy of these numbers is how the guild bounty went wrong
+ * once already. One table; the dice read it, and so does the thing that asks how long a set takes.
+ */
+export const SCRAP_YIELDS: Readonly<
+  Record<
+    Rarity,
+    {
+      readonly scrap: readonly [number, number];
+      readonly essence: readonly [number, number];
+      readonly starmetal: readonly [number, number];
+    }
+  >
+> = {
+  common: { scrap: [3, 5], essence: [0, 0], starmetal: [0, 0] },
+  uncommon: { scrap: [6, 9], essence: [0, 0], starmetal: [0, 0] },
+  rare: { scrap: [0, 0], essence: [4, 6], starmetal: [0, 0] },
+  /*
+   * `[TUNE]` An epic scrap used to be a coin flip for one Starmetal, which made the *only*
+   * renewable source of the rarest material average 0.5 a scrap — and priced the forge's
+   * deterministic set path at ~210 days against a 45–60 day promise. Phase 17's pacing pass
+   * found it (balancing §16); 1–2 is what makes a recipe a route rather than a display case.
+   */
+  epic: { scrap: [0, 0], essence: [9, 14], starmetal: [1, 2] },
+  set: { scrap: [0, 0], essence: [10, 10], starmetal: [3, 3] },
+};
+
+/** Mean of a yield range — what the sims cost a scrap at. */
+export function meanYield(rarity: Rarity, material: keyof MaterialBundle): number {
+  const [low, high] = SCRAP_YIELDS[rarity][material];
+  return (low + high) / 2;
+}
+
+/** What scrapping this item returns, rolled. */
 export function scrapYieldFor(rarity: Rarity, rng: RngStream): MaterialBundle {
-  switch (rarity) {
-    case 'common':
-      return { scrap: rng.int(3, 5), essence: 0, starmetal: 0 };
-    case 'uncommon':
-      return { scrap: rng.int(6, 9), essence: 0, starmetal: 0 };
-    case 'rare':
-      return { scrap: 0, essence: rng.int(4, 6), starmetal: 0 };
-    case 'epic':
-      return { scrap: 0, essence: rng.int(9, 14), starmetal: rng.int(0, 1) };
-    case 'set':
-      return { scrap: 0, essence: 10, starmetal: 3 };
-  }
+  const yields = SCRAP_YIELDS[rarity];
+  return {
+    scrap: rng.int(yields.scrap[0], yields.scrap[1]),
+    essence: rng.int(yields.essence[0], yields.essence[1]),
+    starmetal: rng.int(yields.starmetal[0], yields.starmetal[1]),
+  };
 }
 
 /**
@@ -220,7 +250,12 @@ export interface GenerateSetPieceOptions {
  * The size is still level-scaled like everything else (spec §1), so a piece found at level 30 is
  * a level-30 piece forever. Out-levelled sets are refreshed at the forge, not retro-fitted.
  */
-export function generateSetPiece({ setId, slot, level, rng }: GenerateSetPieceOptions): Item | null {
+export function generateSetPiece({
+  setId,
+  slot,
+  level,
+  rng,
+}: GenerateSetPieceOptions): Item | null {
   const definition = gearSet(setId);
   const piece = definition ? setPiece(setId, slot) : null;
   if (!definition || !piece) return null;

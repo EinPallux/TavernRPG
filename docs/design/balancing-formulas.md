@@ -18,20 +18,25 @@
 
 **Measured, Phase 17** (`npm run pacing`, reference player = `ACTIVE_PLAYER`):
 
-| Milestone | Target | Measured | Drift |
-|---|---|---|---|
-| Level 10 | day 3 | **3.5** | +17% |
-| Level 25 | day 14 | **11.4** | −19% |
-| Level 55 | day 30 | **34.5** | +15% |
-| First set piece | day 30 | **12.5** | −58% |
-| Full 5-piece set | day 52 | **125** | +140% ⚠ |
-| Hall of Fame top 100 | day 75 | **45** | −40% |
+| Milestone | Kind | Target | Measured | Drift |
+|---|---|---|---|---|
+| Level 10 | schedule | day 3 | **3.5** | +17% |
+| Level 25 | schedule | day 14 | **11.3** | −19% |
+| Level 55 | schedule | day 30 | **34.5** | +15% |
+| First set piece | deadline | day 30 | **7.3** | −76% (22.7d early) |
+| Full 5-piece set | deadline | day 52 | **51.5** | −1% |
+| Hall of Fame top 100 | deadline | day 75 | **44.0** | −41% (31.0d early) |
 
-The three level rows are inside the ±20% the ROADMAP asks for, and `pacing.test.ts` enforces
-them. Two rows are **not** tuning problems and are logged as open questions rather than quietly
-adjusted: the L25 row cannot be hit alongside the other two by any monotone curve (Q22), and the
-full-set chase is ~2.4× slower than promised because mission drops carry `set: 0` and only
-Vesna's featured card feeds it (Q23).
+**All six rows are inside the ±20% the ROADMAP asks for**, and `pacing.test.ts` enforces each by
+kind. Two things got them there, both recorded in §16: the full-set row was +140% until the sim
+was made to cost the *forge* route it had been excluding — and that in turn exposed a recipe price
+no player could reach — and the two "early" rows were failing a two-sided band while describing a
+game that is generous. §0 words those as deadlines ("1–2 set pieces **by** day 30", "top 100 in
+month 2–3"), so they are measured as deadlines; the days-early figure is still reported and
+asserted, because generosity is a design fact worth seeing.
+
+One row remains a known compromise rather than a fit: level 25 by day 14 cannot be hit alongside
+10-by-3 and 55-by-30 by any monotone curve (Q22). It is inside tolerance, so nothing is blocked.
 
 Milestones are reported in **fractional days**. A day-indexed ledger rounds every milestone up to
 the end of the day it landed on, which at a three-day target is a third of the budget — enough on
@@ -519,3 +524,131 @@ Anything else that wants to play two cues of one family at a moment needs the sa
 are scheduled in, it is monotonic, and it does not care what the tab was doing. It is also the
 only clock available: `Date.now` is lint-banned outside GameClock, and rightly — nothing about
 gameplay should be able to read the wall time through the speaker.
+
+## 16. The tuning pass (Phase 17) — every `[TUNE]`, changed or defended
+
+ROADMAP Phase 17 asks that *all* `[TUNE]` values carry a post-tuning entry here. **68 markers**
+across 34 files; `npm run tuning` prints the live inventory alongside a 90-day economy run and the
+§0 ladder, so this table can be regenerated rather than trusted.
+
+The verdicts are deliberately three, not two:
+
+- **changed** — the pass moved it, and says to what and why.
+- **held** — the pass *measured* it against a harness and left it. Defended, not skipped.
+- **model** — a parameter of a simulation rather than of the game. Moving one changes what we
+  believe, not what the player experiences, so these are held to a stricter standard: they may
+  only move if the thing they approximate is shown to have been mis-modelled.
+
+### 16.1 What moved
+
+| constant | was → now | why |
+|---|---|---|
+| `SCRAP_YIELDS.epic.starmetal` | `0–1` → **`1–2`** | The finding of the pass. See below. |
+| `XP_DIVISOR_BASE` / `_PER_LEVEL` | `28 / 1.2` → **`42 / 1.5`** | Re-fitted once the pacing sim stopped under-counting (§0, Q22). Landed earlier in Phase 17. |
+| — *marker added* | `XP_DIVISOR_*` | Had no `[TUNE]` at all. The two numbers that set the pace of the whole game were invisible to a pass whose job is to review every tunable. |
+
+**The Starmetal change is the one that mattered, and it was only visible from two directions at
+once.** §0 promises a full five-piece set inside 45–60 days; the sim reported **125**, and the
+reason recorded in Q23 was that only Vesna's featured card feeds the chase. That was half true.
+The other half: the sim *excluded the forge* — on the stated reasoning that folding in a
+deterministic craft would flatter the number — and the forge's recipe route was itself
+unreachable. A recipe costs 2 Starmetal, Starmetal came only from scrapping an Epic, and an Epic
+scrap paid an average of **half of one**. Four recipes was therefore ~210 days: three times slower
+than the gacha it existed to backstop. Neither fact could be seen without the other — the
+exclusion hid the price, and the price justified the exclusion.
+
+Fixing both: the sim now costs the recipe route from the real material budget, and an Epic scrap
+yields 1–2 Starmetal. A full set closes at **day 51.5** against a 52-day target (−0.9%). The
+gacha still delivers the first pieces and the forge closes the set, which is the division of
+labour the design describes. *This is the third instance of the same lesson — a cap or a cost the
+game cannot supply is a lie on the screen — after the Menagerie's feeds and the guild bounty.*
+
+### 16.2 Milestone semantics — a fix to the measurement, not to the game
+
+Two §0 rows were failing the ±20% band **by being early**: the first set piece at day 7.3 against
+a day-30 target, and the Hall of Fame top 100 at day 44 against day 75. Neither is a defect, and
+`pacing.ts` now says so structurally: each milestone is a `schedule` or a `deadline`.
+
+A **schedule** is a content gate — level 55 on day 5 is as wrong as level 55 on day 90, because
+the game would be handing over everything it has before the player wants any of it. Two-sided.
+A **deadline** is a long chase, and §0 words them that way: "1–2 set pieces *by* day 30", "top 100
+in month 2–3". The risk being managed is the thing never arriving. One-sided.
+
+Early arrivals are still reported (`earlyBy`) and asserted, because a band that fails on
+generosity is a band that gets widened until it means nothing — but "sooner than promised" is a
+design fact to look at, not a regression to fix. **Top 100 at day 44 is accepted**: it is the top
+6.7% of a field that is mostly casual, after six weeks of daily arena play, and the model holds
+the hundredth hero's honor at a fixed multiple of the player's level while the real bots keep
+climbing — so if anything it flatters the player. Recorded rather than tuned away.
+
+### 16.3 The §0 table, re-measured
+
+| Milestone | Kind | Target | Measured | Drift | Verdict |
+|---|---|---|---|---|---|
+| Level 10 | schedule | day 3 | **3.5** | +17% | in band |
+| Level 25 | schedule | day 14 | **11.3** | −19% | in band (Q22) |
+| Level 55 | schedule | day 30 | **34.5** | +15% | in band |
+| First set piece | deadline | day 30 | **7.3** | −76% | in band — 22.7d early |
+| Full 5-piece set | deadline | day 52 | **51.5** | −1% | in band (was +140%) |
+| Hall of Fame top 100 | deadline | day 75 | **44.0** | −41% | in band — 31.0d early |
+
+All six rows now pass, and `pacing.test.ts` asserts each one by kind. It also asserts the
+distinction itself — that a schedule row fails when it is early and a deadline row does not —
+because a semantic that only lives in a comment is a semantic that gets rewritten by whoever is
+in a hurry.
+
+### 16.4 The 90-day economy
+
+`economy.test.ts` gated 30 days, which is where the loop is tightest and least likely to be
+diverging. Nine bands now run at 90: that the first thirty days are byte-identical whatever
+horizon is asked for (a sim whose early days depend on its length is measuring itself), that
+spend still tracks earnings above 99%, that training stays the dominant sink and *grows* rather
+than being overtaken, that the third month out-earns the first by between 2× and 25× — compounding,
+not exploding — and that half-Vigor play stays within 30% of full-Vigor play.
+
+| measure (active, 90 days) | value |
+|---|---|
+| final level | 101 |
+| lifetime earned | 16.2M gold |
+| purse at day 90 | 48k (0.3% of lifetime) |
+| faucets | missions 52.7% · patrol 32.8% · gacha 10.5% · sales 4.0% |
+| sinks | training 87.2% · mounts 10.0% · shops 2.7% · pets 0.1% |
+| attribute points bought | 2,382 |
+
+The shape holds from Phase 7's reading: training is the endless sink, shops are a *gear-supply
+valve* rather than a gold sink (2.7%), and patrol is the fallback rather than the strategy — a
+third of income for a player who is also running every mission, over half for one who is not.
+
+### 16.5 Held, with the harness that holds them
+
+Every remaining marker was measured and left. Grouped by what proves them:
+
+| area | markers | held against |
+|---|---|---|
+| Combat & monsters — `monsterStatBudget` | 1 | `npm run balance`: five classes inside their win-rate bands, median fight under ~12 rounds (`timeline.test.ts`). |
+| Items — `itemBudget`, `itemValue`, `armourValue`, `weaponDamage`, `RARITY_FACTOR`, `RARITY_VALUE_MULT`, `SLOT_FACTOR`, `ARMOUR_PIECE_WEIGHT`, `SCRAP_YIELDS` (non-epic) | 9 | The balance harness builds its reference hero from these; moving one moves every win-rate at once. |
+| Progression — `XP_COEFFICIENT`, `COST_BASE` | 2 | The §0 ladder above, and the economy's training share. |
+| Drops & keys — `SET_REPLACES_EPIC`, `KEY_DROP_CHANCE` | 2 | `SET_REPLACES_EPIC` is now load-bearing for the full-set row; `KEY_DROP_CHANCE` by the delve cadence in `dungeons.test.ts`. |
+| Dungeons — `FLOOR_BUDGET`, `BOSS_BUDGET`, `MID_BOSS_BUDGET`, `FLOOR_VIGOR_EQUIVALENT`, `BOSS_REWARD_MULTIPLIER`, `LOSS_COOLDOWN_MS` | 6 | `dungeons.test.ts` measures the whole thirty-floor ramp and fails on a dip. |
+| Forge — `EMBER_PITY`, `SCRAPS_PER_DAY`, `RECIPE_COST` | 3 | Re-examined this pass; the *price* is defensible now that the supply exists to meet it. `SCRAPS_PER_DAY` binds the recipe cadence and is deliberately left as the choice that makes sell-vs-scrap real. |
+| Gacha — the three banner tables, `MONTHLY_TRACK_STEP`, `TRACK_STARMETAL`, `SNAIL_CHANCE`, `DUPE_STARMETAL`, `DUPE_SHARDS`, `GOLD_CACHE_VIGOR`, `MATERIAL_BUNDLES`, `DAILY_SLOT_RATE_UP` | 9 | 100k-roll rate tests, and the F2P rule: these are printed on the odds panel, so moving one is a promise changed in public. |
+| Pets — `PET_MAX_LEVEL`, `FEEDS_PER_DAY`, `SCRAPS_PER_FEED`, `SCRAP_DROP_CHANCE`, `BOOST_BASE`, `RARITY_STEPS` | 6 | The economy band that measures **days to grow one companion** rather than the advertised cap. |
+| Guilds & world — `HALL_EFFORT`, `CHEST_GOLD_PER_LEVEL`, `STEP_COST_BASE`, `TREASURY_PER_MEMBER`, the seeded treasury, `COUNTED_MEMBERS` | 6 | `guilds.test.ts`'s two-sided bounty band, and economy sim pass 3. |
+| Daily loop — `TASK_POINTS`, `WEEKLY_CHEST_AT`, `DAILY_CHEST`, `WEEKLY_CHEST`, `CALENDAR_DAYS`, `CALENDAR`, `NEGLECT_LEAN` | 7 | §13's reward tables, and the board's draw tests. |
+| Onboarding — `FIRST_MISSION_MS`, `CALLOUT_DURATION`, `IDLE_POINTS`, `UNLOCK_FLOURISH_MS`, `PAD` | 5 | §14. Costs the economy nothing by construction (only `endsAt` moves). |
+| Sound — the four `THROTTLE_MS` families, `BGM_SHARE`, `FADE_IN_MS`, `UNLOCK_CUE_DELAY_MS` | 7 | §15, and `sfx.test.ts`'s two length ceilings. |
+| Presentation — `TUMBLE_MS`, `WARNING_MS`, `ROLL_HISTORY_LIMIT` | 3 | Spec timings; no economic effect. |
+| Sim parameters (**model**) — `TARGET_DAYS`, `HONOR_PER_DAY_PER_LEVEL`, `TOP_100_HONOR_PER_LEVEL` | 3 | Held deliberately. These decide what the harness *believes*; moving one to make a row pass is how a balance suite stops being one. `TARGET_DAYS` is §0 transcribed, and the two honor numbers are the arena's published payout against the generator's own distribution. |
+
+### 16.6 What a future pass should look at first
+
+1. **`SCRAPS_PER_DAY` is now doing two jobs.** It caps the crucible *and* meters the recipe route,
+   so it is the single number standing between the set chase and the Starmetal supply. If the set
+   pacing ever needs moving again, this is the lever with the fewest side effects — and the one
+   most likely to be changed for an unrelated reason and break §0 silently.
+2. **`TOP_100_HONOR_PER_LEVEL` is a static bar in a moving field.** Modelling the hundredth hero
+   as a fixed multiple of the *player's* level is right in shape and optimistic in detail. A pass
+   that wants the ladder promise measured properly should read the bar off a simulated world.
+3. **Q22's middle row.** Level 25 by day 14 cannot be hit alongside 10-by-3 and 55-by-30 with any
+   monotone curve. Nothing is out of tolerance, so nothing is blocked — but the table names a
+   target the curve can only approach, and a table like that eventually gets tuned toward.

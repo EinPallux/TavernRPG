@@ -54,6 +54,13 @@ export function isMissionDuration(value: number): value is MissionDuration {
  * between the 10–24 band and the 25–54 band (96.8 Vigor to 70.4), which is a curve that speeds
  * up as you climb. The table's middle row is the outlier; see USER_QUESTIONS Q22.
  */
+/*
+ * `[TUNE]` The two numbers that set the pace of the entire game.
+ *
+ * They carried no marker until the Phase 17 inventory went looking — which is worth recording,
+ * because the pass exists to review every tunable and the most-tuned constant in the build was
+ * invisible to it. A number nobody has flagged is not a number nobody has changed.
+ */
 export const XP_DIVISOR_BASE = 42;
 export const XP_DIVISOR_PER_LEVEL = 1.5;
 

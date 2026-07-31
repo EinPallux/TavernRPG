@@ -21,7 +21,15 @@
 
 import { describe, expect, it } from 'vitest';
 import { CASUAL_PLAYER, FRUGAL_PLAYER } from '@/engine/economy/simulate';
-import { MILESTONES, TARGET_DAYS, drift, simulatePacing } from './pacing';
+import {
+  MILESTONES,
+  MILESTONE_KIND,
+  TARGET_DAYS,
+  drift,
+  earlyBy,
+  simulatePacing,
+  withinBand,
+} from './pacing';
 
 /** The ROADMAP's acceptance tolerance on the §0 table. */
 const TOLERANCE = 0.2;
@@ -60,21 +68,82 @@ describe('the level curve keeps §0’s promises', () => {
   });
 });
 
-describe('the set chase — recorded, and currently behind', () => {
+describe('every §0 row is inside the band the ROADMAP asks for', () => {
+  for (const milestone of MILESTONES) {
+    it(`${milestone} (${MILESTONE_KIND[milestone]}) holds at ±20%`, () => {
+      const reached = run.reached[milestone];
+      expect(reached, `${milestone} never happened inside 220 days`).not.toBeNull();
+
+      const off = drift(run, milestone)!;
+      expect(
+        withinBand(run, milestone, TOLERANCE),
+        `${milestone}: day ${reached} against a target of ${TARGET_DAYS[milestone]} — ${(off * 100).toFixed(0)}% off`,
+      ).toBe(true);
+    });
+  }
+
+  it('penalises a schedule row in both directions and a deadline row in one', () => {
+    /*
+     * The distinction is load-bearing, so it is asserted rather than only commented. A content
+     * gate arriving at half its target is as wrong as arriving at double — the game would be
+     * handing over everything before the player wants it. A chase arriving early is generosity.
+     */
+    const early = { ...run, reached: { ...run.reached, 'level-55': 5, 'full-set': 5 } };
+    expect(withinBand(early, 'level-55')).toBe(false);
+    expect(withinBand(early, 'full-set')).toBe(true);
+
+    const late = { ...run, reached: { ...run.reached, 'level-55': 90, 'full-set': 200 } };
+    expect(withinBand(late, 'level-55')).toBe(false);
+    expect(withinBand(late, 'full-set')).toBe(false);
+  });
+
+  it('never counts a milestone that did not happen as passing', () => {
+    const missed = { ...run, reached: { ...run.reached, 'full-set': null } };
+    expect(withinBand(missed, 'full-set')).toBe(false);
+  });
+});
+
+describe('the set chase', () => {
   it('hands over the first piece well inside the level-55 window', () => {
-    // §0 pairs "level 55" with "1–2 set pieces equipped" at around day 30. That half is met
-    // comfortably: the first piece arrives around day 12.
+    // §0 pairs "level 55" with "1–2 set pieces equipped" at around day 30. Met comfortably.
     expect(run.reached['first-set-piece']!).toBeLessThan(TARGET_DAYS['level-55']);
   });
 
-  it('takes far longer than §0 promises to close a full set — see Q23', () => {
+  it('closes a full set on the promise, because the forge is finally in the model', () => {
     const full = run.reached['full-set'];
     expect(full, 'a full set never closed inside 220 days').not.toBeNull();
 
-    // Asserted at the shape of the miss rather than at the promise. If somebody raises the
-    // featured rate or lets the forge in, this fails and the doc gets updated with it.
-    expect(full!).toBeGreaterThan(TARGET_DAYS['full-set'] * 1.5);
-    expect(full!).toBeLessThan(TARGET_DAYS['full-set'] * 3);
+    /*
+     * This read 125 days until Phase 17 — 2.4× the promise — and the cause was two things
+     * stacked. The sim excluded the recipe route on the reasoning that a deterministic craft
+     * would flatter the number, and the recipe route was itself unreachable: `2` Starmetal a
+     * craft against an epic scrap yielding an average of half of one priced the forge's
+     * guaranteed path at ~210 days. Neither was visible without costing the other.
+     *
+     * Banded rather than pinned, because both halves are `[TUNE]` and a change to either should
+     * show up here as a number to re-record, not as a red test with no reading attached.
+     */
+    expect(full!).toBeGreaterThan(TARGET_DAYS['full-set'] * 0.6);
+    expect(full!).toBeLessThan(TARGET_DAYS['full-set'] * 1.2);
+  });
+
+  it('is still mostly the gacha, with the forge as the closer', () => {
+    // If the forge ever supplies the *whole* chase, the featured card has stopped mattering and
+    // Fortune's Table is decoration. The first piece should still arrive before a recipe could.
+    expect(run.reached['first-set-piece']!).toBeLessThan(run.reached['full-set']! / 3);
+  });
+});
+
+describe('generosity is reported, not hidden', () => {
+  it('says how far ahead of the promise the early rows landed', () => {
+    // The two rows that beat their deadline by a wide margin. Recorded in balancing §16 as
+    // accepted, and asserted here so "accepted" cannot quietly drift into "unmeasured".
+    expect(earlyBy(run, 'first-set-piece')).toBeGreaterThan(15);
+    expect(earlyBy(run, 'top-100')).toBeGreaterThan(20);
+  });
+
+  it('returns null for a row that did not beat its target', () => {
+    expect(earlyBy(run, 'level-55')).toBeNull();
   });
 });
 

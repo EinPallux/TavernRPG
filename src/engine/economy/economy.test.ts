@@ -401,3 +401,88 @@ describe('the Menagerie is a habit, not a bill — Phase 14', () => {
     expect(skipped.finalLevel).toBe(run.finalLevel);
   });
 });
+
+/**
+ * The 90-day horizon (ROADMAP Phase 17: "economy 90-day sim bands finalized").
+ *
+ * Every band above this runs at 30 days, which is where the loop is *tightest* — a month in, the
+ * player is still buying their first attribute points and every faucet matters. Three months in
+ * is a different game: the costs have compounded, the purse turns over faster than it fills, and
+ * a ratio that looked stable at day 30 can be quietly diverging. These are the bands that catch
+ * a curve that is fine early and wrong later, which is the failure mode a 30-day gate cannot see.
+ *
+ * `npm run tuning` prints the same run in full if you want to look at it rather than assert it.
+ */
+describe('the 90-day horizon', () => {
+  const long = simulateEconomy({ days: 90 });
+  const month = simulateEconomy({ days: 30 });
+
+  it('is deterministic at three months, like it is at one', () => {
+    expect(simulateEconomy({ days: 90 })).toEqual(long);
+  });
+
+  it('keeps the first thirty days intact — the horizon changes nothing behind it', () => {
+    // A sim whose early days depend on how long it is asked to run is a sim measuring itself.
+    expect(long.ledger.slice(0, 30)).toEqual(month.ledger);
+  });
+
+  it('still spends nearly everything it earns', () => {
+    const earned = totalEarned(long.ledger);
+    const spent = totalSpent(long.ledger);
+    // Hoarding is the tell for a sink that has stopped scaling. A player three months in should
+    // be within a rounding error of broke, because training always costs more than they have.
+    expect(spent / earned).toBeGreaterThan(0.99);
+    expect(long.finalPurse / earned).toBeLessThan(0.01);
+  });
+
+  it('leaves training the dominant sink at three months, not just at one', () => {
+    const share = (days: typeof long.ledger) =>
+      days.reduce((sum, day) => sum + day.spent.training, 0) / totalSpent(days);
+
+    expect(share(long.ledger)).toBeGreaterThan(0.8);
+    // And it should *grow*: §2 calls training "the endless one", and the mount is a flat weekly
+    // fee while the next attribute point never stops getting dearer.
+    expect(share(long.ledger)).toBeGreaterThan(share(month.ledger) - 0.05);
+  });
+
+  it('keeps shops a gear-supply valve rather than a gold sink, at both horizons', () => {
+    const shops = long.ledger.reduce((sum, day) => sum + day.spent.shops, 0);
+    expect(shops / totalSpent(long.ledger)).toBeLessThan(0.1);
+    expect(long.ledger.reduce((sum, day) => sum + day.itemsBought, 0)).toBeGreaterThan(20);
+  });
+
+  it('does not stall — the third month still earns more than the first', () => {
+    const earnedIn = (from: number, to: number) =>
+      long.ledger.slice(from, to).reduce((sum, day) => sum + totalEarned([day]), 0);
+
+    expect(earnedIn(60, 90)).toBeGreaterThan(earnedIn(0, 30) * 2);
+  });
+
+  it('does not run away either — the curve compounds, it does not explode', () => {
+    /*
+     * The band that would have caught a runaway multiplier. Income scales with level and level
+     * scales with income, so the loop is a feedback one; what keeps it honest is that costs
+     * scale faster. Twenty-five times the first month over the third is generous headroom for
+     * a healthy curve and nowhere near what a compounding bug produces.
+     */
+    const earnedIn = (from: number, to: number) =>
+      long.ledger.slice(from, to).reduce((sum, day) => sum + totalEarned([day]), 0);
+
+    expect(earnedIn(60, 90)).toBeLessThan(earnedIn(0, 30) * 25);
+  });
+
+  it('rewards three months of daily play with a level a casual player has not reached', () => {
+    const casual = simulateEconomy({ days: 90, style: CASUAL_PLAYER });
+    expect(long.finalLevel).toBeGreaterThan(casual.finalLevel);
+    // But not by so much that half-Vigor play is a different game. Playing more should be worth
+    // playing more, not worth everything.
+    expect(casual.finalLevel).toBeGreaterThan(long.finalLevel * 0.7);
+  });
+
+  it('never leaves a day unaccounted for', () => {
+    expect(long.ledger).toHaveLength(90);
+    expect(long.ledger.map((day) => day.day)).toEqual(
+      Array.from({ length: 90 }, (_, index) => index + 1),
+    );
+  });
+});

@@ -30,6 +30,8 @@ import {
 } from '@/engine/economy/simulate';
 import { totalXpToLevel } from '@/engine/progression/xp';
 import { missionDropTable } from '@/engine/items/drops';
+import { meanYield } from '@/engine/items/generate';
+import { RECIPE_COST, SCRAPS_PER_DAY } from '@/engine/forge/forgeConfig';
 import { VIGOR_PER_DAY } from '@/engine/progression/rewards';
 import { GEAR_SETS, SET_PIECES } from '@/data/gearSets';
 import { banner, outcomeOdds } from '@/data/banners';
@@ -53,6 +55,32 @@ export const TARGET_DAYS: Readonly<Record<Milestone, number>> = {
   'first-set-piece': 30,
   'full-set': 52,
   'top-100': 75,
+};
+
+/**
+ * What kind of promise each row is — and the distinction is not a technicality.
+ *
+ * A **schedule** row is a content gate: level 55 arriving on day 5 is as much a failure as it
+ * arriving on day 90, because the game would be handing over everything it has before the player
+ * has any reason to want it. Both directions count.
+ *
+ * A **deadline** row is a long chase, and §0 words them that way — "1–2 set pieces *by* day 30",
+ * "top 100 in month 2–3". The risk being managed there is the thing never arriving; getting
+ * there early is the game being generous, not the table being wrong. Only lateness counts.
+ *
+ * This was worth getting right rather than leaving both two-sided: the first-set-piece row read
+ * as a 58% miss while describing a game that delivers the piece *eighteen days ahead of the
+ * promise*. A band that fails on generosity is a band nobody trusts, and an untrusted band gets
+ * widened until it means nothing. Early arrivals are still reported — see `earlyBy` — because
+ * "sooner than promised" is a design fact worth seeing, just not a regression.
+ */
+export const MILESTONE_KIND: Readonly<Record<Milestone, 'schedule' | 'deadline'>> = {
+  'level-10': 'schedule',
+  'level-25': 'schedule',
+  'level-55': 'schedule',
+  'first-set-piece': 'deadline',
+  'full-set': 'deadline',
+  'top-100': 'deadline',
 };
 
 export interface PacingResult {
@@ -103,18 +131,61 @@ function dayLevelReached(ledger: readonly DayLedger[], level: number): number | 
  * pacing claim about a different game.
  */
 function setPiecesPerDay(style: PlayStyle): number {
-  const missions = Math.floor((VIGOR_PER_DAY * style.vigorUsed) / style.duration);
+  const missions = missionsPerDay(style);
   const table = missionDropTable(style.duration);
   const perMission = table.itemChance * (table.rarityWeights.set ?? 0);
 
   const rolls = style.gachaRollsPerDay ?? 0;
   const featured = outcomeOdds(banner('weekly'), 'featured') / 100;
 
-  // The forge is deliberately absent: a recipe craft is a *decision* paid for in Starmetal the
-  // player could have spent elsewhere, and folding an average of it in would let the chase's
-  // headline rate borrow from a currency the sim does not model. It makes this figure the
-  // pessimistic one, which is the right direction for a promise.
   return missions * perMission + rolls * featured;
+}
+
+function missionsPerDay(style: PlayStyle): number {
+  return Math.floor((VIGOR_PER_DAY * style.vigorUsed) / style.duration);
+}
+
+/**
+ * Recipe crafts a day — the *deterministic* half of the chase, which this sim used to omit.
+ *
+ * The omission was defended in a comment ("a recipe is a decision paid for in a currency the sim
+ * does not model") and it was wrong in the way a missing measurement is always wrong: it did not
+ * make the answer pessimistic, it made the answer *unexamined*. Costing it out was the whole
+ * finding of the Phase 17 pass — at the shipped rates the route came to ~210 days, three times
+ * slower than the gacha it was meant to backstop, so the "guaranteed path" was decoration
+ * (balancing §16).
+ *
+ * The model is the material budget and nothing else: a day's drops, scrapped up to the daily cap,
+ * priced at `RECIPE_COST`. Both materials are checked because the binding one is not obvious —
+ * Essence is plentiful and Starmetal is not, and which of them gates a recipe is exactly the
+ * thing a tuning pass exists to find out.
+ */
+function recipesPerDay(style: PlayStyle): number {
+  const table = missionDropTable(style.duration);
+  const items = missionsPerDay(style) * table.itemChance;
+  const weights = table.rarityWeights;
+  const total = Object.values(weights).reduce((sum, weight) => sum + (weight ?? 0), 0);
+  if (total <= 0 || items <= 0) return 0;
+
+  /*
+   * A player scraps what they cannot wear, which is nearly everything, but never more than the
+   * crucible allows in a day. The cap binds first at high mission counts and is part of the
+   * answer rather than a footnote to it.
+   */
+  const scrapped = Math.min(items, SCRAPS_PER_DAY);
+  const share = scrapped / items;
+
+  let essence = 0;
+  let starmetal = 0;
+  for (const [rarity, weight] of Object.entries(weights)) {
+    const perDay = ((items * (weight ?? 0)) / total) * share;
+    essence += perDay * meanYield(rarity as Parameters<typeof meanYield>[0], 'essence');
+    starmetal += perDay * meanYield(rarity as Parameters<typeof meanYield>[0], 'starmetal');
+  }
+
+  const byEssence = RECIPE_COST.essence > 0 ? essence / RECIPE_COST.essence : Infinity;
+  const byStarmetal = RECIPE_COST.starmetal > 0 ? starmetal / RECIPE_COST.starmetal : Infinity;
+  return Math.min(byEssence, byStarmetal);
 }
 
 /**
@@ -156,32 +227,42 @@ export function simulatePacing({
   const run = simulateEconomy({ days, style });
 
   let pieces = 0;
+  let towardSet = 0;
   let firstPiece: number | null = null;
   let fullSet: number | null = null;
 
   /*
-   * A "full set" is five pieces of *one* set, not five pieces.
+   * A "full set" is five pieces of *one* set, not five pieces — and the two sources differ in
+   * exactly that respect, which is why they are counted separately.
    *
-   * With ten sets in the pool and two of them the player's class, a piece landing in the set
-   * they are building is not a certainty — modelling it as one would claim a completion date the
-   * player will not see. `sets.ts` draws the missing piece first within a set, so the cost is
-   * the *cross-set* spread rather than duplicate slots: on average the player needs about
-   * `SET_PIECE_SLOTS × classSets` pieces before one set is closed.
+   * A random piece (a drop, a featured card) lands in whichever of the player's class sets the
+   * table picked, so with two of them only about half of it advances the set being built.
+   * `sets.ts` draws the missing slot first *within* a set, so duplicate slots are not the cost —
+   * the cross-set spread is. A **recipe** has no spread at all: the player names the set, so
+   * every recipe piece counts, which is the entire reason the deterministic path exists.
+   *
+   * Modelling both as random (which this did until Phase 17) understates the forge to nothing
+   * and then blames the gacha for the gap.
    */
   const classSets = GEAR_SETS.filter((entry) => entry.classId === 'warrior').length || 2;
-  const piecesForFullSet = SET_PIECES * classSets;
+  const random = setPiecesPerDay(style);
+  const recipes = recipesPerDay(style);
 
   for (const entry of run.ledger) {
-    const gained = setPiecesPerDay(style);
+    const gained = random + recipes;
     const before = pieces;
     pieces += gained;
+
+    const towardBefore = towardSet;
+    towardSet += random / classSets + recipes;
 
     if (firstPiece === null && pieces >= 1) {
       const share = gained > 0 ? (1 - before) / gained : 0;
       firstPiece = Number((entry.day - 1 + Math.min(1, Math.max(0, share))).toFixed(2));
     }
-    if (fullSet === null && pieces >= piecesForFullSet) {
-      const share = gained > 0 ? (piecesForFullSet - before) / gained : 0;
+    if (fullSet === null && towardSet >= SET_PIECES) {
+      const step = towardSet - towardBefore;
+      const share = step > 0 ? (SET_PIECES - towardBefore) / step : 0;
       fullSet = Number((entry.day - 1 + Math.min(1, Math.max(0, share))).toFixed(2));
     }
   }
@@ -206,4 +287,23 @@ export function drift(result: PacingResult, milestone: Milestone): number | null
   const reached = result.reached[milestone];
   if (reached === null) return null;
   return (reached - TARGET_DAYS[milestone]) / TARGET_DAYS[milestone];
+}
+
+/**
+ * Is this row inside the ±20% the ROADMAP asks for?
+ *
+ * A milestone never reached fails whatever kind it is — that is the one answer no promise
+ * survives. Otherwise a schedule is two-sided and a deadline only penalises lateness.
+ */
+export function withinBand(result: PacingResult, milestone: Milestone, band = 0.2): boolean {
+  const off = drift(result, milestone);
+  if (off === null) return false;
+  return MILESTONE_KIND[milestone] === 'deadline' ? off <= band : Math.abs(off) <= band;
+}
+
+/** Days ahead of the promise, for a row that beat it. Null when it did not, or never landed. */
+export function earlyBy(result: PacingResult, milestone: Milestone): number | null {
+  const reached = result.reached[milestone];
+  if (reached === null || reached >= TARGET_DAYS[milestone]) return null;
+  return Number((TARGET_DAYS[milestone] - reached).toFixed(2));
 }
