@@ -7,6 +7,82 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 16: the first twenty minutes
+- **The active beat is derived, not stored.** Twelve beats in `data/tutorial.ts`, each a place, a
+  thing to point at, two sentences and a predicate — and the live one is simply the first the save
+  cannot already prove happened. Nothing advances it. That makes "resumable mid-beat" free rather
+  than implemented: a reload lands on the same beat because the position was never written down,
+  and a cursor can never point at something the player already did in another tab. Only the two
+  `'read'` beats store anything, because "notice this" has no consequence to derive from.
+- **Every predicate is monotone, and a test replays a playthrough to prove it.** The price of a
+  derived cursor is that a predicate which can go back to false drags the whole tour backwards.
+  Beat 4 first asked "are your bags empty?", which is false again the moment a second contract
+  drops something — and beat 7 asks the player to *hold* loot for Bram to buy, so beat 4 would
+  have reactivated every time they did what beat 7 asked and the tour could never have reached
+  beat 8. Fixing it added three facts to the one progress vocabulary: `missionsAccepted`,
+  `missionsReturned` and `itemsEquipped`, each credited at the one place its action happens.
+- **A spotlight that cannot trap anybody.** One element with `0 0 0 100vmax` of shade cuts the
+  hole; the whole layer is `pointer-events-none` except the keeper's card, so every control on
+  screen stays live — including the ones the beat is not pointing at. The hole tracks its target
+  on a rAF loop through resizes, scrolls and place transitions, and the card places itself below
+  it or above it depending on what the viewport has left. Escape folds it, the fold is keyed on
+  the beat id so it silences one and not the next, and "Skip the tour" is on the card at all times.
+- **Off the beat's screen, the tour is a chip, not a card.** When there is no hole to draw — wrong
+  room, target not mounted — nothing renders over the page and the HUD says it instead. This is
+  the fix for a real bug rather than a preference: the first version floated a card bottom-centre
+  in that case, landed it on Vesna's roll buttons, and three Fortune's Table tests failed with
+  "subtree intercepts pointer events".
+- **A twenty-second first contract.** Beat 2 has to end before beat 3 can begin, and a five-minute
+  wall on the second thing a player has ever done is where they close the tab. Only `endsAt`
+  moves: the Vigor is spent at the real cost, the payout is still priced off `duration`, and the
+  card still prints "10-minute contract" — so the next job, which really does take ten minutes,
+  does not make the first one retroactively a lie. The card says Marla knows a shortcut, because
+  an unexplained short timer reads as a bug the second time round.
+- **Three callouts over the first fight, pinned to ×1.** Keyed to playback progress rather than to
+  a block landing — a fight without one would never show the middle note — and written about the
+  system rather than the blow on screen, so each is true whatever the dice did. The fight stretches
+  to 16s so they are readable, and the speed buttons say why they are locked instead of going
+  quietly dead. Skip still works.
+- **"I have played before", at creation.** One tick, one flag, and it only stops the overlay
+  rendering: the gates still open by level, the glossary still works, the six explainers still
+  fire, and turning the tour back on resumes at beat one rather than pretending the twelve
+  happened.
+- **Rooms announce themselves.** One watcher on the hero's level toasts every room a climb opened
+  — however many levels it covered at once — and lights the rail row it belongs to. Both read the
+  same list, so the toast and the flourish cannot disagree about what just happened.
+- **One hint, ever.** The Next Step chip ranks seven rules by how *perishable* each is rather than
+  by how valuable, because the chip's job is to catch the thing you would regret missing. It waits
+  for the tour to finish, goes where it points, and a dismissal lasts until the reset walk clears
+  it at midnight.
+- **A glossary that never switches off.** Forty-one one-sentence entries, each answering the
+  question with a number where the rule has one, attached to the word wherever it appears
+  (`components/ui/Term.tsx`). It is deliberately not tutorial content: the player who needs "what
+  was Starmetal for?" is three weeks past the tutorial. The settings-screen index lands with the
+  Settings screen in Phase 18.
+- **Six one-time explainers** for the moments that need a sentence and never need it again. They
+  mark themselves seen on *show* rather than on dismiss, so a reload mid-Epic does not bring them
+  back, and they never block — these fire in the middle of a loot reveal, so they are a card
+  beside the thing rather than a modal over it. The dungeon wall is the important one: hitting a
+  floor you cannot beat is the intended experience and reads as a balance bug unless somebody says
+  so out loud.
+- Save schema **v16** (`tutorial`), with the 15→16 migration marking an existing save opted-out —
+  a player mid-Phase-15 has already learned all of this.
+- `tutorialContent.test.ts` checks the data against the app: every beat's spotlight testid is one
+  a component actually renders, no beat is gated below the room it happens in, copy stays inside
+  its sentence budget, and the glossary never defines one unknown word with two more.
+
+### Fixed — Phase 16
+- **`itemsEquipped`, `missionsAccepted` and `missionsReturned` did not exist.** The tutorial needed
+  facts the save could not answer, which is a gap rather than a tutorial problem: nothing counted
+  a contract *signed* (only won), and nothing counted a piece put on. All three now go through
+  `credit()` like every other metric.
+- **`landMission` was a silent transition.** It is the moment the waiting ended — a different
+  lesson from the fight that follows — and now says so.
+- Playback settings could change under a mounted `useBattlePlayback`: banking the victory on the
+  closing beat flipped "is this their first fight?" while the same scene was still on screen,
+  handing it a new speed and a new pacing target as the result slid up. The answer is frozen at
+  mount.
+
 ### Added — Phase 15: the Notice Board, the ledger, and one owner for midnight
 - **Three notices a day, and the board tracks them itself.** No per-task claim button, now or
   ever: three notices with three claim buttons and then a chest button is four clicks for one

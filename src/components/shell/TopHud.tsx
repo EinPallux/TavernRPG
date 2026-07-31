@@ -19,6 +19,7 @@ import { CoinIcon, DiceIcon, GearIcon, VigorTankard } from '@/components/icons';
 import { Meter } from '@/components/ui/Meter';
 import { TimerChip } from '@/components/ui/TimerChip';
 import { HintChip } from '@/components/tutorial/HintChip';
+import { TutorialChip } from '@/components/tutorial/TutorialChip';
 import { useShellStore } from '@/state/shellStore';
 import { useGameStore } from '@/state/gameStore';
 import { classDef } from '@/data/classes';
@@ -217,8 +218,14 @@ export function TopHud() {
         )}
       </div>
 
-      {/* The one suggestion worth making, if there is one (tutorial spec §4). It rides in the
-          HUD because that is the only strip on screen in every room. */}
+      {/*
+        The tour and the hint, in the one strip on screen in every room.
+
+        They are mutually exclusive by construction — `HintChip` stands down while a beat is live —
+        and both live here rather than floating over the page, because a card over the content is
+        a card over somebody's button (tutorial spec §1, §4).
+      */}
+      <TutorialChip />
       <HintChip />
 
       <Link

@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–15 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–16 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -97,7 +97,32 @@ feedback, edge cases and tests. Deployed on Vercel.
   `boardActions` + `calendarActions`, the two-faced Notice Board, the reset-moment flourish, the
   out-of-Vigor wind-down, and save schema v15. Every room in Emberhollow is now built.
 
-1,109 unit tests + 174 e2e green. Next work: `ROADMAP.md` **Phase 16 (Tutorial & Onboarding)**.
+- **Phase 16:** onboarding — `data/tutorial.ts` (twelve beats as place + target + two sentences +
+  a predicate) and `data/glossary.ts` (41 entries), `engine/tutorial/` (`beats` — the active beat
+  *derived* as the first the save cannot prove; `hints`; `firstMission`), `state/tutorialActions.ts`,
+  the spotlight (`components/tutorial/`), the three battle callouts, unlock toasts and the rail
+  reveal, `components/ui/Term.tsx`, six one-time explainers, and save schema v16. It also added
+  three facts the save could not previously answer — `missionsAccepted`, `missionsReturned`,
+  `itemsEquipped` — because the beats needed them and nothing counted a contract *signed*.
+
+1,150 unit tests + 184 e2e green. Next work: `ROADMAP.md` **Phase 17 (Balancing, Content Fill &
+Feel)**.
+
+**A derived cursor demands monotone predicates.** The tutorial's active beat is the first of twelve
+the save cannot prove happened — no stored position, so a mid-beat reload resumes for free and two
+tabs cannot desync. The price is absolute: a predicate that can go back to false drags the whole
+tour backwards. Beat 4 first read "are your bags empty?", and beat 7 asks the player to *hold* loot
+for Bram — beat 4 would have reactivated every time they did what beat 7 asked, and beat 8 was
+unreachable. Read lifetime counters and acknowledgements, never present state.
+`engine/tutorial/tutorial.test.ts` replays a playthrough and fails if the finished count ever falls.
+
+**A tutorial card that floats over the page will land on somebody's button.** The spotlight only
+renders when it has a hole to draw around; every other state — wrong room, target not mounted,
+pushed aside — speaks from a chip in the HUD. The version that floated a card bottom-centre "when
+there was nothing to point at" sat on Vesna's roll buttons and failed three Fortune's Table e2e
+tests with *subtree intercepts pointer events*. Anchoring the only page-level element to a real
+measured target makes that unrepresentable rather than merely unlikely. (The layer is otherwise
+`pointer-events-none`: the dim is a look, not a modal, and every control stays live.)
 
 **A dungeon floor's difficulty is level *and* archetype, and archetype is worth more than you
 think.** Twelve levels of spread at dungeon budget — swarm 27, caster 32, skirmisher 34, bruiser
@@ -154,9 +179,10 @@ toward Oathsworn survive a Wolfblood week — but `pityFor()` reports **zero** o
 not honour them, because a meter reading 12/20 under a card that cannot pay it is a lie told for
 six days. The two behaviours look contradictory and are both required.
 
-**Five day-or-count-keyed high-water marks now exist** — `arena.lastRaidDay`,
-`guild.lastApplicantDay`, `lastChatDay`, `lastBountyDay`, and `gacha.monthlyPaidThrough`. The last
-one is denominated in *rolls*, not rungs, and is the shape to copy: rungs are
+**Eight day-or-count-keyed high-water marks now exist** — `arena.lastRaidDay`,
+`guild.lastApplicantDay`, `lastChatDay`, `lastBountyDay`, `gacha.monthlyPaidThrough`,
+`calendar.lastStampedDay`, `tasks.lastChestDay` and `tasks.lastWeeklyChestWeek`.
+`gacha.monthlyPaidThrough` is denominated in *rolls*, not rungs, and is the shape to copy: rungs are
 `floor(rolls / 15)` arithmetic on totals rather than an increment on a boundary, so replaying it
 cannot double-pay.
 
@@ -172,7 +198,10 @@ is that *granting* a pet means making its source true, which is why the two luck
 shipped counting *attempts* while `activity.missionsCompleted` counted *victories* — which quietly
 made the Wisp of the Chapel's forty-at-one-zone gate easier than the Tankard Imp's hundred-
 anywhere. Any new progress counter that sits beside an existing one inherits its units, or it is
-a balance bug wearing a plausible name.
+a balance bug wearing a plausible name. The converse also holds: `missionsAccepted`,
+`missionsReturned` and `missions` are three counters over *one contract's lifecycle* and that is
+fine, because signing, coming home and winning are three different events the tutorial has to
+point at separately. Three names for one event is the bug; three events is a vocabulary.
 
 **There is one vocabulary for what the game counts, and one path to credit it.**
 `data/progress.ts` owns `ProgressMetric`; the guild bounty and the Notice Board each narrow it to
@@ -223,13 +252,14 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 (arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty),
 `dungeons/` (floors, delve, keys), `forge/` (forgeConfig, craft),
 `gacha/` (schedule, roll, track), `pets/` (ownership, feeding, boost, eggs),
-`board/` (tasks, chest), `calendar/`, `economy/`, `reset/` (resetEngine + the one-owner audit) ·
+`board/` (tasks, chest), `calendar/`, `tutorial/` (beats, hints, firstMission), `economy/`,
+`reset/` (resetEngine + the one-owner audit) ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
 patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, vesnaBarks, names, guilds, guildChat,
 bounties, dungeons, gearSets, banners, pets, progress, dailyTasks, calendar, legends,
-crierTemplates ·
+crierTemplates, tutorial, glossary ·
 `src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board}/` ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board,tutorial}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,

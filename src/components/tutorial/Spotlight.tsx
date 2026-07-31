@@ -25,7 +25,7 @@
  */
 
 import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import type { SpotRect } from './useSpotlightRect';
 import { duration, snappy, standard } from '@/styles/motion';
 
@@ -46,8 +46,14 @@ export interface SpotlightAction {
 }
 
 export interface SpotlightProps {
-  /** Where to cut the hole, or null for a beat that talks without pointing. */
-  readonly rect: SpotRect | null;
+  /**
+   * Where to cut the hole.
+   *
+   * Required, and that is the design. The layer above renders nothing at all when there is no
+   * target, so this component can never end up as a card floating over a screen it has no
+   * business on — which is exactly what it did before, on top of Vesna's roll buttons.
+   */
+  readonly rect: SpotRect;
   readonly speaker: string;
   readonly copy: string;
   /** "Step 4 of 12" — orientation, so the tour has a visible end. */
@@ -59,6 +65,7 @@ export interface SpotlightProps {
   readonly onHide: () => void;
   /** Leave the tour for good. Always offered — see spec §1 on opt-out. */
   readonly onSkip: () => void;
+  /** Extra content under the copy, for a beat that wants to show something as well as say it. */
   readonly children?: ReactNode;
 }
 
@@ -121,94 +128,73 @@ export function Spotlight({
 
   if (vh === 0) return null;
 
-  const hole = rect
-    ? {
-        top: rect.top - PAD,
-        left: rect.left - PAD,
-        width: rect.width + PAD * 2,
-        height: rect.height + PAD * 2,
-      }
-    : null;
+  const hole = {
+    top: rect.top - PAD,
+    left: rect.left - PAD,
+    width: rect.width + PAD * 2,
+    height: rect.height + PAD * 2,
+  };
 
-  // Below the hole by default; above once the bottom of the screen has run out. With no hole at
-  // all the card sits low and centred, out of the way of whatever the beat is describing.
-  const belowTop = hole ? hole.top + hole.height + GAP : 0;
-  const fitsBelow = hole !== null && belowTop + cardH <= vh - MARGIN;
-  const cardTop = hole
-    ? fitsBelow
-      ? belowTop
-      : clamp(hole.top - GAP - cardH, MARGIN, Math.max(MARGIN, vh - cardH - MARGIN))
-    : vh - cardH - 40;
-  const cardLeft = hole
-    ? clamp(hole.left + hole.width / 2 - CARD_W / 2, MARGIN, Math.max(MARGIN, vw - CARD_W - MARGIN))
-    : Math.max(MARGIN, (vw - CARD_W) / 2);
+  // Below the hole by default; above once the bottom of the screen has run out.
+  const belowTop = hole.top + hole.height + GAP;
+  const fitsBelow = belowTop + cardH <= vh - MARGIN;
+  const cardTop = fitsBelow
+    ? belowTop
+    : clamp(hole.top - GAP - cardH, MARGIN, Math.max(MARGIN, vh - cardH - MARGIN));
+  const cardLeft = clamp(
+    hole.left + hole.width / 2 - CARD_W / 2,
+    MARGIN,
+    Math.max(MARGIN, vw - CARD_W - MARGIN),
+  );
 
   return (
     <div
       className="pointer-events-none fixed inset-0 z-30"
       data-testid="tutorial-spotlight"
-      data-spotlit={rect ? 'yes' : 'no'}
+      data-spotlit="yes"
     >
-      {/*
-        The wash. With no target the whole screen dims a little instead — a beat that points at
-        nothing should still feel like the game leaning in.
-      */}
-      <AnimatePresence>
-        {hole ? (
-          <motion.div
-            key="hole"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: duration.base }}
-            className="absolute border border-amber-400/70"
-            style={{
-              top: hole.top,
-              left: hole.left,
-              width: hole.width,
-              height: hole.height,
-              boxShadow: '0 0 0 100vmax rgb(6 5 4 / 0.68)',
-              borderRadius: 2,
-              transition: `${TRACK}, width 220ms cubic-bezier(0.22,1,0.36,1), height 220ms cubic-bezier(0.22,1,0.36,1)`,
-            }}
-            data-testid="tutorial-hole"
-          >
-            {/* Corner ticks: the hand-drawn version of a focus ring (style guide §3). */}
-            {(
-              [
-                ['-top-px -left-px', 'border-t-2 border-l-2'],
-                ['-top-px -right-px', 'border-t-2 border-r-2'],
-                ['-bottom-px -left-px', 'border-b-2 border-l-2'],
-                ['-bottom-px -right-px', 'border-b-2 border-r-2'],
-              ] as const
-            ).map(([corner, edges]) => (
-              <span
-                key={corner}
-                aria-hidden
-                className={`absolute h-3.5 w-3.5 border-amber-400 ${corner} ${edges}`}
-              />
-            ))}
-
-            {/* One slow pulse outward, forever — the "look here" the copy cannot do. */}
-            <motion.span
-              aria-hidden
-              className="absolute -inset-1 border border-amber-400/60"
-              style={{ borderRadius: 2 }}
-              animate={{ opacity: [0.6, 0], scale: [1, 1.045] }}
-              transition={{ duration: 1.9, repeat: Infinity, ease: 'easeOut' }}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="wash"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: duration.base }}
-            className="absolute inset-0 bg-black/45"
+      {/* The wash: one element, `0 0 0 100vmax` of shade, so there are no seams to line up. */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: duration.base }}
+        className="absolute border border-amber-400/70"
+        style={{
+          top: hole.top,
+          left: hole.left,
+          width: hole.width,
+          height: hole.height,
+          boxShadow: '0 0 0 100vmax rgb(6 5 4 / 0.68)',
+          borderRadius: 2,
+          transition: `${TRACK}, width 220ms cubic-bezier(0.22,1,0.36,1), height 220ms cubic-bezier(0.22,1,0.36,1)`,
+        }}
+        data-testid="tutorial-hole"
+      >
+        {/* Corner ticks: the hand-drawn version of a focus ring (style guide §3). */}
+        {(
+          [
+            ['-top-px -left-px', 'border-t-2 border-l-2'],
+            ['-top-px -right-px', 'border-t-2 border-r-2'],
+            ['-bottom-px -left-px', 'border-b-2 border-l-2'],
+            ['-bottom-px -right-px', 'border-b-2 border-r-2'],
+          ] as const
+        ).map(([corner, edges]) => (
+          <span
+            key={corner}
+            aria-hidden
+            className={`absolute h-3.5 w-3.5 border-amber-400 ${corner} ${edges}`}
           />
-        )}
-      </AnimatePresence>
+        ))}
+
+        {/* One slow pulse outward, forever — the "look here" the copy cannot do. */}
+        <motion.span
+          aria-hidden
+          className="absolute -inset-1 border border-amber-400/60"
+          style={{ borderRadius: 2 }}
+          animate={{ opacity: [0.6, 0], scale: [1, 1.045] }}
+          transition={{ duration: 1.9, repeat: Infinity, ease: 'easeOut' }}
+        />
+      </motion.div>
 
       {/* The keeper's card — the only thing on this layer that takes a click. */}
       <div
@@ -277,18 +263,16 @@ export function Spotlight({
           </div>
 
           {/* Tail, cut at the same 45° as every other bubble in the game. */}
-          {hole && (
-            <div
-              aria-hidden
-              className={`bg-parchment-500 absolute h-4 w-4 ${fitsBelow ? '-top-2' : '-bottom-2'}`}
-              style={{
-                left: clamp(hole.left + hole.width / 2 - cardLeft - 8, 12, CARD_W - 28),
-                clipPath: fitsBelow
-                  ? 'polygon(50% 0, 100% 100%, 0 100%)'
-                  : 'polygon(0 0, 100% 0, 50% 100%)',
-              }}
-            />
-          )}
+          <div
+            aria-hidden
+            className={`bg-parchment-500 absolute h-4 w-4 ${fitsBelow ? '-top-2' : '-bottom-2'}`}
+            style={{
+              left: clamp(hole.left + hole.width / 2 - cardLeft - 8, 12, CARD_W - 28),
+              clipPath: fitsBelow
+                ? 'polygon(50% 0, 100% 100%, 0 100%)'
+                : 'polygon(0 0, 100% 0, 50% 100%)',
+            }}
+          />
         </motion.div>
       </div>
     </div>

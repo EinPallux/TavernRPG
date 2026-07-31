@@ -353,13 +353,21 @@ credited from the player's side at all. The reset audit (`engine/reset/audit.tes
 other piece worth keeping: it reads the source and fails on the *shape* a drift bug takes,
 because behaviour cannot catch two features that each decide it is tomorrow.
 
-## Phase 16 — Tutorial & Onboarding (M) 🔲
+## Phase 16 — Tutorial & Onboarding (M) ✅
 12 data-driven beats with spotlight system, tutorial-shortened first mission, gates enforcement
-polish (rail silhouettes, unlock toasts), opt-out path, glossary tooltips (40 entries),
+polish (rail silhouettes, unlock toasts), opt-out path, glossary tooltips (41 entries),
 first-encounter micro-explainers, hint chip system.
 **Accept:** fresh-profile Playwright run completes all 12 beats; opt-out grants gates correctly;
 every beat resumable after mid-beat reload; a no-docs playtester (user proxy checklist) reaches
 level 10 unaided.
+**Done:** `e2e/tutorial.spec.ts` drives a fresh profile through the tour — chip off-site,
+spotlight on it, 20-second first contract, three callouts at a locked ×1 — plus a mid-beat reload
+that resumes on the same beat, opt-out at creation, skip-and-reload, the hint chip falling through
+to its next rule, six unlock toasts on a 1→4 climb, and a glossary tooltip on an opted-out save.
+`tutorial.test.ts` replays a whole playthrough and fails if the finished-beat count ever falls;
+`tutorialContent.test.ts` checks every beat's spotlight against the components that render it.
+1,150 unit + 184 e2e green. **Deferred to Phase 18:** the glossary's settings-screen index, which
+needs the Settings screen. The no-docs playtest is the user's to run.
 
 ## Phase 17 — Balancing, Content Fill & Feel (L) 🔲
 Fill content to plan volumes (96 monsters, 160 blurbs, all zones wired to 14 backdrops, barks,

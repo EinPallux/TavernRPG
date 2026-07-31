@@ -443,3 +443,24 @@ line. Over a 28-day month of perfect attendance:
 
 Plus mission and calendar drops. If the daily figure moves, the whole Fortune's Table economy
 moves with it — `board.test.ts` asserts the month.
+
+## 14. Onboarding (Phase 16)
+
+Four numbers, all in the first twenty minutes and none of them touching the economy.
+
+| constant | value | where | why |
+|---|---|---|---|
+| `FIRST_MISSION_MS` | 20,000 ms `[TUNE]` | `data/tutorial.ts` | Beat 2 must *end* for beat 3 to start. Five minutes on the second thing a player has ever done is where they close the tab. |
+| `CALLOUT_DURATION` | 16,000 ms `[TUNE]` | `components/battle/BattleCallouts.tsx` | Twice the usual 8s pacing target, so three notes get ~4s each. Three notes over 8s is a slideshow. |
+| `IDLE_POINTS` | 3 `[TUNE]` | `engine/tutorial/hints.ts` | "Unspent gold" is measured in *points affordable*, not coin: 5,000 gold is a fortune at level 3 and a rounding error at 40. Three points ≈ a day's training. |
+| `UNLOCK_FLOURISH_MS` | 6,000 ms `[TUNE]` | `state/shellStore.ts` | How long a newly-opened rail row keeps its wash. |
+
+**The shortened first contract is not a discount.** Only `endsAt` moves: the Vigor is spent at the
+full duration cost and `resolveMission` prices the payout off `duration`, so the twenty seconds
+cost the economy nothing and the sim never sees them. It fires once per save
+(`missionsAccepted === 0`) and is skipped entirely for a player who opted out.
+
+**The hint chip is ordered by perishability, not by value.** A banner ending tonight outranks
+unspent stat points that will still be unspent tomorrow, even though the stat points are worth
+more — the chip's job is to catch the thing you would regret missing. The order is the list in
+`engine/tutorial/hints.ts#RULES`, and the first rule that has something to say wins.

@@ -137,7 +137,7 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
 
 // ————— Save envelope —————
 interface SaveFile {
-  schemaVersion: 15; savedAt: Timestamp; slot: 1|2|3;
+  schemaVersion: 16; savedAt: Timestamp; slot: 1|2|3;
   worldSeed: Seed;                  // committed once; seeds the entire simulated world
   clock: { lastSeen: Timestamp; clampCount: number };
   settings: Settings;               // nav, motion, audio, battle playback (v4)
@@ -151,6 +151,7 @@ interface SaveFile {
   pets: Pets;                       // v14
   tasks: Tasks;                     // v15
   calendar: Calendar;               // v15
+  tutorial: TutorialState;          // v16
 }
 
 // ————— The Undertavern (v11) —————
@@ -244,7 +245,27 @@ interface Calendar {
 // implemented: there is nothing here an absence could reduce, so there is no branch to get wrong.
 //
 // `ProgressMetric` is the single vocabulary in data/progress.ts. BountyMetric is a subset of it,
-// and the daily tasks narrow the same union from the other end — neither owns it.
+// and the daily tasks narrow the same union from the other end — neither owns it. v16 added
+// `missionsAccepted`, `missionsReturned` and `itemsEquipped`: three moments on one contract's
+// lifecycle (signed, came home, won) rather than three names for one event, because the tutorial
+// has to be able to point at each of them separately.
+
+// ————— Onboarding (v16) —————
+interface TutorialState {
+  optedOut: boolean;                // "I have played before" — hides the overlay, changes nothing else
+  acknowledged: BeatId[];           // the two 'read' beats; every other beat is derived
+  seenExplainers: ExplainerId[];    // six one-time lines, marked on show rather than on dismiss
+  dismissedHints: HintId[];         // cleared by the reset walk, like every other daily list
+}
+// **There is no `beat` cursor.** `activeBeat(save)` walks the twelve in curriculum order and
+// returns the first the save cannot already prove happened — which is why a mid-beat reload
+// resumes for free and why a second tab cannot desync it. The price is that every predicate must
+// be *monotone*: once true, true forever. A predicate over present state ("are your bags empty?")
+// goes false again and drags the tour backwards; see `engine/tutorial/beats.ts` and the
+// playthrough replay in `tutorial.test.ts`.
+//
+// `optedOut` answers "shown?" and never touches the facts, so turning the tour back on resumes at
+// beat one rather than pretending the twelve happened. It does not silence the explainers.
 
 // ————— Gear sets (content, v12) —————
 // A set *bonus* is data the engine folds, not a proc: `SetEffect` is a flat union of ~24 named
