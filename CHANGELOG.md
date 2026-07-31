@@ -5,6 +5,32 @@ All notable changes to TavernRPG are documented here. Format follows
 [SemVer](https://semver.org/) once code exists (0.x during development, 1.0.0 at release —
 see `ROADMAP.md` phase gates).
 
+## [Unreleased]
+
+### Added — three characters, reachable
+
+- **Settings → Characters.** Three save slots, which the engine has had since Phase 0 and nothing
+  could reach: `readSave(slot)`, `deleteSave(slot)` and even a `listSlots` slot-picker helper have
+  been there for eighteen phases while the shell called `hydrate(1)` on every load. The shelf
+  names who is in each slot — hero, class, level, when they were last played — and switching puts
+  one hero down where they stand and picks another up. An empty slot opens hero creation; a full
+  one is one click away.
+- **The slot is remembered**, in one key beside the saves rather than inside any of them. Closing
+  the tab on your second hero brings you back to your second hero. Anything unreadable falls back
+  to slot 1, because a bad value here must never keep a player out of their game.
+- **Deleting says the name.** "Delete Ysolde, level 12?" rather than "Are you sure?", with the
+  export button in the panel above it as the actual undo. Deleting the character you are playing
+  puts you with another one rather than nowhere.
+
+### Fixed — while building it
+
+- **An effect keyed on the active save cannot see a sibling.** The shelf re-read the disk whenever
+  the *played* save changed, so deleting a character you were not playing left their name on
+  screen until something else nudged it.
+- **Two delete confirms at once.** Keying the confirm panel on which slot it was asking about made
+  moving the question between heroes an exit plus an entrance, and `AnimatePresence` keeps the
+  outgoing one mounted — style guide §7.1, written one commit earlier and demonstrated here.
+
 ## [1.0.0] — Emberhollow opens
 
 Eighteen phases. The game is complete against the definition in GDD §7, and `npm run release`

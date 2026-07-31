@@ -12,7 +12,9 @@ import {
   archiveSave,
   exportRaw,
   listArchives,
+  readActiveSlot,
   resetPersistenceForTests,
+  writeActiveSlot,
   writeSave,
 } from './persistence';
 
@@ -255,5 +257,71 @@ describe('persistence — triage', () => {
     if (other.status !== 'loaded') return;
     expect(other.save.hero?.name).toBe('Also me');
     expect(await listArchives(2)).toEqual([]);
+  });
+});
+
+describe('three slots, and remembering which one', () => {
+  it('names who is in each slot rather than just saying "occupied"', async () => {
+    /*
+     * A picker that can only say "slot 2 has bytes in it" is a picker nobody can choose from.
+     * The summary carries the three facts that identify a character to the person who made them.
+     */
+    await writeSave(freshSave({ slot: 1, hero: heroNamed('Ysolde') }));
+    await writeSave(freshSave({ slot: 3, hero: { ...heroNamed('Kargath'), level: 12 } }));
+
+    const slots = await listSlots();
+    expect(slots[0]?.hero).toEqual({ name: 'Ysolde', classId: 'warrior', level: 1 });
+    expect(slots[1]?.hero).toBeNull();
+    expect(slots[2]?.hero).toEqual({ name: 'Kargath', classId: 'warrior', level: 12 });
+  });
+
+  it('separates "has a save file" from "has a character"', async () => {
+    // Glancing at an empty slot writes an envelope before anybody has been made. That slot is
+    // occupied on disk and empty to the player, and the picker must side with the player.
+    await writeSave(freshSave({ slot: 2, hero: null }));
+
+    const slots = await listSlots();
+    expect(slots[1]?.occupied, 'the file is there').toBe(true);
+    expect(slots[1]?.hero, 'but nobody is').toBeNull();
+  });
+
+  it('shows a slot that will not open rather than hiding it', async () => {
+    await corruptMainSlot({ schemaVersion: 999, slot: 1 });
+
+    const slots = await listSlots();
+    expect(slots[0]?.broken).toBe(true);
+    expect(slots[0]?.hero).toBeNull();
+  });
+
+  it('remembers the slot last played, and defaults to the first', async () => {
+    expect(await readActiveSlot(), 'a browser that has never chosen').toBe(1);
+
+    await writeActiveSlot(3);
+    expect(await readActiveSlot()).toBe(3);
+  });
+
+  it('refuses a stored slot that is not a slot', async () => {
+    // A hand-edited or half-written value must never lock a player out of their game.
+    const { openDB } = await import('idb');
+    const db = await openDB('tavernrpg', 1, {
+      upgrade(database) {
+        if (!database.objectStoreNames.contains('saves')) database.createObjectStore('saves');
+      },
+    });
+    await db.put('saves', 'seven', 'active-slot');
+    db.close();
+
+    expect(await readActiveSlot()).toBe(1);
+  });
+
+  it('keeps the other slots when one is deleted', async () => {
+    await writeSave(freshSave({ slot: 1, hero: heroNamed('Ysolde') }));
+    await writeSave(freshSave({ slot: 2, hero: heroNamed('Kargath') }));
+
+    await deleteSave(1);
+
+    const slots = await listSlots();
+    expect(slots[0]?.hero).toBeNull();
+    expect(slots[1]?.hero?.name, 'the neighbour went with it').toBe('Kargath');
   });
 });

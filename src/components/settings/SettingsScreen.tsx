@@ -25,9 +25,11 @@ import { SFX_IDS } from '@/data/sfx';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { CharactersPanel } from './CharactersPanel';
 import { SavePanel } from './SavePanel';
 import { CreditsPanel } from './CreditsPanel';
 import { useShellStore } from '@/state/shellStore';
+import { SAVE_SLOTS } from '@/engine/save/schema';
 import { useGameStore } from '@/state/gameStore';
 import { audioAvailable, play } from '@/state/sfx';
 import { bgmAvailable } from '@/state/bgm';
@@ -143,6 +145,7 @@ export function SettingsScreen() {
   const settings = useShellStore((state) => state.settings);
   const setSettings = useShellStore((state) => state.setSettings);
   const save = useGameStore((state) => state.save);
+  const slot = useGameStore((state) => state.slot);
   const setTutorialOptedOut = useGameStore((state) => state.setTutorialOptedOut);
 
   /*
@@ -342,10 +345,24 @@ export function SettingsScreen() {
               </Row>
             </TavernPanel>
 
+            {/* ── Characters ───────────────────────────────────────────── */}
+            <TavernPanel
+              title="Characters"
+              headerSlot={
+                <span className="text-parchment-500/72 text-xs">
+                  {SAVE_SLOTS.length} slots · this browser
+                </span>
+              }
+            >
+              <CharactersPanel />
+            </TavernPanel>
+
             {/* ── Your save ────────────────────────────────────────────── */}
             <TavernPanel
               title="Your save"
-              headerSlot={<span className="text-parchment-500/72 text-xs">this browser only</span>}
+              headerSlot={
+                <span className="text-parchment-500/72 text-xs">slot {slot} · this browser</span>
+              }
             >
               <SavePanel />
             </TavernPanel>

@@ -4,7 +4,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createRng } from '@/engine/rng';
 import { generateItem } from '@/engine/items/generate';
-import { readSave, resetPersistenceForTests } from './persistence';
+import { readActiveSlot, readSave, resetPersistenceForTests } from './persistence';
 import { resetGameStoreForTests, useGameStore } from './gameStore';
 
 const store = () => useGameStore.getState();
@@ -552,5 +552,106 @@ describe('gameStore — the City Watch', () => {
 
   it('has nothing to collect when off duty', () => {
     expect(store().collectPatrol()).toBeNull();
+  });
+});
+
+describe('gameStore — three characters', () => {
+  it('carries a hero into a slot and finds them again on the way back', async () => {
+    await store().hydrate(1);
+    store().createHero('Ysolde', 'warrior');
+
+    await store().switchSlot(2);
+    expect(store().slot).toBe(2);
+    expect(store().save?.hero, 'slot two came with somebody else’s hero').toBeNull();
+
+    store().createHero('Kargath', 'mage');
+    await store().switchSlot(1);
+
+    expect(store().save?.hero?.name).toBe('Ysolde');
+    expect(store().save?.hero?.classId).toBe('warrior');
+  });
+
+  it('gives each character their own world', async () => {
+    // Two heroes in one browser must not share a ladder: the seed is what keeps their 1,500
+    // simulated neighbours, their guilds and their Crier feeds separate.
+    await store().hydrate(1);
+    const first = store().save?.worldSeed;
+
+    await store().switchSlot(3);
+    expect(store().save?.worldSeed).not.toBe(first);
+  });
+
+  it('writes the leaving hero to disk before opening the next slot', async () => {
+    /*
+     * The grievance a slot system exists to avoid. Every mutation writes through already, so the
+     * only way to catch a regression here is to read the *disk* rather than the store — a switch
+     * that forgot to flush would leave the level in memory and slot 1 a step behind.
+     */
+    await store().hydrate(1);
+    store().createHero('Ysolde', 'warrior');
+    store().grantXp(5_000);
+    const levelled = store().save!.hero!.level;
+
+    await store().switchSlot(2);
+
+    const onDisk = await readSave(1);
+    expect(onDisk.status).toBe('loaded');
+    if (onDisk.status !== 'loaded') return;
+    expect(onDisk.save.hero?.level).toBe(levelled);
+  });
+
+  it('remembers the slot, so the next load opens the same character', async () => {
+    await store().hydrate(1);
+    store().createHero('Ysolde', 'warrior');
+    await store().switchSlot(3);
+    store().createHero('Brenna', 'bard');
+
+    expect(await readActiveSlot()).toBe(3);
+  });
+
+  it('does nothing when asked for the slot already open', async () => {
+    await store().hydrate(1);
+    store().createHero('Ysolde', 'warrior');
+    const before = store().save;
+
+    await store().switchSlot(1);
+    expect(store().save, 'a no-op switch rebuilt the world').toBe(before);
+  });
+
+  it('deletes a character without touching the neighbours', async () => {
+    await store().hydrate(1);
+    store().createHero('Ysolde', 'warrior');
+    await store().switchSlot(2);
+    store().createHero('Kargath', 'mage');
+
+    await store().deleteSlot(1);
+
+    expect(store().slot, 'deleting a slot nobody was in moved the player').toBe(2);
+    expect(store().save?.hero?.name).toBe('Kargath');
+    expect((await readSave(1)).status).toBe('empty');
+  });
+
+  it('lands somewhere real after deleting the character being played', async () => {
+    await store().hydrate(1);
+    store().createHero('Ysolde', 'warrior');
+    await store().switchSlot(2);
+    store().createHero('Kargath', 'mage');
+
+    await store().deleteSlot(2);
+
+    // Another hero exists, so the player is put with them rather than into an empty room.
+    expect(store().slot).toBe(1);
+    expect(store().save?.hero?.name).toBe('Ysolde');
+    expect(await readActiveSlot()).toBe(1);
+  });
+
+  it('falls back to creation when the last character is deleted', async () => {
+    await store().hydrate(1);
+    store().createHero('Ysolde', 'warrior');
+
+    await store().deleteSlot(1);
+
+    expect(store().status).toBe('ready');
+    expect(store().save?.hero, 'the shell opens creation on a heroless save').toBeNull();
   });
 });

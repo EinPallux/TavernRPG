@@ -105,6 +105,20 @@ walking-skeleton screen that Phase 1 replaces with the real app shell.
   reports version/corruption in human language. Tampering is the player's right (Q15) — import
   never crashes, worst case rejects politely.
 - **Multi-tab guard:** BroadcastChannel leader election; secondary tabs get a friendly takeover screen.
+- **Three slots, reachable** (as built, post-1.0). The slot argument has threaded through
+  `readSave`/`writeSave`/`deleteSave` since Phase 0 and `listSlots` was written as slot-picker
+  data — but the shell called `hydrate(1)` on every load, so two thirds of the save system was
+  unreachable for eighteen phases. Settings → **Characters** is the room that plumbing was for:
+  each slot names its hero, class, level and when they were last played, and switching flushes
+  the outgoing save before it opens the next.
+  - **Which slot is active is a property of the browser, not of a save.** It lives in one
+    `active-slot` key beside the three saves — never a field inside them, because three saves each
+    carrying "am I the active one?" is three places to disagree. Read before the first `hydrate`,
+    so closing the tab on your second hero returns you to your second hero. Anything unreadable
+    falls back to slot 1: a bad value here must never keep a player out of their game.
+  - **A slot is a character, not a file.** Opening an empty slot writes an envelope before anybody
+    is made, so `occupied` (there are bytes) and `hero` (there is somebody) are different
+    questions and the picker asks the second.
 - **Nothing renders over an unloaded save** (as built, Phase 18). The shell used to draw the town
   the instant it mounted, over a store still at `status: 'idle'`; the window was a couple of
   milliseconds while `hydrate()` was the first thing a page load did, and nobody ever saw it. The

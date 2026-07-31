@@ -11,6 +11,7 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import { describeFailure, migrateSave, type MigrationFailure } from '@/engine/save/migrations';
 import { SAVE_SLOTS, saveFileSchema, type SaveFile, type SaveSlot } from '@/engine/save/schema';
+import type { ClassId } from '@/engine/items/types';
 
 const DB_NAME = 'tavernrpg';
 const DB_VERSION = 1;
@@ -114,22 +115,69 @@ export async function deleteSave(slot: SaveSlot): Promise<void> {
 
 export interface SlotSummary {
   readonly slot: SaveSlot;
+  /**
+   * Whether a save *file* exists — which is not the same question as whether a character does.
+   *
+   * Opening a slot writes a fresh envelope before the player has made anybody, so "there are
+   * bytes here" and "there is a hero here" diverge the moment somebody glances at slot 3 and
+   * leaves. The picker asks about `hero`; `occupied` is for the code that has to know a slot is
+   * physically in use.
+   */
   readonly occupied: boolean;
   readonly savedAt: number | null;
+  /** Who lives here, if anyone. Null for a fresh envelope or a slot that will not open. */
+  readonly hero: {
+    readonly name: string;
+    readonly classId: ClassId;
+    readonly level: number;
+  } | null;
+  /** A slot whose save is beyond migrating. Shown, never hidden — a broken hero is still a hero. */
+  readonly broken: boolean;
 }
 
-/** Slot-picker data: which slots hold a save and when each was last written. */
+/** Slot-picker data: who is in each slot, when they were last played, and what is unreadable. */
 export async function listSlots(): Promise<SlotSummary[]> {
   const summaries: SlotSummary[] = [];
   for (const slot of SAVE_SLOTS) {
     const result = await readSave(slot);
+    const hero = result.status === 'loaded' ? result.save.hero : null;
     summaries.push({
       slot,
       occupied: result.status === 'loaded',
       savedAt: result.status === 'loaded' ? result.save.savedAt : null,
+      hero: hero ? { name: hero.name, classId: hero.classId, level: hero.level } : null,
+      broken: result.status === 'failed',
     });
   }
   return summaries;
+}
+
+/**
+ * Which slot the player was last in.
+ *
+ * Deliberately **not** a field in any save. Three saves each carrying "am I the active one?" is
+ * three places to disagree, and the answer is a property of the *browser*, not of a character —
+ * the same shape as which tab holds the lock. One key beside the slots, read before the first
+ * `hydrate`, so closing the tab on your second hero and coming back does not hand you the first.
+ *
+ * Falls back to slot 1 for anything unreadable: a bad value here must never keep a player out of
+ * their game.
+ */
+const ACTIVE_SLOT_KEY = 'active-slot';
+
+export async function readActiveSlot(): Promise<SaveSlot> {
+  try {
+    const db = await getDb();
+    const stored: unknown = await db.get(STORE, ACTIVE_SLOT_KEY);
+    return SAVE_SLOTS.find((slot) => slot === stored) ?? 1;
+  } catch {
+    return 1;
+  }
+}
+
+export async function writeActiveSlot(slot: SaveSlot): Promise<void> {
+  const db = await getDb();
+  await db.put(STORE, slot, ACTIVE_SLOT_KEY);
 }
 
 /**
