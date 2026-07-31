@@ -21,11 +21,12 @@ import type { WeeklyPayout } from '@/engine/arena/payout';
 import type { BountyChest } from '@/engine/guilds/bounty';
 import { refreshArenaDay } from './arenaActions';
 import { refreshGuildDay } from './guildActions';
-import { creditAll } from './progressActions';
+import { credit, creditAll } from './progressActions';
 import { refreshForgeDay } from './forgeActions';
 import { refreshGachaDay } from './gachaActions';
 import { creditMissionDrops, payoutBonus, petContribution, refreshPetDay } from './petActions';
 import { ensureTasks, refreshBoardDay } from './boardActions';
+import { refreshTutorialDay } from './tutorialActions';
 import { stampToday, type StampTransition } from './calendarActions';
 import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
@@ -101,6 +102,10 @@ export function refreshDay(
   // Three fresh notices and an empty tally (daily-loop spec §1). The week's claim count rolls
   // here too, which is why the board is handed `today` rather than working it out.
   if (outcome.didReset) next = refreshBoardDay(next, today);
+
+  // And the Next Step chip gets another go: a hint waved away yesterday is a nudge declined, not
+  // a preference (tutorial spec §4).
+  if (outcome.didReset) next = refreshTutorialDay(next);
 
   /*
    * Then the ledger stamps itself.
@@ -187,9 +192,13 @@ export function accept(
     );
   }
 
+  // Signed, not won: `missionsAccepted` is credited here and `missions` only on a victory. The
+  // tutorial reads this one, because a first contract that loses still taught the lesson.
+  const signed = credit(save, 'missionsAccepted', 1);
+
   return {
     ok: true,
-    save: withActivity(save, {
+    save: withActivity(signed, {
       vigor: activity.vigor - result.vigorSpent,
       mission: result.mission,
       // The taken job leaves the board; the other two stay for tomorrow's comparison.
@@ -257,7 +266,13 @@ export function landMission(save: SaveFile, now: number): SaveFile {
   const { mission } = save.activity;
   if (!mission || missionPhase(mission, now) !== 'returned') return save;
 
-  return withActivity(save, { mission: null, pendingMission: mission });
+  // Counted here rather than at the claim: this is the moment the *waiting* ended, which is a
+  // different lesson from the fight that follows it. Safe to run on every tick — the guard above
+  // makes it fire exactly once per contract.
+  return withActivity(credit(save, 'missionsReturned', 1), {
+    mission: null,
+    pendingMission: mission,
+  });
 }
 
 export interface ClaimResult {

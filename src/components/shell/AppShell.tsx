@@ -16,6 +16,7 @@ import { TopHud } from './TopHud';
 import { PlaceStage } from './PlaceStage';
 import { ToastStack } from '@/components/ui/Toast';
 import { HeroCreation } from '@/components/hero/HeroCreation';
+import { TutorialLayer } from '@/components/tutorial/TutorialLayer';
 import { useGameStore } from '@/state/gameStore';
 import { useShellStore } from '@/state/shellStore';
 
@@ -72,6 +73,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </>
         )}
+        {/* Marla's tour rides above the town and below the ceremonies: the spotlight sits at
+            z-30, so a battle scene or a chest opening covers it rather than competing with it
+            (tutorial spec §1). */}
+        {!needsHero && <TutorialLayer />}
+
         {/* The clock strikes over everything, but never over a fight — the battle scene raises
             its own layer and the moment queues behind it (daily-loop spec §4). */}
         {!needsHero && <ResetMoment />}

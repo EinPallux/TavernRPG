@@ -86,6 +86,14 @@ export interface ShellState {
   settings: Settings;
   toasts: Toast[];
   preview: PreviewState;
+  /**
+   * The beat whose spotlight the player has pushed aside, if any (tutorial spec §1).
+   *
+   * Ephemeral on purpose, and it stores the *beat id* rather than a boolean: pushing beat four
+   * aside should not silence beat five. The tutorial's position is derived, so when the save
+   * moves on this id stops matching and the overlay simply comes back.
+   */
+  spotlightHidden: string | null;
 
   setSettings: (patch: Partial<Settings>) => void;
   toggleNav: () => void;
@@ -93,12 +101,15 @@ export interface ShellState {
   dismissToast: (id: string) => void;
   clearToasts: () => void;
   setPreview: (patch: Partial<PreviewState>) => void;
+  hideSpotlight: (beatId: string) => void;
+  showSpotlight: () => void;
 }
 
 export const useShellStore = create<ShellState>((set, get) => ({
   settings: { ...DEFAULT_SETTINGS },
   toasts: [],
   preview: { ...DEFAULT_PREVIEW, level: readStoredLevel() ?? DEFAULT_PREVIEW.level },
+  spotlightHidden: null,
 
   setSettings(patch) {
     set({ settings: { ...get().settings, ...patch } });
@@ -133,6 +144,14 @@ export const useShellStore = create<ShellState>((set, get) => ({
     if (patch.level !== undefined) storeLevel(patch.level);
     set({ preview: { ...get().preview, ...patch } });
   },
+
+  hideSpotlight(beatId) {
+    set({ spotlightHidden: beatId });
+  },
+
+  showSpotlight() {
+    set({ spotlightHidden: null });
+  },
 }));
 
 /** Test seam. */
@@ -142,5 +161,6 @@ export function resetShellStoreForTests(): void {
     settings: { ...DEFAULT_SETTINGS },
     toasts: [],
     preview: { ...DEFAULT_PREVIEW },
+    spotlightHidden: null,
   });
 }

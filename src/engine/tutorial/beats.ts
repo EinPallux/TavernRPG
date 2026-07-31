@@ -22,43 +22,49 @@ import { BEATS, type BeatDef, type BeatId } from '@/data/tutorial';
 import { tallyOf } from '@/data/progress';
 import type { SaveFile } from '@/engine/save/schema';
 
-/** How many items are loose in the bags — the "first loot" beat's finish line. */
-function bagCount(save: SaveFile): number {
-  const hero = save.hero;
-  if (!hero) return 0;
-  return hero.backpack.filter(Boolean).length + hero.satchel.length;
-}
-
 /**
  * The fact in the save that proves each beat was taught.
  *
  * Exhaustive over `BeatId`, so a thirteenth beat is a type error until somebody decides what
  * finishing it looks like — which is the useful half of the constraint. A beat with no
  * observable consequence is a beat that teaches nothing.
+ *
+ * **Every predicate here must be monotone**: once true for a save, true for every save that
+ * follows it. This is not tidiness, it is the one thing a derived cursor can get wrong. The walk
+ * below returns the *first* unfinished beat, so a predicate that can go back to false drags the
+ * whole tour backwards — and the failure is not theoretical. The first draft asked "are your bags
+ * empty?" for beat 4, which is false again the moment a second contract drops something. Beat 7
+ * is *"sell Bram what you are not wearing"*, which requires holding loot, so beat 4 would have
+ * reactivated every time the player did what beat 7 asked and the tour could never have reached
+ * it. `beats.test.ts` replays a whole playthrough and asserts the count never falls.
+ *
+ * The practical rule: read lifetime counters and acknowledgements, never present state.
  */
 const TAUGHT: Readonly<Record<BeatId, (save: SaveFile) => boolean>> = {
-  // Signed for a job. Any of the three states past "looking at the board" will do.
-  'welcome-in': (save) =>
-    Boolean(save.activity.mission ?? save.activity.pendingMission) ||
-    save.activity.missionsCompleted > 0,
+  // Signed for a job. The *attempt*, not the win — a first contract that loses still taught this,
+  // and `missionsCompleted` counts victories only.
+  'welcome-in': (save) => tallyOf(save.tasks.lifetime, 'missionsAccepted') > 0,
 
-  // Waited it out. The contract is at the door, or already behind them.
-  'first-mission': (save) =>
-    Boolean(save.activity.pendingMission) || save.activity.missionsCompleted > 0,
+  // Waited it out: the contract came home. Its own counter rather than "no mission running",
+  // because the second contract would make that false again and send the tour back to here.
+  'first-mission': (save) => tallyOf(save.tasks.lifetime, 'missionsReturned') > 0,
 
   // Watched the fight through. A first-mission *loss* leaves them here, which is correct: the
-  // beat's spotlight is the returned card, and there will be another contract.
-  'first-fight': (save) => save.activity.missionsCompleted > 0,
+  // beat's spotlight is the returned card, and there will be another contract. Two contracts
+  // home without a win is the give-up line — by then they have watched two fights.
+  'first-fight': (save) =>
+    save.activity.missionsCompleted > 0 || tallyOf(save.tasks.lifetime, 'missionsReturned') >= 2,
 
   /*
-   * Cleared the bag.
+   * Put something on.
    *
-   * Not "equipped an item" — a first mission drops something only a quarter of the time, and a
-   * beat that waits for a drop that may not come is a beat that strands the player. "Nothing
-   * loose in your bags" is true either way, immediately when there was no drop and after one
-   * click when there was.
+   * Or ran out of things for the beat to teach: a mission drops gear only about a quarter of the
+   * time, so waiting for a drop that may not come would strand the player on the paperdoll with
+   * an empty bag. Two contracts in is the give-up line — by then they have seen the loop, and
+   * the Armory beat is about to make the same point with Bram's money behind it.
    */
-  'first-loot': (save) => save.activity.missionsCompleted > 0 && bagCount(save) === 0,
+  'first-loot': (save) =>
+    tallyOf(save.tasks.lifetime, 'itemsEquipped') > 0 || save.activity.missionsCompleted >= 2,
 
   // Spent gold on a stat. The one number every new player has to be shown how to move.
   'get-stronger': (save) => tallyOf(save.tasks.lifetime, 'goldTrained') > 0,

@@ -110,7 +110,14 @@ import {
   type DailyClaimResult,
   type WeeklyClaimResult,
 } from './boardActions';
+import {
+  acknowledgeBeat as acknowledgeBeatOn,
+  dismissHint as dismissHintOn,
+  markExplainerSeen as markExplainerSeenOn,
+  setOptedOut as setOptedOutOn,
+} from './tutorialActions';
 import type { BannerId } from '@/data/banners';
+import type { BeatId, ExplainerId } from '@/data/tutorial';
 import type { PetId } from '@/data/pets';
 import type { ForgeTier } from '@/engine/forge/forgeConfig';
 import type { VerseId } from '@/engine/combat/types';
@@ -303,6 +310,18 @@ export interface GameStoreState {
   /** The Notice Board's two chests (daily-loop spec §1). */
   claimDailyChest: () => DailyClaimResult;
   claimWeeklyChest: () => WeeklyClaimResult;
+
+  /**
+   * Onboarding (tutorial spec §1, §4).
+   *
+   * Four writes and no cursor. The tutorial's *position* is derived from the save
+   * (`engine/tutorial/beats.ts`), so nothing here advances it — these only record the handful of
+   * facts a predicate cannot infer.
+   */
+  setTutorialOptedOut: (optedOut: boolean) => void;
+  acknowledgeBeat: (id: BeatId) => void;
+  markExplainerSeen: (id: ExplainerId) => void;
+  dismissHint: (id: string) => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -535,7 +554,17 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     },
 
     equipItem(item) {
-      updateHero((hero) => equipOnHero(hero, item));
+      const { save } = get();
+      if (!save?.hero) return;
+
+      const hero = equipOnHero(save.hero, item);
+      if (hero === save.hero) return; // the transform refused; nothing to persist
+
+      // Counted at the one place the action happens, like every other metric. The tutorial's
+      // "put it on" beat reads it, and it is monotone — which is what stops the tour walking
+      // backwards the next time the bags have something in them.
+      set({ save: credit({ ...save, hero }, 'itemsEquipped', 1) });
+      void persistNow();
     },
 
     unequipItem(slot) {
@@ -1126,6 +1155,52 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       if (!save || save.settings.battleSpeed === battleSpeed) return;
 
       set({ save: { ...save, settings: { ...save.settings, battleSpeed } } });
+      void persistNow();
+    },
+
+    /* ── Onboarding (tutorial spec §1, §4) ──────────────────────────────────────── */
+
+    setTutorialOptedOut(optedOut) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = setOptedOutOn(save, optedOut);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    acknowledgeBeat(id) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = acknowledgeBeatOn(save, id);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    markExplainerSeen(id) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = markExplainerSeenOn(save, id);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    dismissHint(id) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = dismissHintOn(save, id);
+      if (next === save) return;
+
+      set({ save: next });
       void persistNow();
     },
   };

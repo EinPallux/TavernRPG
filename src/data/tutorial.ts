@@ -123,7 +123,7 @@ export const BEATS: readonly BeatDef[] = [
     place: 'character',
     spotlight: 'paperdoll',
     speaker: 'Marla',
-    copy: 'Put it on. Anything in the bag is worth more on you than in it.',
+    copy: 'This is where everything you find ends up. Put your best on — the numbers underneath move when you do.',
     fromLevel: 1,
   },
   {

@@ -18,11 +18,32 @@
 export const PROGRESS_METRICS = [
   /** Contracts **won**. Losses do not count, here or in `activity.missionsCompleted`. */
   'missions',
+  /**
+   * Contracts **signed**, won or lost.
+   *
+   * The sibling of `missions`, and the units differ on purpose — see the note in CLAUDE.md about
+   * two counters that mean the same thing. It exists because the tutorial needs a fact that says
+   * "this player has taken a job" and cannot use the victory count: a first contract that *loses*
+   * still taught the lesson, and a predicate that forgets it would send the tour backwards.
+   */
+  'missionsAccepted',
+  /**
+   * Contracts that **came home** — the timer ran out and the hero is at the door.
+   *
+   * Three counters over one lifecycle (signed, returned, won) rather than three names for the
+   * same event, which is the thing CLAUDE.md warns about. They are here because each is a
+   * different moment the tutorial has to be able to point at, and because a predicate built out
+   * of *present* state — "is a mission running?" — walks the tour backwards on the second
+   * contract. See the monotonicity note in `engine/tutorial/beats.ts`.
+   */
+  'missionsReturned',
   'arenaWins',
   /** Whole hours banked from a completed patrol shift. */
   'patrolHours',
   'itemsScrapped',
   'itemsSold',
+  /** Pieces the player put on. Swapping one out for another counts once, for the one going on. */
+  'itemsEquipped',
   /** Levels the hero gained, from any source. */
   'levelsGained',
   /** Gold given to the hall's treasury. Guild-only — there is no solo equivalent. */
