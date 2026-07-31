@@ -8,7 +8,8 @@
  * reload without every component knowing about persistence.
  */
 
-import { useEffect, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { MotionConfig } from 'motion/react';
 import { NavRail } from './NavRail';
 import { ResetMoment } from './ResetMoment';
@@ -19,6 +20,9 @@ import { HeroCreation } from '@/components/hero/HeroCreation';
 import { TutorialLayer } from '@/components/tutorial/TutorialLayer';
 import { UnlockWatcher } from './UnlockWatcher';
 import { SaveTriage } from './SaveTriage';
+import { TabConflict } from './TabConflict';
+import { RoomBoundary } from './RoomBoundary';
+import { claimTabLock, type TabLock, type TabRole } from '@/state/tabLock';
 import { useGameStore } from '@/state/gameStore';
 import { useShellStore } from '@/state/shellStore';
 import { configureSfx } from '@/state/sfx';
@@ -33,6 +37,7 @@ import { configureBgm, watchVisibility } from '@/state/bgm';
 const BGM_SHARE = 0.45;
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const hydrate = useGameStore((state) => state.hydrate);
   const status = useGameStore((state) => state.status);
   const save = useGameStore((state) => state.save);
@@ -40,9 +45,34 @@ export function AppShell({ children }: { children: ReactNode }) {
   const settings = useShellStore((state) => state.settings);
   const setSettings = useShellStore((state) => state.setSettings);
 
+  /*
+   * Claim the save before loading it.
+   *
+   * Two tabs each hold their own store and each flush to the same slot, so the second to write
+   * silently overwrites the first — a player who opens the game twice loses whichever session
+   * they were not watching. `electing` lasts a few hundred milliseconds and renders nothing,
+   * because a flash of "another tab has this" on every single load would be worse than the bug.
+   */
+  const [tabRole, setTabRole] = useState<TabRole>('electing');
+  const lock = useRef<TabLock | null>(null);
   useEffect(() => {
+    lock.current = claimTabLock(setTabRole);
+    return () => {
+      lock.current?.release();
+      lock.current = null;
+    };
+  }, []);
+
+  const takeOver = useCallback(() => {
+    lock.current?.takeOver();
+    // The save may have moved on in the other tab; re-read rather than trusting what is in hand.
     void hydrate(1);
   }, [hydrate]);
+
+  useEffect(() => {
+    if (tabRole !== 'leader') return;
+    void hydrate(1);
+  }, [hydrate, tabRole]);
 
   // Save -> shell, once the save lands.
   useEffect(() => {
@@ -94,11 +124,16 @@ export function AppShell({ children }: { children: ReactNode }) {
    * 'failed'` reached the store and nothing read it.
    */
   const brokenSave = status === 'failed';
+  const shadowed = tabRole === 'follower';
 
   return (
     <MotionConfig reducedMotion={reducedMotion}>
       <div className="bg-wood-900 flex h-screen w-screen overflow-hidden">
-        {brokenSave ? (
+        {shadowed ? (
+          <main className="relative min-h-0 flex-1">
+            <TabConflict onTakeOver={takeOver} />
+          </main>
+        ) : brokenSave ? (
           <main className="relative min-h-0 flex-1">
             <SaveTriage />
           </main>
@@ -112,7 +147,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex min-w-0 flex-1 flex-col">
               <TopHud />
               <main className="relative min-h-0 flex-1">
-                <PlaceStage>{children}</PlaceStage>
+                <RoomBoundary onLeave={() => router.push('/tavern')}>
+                  <PlaceStage>{children}</PlaceStage>
+                </RoomBoundary>
               </main>
             </div>
           </>
@@ -120,15 +157,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Marla's tour rides above the town and below the ceremonies: the spotlight sits at
             z-30, so a battle scene or a chest opening covers it rather than competing with it
             (tutorial spec §1). */}
-        {!needsHero && !brokenSave && <TutorialLayer />}
+        {!needsHero && !brokenSave && !shadowed && <TutorialLayer />}
 
         {/* Announces a room the moment a level opens it — the rail's lock coming off is easy
             to miss when you were not looking at that row (tutorial spec §3). */}
-        {!needsHero && !brokenSave && <UnlockWatcher />}
+        {!needsHero && !brokenSave && !shadowed && <UnlockWatcher />}
 
         {/* The clock strikes over everything, but never over a fight — the battle scene raises
             its own layer and the moment queues behind it (daily-loop spec §4). */}
-        {!needsHero && !brokenSave && <ResetMoment />}
+        {!needsHero && !brokenSave && !shadowed && <ResetMoment />}
         <ToastStack />
       </div>
     </MotionConfig>
