@@ -102,3 +102,55 @@ game-icons for items as a task for whenever the assets can actually be fetched. 
 
 *New product ambiguities get appended here under a dated heading with a proposed default (per
 `CLAUDE.md` working rules).*
+
+---
+
+## 2026-07-31 — Phase 17 (Balancing)
+
+**Q22. The §0 milestone table's middle row cannot be hit with any smooth XP curve.**
+The pacing sim (`npm run pacing`) now measures the reference player against §0. Two of the three
+level rows fit comfortably; the third does not, and the reason is arithmetic rather than tuning.
+
+Hitting **level 10 by day 3** and **level 55 by day 30** fixes the two ends of the curve. Between
+them, **level 25 by day 14** demands that the average cost of a level *fall* from 96.8 Vigor
+(levels 10–24) to 70.4 Vigor (levels 25–54) — a game that speeds up as you climb. No monotone
+divisor can do it, and the shape it would need is not one we want.
+
+What is shipped: `XP_DIVISOR_BASE`/`PER_LEVEL` re-fitted from 28/1.2 to **42/1.5**, which lands
+L10 at 3.5 days (+17%), L25 at 11.4 (−19%) and L55 at 34.5 (+15%) — every row inside the ±20%
+the ROADMAP asks for, with the error spread evenly rather than parked on one row.
+
+1. **Leave it.** All three rows pass at ±20%; the table stays as written and the sim keeps
+   measuring against it.
+2. **Move the L25 row to ~day 11** to match the curve the other two rows imply, so the table
+   describes the game rather than a third target pulling against them.
+3. **Slow the mid-game deliberately** with a non-monotone curve (a plateau between 10 and 25).
+   Buys the table at the cost of a stretch where levelling visibly stalls.
+
+**Default while unanswered: option 1** — nothing is out of tolerance, so nothing is blocked.
+→ `docs/design/balancing-formulas.md` §0, §1
+
+**Q23. A full five-piece set takes ~125 days, against §0's 45–60.**
+Mission drops carry `set: 0` by design — set pieces come from Vesna's featured card and the
+forge's recipes, nowhere else. On the published featured rate, and counting only the gacha, the
+reference player closes their first five-piece set around **day 125**. First *piece* arrives about
+day 12, so §0's "level 55 with 1–2 set pieces by day 30" is met; it is the *completion* promise
+that is roughly 2.4× out.
+
+This is a design decision rather than a tuning one — it touches a published rate, the odds panel
+and the F2P promise — so it is yours:
+
+1. **Raise the featured rate** (the direct lever). Changes a number printed on the odds panel and
+   makes every banner more generous, including for pieces the player is not chasing.
+2. **Let recipes carry the chase.** A recipe craft is a *guaranteed* piece of a named set, which
+   is exactly the deterministic path the design added; making recipes more common (dungeon drops,
+   Vesna's monthly track) or cheaper in Starmetal closes sets without touching the gacha odds.
+   The sim deliberately excludes this route today, so today's 125 days is the pessimistic floor.
+3. **Let missions drop set pieces** at a low weight, so the chase advances while playing the core
+   loop rather than only at the two premium rooms.
+4. **Move the §0 row to ~90–120 days** and treat a full set as a two-to-four-month chase.
+
+**Default while unanswered: option 2** — it is the only one that does not touch a published rate
+or the loop's loot table, and the deterministic path is already built. Nothing is blocked either
+way; `pacing.test.ts` asserts today's number so the change is visible when it happens.
+→ `docs/design/systems/gear-sets.md`, `docs/design/balancing-formulas.md` §0

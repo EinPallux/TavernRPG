@@ -16,6 +16,27 @@
 | Hall of Fame top 100 | Month 2–3 |
 | Rank 1 (campaign goal) | Month 6+ (bots keep progressing too) |
 
+**Measured, Phase 17** (`npm run pacing`, reference player = `ACTIVE_PLAYER`):
+
+| Milestone | Target | Measured | Drift |
+|---|---|---|---|
+| Level 10 | day 3 | **3.5** | +17% |
+| Level 25 | day 14 | **11.4** | −19% |
+| Level 55 | day 30 | **34.5** | +15% |
+| First set piece | day 30 | **12.5** | −58% |
+| Full 5-piece set | day 52 | **125** | +140% ⚠ |
+| Hall of Fame top 100 | day 75 | **45** | −40% |
+
+The three level rows are inside the ±20% the ROADMAP asks for, and `pacing.test.ts` enforces
+them. Two rows are **not** tuning problems and are logged as open questions rather than quietly
+adjusted: the L25 row cannot be hit alongside the other two by any monotone curve (Q22), and the
+full-set chase is ~2.4× slower than promised because mission drops carry `set: 0` and only
+Vesna's featured card feeds it (Q23).
+
+Milestones are reported in **fractional days**. A day-indexed ledger rounds every milestone up to
+the end of the day it landed on, which at a three-day target is a third of the budget — enough on
+its own to fail a curve that is inside tolerance.
+
 ## 1. Experience & levels
 
 - XP to go from level `L` to `L+1`: `xpNeeded(L) = round(60 · L^2.1 + 240 · L)` `[TUNE]`

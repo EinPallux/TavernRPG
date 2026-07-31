@@ -40,12 +40,22 @@ export function isMissionDuration(value: number): value is MissionDuration {
  * — the hundredth level costs the same number of missions as the second. Growing the divisor
  * with level is what produces a curve: fast onboarding, a long tail.
  *
- * Measured against balancing §0 (missions only, 100 Vigor/day): L10 day 4, L25 day 11,
- * L55 day 34. The §0 table also wants L100 around day 180, which no simple divisor reaches
- * from these three — see the note in balancing §1.
+ * **Re-fitted in the Phase 17 pacing pass** (28 / 1.2 → 42 / 1.5). Two things forced it. The
+ * economy sim had never counted patrol XP, so every milestone it reported — including the
+ * "L10 day 4" that used to sit in this comment as a measured fact — was pessimistic by about a
+ * third of a day's progression. And the sim rounded a milestone up to the end of the day it
+ * landed on, which at a three-day target is a third of the whole budget.
+ *
+ * With both fixed, `engine/pacing/` measures the reference player at **L10 3.5 days, L25 11.4,
+ * L55 34.5** against §0's 3 / 14 / 30 — inside the ±20% the ROADMAP asks for, on all three.
+ *
+ * A *linear* divisor cannot do better than that here, and the reason is worth knowing before
+ * anybody tries: hitting 3 / 14 / 30 exactly requires the average cost per level to **fall**
+ * between the 10–24 band and the 25–54 band (96.8 Vigor to 70.4), which is a curve that speeds
+ * up as you climb. The table's middle row is the outlier; see USER_QUESTIONS Q22.
  */
-export const XP_DIVISOR_BASE = 28;
-export const XP_DIVISOR_PER_LEVEL = 1.2;
+export const XP_DIVISOR_BASE = 42;
+export const XP_DIVISOR_PER_LEVEL = 1.5;
 
 export function vigorPerLevel(level: number): number {
   return XP_DIVISOR_BASE + XP_DIVISOR_PER_LEVEL * Math.max(1, level);

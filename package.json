@@ -19,7 +19,8 @@
     "format:check": "prettier --check .",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
     "balance": "vitest run src/engine/combat/balance.test.ts",
-    "economy": "vitest run src/engine/economy/economy.test.ts"
+    "economy": "vitest run src/engine/economy/economy.test.ts",
+    "pacing": "vitest run src/engine/pacing/pacing.test.ts"
   },
   "engines": {
     "node": ">=20.11"

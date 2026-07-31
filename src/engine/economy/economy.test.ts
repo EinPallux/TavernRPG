@@ -55,20 +55,16 @@ function daysToLevel(target: number, vigorPerDay = VIGOR_PER_DAY): number {
 }
 
 describe('pacing — balancing §0', () => {
+  /*
+   * The §0 *milestone table* is asserted in `engine/pacing/pacing.test.ts`, which reports
+   * fractional days and models set pieces and rank as well as levels. What stays here is the
+   * property this file is the right home for: the curve has a shape, and a flat divisor would
+   * flatten it. Two owners for the same numbers is how bands drift apart.
+   */
   it('unlocks the whole town within the first few days', () => {
     // Level 10 is the last feature gate. A player stuck below it is playing a demo, and the
     // original flat /320 divisor put this at day 29.
     expect(daysToLevel(10)).toBeLessThanOrEqual(6);
-  });
-
-  it('reaches the mid-game milestones roughly on schedule', () => {
-    // §0 targets: L25 ~week 2, L55 ~day 30. Missions alone should land near but not before
-    // these — dailies, arena and dungeons all add XP that this model does not include yet.
-    expect(daysToLevel(25)).toBeGreaterThanOrEqual(8);
-    expect(daysToLevel(25)).toBeLessThanOrEqual(18);
-
-    expect(daysToLevel(55)).toBeGreaterThanOrEqual(24);
-    expect(daysToLevel(55)).toBeLessThanOrEqual(45);
   });
 
   it('slows down as it climbs, rather than levelling at a flat rate forever', () => {
@@ -313,9 +309,16 @@ describe('a hall changes the numbers — Phase 10', () => {
   });
 
   it('applies exactly the published multiplier on any single day, level held', () => {
-    // The direct claim, isolated from the compounding above.
+    /*
+     * The direct claim, isolated from the compounding above.
+     *
+     * Level 200 rather than 40, and the level is the whole point: patrol gold is priced off the
+     * level *after* the day's missions, so at 40 the buffed player's extra XP levels them up
+     * mid-day and their patrol gold beats the multiplier for a reason that is not the multiplier.
+     * High enough up the curve that one day cannot cross a level, the claim is clean again.
+     */
     const oneDay = (steps: { treasuryStep: number; drillmasterStep: number }) =>
-      simulateEconomy({ days: 1, startLevel: 40, style: { ...ACTIVE_PLAYER, ...steps } })
+      simulateEconomy({ days: 1, startLevel: 200, style: { ...ACTIVE_PLAYER, ...steps } })
         .ledger[0]!;
 
     const plain = oneDay({ treasuryStep: 0, drillmasterStep: 0 });
