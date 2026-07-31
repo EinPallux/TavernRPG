@@ -96,7 +96,29 @@ import {
   type ScrapResult,
 } from './forgeActions';
 import { roll as rollOn, type RollResultState } from './gachaActions';
+import {
+  feedPet as feedPetOn,
+  markPetsSeen as markPetsSeenOn,
+  setActivePet as setActivePetOn,
+  upgradePet as upgradePetOn,
+  type PetResult,
+} from './petActions';
+import { credit } from './progressActions';
+import {
+  claimDailyChest as claimDailyChestOn,
+  claimWeeklyChest as claimWeeklyChestOn,
+  type DailyClaimResult,
+  type WeeklyClaimResult,
+} from './boardActions';
+import {
+  acknowledgeBeat as acknowledgeBeatOn,
+  dismissHint as dismissHintOn,
+  markExplainerSeen as markExplainerSeenOn,
+  setOptedOut as setOptedOutOn,
+} from './tutorialActions';
 import type { BannerId } from '@/data/banners';
+import type { BeatId, ExplainerId } from '@/data/tutorial';
+import type { PetId } from '@/data/pets';
 import type { ForgeTier } from '@/engine/forge/forgeConfig';
 import type { VerseId } from '@/engine/combat/types';
 import type { DungeonId } from '@/data/dungeons';
@@ -149,7 +171,12 @@ export interface GameStoreState {
   startOver: () => Promise<void>;
 
   /** Creation. Writes through immediately — nobody should lose a new hero to a debounce. */
-  createHero: (name: string, classId: ClassId) => Promise<void>;
+  createHero: (
+    name: string,
+    classId: ClassId,
+    /** `skipTutorial` is the creation screen's "I have played before" tick (tutorial spec §1). */
+    options?: { readonly skipTutorial?: boolean },
+  ) => Promise<void>;
   equipItem: (item: Item) => void;
   unequipItem: (slot: SlotId) => void;
   trainAttribute: (attribute: AttributeId, count: number) => void;
@@ -275,6 +302,31 @@ export interface GameStoreState {
   // ── Fortune's Table (Phase 13) ───────────────────────────────────────────────────
   /** One card, or ten on the Grand Reading. The free daily card costs nothing. */
   rollBanner: (bannerId: BannerId, ten?: boolean) => RollResultState;
+
+  // ── The Menagerie (Phase 14) ─────────────────────────────────────────────────────
+  /** A scrap and some gold for a level. Three a day, per pet. */
+  feedPet: (id: PetId) => PetResult;
+  /** Materials for a frame, a trail and half a percent. */
+  upgradePet: (id: PetId) => PetResult;
+  /** Put one at your side, or none. Free and instant. */
+  setActivePet: (id: PetId | null) => void;
+  /** Stop the rail saying something new is in the Menagerie. */
+  markPetsSeen: () => void;
+  /** The Notice Board's two chests (daily-loop spec §1). */
+  claimDailyChest: () => DailyClaimResult;
+  claimWeeklyChest: () => WeeklyClaimResult;
+
+  /**
+   * Onboarding (tutorial spec §1, §4).
+   *
+   * Four writes and no cursor. The tutorial's *position* is derived from the save
+   * (`engine/tutorial/beats.ts`), so nothing here advances it — these only record the handful of
+   * facts a predicate cannot infer.
+   */
+  setTutorialOptedOut: (optedOut: boolean) => void;
+  acknowledgeBeat: (id: BeatId) => void;
+  markExplainerSeen: (id: ExplainerId) => void;
+  dismissHint: (id: string) => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => {
@@ -480,7 +532,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       }
     },
 
-    async createHero(name, classId) {
+    async createHero(name, classId, options = {}) {
       const { save } = get();
       if (!save) return;
 
@@ -493,9 +545,13 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         rng: createRng(deriveSeed(save.worldSeed, 'starter-kit', classId), 'starter-kit'),
       });
 
+      // "I have been here before", ticked at creation. One flag, applied before anything else
+      // reads it, so the first render of the tavern is already tour-free (tutorial spec §1).
+      const started = setOptedOutOn({ ...save, hero }, options.skipTutorial === true);
+
       // Draw the opening board straight away: creation ends at the tavern, and an empty
       // quest table would be the first thing a new player saw.
-      const seeded = refreshDay({ ...save, hero }, currentDayKey(), dayKeysBetween).save;
+      const seeded = refreshDay(started, currentDayKey(), dayKeysBetween).save;
       // Raise the 1,500. The world is generated at creation rather than lazily, so the ladder
       // the player is joining already has ninety days of history behind it — and the warm-up
       // day is simulated straight away so the Crier board has news on arrival rather than
@@ -507,7 +563,17 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     },
 
     equipItem(item) {
-      updateHero((hero) => equipOnHero(hero, item));
+      const { save } = get();
+      if (!save?.hero) return;
+
+      const hero = equipOnHero(save.hero, item);
+      if (hero === save.hero) return; // the transform refused; nothing to persist
+
+      // Counted at the one place the action happens, like every other metric. The tutorial's
+      // "put it on" beat reads it, and it is monotone — which is what stops the tour walking
+      // backwards the next time the bags have something in them.
+      set({ save: credit({ ...save, hero }, 'itemsEquipped', 1) });
+      void persistNow();
     },
 
     unequipItem(slot) {
@@ -515,7 +581,15 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     },
 
     trainAttribute(attribute, count) {
-      updateHero((hero) => trainOnHero(hero, attribute, count).hero);
+      const { save } = get();
+      if (!save?.hero) return;
+
+      const result = trainOnHero(save.hero, attribute, count);
+      if (result.pointsBought === 0) return;
+
+      // Gold into the trainer is the game's primary sink, so the board is allowed to notice.
+      set({ save: credit({ ...save, hero: result.hero }, 'goldTrained', result.goldSpent) });
+      void persistNow();
     },
 
     toggleItemLock(uid) {
@@ -881,7 +955,24 @@ export const useGameStore = create<GameStoreState>((set, get) => {
     },
 
     donateToGuild(options) {
-      return runGuild((save) => donateOn(save, options, gameNow()));
+      /*
+       * The one metric credited from two places, and deliberately so: `donate` already threads
+       * the bounty through a larger transaction (the hall's pot, the treasury track, the world
+       * record), so routing it back through `credit` would be circular. What the board needs is
+       * the tally, and that is added here — the value is whatever the donation was worth, which
+       * `donate` has already priced.
+       */
+      const before = get().save?.hero;
+      const refusal = runGuild((save) => donateOn(save, options, gameNow()));
+      if (refusal) return refusal;
+
+      const after = get().save;
+      const value = (before?.gold ?? 0) - (after?.hero?.gold ?? 0);
+      if (after && value > 0) {
+        set({ save: credit(after, 'goldDonated', value) });
+        void persistNow();
+      }
+      return null;
     },
 
     acceptGuildApplicant(botId) {
@@ -915,7 +1006,9 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       const result = descendOn(save, id, gameNow());
       if (!result.ok) return result;
 
-      set({ save: result.save });
+      set({
+        save: credit(result.save, 'dungeonFloors', result.outcome.cleared ? 1 : 0),
+      });
       void persistNow();
       return result;
     },
@@ -968,7 +1061,81 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       });
       if (!result.ok) return result;
 
+      // Every card counts, the free one included — the task says "draw a card", not "spend a die".
+      const drawn = result.save.gacha.rolls - save.gacha.rolls;
+      set({ save: credit(result.save, 'gachaRolls', drawn) });
+      void persistNow();
+      return result;
+    },
+
+    feedPet(id) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = feedPetOn(save, id);
+      if (!result.ok) return result;
+
+      set({ save: credit(result.save, 'petsFed', 1) });
+      void persistNow();
+      return result;
+    },
+
+    upgradePet(id) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = upgradePetOn(save, id);
+      if (!result.ok) return result;
+
       set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    setActivePet(id) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = setActivePetOn(save, id);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    markPetsSeen() {
+      const { save } = get();
+      if (!save) return;
+
+      const next = markPetsSeenOn(save);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    claimDailyChest() {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = claimDailyChestOn(save, currentDayKey());
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    claimWeeklyChest() {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = claimWeeklyChestOn(save, currentDayKey());
+      if (!result.ok) return result;
+
+      // The chest's item goes into the bags like any other drop, through the one path that
+      // knows what to do when they are full.
+      set({ save: { ...result.save, hero: addItemToHero(result.save.hero!, result.item).hero } });
       void persistNow();
       return result;
     },
@@ -997,6 +1164,52 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       if (!save || save.settings.battleSpeed === battleSpeed) return;
 
       set({ save: { ...save, settings: { ...save.settings, battleSpeed } } });
+      void persistNow();
+    },
+
+    /* ── Onboarding (tutorial spec §1, §4) ──────────────────────────────────────── */
+
+    setTutorialOptedOut(optedOut) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = setOptedOutOn(save, optedOut);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    acknowledgeBeat(id) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = acknowledgeBeatOn(save, id);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    markExplainerSeen(id) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = markExplainerSeenOn(save, id);
+      if (next === save) return;
+
+      set({ save: next });
+      void persistNow();
+    },
+
+    dismissHint(id) {
+      const { save } = get();
+      if (!save) return;
+
+      const next = dismissHintOn(save, id);
+      if (next === save) return;
+
+      set({ save: next });
       void persistNow();
     },
   };

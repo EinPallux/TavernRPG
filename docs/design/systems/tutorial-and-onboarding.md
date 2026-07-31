@@ -62,3 +62,77 @@ Locked rail items show as darkened silhouettes with level tags (visible ambition
 `TutorialState` {beat, seenBeats, optedOut}, `FeatureGates` derived from level (single source used
 by nav rail, routers, and task pool). Beats are data-driven (`src/data/tutorial.ts`) with
 spotlight target selectors, copy keys, and completion predicates — new beats ship as content.
+
+## 6. As built (Phase 16)
+
+The twelve beats, the spotlight, the glossary and the six explainers all shipped. Five decisions
+diverged from — or sharpened — the spec above, and each is worth knowing before touching this.
+
+### The active beat is derived, not stored
+
+`TutorialState` in §5 named a `beat` cursor. There isn't one. `engine/tutorial/beats.ts#activeBeat`
+walks the twelve in curriculum order and returns **the first the save cannot already prove
+happened**. Nothing advances it; the predicate simply stops being false.
+
+That buys resumability outright — "resumable mid-beat" (§1 rule 3) needed no code, because the
+position was never written down — and it removes the whole class of bug where a cursor points at
+something already done (a second tab, an action that fired twice, a migration landing mid-tour).
+
+**The price, and it is a real one: every predicate must be monotone.** Once true for a save, true
+for every save after it. The first draft finished beat 4 on "are your bags empty?", which is false
+again the moment a second contract drops something — and beat 7 asks the player to *hold* loot for
+Bram to buy. Beat 4 would have reactivated every time they did what beat 7 asked, and the tour
+could never have reached beat 8. `engine/tutorial/tutorial.test.ts` replays a whole playthrough and
+fails on any step where the finished count falls.
+
+Making them monotone added three facts to `data/progress.ts`: `missionsAccepted` (signed),
+`missionsReturned` (came home) and `itemsEquipped`. Three counters over one lifecycle, not three
+names for one event — each is a different moment the tour has to be able to point at.
+
+Only the two `'read'` beats store anything (`tutorial.acknowledged`), because "notice this" has no
+observable consequence to derive from.
+
+### The overlay only draws when it has a hole
+
+The spotlight is one element with `0 0 0 100vmax` of box-shadow, and the whole layer is
+`pointer-events-none` except the keeper's card — the dim is a *look*, not a modal, so every control
+on screen stays live including the ones the beat is not pointing at.
+
+When there is no hole — the player is in another room, or the beat's target has not mounted — the
+tour renders **nothing over the page** and speaks from a chip in the HUD instead (`TutorialChip`,
+beside the Next Step chip). This replaced a version that floated a card bottom-centre in that case,
+which sat directly on Vesna's roll buttons and failed three Fortune's Table e2e tests with "subtree
+intercepts pointer events". A tutorial blocking a button in a room it is not talking about is the
+exact failure the layer exists to avoid, so the fix is structural rather than careful.
+
+### The first contract, and only the first
+
+`FIRST_MISSION_MS = 20_000` moves **`endsAt` and nothing else**. The Vigor is spent at the real
+cost, `resolveMission` still prices the payout off `duration`, and the card still prints
+"10-minute contract" — so the player's *next* job, which really does take ten minutes, does not
+make the first one retroactively a lie. The card says Marla knows a shortcut, because an
+unexplained short timer reads as a bug the second time round. Derived from
+`missionsAccepted === 0`; there is no first-mission flag.
+
+### Callouts fire off progress, not events
+
+The three notes over the first fight (§2 beat 3) are keyed to playback progress bands rather than
+to a block or a proc landing: a fight with no block would never show the middle note, and one with
+six would show it at whichever happened to land. The copy is written about the *system* rather than
+the blow on screen, so it is true whatever the dice did. The fight is stretched to 16s and pinned
+to ×1 — with a reason on the disabled buttons — because a player who left the speed on ×4 from a
+previous character would watch the whole lesson go past in two seconds. Skip still works.
+
+### Opt-out, and what it does not switch off
+
+The creation tick sets one flag. Gates still open by level, the glossary still works, and the six
+one-time explainers **still fire** — "I have played before" is a claim about the twelve beats, not
+about the pity floor or the dungeon wall, and a returning player on a fresh save has met neither in
+this world. Turning the tour back on resumes at beat one rather than pretending the twelve
+happened, because the flag answers "shown?" and never touches the facts.
+
+### Deferred
+
+The glossary's **settings-screen index** (all 41 entries, grouped by topic) waits for Phase 18,
+which builds the Settings screen. The tooltips are live now — `components/ui/Term.tsx`, wired into
+the character screen's derived-stats panel, the forge wallet and the pity meter.

@@ -20,9 +20,15 @@ import { canDrinkAle, processResets, vigorCeiling } from '@/engine/reset/resetEn
 import type { WeeklyPayout } from '@/engine/arena/payout';
 import type { BountyChest } from '@/engine/guilds/bounty';
 import { refreshArenaDay } from './arenaActions';
-import { creditBounty, guildBonus, refreshGuildDay } from './guildActions';
+import { refreshGuildDay } from './guildActions';
+import { credit, creditAll } from './progressActions';
 import { refreshForgeDay } from './forgeActions';
 import { refreshGachaDay } from './gachaActions';
+import { creditMissionDrops, payoutBonus, petContribution, refreshPetDay } from './petActions';
+import { ensureTasks, refreshBoardDay } from './boardActions';
+import { refreshTutorialDay } from './tutorialActions';
+import { quickenedEndsAt, shortensNextMission } from '@/engine/tutorial/firstMission';
+import { stampToday, type StampTransition } from './calendarActions';
 import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
@@ -68,6 +74,10 @@ export function refreshDay(
   readonly payouts: readonly WeeklyPayout[];
   /** The guild bounty chest, if a Sunday passed and the hall earned one. */
   readonly chest: BountyChest | null;
+  /** Today's calendar square, if this refresh was the one that stamped it (spec §2). */
+  readonly calendarStamp: StampTransition | null;
+  /** Whole days the player was away — what the absence card counts. */
+  readonly daysAway: number;
 } {
   const outcome = processResets(save.activity, today, daysBetween);
   let next = { ...save, activity: outcome.state as Activity };
@@ -86,6 +96,34 @@ export function refreshDay(
 
   // And Vesna deals a fresh card on the house. Same boundary, same owner (gacha spec §3).
   if (outcome.didReset) next = refreshGachaDay(next);
+
+  // Twelve empty bowls in the Menagerie (pets spec §2).
+  if (outcome.didReset) next = refreshPetDay(next);
+
+  // Three fresh notices and an empty tally (daily-loop spec §1). The week's claim count rolls
+  // here too, which is why the board is handed `today` rather than working it out.
+  if (outcome.didReset) next = refreshBoardDay(next, today);
+
+  // And the Next Step chip gets another go: a hint waved away yesterday is a nudge declined, not
+  // a preference (tutorial spec §4).
+  if (outcome.didReset) next = refreshTutorialDay(next);
+
+  /*
+   * Then the ledger stamps itself.
+   *
+   * Auto-stamping on first load of the day is the spec's own wording (§2), and doing it inside
+   * the one reset walk rather than on the Notice Board screen is what makes it true: a player
+   * who logs in, runs a mission and closes the tab has still been marked present. `stampToday`
+   * is idempotent, so calling it on every refresh — which is every load and every tick — is
+   * exactly as safe as calling it once.
+   */
+  const stamped = stampToday(next, today);
+  const calendarStamp = stamped.ok ? stamped : null;
+  if (stamped.ok) next = stamped.save;
+
+  // The day's three are drawn lazily, after the reset and after the stamp, so a board drawn on
+  // the way in already reflects a level the calendar's reward might have paid for.
+  next = ensureTasks(next, today);
 
   // A board is drawn lazily: on the first visit of the day, after a reroll, or after a reset
   // nulled it. Drawing it here rather than at midnight means a player who never opens the
@@ -110,6 +148,8 @@ export function refreshDay(
     vigorForfeited: outcome.vigorForfeited,
     payouts: arenaDay.payouts,
     chest: guildDay.chest,
+    calendarStamp,
+    daysAway: outcome.daysAway,
   };
 }
 
@@ -153,11 +193,27 @@ export function accept(
     );
   }
 
+  // Signed, not won: `missionsAccepted` is credited here and `missions` only on a victory. The
+  // tutorial reads this one, because a first contract that loses still taught the lesson.
+  const signed = credit(save, 'missionsAccepted', 1);
+
+  /*
+   * The very first contract comes home in twenty seconds (tutorial spec §2).
+   *
+   * Only the finish line moves: the Vigor is already spent at the real cost above and
+   * `resolveMission` still prices the reward off `duration`, so the short road is a gift rather
+   * than a discount. Checked against the save *before* the credit, since that is the one that
+   * still says nobody has signed anything.
+   */
+  const mission = shortensNextMission(save)
+    ? { ...result.mission, endsAt: quickenedEndsAt(now) }
+    : result.mission;
+
   return {
     ok: true,
-    save: withActivity(save, {
+    save: withActivity(signed, {
       vigor: activity.vigor - result.vigorSpent,
-      mission: result.mission,
+      mission,
       // The taken job leaves the board; the other two stay for tomorrow's comparison.
       board: activity.board.filter((entry) => entry.id !== offerId),
     }),
@@ -223,7 +279,13 @@ export function landMission(save: SaveFile, now: number): SaveFile {
   const { mission } = save.activity;
   if (!mission || missionPhase(mission, now) !== 'returned') return save;
 
-  return withActivity(save, { mission: null, pendingMission: mission });
+  // Counted here rather than at the claim: this is the moment the *waiting* ended, which is a
+  // different lesson from the fight that follows it. Safe to run on every tick — the guard above
+  // makes it fire exactly once per contract.
+  return withActivity(credit(save, 'missionsReturned', 1), {
+    mission: null,
+    pendingMission: mission,
+  });
 }
 
 export interface ClaimResult {
@@ -262,7 +324,20 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
 
   // The hall's cut, applied where the payout is computed so the result screen and the ledger
   // agree with the quote (guilds spec §2).
-  const { spoils, battle } = resolveMission(mission, hero, guildBonus(save), save.dungeons.keys);
+  /*
+   * Every multiplier the hero has earned, and the companion at their side.
+   *
+   * `payoutBonus` rather than `guildBonus` since Phase 14: it composes the hall's cut with the
+   * pet's and with the gear specials that had been computed and thrown away since Phase 2.
+   */
+  const { spoils, battle } = resolveMission(
+    mission,
+    hero,
+    payoutBonus(save),
+    save.dungeons.keys,
+    petContribution(save),
+    save.pets.eggs,
+  );
   const item = spoils.item
     ? generateItem({
         slot: spoils.item.slot,
@@ -285,15 +360,30 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
 
   const activity = save.activity;
   const gainedFreeAle = spoils.ale && activity.freeAlesToday < 1;
-  // A finished contract counts toward the week's bounty, if that is what it is counting.
-  const credited = creditBounty(save, 'missions', 1);
+  /*
+   * A won contract counts, and only a won one — the same units `activity.missionsCompleted` and
+   * `activity.zoneMissions` use. Three counters that mean "a contract you finished" have to be
+   * counted the same way or the gates built on them quietly disagree.
+   */
+  const credited = creditMissionDrops(
+    creditAll(save, [
+      ['missions', spoils.victory ? 1 : 0],
+      ['levelsGained', levelled.level - hero.level],
+    ]),
+    {
+      zoneId: mission.offer.zoneId,
+      victory: spoils.victory,
+      scraps: spoils.scraps,
+      egg: spoils.egg,
+    },
+  );
 
   return {
     save: {
       ...credited,
       hero: next,
       activity: {
-        ...activity,
+        ...credited.activity,
         pendingMission: null,
         missionsCompleted: activity.missionsCompleted + (spoils.victory ? 1 : 0),
         ...(gainedFreeAle

@@ -27,6 +27,8 @@ export interface StatBreakdown {
   readonly base: number;
   /** Sum of everything equipped. */
   readonly gear: number;
+  /** Points the active pet is adding (pets spec §2). Zero for every attribute it does not touch. */
+  readonly pet: number;
   readonly total: number;
 }
 
@@ -70,6 +72,15 @@ export interface DeriveInput {
   readonly level: number;
   readonly trained: Attributes;
   readonly equipment: Equipment;
+  /**
+   * The active pet's contribution (pets spec §2), if there is one.
+   *
+   * It lands *here* rather than in the resolver so there is exactly one place a hero's numbers
+   * are computed: the character screen's breakdown, the compare tooltips and the fight all read
+   * the same figure, and a pet cannot quietly be worth more in a battle than it says on the chip.
+   * Optional, so every existing caller — including the golden logs — is untouched.
+   */
+  readonly petBoost?: { readonly stat: AttributeId | 'armour'; readonly share: number } | null;
 }
 
 /**
@@ -87,12 +98,18 @@ export function critChanceAgainst(luck: number, opponentLevel: number): number {
   return Math.min(CRIT_CAP, Math.max(0, raw / 100));
 }
 
-export function deriveStats({ classId, level, trained, equipment }: DeriveInput): DerivedStats {
+export function deriveStats({
+  classId,
+  level,
+  trained,
+  equipment,
+  petBoost = null,
+}: DeriveInput): DerivedStats {
   const definition = classDef(classId);
   const base = definition.startingStats;
   const gear = equipmentAttributes(equipment);
 
-  const attributes: Attributes = {
+  const raw: Attributes = {
     str: base.str + trained.str + gear.str,
     dex: base.dex + trained.dex + gear.dex,
     int: base.int + trained.int + gear.int,
@@ -100,10 +117,27 @@ export function deriveStats({ classId, level, trained, equipment }: DeriveInput)
     lck: base.lck + trained.lck + gear.lck,
   };
 
+  // A percentage of the *finished* total, rounded once. Applying it to the base or to each
+  // source separately would make the pet worth a different amount depending on where a point
+  // came from, which is not a distinction the player can see or should feel.
+  const petAttribute =
+    petBoost && petBoost.stat !== 'armour'
+      ? { stat: petBoost.stat, points: Math.round(raw[petBoost.stat] * petBoost.share) }
+      : null;
+  const attributes: Attributes = petAttribute
+    ? { ...raw, [petAttribute.stat]: raw[petAttribute.stat] + petAttribute.points }
+    : raw;
+
   const breakdown = Object.fromEntries(
     (Object.keys(attributes) as AttributeId[]).map((id) => [
       id,
-      { trained: trained[id], base: base[id], gear: gear[id], total: attributes[id] },
+      {
+        trained: trained[id],
+        base: base[id],
+        gear: gear[id],
+        pet: petAttribute?.stat === id ? petAttribute.points : 0,
+        total: attributes[id],
+      },
     ]),
   ) as Record<AttributeId, StatBreakdown>;
 
@@ -119,7 +153,9 @@ export function deriveStats({ classId, level, trained, equipment }: DeriveInput)
     average: Math.round(((weapon.min + weapon.max) / 2) * multiplier),
   };
 
-  const armour = equipmentArmour(equipment);
+  const armour = Math.round(
+    equipmentArmour(equipment) * (1 + (petBoost?.stat === 'armour' ? petBoost.share : 0)),
+  );
 
   let goldFind = 0;
   let xpBonus = 0;

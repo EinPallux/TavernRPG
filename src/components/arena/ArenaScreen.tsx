@@ -46,6 +46,7 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { formatRemaining } from '@/components/ui/TimerChip';
 import { BattleScene } from '@/components/battle/BattleScene';
 import { BattleResult, type BattleRewards } from '@/components/battle/BattleResult';
+import { Explainer } from '@/components/tutorial/Explainer';
 import { ArenaIcon, HourglassIcon, LaurelIcon } from '@/components/icons';
 import { dramatic, snappy, standard } from '@/styles/motion';
 import { DuelPoster } from './DuelPoster';
@@ -518,6 +519,10 @@ export function ArenaScreen() {
                   </div>
                 </TavernPanel>
               )}
+
+              {/* The first time somebody hits you while you are away needs a sentence: a rank
+                  gone missing overnight reads as the game cheating (tutorial spec §4). */}
+              <Explainer id="first-revenge" when={arena.revengeQueue.length > 0} />
 
               {arena.revengeQueue.length > 0 && (
                 <TavernPanel title="They came for you" data-testid="revenge-panel">

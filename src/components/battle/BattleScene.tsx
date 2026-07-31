@@ -16,6 +16,7 @@ import { useCallback, useMemo, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { BattleEvent, CombatantCard, Side } from '@/engine/combat/types';
 import { dramatic, snappy } from '@/styles/motion';
+import { BattleCallouts, CALLOUT_DURATION } from './BattleCallouts';
 import { BattleFighter } from './BattleFighter';
 import { DamageNumbers } from './DamageNumbers';
 import { ParticleLayer } from './ParticleLayer';
@@ -36,6 +37,14 @@ export interface BattleSceneProps {
   readonly result?: ReactNode;
   /** Override the eight-second pacing target. The Undertavern's long fights need it. */
   readonly targetDuration?: number;
+  /**
+   * The first fight of a save: three explanatory notes, pinned to ×1 (tutorial spec §2 beat 3).
+   *
+   * The pin is the point. A player who left the speed on ×4 from a previous character would
+   * watch the whole lesson go past in two seconds, and the notes are the one thing here that has
+   * to be readable. Skip still works — pinning the speed is not trapping anybody.
+   */
+  readonly callouts?: boolean;
   readonly className?: string;
 }
 
@@ -128,15 +137,19 @@ export function BattleScene({
   onFinished,
   result,
   targetDuration,
+  callouts = false,
   className = '',
 }: BattleSceneProps) {
   const reducedMotion = useReducedMotion();
+  // The tutorial fight ignores both the remembered speed and the remembered skip preference:
+  // there is nothing to skip past yet, and the notes have to be legible (spec §2 beat 3).
+  const pace = callouts ? CALLOUT_DURATION : targetDuration;
   const playback = useBattlePlayback({
     log,
-    initialSpeed,
-    startFinished,
+    initialSpeed: callouts ? 1 : initialSpeed,
+    startFinished: callouts ? false : startFinished,
     onFinished,
-    ...(targetDuration === undefined ? {} : { targetDuration }),
+    ...(pace === undefined ? {} : { targetDuration: pace }),
   });
   const { frame, isFinished, progress } = playback;
 
@@ -223,6 +236,11 @@ export function BattleScene({
 
       <AnimatePresence>{showVersus && <VersusFlash a={cards.a} b={cards.b} />}</AnimatePresence>
 
+      {/* The three explanatory notes, first fight only. */}
+      {callouts && (
+        <BattleCallouts progress={progress} hero={cards.a} foe={cards.b} finished={isFinished} />
+      )}
+
       {/* The boss naming its trick, and the swarm announcing itself (dungeons spec §2). */}
       <AnimatePresence>
         {frame.trait && (
@@ -258,7 +276,12 @@ export function BattleScene({
         )}
       </AnimatePresence>
 
-      <PlaybackControls playback={playback} progress={progress} onSelectSpeed={selectSpeed} />
+      <PlaybackControls
+        playback={playback}
+        progress={progress}
+        onSelectSpeed={selectSpeed}
+        speedLocked={callouts}
+      />
 
       {/* Result slides up over the stage once the closing beat has landed. */}
       <AnimatePresence>
@@ -291,10 +314,13 @@ function PlaybackControls({
   playback,
   progress,
   onSelectSpeed,
+  speedLocked = false,
 }: {
   playback: ReturnType<typeof useBattlePlayback>;
   progress: number;
   onSelectSpeed: (speed: PlaybackSpeed) => void;
+  /** The tutorial fight runs at ×1; the buttons say why rather than going quietly dead. */
+  speedLocked?: boolean;
 }) {
   const { speed, skip, replay, isFinished } = playback;
 
@@ -319,12 +345,14 @@ function PlaybackControls({
               key={option}
               type="button"
               onClick={() => onSelectSpeed(option)}
+              disabled={speedLocked}
+              title={speedLocked ? 'The first fight plays at ×1 — there is a bit to read.' : ''}
               aria-pressed={speed === option}
               className={`chamfer-sm font-display border px-2.5 py-1 text-xs font-bold transition-colors ${
                 speed === option
                   ? 'text-ink-900 border-amber-400 bg-amber-500'
                   : 'border-parchment-500/25 text-parchment-500/70 hover:border-amber-500/60 hover:text-amber-500'
-              }`}
+              } ${speedLocked && speed !== option ? 'cursor-not-allowed opacity-40' : ''}`}
               data-testid={`battle-speed-${option}`}
             >
               ×{option}

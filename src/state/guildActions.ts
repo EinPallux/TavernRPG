@@ -27,7 +27,12 @@ import {
   type GuildNameRefusal,
   type SigilIcon,
 } from '@/data/guilds';
-import { applyDonation, donationValue, guildMultipliers, type TrackId } from '@/engine/guilds/buffs';
+import {
+  applyDonation,
+  donationValue,
+  guildMultipliers,
+  type TrackId,
+} from '@/engine/guilds/buffs';
 import {
   FOUNDING_COST,
   GUILD_CAPACITY,
@@ -276,7 +281,9 @@ export function leaveGuild(save: SaveFile, now: number): GuildTransition {
       contributions: {},
       // A founded hall is kept: leaving your own guild disbands it, but the identity stays so a
       // player who founds again is not asked to invent a second name.
-      ...(save.guild.guildId === PLAYER_GUILD_ID ? { roster: [], officers: [], applicants: [] } : {}),
+      ...(save.guild.guildId === PLAYER_GUILD_ID
+        ? { roster: [], officers: [], applicants: [] }
+        : {}),
       lastChatDay: Math.floor(now / 86_400_000),
     }),
   };
@@ -295,7 +302,8 @@ export interface FoundOptions {
 export function foundGuild(save: SaveFile, options: FoundOptions, now: number): GuildTransition {
   const { hero, guild } = save;
   if (!hero) return refuse({ kind: 'no-hero' });
-  if (guild.guildId !== null) return refuse({ kind: 'apply', reason: { kind: 'already-in-a-guild' } });
+  if (guild.guildId !== null)
+    return refuse({ kind: 'apply', reason: { kind: 'already-in-a-guild' } });
 
   const valid = validateGuildName(options.name);
   if (!valid.ok) return refuse({ kind: 'bad-name', reason: valid.refusal });
@@ -435,7 +443,8 @@ export function kickMember(save: SaveFile, botId: number, now: number): GuildTra
 
 export function editMotto(save: SaveFile, motto: string): GuildTransition {
   const { guild } = save;
-  if (guild.guildId !== PLAYER_GUILD_ID || !guild.founded) return refuse({ kind: 'not-guildmaster' });
+  if (guild.guildId !== PLAYER_GUILD_ID || !guild.founded)
+    return refuse({ kind: 'not-guildmaster' });
   return {
     ok: true,
     save: withGuild(save, { founded: { ...guild.founded, motto: motto.trim().slice(0, 80) } }),
@@ -467,8 +476,10 @@ export function donate(save: SaveFile, options: DonateOptions, now: number): Gui
   const gold = Math.max(0, Math.floor(options.gold));
   const dice = Math.max(0, Math.floor(options.dice));
   if (gold <= 0 && dice <= 0) return refuse({ kind: 'nothing-to-do' });
-  if (hero.gold < gold) return refuse({ kind: 'insufficient-gold', needed: gold, available: hero.gold });
-  if (hero.dice < dice) return refuse({ kind: 'insufficient-dice', needed: dice, available: hero.dice });
+  if (hero.gold < gold)
+    return refuse({ kind: 'insufficient-gold', needed: gold, available: hero.gold });
+  if (hero.dice < dice)
+    return refuse({ kind: 'insufficient-dice', needed: dice, available: hero.dice });
 
   const value = donationValue(gold, dice);
   const spent = { ...hero, gold: hero.gold - gold, dice: hero.dice - dice };
@@ -565,7 +576,9 @@ export function postMessage(save: SaveFile, text: string, now: number): GuildTra
 
   return {
     ok: true,
-    save: withGuild(save, { chat: toStored(mergeChat(fromStored(guild.chat), [mine, ...replies])) }),
+    save: withGuild(save, {
+      chat: toStored(mergeChat(fromStored(guild.chat), [mine, ...replies])),
+    }),
   };
 }
 
@@ -711,7 +724,9 @@ export function refreshGuildDay(
           mergeChat(fromStored(next.guild.chat), [
             systemMessage(
               Date.parse(`${day}T23:59:00`),
-              settled.full ? 'Bounty cleared. Chests all round.' : 'Bounty part-cleared. Half a chest each.',
+              settled.full
+                ? 'Bounty cleared. Chests all round.'
+                : 'Bounty part-cleared. Half a chest each.',
               `chest-${settled.weekKey}`,
             ),
           ]),

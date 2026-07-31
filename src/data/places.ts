@@ -99,7 +99,9 @@ export const PLACES: readonly PlaceDef[] = [
     gateLevel: 3,
     blurb: 'Daily tasks, weekly chest, login calendar.',
     backdrop: `${BG}/tavern_background.png`,
-    tint: 'from-wood-900 via-wood-900/80 to-wood-900/55',
+    // Heavier than the Tankard's own wash on the same art: this room is three notices, two
+    // chests and twenty-eight squares, and the frames have to win against the fire.
+    tint: 'from-wood-900 via-wood-900/92 to-wood-900/78',
     effects: ['lantern', 'motes'],
     buildPhase: 'Phase 15',
     constructionBark: 'Nothing pinned up but a woodworm and an old wanted poster.',
@@ -186,6 +188,9 @@ export const PLACES: readonly PlaceDef[] = [
     gateLevel: 8,
     blurb: 'Twelve companions, one at your side.',
     backdrop: `${BG}/pets_background.png`,
+    // Twelve stalls is the densest grid in the game; the wash has to sit heavier than a room
+    // you only read one panel in, or the frames lose against the straw.
+    tint: 'from-wood-900 via-wood-900/92 to-wood-900/78',
     effects: ['motes'],
     buildPhase: 'Phase 14',
     constructionBark: 'Something in the back is snoring. Best not wake it yet.',

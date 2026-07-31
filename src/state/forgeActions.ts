@@ -25,6 +25,7 @@ import {
   type ForgeTier,
 } from '@/engine/forge/forgeConfig';
 import { gearSet } from '@/data/gearSets';
+import { credit } from './progressActions';
 import type { SaveFile } from '@/engine/save/schema';
 
 export type ForgeRefusal =
@@ -89,11 +90,20 @@ export function scrap(save: SaveFile, uid: string): ScrapResult {
 
   return {
     ok: true,
-    save: {
-      ...save,
-      hero: result.hero,
-      forge: { ...save.forge, scrapsUsedToday: save.forge.scrapsUsedToday + 1 },
-    },
+    /*
+     * A melt counts. It had not until Phase 15: `itemsScrapped` was one of six bounty metrics and
+     * the only side crediting it was the hall's simulation, so a week that drew "members melt 90
+     * pieces" gave the player nothing they could do about it.
+     */
+    save: credit(
+      {
+        ...save,
+        hero: result.hero,
+        forge: { ...save.forge, scrapsUsedToday: save.forge.scrapsUsedToday + 1 },
+      },
+      'itemsScrapped',
+      1,
+    ),
     gained: result.quote.materials,
     item: result.quote.item,
   };
@@ -110,8 +120,7 @@ export interface CraftTransition {
 }
 
 export type CraftResultState =
-  | CraftTransition
-  | { readonly ok: false; readonly refusal: ForgeRefusal };
+  CraftTransition | { readonly ok: false; readonly refusal: ForgeRefusal };
 
 /**
  * Strike the anvil.
@@ -143,15 +152,19 @@ export function craft(save: SaveFile, tier: ForgeTier, slot: SlotId): CraftResul
 
   return {
     ok: true,
-    save: {
-      ...save,
-      hero: addItemToHero({ ...hero, materials: spend(hero.materials, cost) }, result.item).hero,
-      forge: {
-        ...save.forge,
-        emberMeter: result.emberMeter,
-        crafted: save.forge.crafted + 1,
+    save: credit(
+      {
+        ...save,
+        hero: addItemToHero({ ...hero, materials: spend(hero.materials, cost) }, result.item).hero,
+        forge: {
+          ...save.forge,
+          emberMeter: result.emberMeter,
+          crafted: save.forge.crafted + 1,
+        },
       },
-    },
+      'itemsForged',
+      1,
+    ),
     item: result.item,
     pitied: result.pitied,
   };
@@ -183,14 +196,16 @@ export function craftFromRecipe(save: SaveFile, setId: string): CraftResultState
 
   return {
     ok: true,
-    save: {
-      ...save,
-      hero: addItemToHero(
-        { ...hero, materials: spend(hero.materials, RECIPE_COST) },
-        made.item,
-      ).hero,
-      forge: { ...save.forge, crafted: save.forge.crafted + 1 },
-    },
+    save: credit(
+      {
+        ...save,
+        hero: addItemToHero({ ...hero, materials: spend(hero.materials, RECIPE_COST) }, made.item)
+          .hero,
+        forge: { ...save.forge, crafted: save.forge.crafted + 1 },
+      },
+      'itemsForged',
+      1,
+    ),
     item: made.item,
     pitied: false,
     refresh: made.refresh,

@@ -31,10 +31,11 @@ import { KeeperBark } from '@/components/ui/KeeperBark';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { useGameStore } from '@/state/gameStore';
-import { gameNow } from '@/state/clock';
+import { currentDayKey, gameNow } from '@/state/clock';
 import type { ClaimResult } from '@/state/missionActions';
 import { TownCrier } from '@/components/world/TownCrier';
 import { AbsenceCard } from '@/components/world/AbsenceCard';
+import { WindDown } from '@/components/board/WindDown';
 import { MissionCard } from './MissionCard';
 import { MissionProgress } from './MissionProgress';
 import { dramatic, standard } from '@/styles/motion';
@@ -272,6 +273,15 @@ export function TavernScreen() {
             <ReturnedCard mission={activity.pendingMission} onFight={handleFight} />
           )}
 
+          {/* Out of Vigor is the end of the day's contracts, not the end of the game. Rather
+              than leave the board empty and say nothing, point at tonight and at tomorrow
+              (daily-loop spec §5). */}
+          {phase === 'board' && activity.vigor < 5 && (
+            <div className="mt-5 max-w-md">
+              <WindDown save={save} today={currentDayKey()} now={gameNow()} />
+            </div>
+          )}
+
           {/* The Crier board. The Tavern is the game's home screen, so this is where the
               simulation becomes visible (world-simulation spec §6). */}
           {save.world && save.world.feed.length > 0 && (
@@ -408,6 +418,18 @@ function StagedBattle({
 
   const analysis = useMemo(() => analyseBattle(outcome.battle.log, 'a'), [outcome.battle.log]);
 
+  /*
+   * The first fight of a save gets the three callouts (tutorial spec §2 beat 3).
+   *
+   * Answered **once, when the scene mounts**, and then frozen. The question is derived from the
+   * save — no flag to store — but `settle` banks the victory on the closing beat, which flips
+   * the answer while the same scene is still on screen. Left live, that would hand a mounted
+   * `useBattlePlayback` a new speed and a new pacing target at the moment the result slides up.
+   */
+  const [firstFight] = useState(
+    () => save !== null && !save.tutorial.optedOut && save.activity.missionsCompleted === 0,
+  );
+
   const spoils = claim?.spoils ?? outcome.spoils;
   const rewards: BattleRewards | undefined = spoils.victory
     ? {
@@ -429,6 +451,7 @@ function StagedBattle({
       initialSpeed={save?.settings.battleSpeed ?? 1}
       onSpeedChange={setBattleSpeed}
       startFinished={save?.settings.battleSkipDefault ?? false}
+      callouts={firstFight}
       result={
         <BattleResult
           victory={spoils.victory}

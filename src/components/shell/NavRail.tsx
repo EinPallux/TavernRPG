@@ -13,6 +13,9 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'motion/react';
 import { GROUP_LABELS, NAV_GROUPS, PLACES, type PlaceDef } from '@/data/places';
 import { gateFor, nextUnlock } from '@/engine/progression/gates';
+import { newArrivals } from '@/engine/pets/ownership';
+import { boardHasClaim } from '@/state/boardActions';
+import { currentDayKey } from '@/state/clock';
 import { Icon, ChevronIcon, LockIcon } from '@/components/icons';
 import { useShellStore } from '@/state/shellStore';
 import { useGameStore } from '@/state/gameStore';
@@ -26,13 +29,24 @@ function RailItem({
   level,
   active,
   collapsed,
+  badge = 0,
+  dot = false,
+  revealed = false,
 }: {
   place: PlaceDef;
   level: number;
   active: boolean;
   collapsed: boolean;
+  /** Unattended arrivals waiting in this room — a count, cleared by visiting. */
+  badge?: number;
+  /** Something is claimable in here, but counting it would not tell you more than "yes". */
+  dot?: boolean;
+  /** This room opened seconds ago: the lock coming off deserves to be seen (tutorial spec §3). */
+  revealed?: boolean;
 }) {
   const gate = gateFor(place.id, level);
+  const flagged = gate.unlocked && badge > 0;
+  const dotted = gate.unlocked && dot;
 
   const body = (
     <>
@@ -73,13 +87,61 @@ function RailItem({
               Lv {gate.gateLevel}
             </span>
           )}
+          {flagged && (
+            <span
+              className="chamfer-sm shrink-0 bg-amber-500 px-1.5 text-[10px] leading-[15px] font-bold text-black tabular-nums"
+              data-testid={`nav-badge-${place.id}`}
+            >
+              {badge}
+            </span>
+          )}
+          {dotted && (
+            <motion.span
+              aria-hidden
+              animate={{ opacity: [1, 0.4, 1] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+              className="h-1.5 w-1.5 shrink-0 self-center rounded-full bg-amber-500"
+              data-testid={`nav-dot-${place.id}`}
+            />
+          )}
         </span>
+      )}
+
+      {/* Collapsed, the count has nowhere to go — the dot alone still says "look in here". */}
+      {collapsed && (flagged || dotted) && (
+        <motion.span
+          aria-hidden
+          animate={{ opacity: [1, 0.45, 1] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-amber-500"
+          data-testid={flagged ? `nav-badge-${place.id}` : `nav-dot-${place.id}`}
+        />
       )}
     </>
   );
 
   const shared =
     'group relative flex items-center gap-3 py-2.5 pr-3 pl-4 transition-colors duration-150';
+
+  /* The lock coming off, drawn: a wash sweeping the row and an amber edge that fades out. */
+  const flourish = revealed ? (
+    <>
+      <motion.span
+        aria-hidden
+        initial={{ opacity: 0.85 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 2.2, repeat: 2, ease: 'easeOut' }}
+        className="pointer-events-none absolute inset-0 bg-amber-500/25"
+      />
+      <motion.span
+        aria-hidden
+        initial={{ scaleY: 1 }}
+        animate={{ scaleY: 0 }}
+        transition={{ duration: 6, ease: 'linear' }}
+        className="pointer-events-none absolute top-0 bottom-0 left-0 w-[3px] origin-top bg-amber-400"
+      />
+    </>
+  ) : null;
 
   if (!gate.unlocked) {
     return (
@@ -105,8 +167,10 @@ function RailItem({
         aria-current={active ? 'page' : undefined}
         data-testid={`nav-${place.id}`}
         data-locked="false"
+        data-revealed={revealed ? 'true' : undefined}
         className={`${shared} hover:bg-wood-700/45 ${active ? 'bg-wood-700/60' : ''}`}
       >
+        {flourish}
         {body}
       </Link>
     </li>
@@ -118,12 +182,21 @@ export function NavRail() {
   const collapsed = useShellStore((state) => state.settings.navCollapsed);
   const toggleNav = useShellStore((state) => state.toggleNav);
   const previewLevel = useShellStore((state) => state.preview.level);
+  const justUnlocked = useShellStore((state) => state.justUnlocked);
   const heroLevel = useGameStore((state) => state.save?.hero?.level);
   // The hero's real level drives the gates; the preview value only stands in before creation.
   const level = heroLevel ?? previewLevel;
 
   const upcoming = nextUnlock(level);
   const settingsPlace = PLACES.find((place) => place.id === 'settings');
+
+  // Companions arrive *while you are somewhere else* — a floor cleared, a rank held, a hundredth
+  // contract run — so without a cue the room only gets visited by players who already suspect.
+  const save = useGameStore((state) => state.save);
+  const arrivals = save ? newArrivals(save) : 0;
+  // An unclaimed chest on the Notice Board gets a dot rather than a count: "1" beside a room
+  // that only ever has one thing waiting is a number pretending to be information.
+  const chestWaiting = save ? boardHasClaim(save, currentDayKey()) : false;
 
   return (
     <motion.nav
@@ -179,6 +252,9 @@ export function NavRail() {
                     level={level}
                     active={pathname === place.route}
                     collapsed={collapsed}
+                    badge={place.id === 'menagerie' ? arrivals : 0}
+                    revealed={justUnlocked.includes(place.id)}
+                    {...(place.id === 'board' && chestWaiting ? { dot: true } : {})}
                   />
                 ))}
               </ul>

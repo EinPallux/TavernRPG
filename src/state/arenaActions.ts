@@ -27,12 +27,13 @@ import {
   rerollCost,
 } from '@/engine/arena/arena';
 import { resolveDuel, type DuelResult } from '@/engine/arena/duel';
+import { petContribution } from './petActions';
 import { clearGrudge, queueGrudges, runRaids, type RaidResult } from '@/engine/arena/raids';
 import { LEGENDS_SNAPSHOT_SIZE, weeklyPayouts, type WeeklyPayout } from '@/engine/arena/payout';
 import { PLAYER_LADDER_ID, joinLadder, newcomerHonor } from '@/engine/world/ladder';
 import type { BotRecord, WorldState } from '@/engine/world/generate';
 import { updateRivals } from '@/engine/world/rivals';
-import { creditBounty } from './guildActions';
+import { creditAll } from './progressActions';
 import {
   LEGENDS_ARCHIVE_CAP,
   type Arena,
@@ -231,6 +232,7 @@ export function duel(save: SaveFile, opponentId: number, now: number): DuelOutco
     // Committed: the same duel, replayed, plays out the same way. The cooldown is in the seed so
     // two fights against the same opponent are not the same fight twice.
     seed: opponentId * 7919 + Math.floor(now / 1000),
+    petBoost: petContribution(save),
   });
 
   const levelled = applyXp(hero.level, hero.xp, result.rewards.xp);
@@ -239,8 +241,12 @@ export function duel(save: SaveFile, opponentId: number, now: number): DuelOutco
   const bots = [...world.bots];
   bots[opponentId] = { ...opponent, honor: result.opponentHonor };
 
-  // A win in the sand counts toward the week's bounty, when that is what it is counting.
-  const credited = result.won ? creditBounty(save, 'arenaWins', 1) : save;
+  // A win in the sand counts toward the week's bounty and today's notices, through the one
+  // credit path that feeds both (daily-loop spec §1).
+  const credited = creditAll(save, [
+    ['arenaWins', result.won ? 1 : 0],
+    ['levelsGained', levelled.level - hero.level],
+  ]);
 
   return {
     ok: true,
@@ -333,6 +339,7 @@ export function applyRaids(save: SaveFile, from: number, to: number): RaidsAppli
     from,
     to,
     lastRaidDay: save.arena.lastRaidDay,
+    petBoost: petContribution(save),
   });
 
   const bots = [...world.bots];

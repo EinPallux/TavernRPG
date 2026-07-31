@@ -16,6 +16,10 @@ import {
   DEFAULT_FORGE,
   DEFAULT_GACHA,
   DEFAULT_GUILD,
+  DEFAULT_CALENDAR,
+  DEFAULT_PETS,
+  DEFAULT_TASKS,
+  DEFAULT_TUTORIAL,
   DEFAULT_SETTINGS,
   EMPTY_MATERIALS,
   saveFileSchema,
@@ -195,6 +199,85 @@ export const MIGRATIONS: readonly Migration[] = [
        * track is that the number on screen is the number that was earned.
        */
       return { ...data, gacha: { ...DEFAULT_GACHA } };
+    },
+  },
+  {
+    from: 13,
+    to: 14,
+    describe: 'Phase 14: the Menagerie — pet progress, Tavern Scraps and per-zone mission counts',
+    migrate: (data) => {
+      /*
+       * Additive, and for once **not** empty-handed.
+       *
+       * Pet *ownership* is derived rather than stored (`engine/pets/ownership.ts`), so a player
+       * who cleared the Rat Cellars in Phase 11 or reached the top 500 in Phase 9 walks into the
+       * Menagerie already owning those pets — the facts that earn them have been in the save for
+       * three phases. Nothing is granted here because nothing needs to be; the room simply reads
+       * the history that was always there. What the slice adds is *progress*: levels, feeds and
+       * the food to pay for them, all of which genuinely start at zero.
+       *
+       * `zoneMissions` starts empty and cannot be back-filled — the save has never recorded which
+       * zone a mission was run in, only how many were run. The Wisp's forty contracts therefore
+       * begin counting today for everyone, which is the honest reading of a counter that did not
+       * exist yesterday.
+       */
+      const activity = (data['activity'] ?? {}) as Record<string, unknown>;
+      return {
+        ...data,
+        activity: { ...activity, zoneMissions: {} },
+        pets: { ...DEFAULT_PETS },
+      };
+    },
+  },
+  {
+    from: 14,
+    to: 15,
+    describe: 'Phase 15: the Notice Board and the login calendar',
+    migrate: (data) => {
+      /*
+       * Additive, and empty on purpose — including the calendar, which is the interesting call.
+       *
+       * A returning player has logged in on plenty of days, and it is tempting to hand them a
+       * ledger already several squares deep to acknowledge that. Two reasons not to. The save has
+       * never recorded *which* days they came, only the last one, so any number would be invented
+       * rather than earned — and the day-28 square grants a pet, which makes an invented number a
+       * fabricated fact in a system whose whole premise is that ownership is derived from things
+       * that really happened.
+       *
+       * The daily tally starts empty for the same reason `zoneMissions` did one migration ago:
+       * a counter that did not exist yesterday has nothing honest to say about yesterday.
+       */
+      return {
+        ...data,
+        tasks: { ...DEFAULT_TASKS },
+        calendar: { ...DEFAULT_CALENDAR },
+      };
+    },
+  },
+  {
+    from: 15,
+    to: 16,
+    describe: 'Phase 16: onboarding — the opt-out, acknowledgements and one-time explainers',
+    migrate: (data) => {
+      /*
+       * The one migration in the chain that is *not* empty-handed, and for a plain reason: a save
+       * that already has a hero belongs to somebody who has been playing for fifteen phases, and
+       * walking them through accepting their first contract would be insulting rather than
+       * helpful. They are marked as having opted out.
+       *
+       * Most of the tutorial would in fact skip itself — the beats are derived from facts the
+       * save already holds, so ten of the twelve are provably behind an existing player. The two
+       * `'read'` beats are the exception: nothing in a save can prove somebody has *looked* at
+       * the Crier, so without this flag a veteran would be shown two spotlights out of nowhere.
+       * One flag is cheaper and more honest than pre-acknowledging them.
+       *
+       * A save with no hero has not started, so it gets the real thing.
+       */
+      const startedPlaying = data['hero'] !== null && data['hero'] !== undefined;
+      return {
+        ...data,
+        tutorial: { ...DEFAULT_TUTORIAL, optedOut: startedPlaying },
+      };
     },
   },
 ];

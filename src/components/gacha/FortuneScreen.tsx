@@ -31,6 +31,7 @@ import { KeeperBark } from '@/components/ui/KeeperBark';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { DiceIcon } from '@/components/icons';
 import { listItemIn, snappy, staggerChildren, standard } from '@/styles/motion';
+import { Explainer } from '@/components/tutorial/Explainer';
 import { BannerCard } from './BannerCard';
 import { OddsPanel } from './OddsPanel';
 import { RollHistory } from './RollHistory';
@@ -253,6 +254,13 @@ export function FortuneScreen() {
               >
                 <RollHistory entries={save.gacha.history} />
               </TavernPanel>
+
+              {/* The published floor actually catching somebody is the moment it stops being a
+                  number on a panel and starts being a promise kept (tutorial spec §4). */}
+              <Explainer
+                id="first-pity"
+                when={(spin?.results ?? []).some((entry) => entry.pitied)}
+              />
             </motion.div>
           </div>
         </div>

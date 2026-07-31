@@ -24,6 +24,7 @@ import { analyseBattle } from '@/engine/combat/analysis';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { BattleScene } from '@/components/battle/BattleScene';
 import { BattleResult, type BattleRewards } from '@/components/battle/BattleResult';
+import { Explainer } from '@/components/tutorial/Explainer';
 import {
   BOSS_FIGHT_DURATION,
   DUNGEON_FIGHT_DURATION,
@@ -229,8 +230,8 @@ export function UndertavernScreen() {
 
           {save.dungeons.keys.length === 0 && (
             <p className="text-parchment-500/45 mt-4 shrink-0 text-center text-xs leading-relaxed">
-              Keys turn up on the roads — about one contract in sixteen, once you are old enough
-              for the door they open.
+              Keys turn up on the roads — about one contract in sixteen, once you are old enough for
+              the door they open.
             </p>
           )}
         </div>
@@ -322,6 +323,10 @@ function FloorFight({
 
           {outcome.cleared && <ClearCeremony trophyId={outcome.spoils.trophyId} />}
           {!outcome.won && <BestAttempt share={outcome.share} newBest={outcome.newBest} />}
+
+          {/* Floors are fixed and do not scale to you, which reads as a balance bug the first
+              time one stops you dead. Somebody has to say it out loud (tutorial spec §4). */}
+          <Explainer id="first-dungeon-wall" when={!outcome.won} />
         </div>
       }
     />
@@ -393,4 +398,3 @@ function BestAttempt({ share, newBest }: { share: number; newBest: boolean }) {
     </motion.div>
   );
 }
-

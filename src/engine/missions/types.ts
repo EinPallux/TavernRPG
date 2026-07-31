@@ -62,6 +62,14 @@ export interface MissionSpoils {
    * out of the same draw would quietly cost the player a sword every time they found one.
    */
   readonly key: DungeonKeyId | null;
+  /** Tavern Scraps, on eight percent of winning missions (pets spec §2). */
+  readonly scraps: number;
+  /**
+   * A pet egg — the rarest drop in the game at one in two hundred, and only in the two zones the
+   * Frost Fox lives in (pets spec §1). Its own roll, like the key: a lucky mission should never
+   * cost the player the sword it would otherwise have dropped.
+   */
+  readonly egg: string | null;
 }
 
 export type MissionPhase = 'idle' | 'running' | 'returned';

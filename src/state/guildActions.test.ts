@@ -222,7 +222,13 @@ describe('founding a hall of your own — ROADMAP acceptance', () => {
   const founded = (() => {
     const result = foundGuild(
       seated(),
-      { name: 'The Quiet Kettle', motto: 'We put it on at six.', field: 'moss', charge: 'parchment', sigil: 'tankard' },
+      {
+        name: 'The Quiet Kettle',
+        motto: 'We put it on at six.',
+        field: 'moss',
+        charge: 'parchment',
+        sigil: 'tankard',
+      },
       NOW,
     );
     if (!result.ok) throw new Error('founding failed');
@@ -333,7 +339,11 @@ describe('the two tracks, in the save', () => {
 
   it('buys steps with gold, and the buff follows immediately', () => {
     const before = guildBonus(founded);
-    const result = donate(founded, { track: 'treasury', gold: stepCost(1) + stepCost(2), dice: 0 }, NOW);
+    const result = donate(
+      founded,
+      { track: 'treasury', gold: stepCost(1) + stepCost(2), dice: 0 },
+      NOW,
+    );
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -456,7 +466,10 @@ describe('the weekly bounty, through the day boundary', () => {
     const sunday = weekKeyFor(TODAY);
     const cleared: SaveFile = {
       ...posted,
-      guild: { ...posted.guild, bounty: { ...posted.guild.bounty!, botUnits: posted.guild.bounty!.target } },
+      guild: {
+        ...posted.guild,
+        bounty: { ...posted.guild.bounty!, botUnits: posted.guild.bounty!.target },
+      },
     };
 
     const settled = refreshGuildDay(cleared, [sunday], sunday, true);
@@ -476,7 +489,10 @@ describe('the weekly bounty, through the day boundary', () => {
       ...posted,
       guild: {
         ...posted.guild,
-        bounty: { ...posted.guild.bounty!, botUnits: Math.ceil(posted.guild.bounty!.target * share) },
+        bounty: {
+          ...posted.guild.bounty!,
+          botUnits: Math.ceil(posted.guild.bounty!.target * share),
+        },
       },
     });
 

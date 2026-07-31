@@ -25,8 +25,13 @@ import v9Phase9 from './fixtures/v9-phase9.json';
 import v10Phase10 from './fixtures/v10-phase10.json';
 import v11Phase11 from './fixtures/v11-phase11.json';
 import v12Phase12 from './fixtures/v12-phase12.json';
+import v13Phase13 from './fixtures/v13-phase13.json';
+import v14Phase14 from './fixtures/v14-phase14.json';
+import v15Phase15 from './fixtures/v15-phase15.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
+import { ownedPets } from '@/engine/pets/ownership';
+import { activeBeat, tutorialComplete } from '@/engine/tutorial/beats';
 import { migrateSave } from './migrations';
 import {
   CURRENT_SCHEMA_VERSION,
@@ -36,6 +41,10 @@ import {
   DEFAULT_FORGE,
   DEFAULT_GACHA,
   DEFAULT_GUILD,
+  DEFAULT_CALENDAR,
+  DEFAULT_PETS,
+  DEFAULT_TASKS,
+  DEFAULT_TUTORIAL,
   EMPTY_MATERIALS,
   DEFAULT_SETTINGS,
   type SaveFile,
@@ -468,6 +477,130 @@ describe('save fixtures — every shipped version still loads', () => {
     expect(result.save.hero?.name).toBe('Bryn Halloway');
     expect(result.save.hero?.classId).toBe('swashbuckler');
     expect(result.save.dungeons.keys).toEqual(['rusty-key', 'bone-key']);
+  });
+
+  it('opens a Phase 13 (v13) save with an evening at the table behind it', () => {
+    const result = migrateSave(structuredClone(v13Phase13));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(13);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // Fifteen cards, four banked toward the Corsair set, the free daily card spent, and a
+    // pattern the ten-card spread's track paid out.
+    expect(result.save.gacha.rolls).toBe(15);
+    expect(result.save.gacha.weeklyPity).toBe(4);
+    expect(result.save.gacha.weeklyPitySet).toBe('corsair-kings-finery');
+    expect(result.save.gacha.freeRollsToday).toBe(1);
+    expect(result.save.gacha.history).toHaveLength(15);
+    expect(result.save.forge.recipes).toHaveLength(1);
+  });
+
+  it('hands a Phase 13 player the pets their history already earned', () => {
+    const result = migrateSave(structuredClone(v13Phase13));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    /*
+     * The one migration in the chain that is *not* empty-handed, and it did not have to grant
+     * anything to manage it. Ownership is derived from the facts that earn each pet, and this
+     * save has been five floors into the Rat Cellars since Phase 11 — so the Ember Pup is simply
+     * there, with no back-fill and no reconciliation.
+     */
+    expect(result.save.dungeons.progress['rat-cellars']?.floorsCleared).toBe(5);
+    expect(ownedPets(result.save).map((entry) => entry.id)).toContain('ember-pup');
+
+    // What the slice actually adds is progress, and that genuinely starts at nothing.
+    expect(result.save.pets).toEqual(DEFAULT_PETS);
+    expect(result.save.activity.zoneMissions).toEqual({});
+    // And nothing else moved.
+    expect(result.save.hero?.name).toBe('Bryn Halloway');
+    expect(result.save.hero?.classId).toBe('swashbuckler');
+  });
+
+  it('opens a Phase 14 (v14) save with a fed companion at its side', () => {
+    const result = migrateSave(structuredClone(v14Phase14));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(14);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // Three feeds into an Ember Pup, walking beside them, with two zones counted.
+    expect(result.save.pets.progress['ember-pup']).toEqual({
+      level: 4,
+      rarity: 'common',
+      fedToday: 3,
+    });
+    expect(result.save.pets.activeId).toBe('ember-pup');
+    expect(result.save.activity.zoneMissions['ember-caves']).toBe(12);
+  });
+
+  it('starts a Phase 14 player’s ledger at nothing, rather than inventing attendance', () => {
+    const result = migrateSave(structuredClone(v14Phase14));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    /*
+     * The tempting migration is the wrong one. This player has logged in on plenty of days, and
+     * the save has never recorded which — so any starting square would be invented rather than
+     * earned. Day 28 grants a pet, which would make an invented number into a fabricated fact in
+     * a system whose whole premise is that ownership comes from things that really happened.
+     */
+    expect(result.save.calendar).toEqual(DEFAULT_CALENDAR);
+    expect(result.save.tasks).toEqual(DEFAULT_TASKS);
+    expect(ownedPets(result.save).map((entry) => entry.id)).not.toContain('moss-tortoise');
+    expect(ownedPets(result.save).map((entry) => entry.id)).not.toContain('coin-toad');
+
+    // And the Menagerie it arrived with is untouched.
+    expect(result.save.pets.activeId).toBe('ember-pup');
+    expect(result.save.hero?.name).toBe('Bryn Halloway');
+  });
+
+  it('opens a Phase 15 (v15) save with a day’s work behind it', () => {
+    const result = migrateSave(structuredClone(v15Phase15));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(15);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // A cleared board, a claimed chest and a marked ledger.
+    expect(result.save.tasks.totalChests).toBe(1);
+    expect(result.save.tasks.claimsThisWeek).toBe(1);
+    expect(result.save.calendar.day).toBe(1);
+    expect(result.save.calendar.lastStampedDay).toBe('2026-07-30');
+  });
+
+  it('does not walk a fifteen-phase-old save through its first contract', () => {
+    const result = migrateSave(structuredClone(v15Phase15));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    /*
+     * The one place the onboarding migration takes a position. Ten of the twelve beats would
+     * skip themselves — they are derived from facts this save already holds — but the two
+     * `'read'` beats cannot be, because nothing in a save proves somebody has *looked* at the
+     * Crier. Without the flag a veteran gets two spotlights out of nowhere.
+     */
+    expect(result.save.tutorial.optedOut).toBe(true);
+    expect(activeBeat(result.save)).toBeNull();
+    expect(tutorialComplete(result.save)).toBe(true);
+  });
+
+  it('gives a save with no hero the real tutorial', () => {
+    // A v1 walking-skeleton save has never had a hero, so it has not started — and the whole
+    // point of the opt-out is that it is for people who *have*.
+    const result = migrateSave(structuredClone(v1Phase0));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.save.hero).toBeNull();
+    expect(result.save.tutorial).toEqual(DEFAULT_TUTORIAL);
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

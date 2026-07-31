@@ -16,6 +16,7 @@ import { motion } from 'motion/react';
 import type { MaterialBundle } from '@/engine/items/types';
 import { MATERIAL_LABELS } from '@/engine/forge/forgeConfig';
 import { EssenceIcon, ScrapIcon, StarmetalIcon, type IconProps } from '@/components/icons';
+import { Term } from '@/components/ui/Term';
 
 type MaterialId = keyof MaterialBundle;
 
@@ -99,10 +100,15 @@ function WalletChip({ id, amount }: { id: MaterialId; amount: number }) {
       transition={{ duration: 0.34, times: [0, 0.35, 1], ease: 'easeOut' }}
       className={`chamfer-sm border-parchment-500/15 bg-wood-900/80 flex items-center gap-1.5 border px-2.5 py-1.5 text-xs tabular-nums ${MATERIAL_TONE[id]}`}
       data-testid={`material-${id}`}
-      title={MATERIAL_LABELS[id]}
     >
-      <Glyph size={13} />
-      {amount.toLocaleString()}
+      {/* Glossed rather than title-attributed: "Essence" tells a new smith nothing about where
+          it comes from or what it is for, and this is the wallet they are staring at. */}
+      <Term name={MATERIAL_LABELS[id]}>
+        <span className="inline-flex items-center gap-1.5">
+          <Glyph size={13} />
+          {amount.toLocaleString()}
+        </span>
+      </Term>
     </motion.span>
   );
 }

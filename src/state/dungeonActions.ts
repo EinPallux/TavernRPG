@@ -31,7 +31,7 @@ import {
 import { buildFloorCombatant, floorPayout } from '@/engine/dungeons/floors';
 import { keyInPlay } from '@/engine/dungeons/keys';
 import type { Hero, SaveFile } from '@/engine/save/schema';
-import { guildBonus } from './guildActions';
+import { payoutBonus, petContribution } from './petActions';
 import {
   DUNGEONS,
   FLOORS_PER_DUNGEON,
@@ -85,7 +85,7 @@ export interface DoorView {
 
 export function doorViews(save: SaveFile, now: number): readonly DoorView[] {
   const heroLevel = save.hero?.level ?? 0;
-  const bonus = guildBonus(save);
+  const bonus = payoutBonus(save);
 
   return DUNGEONS.map((definition) => {
     const progress = progressOf(save, definition.id);
@@ -158,7 +158,8 @@ export function descend(save: SaveFile, id: DungeonId, now: number): DelveResult
     progress,
     worldSeed: save.worldSeed,
     now,
-    bonus: guildBonus(save),
+    bonus: payoutBonus(save),
+    petBoost: petContribution(save),
   });
   if (!outcome) return { ok: false, refusal: { kind: 'already-cleared' } };
 
@@ -213,7 +214,13 @@ export function descend(save: SaveFile, id: DungeonId, now: number): DelveResult
       }
     }
 
-    return generateItem({ slot: drop.slot, rarity: drop.rarity, classId: hero.classId, level, rng });
+    return generateItem({
+      slot: drop.slot,
+      rarity: drop.rarity,
+      classId: hero.classId,
+      level,
+      rng,
+    });
   });
 
   const levelled = applyXp(hero.level, hero.xp, outcome.spoils.xp);

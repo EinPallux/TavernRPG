@@ -7,6 +7,213 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 16: the first twenty minutes
+- **The active beat is derived, not stored.** Twelve beats in `data/tutorial.ts`, each a place, a
+  thing to point at, two sentences and a predicate — and the live one is simply the first the save
+  cannot already prove happened. Nothing advances it. That makes "resumable mid-beat" free rather
+  than implemented: a reload lands on the same beat because the position was never written down,
+  and a cursor can never point at something the player already did in another tab. Only the two
+  `'read'` beats store anything, because "notice this" has no consequence to derive from.
+- **Every predicate is monotone, and a test replays a playthrough to prove it.** The price of a
+  derived cursor is that a predicate which can go back to false drags the whole tour backwards.
+  Beat 4 first asked "are your bags empty?", which is false again the moment a second contract
+  drops something — and beat 7 asks the player to *hold* loot for Bram to buy, so beat 4 would
+  have reactivated every time they did what beat 7 asked and the tour could never have reached
+  beat 8. Fixing it added three facts to the one progress vocabulary: `missionsAccepted`,
+  `missionsReturned` and `itemsEquipped`, each credited at the one place its action happens.
+- **A spotlight that cannot trap anybody.** One element with `0 0 0 100vmax` of shade cuts the
+  hole; the whole layer is `pointer-events-none` except the keeper's card, so every control on
+  screen stays live — including the ones the beat is not pointing at. The hole tracks its target
+  on a rAF loop through resizes, scrolls and place transitions, and the card places itself below
+  it or above it depending on what the viewport has left. Escape folds it, the fold is keyed on
+  the beat id so it silences one and not the next, and "Skip the tour" is on the card at all times.
+- **Off the beat's screen, the tour is a chip, not a card.** When there is no hole to draw — wrong
+  room, target not mounted — nothing renders over the page and the HUD says it instead. This is
+  the fix for a real bug rather than a preference: the first version floated a card bottom-centre
+  in that case, landed it on Vesna's roll buttons, and three Fortune's Table tests failed with
+  "subtree intercepts pointer events".
+- **A twenty-second first contract.** Beat 2 has to end before beat 3 can begin, and a five-minute
+  wall on the second thing a player has ever done is where they close the tab. Only `endsAt`
+  moves: the Vigor is spent at the real cost, the payout is still priced off `duration`, and the
+  card still prints "10-minute contract" — so the next job, which really does take ten minutes,
+  does not make the first one retroactively a lie. The card says Marla knows a shortcut, because
+  an unexplained short timer reads as a bug the second time round.
+- **Three callouts over the first fight, pinned to ×1.** Keyed to playback progress rather than to
+  a block landing — a fight without one would never show the middle note — and written about the
+  system rather than the blow on screen, so each is true whatever the dice did. The fight stretches
+  to 16s so they are readable, and the speed buttons say why they are locked instead of going
+  quietly dead. Skip still works.
+- **"I have played before", at creation.** One tick, one flag, and it only stops the overlay
+  rendering: the gates still open by level, the glossary still works, the six explainers still
+  fire, and turning the tour back on resumes at beat one rather than pretending the twelve
+  happened.
+- **Rooms announce themselves.** One watcher on the hero's level toasts every room a climb opened
+  — however many levels it covered at once — and lights the rail row it belongs to. Both read the
+  same list, so the toast and the flourish cannot disagree about what just happened.
+- **One hint, ever.** The Next Step chip ranks seven rules by how *perishable* each is rather than
+  by how valuable, because the chip's job is to catch the thing you would regret missing. It waits
+  for the tour to finish, goes where it points, and a dismissal lasts until the reset walk clears
+  it at midnight.
+- **A glossary that never switches off.** Forty-one one-sentence entries, each answering the
+  question with a number where the rule has one, attached to the word wherever it appears
+  (`components/ui/Term.tsx`). It is deliberately not tutorial content: the player who needs "what
+  was Starmetal for?" is three weeks past the tutorial. The settings-screen index lands with the
+  Settings screen in Phase 18.
+- **Six one-time explainers** for the moments that need a sentence and never need it again. They
+  mark themselves seen on *show* rather than on dismiss, so a reload mid-Epic does not bring them
+  back, and they never block — these fire in the middle of a loot reveal, so they are a card
+  beside the thing rather than a modal over it. The dungeon wall is the important one: hitting a
+  floor you cannot beat is the intended experience and reads as a balance bug unless somebody says
+  so out loud.
+- Save schema **v16** (`tutorial`), with the 15→16 migration marking an existing save opted-out —
+  a player mid-Phase-15 has already learned all of this.
+- `tutorialContent.test.ts` checks the data against the app: every beat's spotlight testid is one
+  a component actually renders, no beat is gated below the room it happens in, copy stays inside
+  its sentence budget, and the glossary never defines one unknown word with two more.
+
+### Fixed — Phase 16
+- **`itemsEquipped`, `missionsAccepted` and `missionsReturned` did not exist.** The tutorial needed
+  facts the save could not answer, which is a gap rather than a tutorial problem: nothing counted
+  a contract *signed* (only won), and nothing counted a piece put on. All three now go through
+  `credit()` like every other metric.
+- **`landMission` was a silent transition.** It is the moment the waiting ended — a different
+  lesson from the fight that follows — and now says so.
+- Playback settings could change under a mounted `useBattlePlayback`: banking the victory on the
+  closing beat flipped "is this their first fight?" while the same scene was still on screen,
+  handing it a new speed and a new pacing target as the result slid up. The answer is frozen at
+  mount.
+
+### Added — Phase 15: the Notice Board, the ledger, and one owner for midnight
+- **Three notices a day, and the board tracks them itself.** No per-task claim button, now or
+  ever: three notices with three claim buttons and then a chest button is four clicks for one
+  reward. The tasks fill as you play and the single claim moment is the chest. 40/30/30 means all
+  three are required, which is the point rather than an accident of arithmetic — a board where
+  two of three suffices is a board whose third task is a suggestion, and the third task is the one
+  that sends you somewhere you were not already going.
+- **The draw is feature-aware and leans toward neglect.** A task is never drawn for a room the
+  hero cannot enter, and `gateFor()` is the authority rather than a level written down twice. The
+  weighting climbs with how *little* of something the player has done — capped under 2× across
+  the whole range, because a board that leans harder becomes a list of everything they have
+  decided they do not enjoy. Every notice names the room it sends you to and links straight there.
+- **The dice paycheck.** One Golden Die a day for clearing the board, and three more for a
+  perfect week. Dice are never purchasable, so this and Vesna's free card are the entire supply —
+  which is why the die is named on the button rather than discovered inside it. Seven-of-seven for
+  the weekly chest, deliberately: six would be the kinder rule and the wrong one, because a weekly
+  bonus you get most weeks is a weekly bonus you stop noticing.
+- **Marla's ledger pauses; it never resets.** Twenty-eight squares, stamped automatically on the
+  first load of the day, with dice on 7/14/21 and an Epic plus the Moss Tortoise on 28. The state
+  is a *count of days attended* and the date of the last one — there is no streak field, so there
+  is nowhere for a "break the streak" branch to live. A player who vanishes for six weeks comes
+  back to day 19, because day 19 is what they earned. Gold on the ledger is denominated in Vigor,
+  so a square is worth the same share of a day's work at forty as it was at four.
+- **One vocabulary for everything the game counts.** The weekly Guild Bounty and the daily tasks
+  both ask for countable things, and each would have kept its own list of what those are — the
+  third occasion of a bug this project has already recorded twice. `data/progress.ts` owns the
+  union, each consumer narrows to its subset, and `credit()` is the only path from a player action
+  to a number.
+- **Reset Engine v2.** The walk now returns a ledger rather than a boolean: the boundaries
+  crossed, the days away, the Sundays that closed and the Vigor forfeited. `weeksClosed` is handed
+  out rather than recomputed, so the arena payout, the guild bounty and the weekly chest cannot
+  disagree about which Sundays a fortnight contained. A **source audit** enforces the rule the
+  engine exists for — one caller for `processResets`, one funnel for every per-feature refresh,
+  and no screen comparing a stored day key against today.
+- **The session bookends.** A minute before midnight the HUD says the tavern clock strikes soon;
+  when it does, a soft card names what refreshed — filtered to rooms this hero can actually walk
+  into, and never dropped over a fight in progress. And out of Vigor is no longer a dead end: the
+  Watch still pays tonight, and three lines say what is waiting at dawn.
+- **Save schema v15** — the day's tally, the lifetime tally, the two chest high-water marks, the
+  week's rungs, and the ledger — with a v14 fixture captured in the Menagerie. The calendar
+  migrates to **zero** on purpose: the save has never recorded which days a returning player came,
+  so any starting square would be invented rather than earned, and day 28 grants a pet.
+- **The Moss Tortoise and the Coin Toad are obtainable.** Both still derived rather than granted —
+  a closed ledger cycle and thirty daily chests. Thirty *chests*, not thirty consecutive days: a
+  pet gated on a streak would quietly contradict the calendar's own promise from the next room
+  over.
+
+### Fixed — Phase 15
+- **Two of the six guild bounty metrics were never credited from the player's side.**
+  `itemsScrapped` and `levelsGained` were only ever moved by the hall's own simulation, so a week
+  that drew either one gave the player nothing they could do about it and left the hall carrying
+  the bounty alone. Both now go through the shared credit path, along with selling, forging,
+  training, feeding, delving and rolling.
+- **Fortune's Table advertised "Bootss" and "Glovess".** A blanket `+ 's'` on slot labels, two of
+  which are already plural, since Phase 13. There is a `SLOT_PLURALS` map now.
+- **A finished ledger rendered as an empty page.** Sitting on day 28 with the roll pending cleared
+  every mark — so a player who had *just completed a twenty-eight-day ledger* was shown a blank
+  one. The completed page now stands until the next mark opens a new cycle.
+- **The three-keyframe spring, for the third time.** Springs take exactly two keyframes and drop
+  the animation silently when handed three; the board's completion tick joined the Phase 12
+  wallet pulse and the forge beam. Duration-based now, and the comment says why.
+- **A staggered list inside `AnimatePresence mode="wait"` needs somewhere to exit to.** Without an
+  exit variant the children never finish leaving, the wait never resolves, and the tab strip moves
+  over a blank panel. The Notice Board's notices needed `exit="hidden"`.
+
+### Added — Phase 14: The Menagerie (twelve companions, one at your side)
+- **Ownership is derived, not stored.** There is no "pets owned" list anywhere in the save.
+  `ownedPets()` answers the question from the facts that *earned* each pet — floors cleared,
+  contracts won, the best ladder rank ever held — every one of which was already in the save
+  before this phase existed. A player who took Barrowdeep to its fifth floor back in Phase 11
+  owns the Gloom Cat the moment the room opens: no migration, no reconciliation pass, and no
+  second copy of the truth to drift from the first. The counters are totals rather than
+  increments on a boundary, so the day-keyed double-pay bug CLAUDE.md warns about five times over
+  simply has nowhere to live here.
+- **A pet's source is data, and the silhouette reads from it.** `PetSource` is a closed union, so
+  a thirteenth companion with a new kind of source is a type error until the engine handles it —
+  and the `hint` an empty stall shows is authored beside the check it describes. A collection page
+  whose empty slots are question marks makes the player feel behind; one whose empty slots are
+  *directions* gives them somewhere to go. `pets.test.ts` matches every dungeon and zone id in the
+  table against the real content, because a hint naming a floor nothing looks at is exactly the
+  drift this shape exists to prevent.
+- **The two luck-based pets store their luck**, and only those two. For a coin-flip that lands
+  once in two hundred there is nothing else in the save to read it back from, so the Frost Fox's
+  egg and Vesna's grants are facts rather than derivations.
+- **Feeding, and the ceiling it climbs to.** A Scrap and some gold buys a level; the boost runs
+  1% at level one to 4.9% at fifty, half rate for armour, gold-find and experience because those
+  three multiply things already multiplied elsewhere. Three rarity upgrades buy a frame, a trail
+  and half a percent each — deliberately skippable, which is what lets the materials price be
+  steep. The whole system caps at **+6.4%** against the **+6.6%** an average Rare chest line is
+  worth at level 30, and the test measures *both* sides against the live generators rather than
+  freezing either number.
+- **One at a time, and free to switch.** Attribute and armour boosts go through `deriveStats`, so
+  the paperdoll, the compare tooltips and the fight all read one figure and a pet cannot be worth
+  more in a battle than it says on the chip. Gold-find and experience become a `PayoutBonus`
+  composed with the guild's. Switching costs nothing and never will: a switching cost would make
+  the player think hard about something the design has deliberately made not worth thinking hard
+  about.
+- **The room.** Twelve stalls, owned ones breathing on their own cycles so the grid is never in
+  lockstep, yours sorted to the front. A feed chomps and flashes the number it moved. The exact
+  boost is on every tile, the upgrade button names the frame it buys and its price, and every
+  refusal is a sentence written by the same function that would decline it.
+- **The rail says when something arrived.** Companions are earned while the player is somewhere
+  else — a floor cleared, a rank held, a hundredth contract — so without a cue the room only gets
+  visited by players who already suspect. The badge counts against a remembered number and clears
+  itself by being looked at.
+- **Save schema v14** — the sparse pet-progress record, the active id, Tavern Scraps, hatched
+  eggs, the seen-count and a per-zone mission counter — with a v13 fixture captured at Vesna's
+  table. The migration grants nothing, which is the whole point: the history already earns the
+  pets.
+
+### Changed — Phase 14
+- **Tavern Scraps drop at 16%, not 8%.** The economy sim's fourth pass measured the old rate at
+  0.8 Scraps a day, which took a companion two months to grow and made the published three-a-day
+  feed cap literally unreachable — the stall was advertising "3/3 feeds left" for a pace the game
+  could not supply. At 16% × 2 a companion reaches fifty in **31 modelled days**, and the cap
+  becomes what it was always meant to be: a burst allowance for a player who banked Scraps while
+  away, not a daily target.
+- **The economy sim gains a pet sink**, held under 3% of all gold out and measured at 0.5–1.2%.
+  Feeding must never compete with training, and a band is a better guarantee of that than an
+  intention.
+
+### Fixed — Phase 14
+- **Gear `goldFind` and `xpBonus` had been decorative since Phase 2.** `deriveStats` has computed
+  them for twelve phases and no payout ever read the numbers, so an amulet advertising "+3% gold
+  found" was advertising nothing. `payoutBonus()` now composes the hall's cut, the pet's and the
+  gear's into one object — one function, so no call site can quietly assemble a subset.
+- **The per-zone mission counter counted attempts; its sibling counted victories.** The Wisp of
+  the Chapel asks for forty contracts at the Sunken Chapel and the Tankard Imp asks for a hundred
+  anywhere — and one of those being satisfiable by *losing* made the harder-sounding gate the
+  easier one.
+
 ### Added — Phase 13: Fortune's Table (a gacha that tells you the truth)
 - **Three banners, and the calendar decides them.** The Daily Draw highlights a slot, Set of the
   Week puts one of your class's two sets on the table until Monday, and Vesna's Grand Reading

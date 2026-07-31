@@ -21,6 +21,7 @@ import { PLAYER_LADDER_ID, attackersOf } from '@/engine/world/ladder';
 import type { Rival } from '@/engine/world/rivals';
 import { attackPressure } from '@/engine/world/rivals';
 import { resolveBotAttack } from './duel';
+import type { PetContribution } from '@/engine/combat/combatant';
 
 const DAY = 86_400_000;
 
@@ -56,6 +57,8 @@ export interface RaidOptions {
   readonly to: number;
   /** Last day index already rolled. 0 on a save that has never seen a raid. */
   readonly lastRaidDay: number;
+  /** The pet was home when they came knocking (pets spec §2). */
+  readonly petBoost?: PetContribution | null;
 }
 
 /** The day a timestamp belongs to, as a whole number of days since the epoch. */
@@ -75,7 +78,15 @@ export function dayIndexOf(at: number): number {
  * times in an afternoon meant twenty attacks; an e2e test caught it as two honor going missing
  * across a reload. The caller stores the returned index and hands it back next time.
  */
-export function runRaids({ hero, world, rivals, from, to, lastRaidDay }: RaidOptions): RaidResult {
+export function runRaids({
+  hero,
+  world,
+  rivals,
+  from,
+  to,
+  lastRaidDay,
+  petBoost = null,
+}: RaidOptions): RaidResult {
   const playerIndex = world.ladder.indexOf(PLAYER_LADDER_ID);
   const lastDay = dayIndexOf(to);
   // Never walk back further than the cap, however long the absence — and never re-roll a day.
@@ -148,6 +159,7 @@ export function runRaids({ hero, world, rivals, from, to, lastRaidDay }: RaidOpt
         world: { ...world, ladder },
         attacker: { ...attacker, honor: botHonor.get(attackerId) ?? attacker.honor },
         seed: deriveSeed(world.seed, 'raid', dayIndex, raid),
+        petBoost,
       });
 
       ladder = [...result.ladder];

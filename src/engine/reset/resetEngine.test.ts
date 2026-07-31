@@ -8,13 +8,16 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { GameClock, createFixedWallClock } from '@/engine/clock';
+import { GameClock, createFixedWallClock, weekKeyFor } from '@/engine/clock';
 import { ALE_PER_DAY, VIGOR_PER_DAY } from '@/engine/progression/rewards';
 import {
+  RESET_SUBJECTS,
   canDrinkAle,
   msUntilNextReset,
   processResets,
+  resetLines,
   vigorCeiling,
+  weeksClosedIn,
   type ResettableState,
 } from './resetEngine';
 
@@ -214,5 +217,87 @@ describe('msUntilNextReset', () => {
   it('never returns a negative countdown', () => {
     const midnight = new Date('2026-07-30T00:00:00').getTime();
     expect(msUntilNextReset(midnight)).toBeGreaterThan(0);
+  });
+});
+
+/* ── Absence fixtures (ROADMAP Phase 15 acceptance) ──────────────────────────────── */
+
+describe('coming back after a while', () => {
+  /** Two, nine and forty days — plus a DST crossing, where a "day" is 23 or 25 hours. */
+  const cases = [
+    { label: 'two days', from: '2026-08-03', to: '2026-08-05', days: 2, weeks: 0 },
+    { label: 'nine days', from: '2026-07-27', to: '2026-08-05', days: 9, weeks: 1 },
+    { label: 'forty days', from: '2026-06-26', to: '2026-08-05', days: 40, weeks: 6 },
+    // Spring forward, in most of Europe the last Sunday in March.
+    { label: 'across the spring change', from: '2026-03-27', to: '2026-03-31', days: 4, weeks: 1 },
+    // ...and back again in late October.
+    { label: 'across the autumn change', from: '2026-10-23', to: '2026-10-27', days: 4, weeks: 1 },
+  ] as const;
+
+  for (const entry of cases) {
+    it(`processes ${entry.label} as ${entry.days} ordered boundaries`, () => {
+      const { clock } = clockAt(`${entry.to}T09:00:00`);
+      const outcome = processResets(stateOn(entry.from), entry.to, between(clock));
+
+      expect(outcome.didReset).toBe(true);
+      expect(outcome.daysProcessed).toHaveLength(entry.days);
+      // In order, no gaps, ending on today.
+      expect(outcome.daysProcessed.at(-1)).toBe(entry.to);
+      expect([...outcome.daysProcessed].sort()).toEqual([...outcome.daysProcessed]);
+
+      // Vigor is one day's worth however many were missed, and the absence is reported as the
+      // boundaries beyond last night.
+      expect(outcome.state.vigor).toBe(VIGOR_PER_DAY);
+      expect(outcome.daysAway).toBe(entry.days - 1);
+
+      // Every Sunday inside the run is named exactly once, for the arena payout, the guild
+      // bounty and the weekly chest to share.
+      expect(outcome.weeksClosed).toHaveLength(entry.weeks);
+      expect(new Set(outcome.weeksClosed).size).toBe(outcome.weeksClosed.length);
+      for (const week of outcome.weeksClosed) {
+        expect(weekKeyFor(week)).toBe(week);
+        expect(outcome.daysProcessed).toContain(week);
+      }
+    });
+  }
+
+  it('is idempotent across a long absence — the second pass changes nothing', () => {
+    const { clock } = clockAt('2026-08-05T09:00:00');
+    const walk = between(clock);
+    const first = processResets(stateOn('2026-06-26'), '2026-08-05', walk);
+    const second = processResets(first.state, '2026-08-05', walk);
+
+    expect(second.didReset).toBe(false);
+    expect(second.daysProcessed).toEqual([]);
+    expect(second.weeksClosed).toEqual([]);
+    expect(second.state).toBe(first.state);
+  });
+});
+
+describe('the reset ritual’s lines', () => {
+  it('names only rooms this hero can walk into', () => {
+    const early = resetLines(1).map((entry) => entry.subject);
+    expect(early).toContain('vigor');
+    expect(early).not.toContain('arena');
+    expect(early).not.toContain('pets');
+
+    const late = resetLines(40).map((entry) => entry.subject);
+    expect(late).toEqual([...RESET_SUBJECTS]);
+  });
+
+  it('says something for every subject it lists', () => {
+    for (const entry of resetLines(40)) {
+      expect(entry.line.length).toBeGreaterThan(8);
+    }
+  });
+});
+
+describe('weeksClosedIn', () => {
+  it('names a Sunday once, and nothing else', () => {
+    const week = weekKeyFor('2026-08-05');
+    expect(weeksClosedIn([week])).toEqual([week]);
+    expect(weeksClosedIn([week, week])).toEqual([week]);
+    expect(weeksClosedIn(['2026-08-05'])).toEqual([]);
+    expect(weeksClosedIn([])).toEqual([]);
   });
 });

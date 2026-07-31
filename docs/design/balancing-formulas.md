@@ -157,7 +157,9 @@ levels per clear — the four floors behind the Rusty Key would have taken them 
 | Golden Die from mission | 1.5% per 20-min mission, 0.6% others | — |
 | Dungeon key drop | 6% per mission once dungeon level-gate reached (until key owned) | — |
 | Ale drop | 2% per mission, cap 1/day | — |
-| Pet egg | dungeon firsts & fixed milestones (deterministic, no RNG) | — |
+| Tavern Scraps | 16% per mission, 2 at a time `[TUNE]` | — |
+| Frost Fox egg | 0.5% per mission in Silverpine Pass / Frostfell Ridge, once only | — |
+| Pet unlocks (the other eleven) | dungeon firsts & fixed milestones (deterministic, no RNG) | — |
 
 **Drop slot weighting and the weapon floor (Phase 6).** Item chance and rarity are as published
 above; *which slot* a drop lands in is not uniform. Weapon 22 / chest 14 / offhand 10 / helmet,
@@ -246,6 +248,28 @@ Sixty modelled days, active player, now including 1.6 cards a day at Fortune's T
 The band asserts gacha stays under 12% and below the mission faucet. The room is a *dice* sink
 first; if rolling ever paid better per day than running missions, the correct play would be to
 stop playing the game and spin the wheel.
+
+### The Menagerie, Phase 14 (`npm run economy`)
+
+Scraps are the pace, not the three-a-day cap. At 16% × 2 a player spending 100 Vigor on 20-minute
+contracts banks ~1.6 a day, which takes one companion from level 1 to 50 in **31 modelled days** —
+the "a month per pet" the spec claims. The rate was 8% until this pass measured it: a pet took
+62 days and the published cap was unreachable, so the stall's "3/3 feeds left" was advertising a
+pace the game could not supply.
+
+| pet lever | value |
+|---|---|
+| boost curve | `1% + 0.08%/level` → **4.9%** at 50 `[TUNE]` |
+| half rate (armour, gold find, XP) | half the level term, **not** the rarity bonus |
+| rarity bonus | **+0.5%** flat per step, at levels 15 / 30 / 45 `[TUNE]` |
+| ceiling (level 50, Epic, full rate) | **+6.4%** |
+| reference: average Rare chest main-stat line, level 30 | **+6.6%** |
+| feed cost | `18 × pet level` gold + 1 Scrap `[TUNE]` |
+| feeding as a share of all gold sinks | **0.5–1.2%** |
+
+The ceiling clears the one-gear-upgrade bar by two tenths of a percent, on purpose.
+`pets.test.ts` measures **both** sides against the live generators rather than freezing either
+number, so tuning gear down is caught as readily as tuning pets up.
 
 ## 8. Item stat budgets
 
@@ -395,7 +419,48 @@ change to player pacing re-paces the whole world with it rather than leaving 1,5
 
 ## 13. Daily/weekly reward tables
 
-- Daily tasks: 3 tasks → 40/30/30 points; chest at 100 pts: gold (= 60·goldPerVigor), materials,
-  **1 Golden Die**. Weekly chest (7 daily clears): 3 dice + Ale ×2 + guaranteed Rare+ item + Epic @ 25%.
-- Login calendar (28 days): gold/materials/Ale cadence, Dice on days 7/14/21, Epic item day 28.
-  Missing a day pauses (doesn't reset) the calendar. `[TUNE]`
+- Daily tasks: 3 tasks → 40/30/30 points; chest at 100 pts: gold (= 60·goldPerVigor), 4 Essence,
+  6 Scrap, **1 Golden Die**. All three tasks are required — 40+30+30 is exactly the chest line, and
+  a board where two of three suffices makes the third task a suggestion. Weekly chest (7 daily
+  clears): 3 dice + Ale ×2 + guaranteed Rare + Epic @ 25%.
+- Task draw: day-seeded from `(worldSeed, dayKey)`, one metric per slot, never a locked room.
+  Neglect weighting `1 + 0.85·(1 − familiarity)` where `familiarity = log10(1+done)/log10(501)`,
+  capped under 2× across the whole range `[TUNE]`.
+- Login calendar (28 days): gold/materials/Ale/Tavern-Scraps cadence, Dice on days 7/14/21, Epic
+  item + Moss Tortoise day 28. Gold denominated in **Vigor**, so a square holds its worth as the
+  hero climbs. Missing a day pauses (doesn't reset) the calendar. `[TUNE]`
+
+### The dice paycheck, counted (Phase 15)
+
+Golden Dice are never purchasable (rule 6), so the daily chest *is* the premium currency's supply
+line. Over a 28-day month of perfect attendance:
+
+| source | dice |
+|---|---|
+| daily chests (28 × 1) | **28** |
+| weekly chests (4 × 3) | **12** |
+| **month total** | **40** |
+
+Plus mission and calendar drops. If the daily figure moves, the whole Fortune's Table economy
+moves with it — `board.test.ts` asserts the month.
+
+## 14. Onboarding (Phase 16)
+
+Four numbers, all in the first twenty minutes and none of them touching the economy.
+
+| constant | value | where | why |
+|---|---|---|---|
+| `FIRST_MISSION_MS` | 20,000 ms `[TUNE]` | `data/tutorial.ts` | Beat 2 must *end* for beat 3 to start. Five minutes on the second thing a player has ever done is where they close the tab. |
+| `CALLOUT_DURATION` | 16,000 ms `[TUNE]` | `components/battle/BattleCallouts.tsx` | Twice the usual 8s pacing target, so three notes get ~4s each. Three notes over 8s is a slideshow. |
+| `IDLE_POINTS` | 3 `[TUNE]` | `engine/tutorial/hints.ts` | "Unspent gold" is measured in *points affordable*, not coin: 5,000 gold is a fortune at level 3 and a rounding error at 40. Three points ≈ a day's training. |
+| `UNLOCK_FLOURISH_MS` | 6,000 ms `[TUNE]` | `state/shellStore.ts` | How long a newly-opened rail row keeps its wash. |
+
+**The shortened first contract is not a discount.** Only `endsAt` moves: the Vigor is spent at the
+full duration cost and `resolveMission` prices the payout off `duration`, so the twenty seconds
+cost the economy nothing and the sim never sees them. It fires once per save
+(`missionsAccepted === 0`) and is skipped entirely for a player who opted out.
+
+**The hint chip is ordered by perishability, not by value.** A banner ending tonight outranks
+unspent stat points that will still be unspent tomorrow, even though the stat points are worth
+more — the chip's job is to catch the thing you would regret missing. The order is the list in
+`engine/tutorial/hints.ts#RULES`, and the first rule that has something to say wins.

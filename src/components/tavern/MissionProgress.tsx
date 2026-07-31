@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { missionProgress, msRemaining, type ActiveMission } from '@/engine/missions/types';
 import { SKIP_DICE_COST } from '@/engine/missions/board';
+import { isQuickened } from '@/engine/tutorial/firstMission';
 import { formatRemaining } from '@/components/ui/TimerChip';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { HeroIcon, Icon } from '@/components/icons';
@@ -141,6 +142,14 @@ export function MissionProgress({
               >
                 <Icon name={mount.iconId} size={12} />
                 {mount.name}
+              </span>
+            )}
+            {/* An unexplained twenty seconds against a printed ten minutes reads as a bug the
+                second time round, when the timer means it (tutorial spec §2). */}
+            {isQuickened(mission) && (
+              <span className="flex items-center gap-1 text-amber-500" data-testid="mission-quick">
+                <Icon name="spark" size={12} />
+                Marla knows a shortcut, this once
               </span>
             )}
           </p>

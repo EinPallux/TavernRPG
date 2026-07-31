@@ -86,6 +86,22 @@ export interface ShellState {
   settings: Settings;
   toasts: Toast[];
   preview: PreviewState;
+  /**
+   * The beat whose spotlight the player has pushed aside, if any (tutorial spec §1).
+   *
+   * Ephemeral on purpose, and it stores the *beat id* rather than a boolean: pushing beat four
+   * aside should not silence beat five. The tutorial's position is derived, so when the save
+   * moves on this id stops matching and the overlay simply comes back.
+   */
+  spotlightHidden: string | null;
+  /**
+   * Rooms that opened in the last few seconds (tutorial spec §3).
+   *
+   * Written by one watcher and read by both the toast stack and the rail, so the two cannot
+   * disagree about what just unlocked — the rail flourish and the toast are the same event seen
+   * twice. Clears itself, because "recently" is the whole of its meaning.
+   */
+  justUnlocked: readonly string[];
 
   setSettings: (patch: Partial<Settings>) => void;
   toggleNav: () => void;
@@ -93,12 +109,20 @@ export interface ShellState {
   dismissToast: (id: string) => void;
   clearToasts: () => void;
   setPreview: (patch: Partial<PreviewState>) => void;
+  hideSpotlight: (beatId: string) => void;
+  showSpotlight: () => void;
+  noteUnlocks: (placeIds: readonly string[]) => void;
 }
+
+/** `[TUNE]` How long a newly-opened room keeps its flourish on the rail. */
+export const UNLOCK_FLOURISH_MS = 6_000;
 
 export const useShellStore = create<ShellState>((set, get) => ({
   settings: { ...DEFAULT_SETTINGS },
   toasts: [],
   preview: { ...DEFAULT_PREVIEW, level: readStoredLevel() ?? DEFAULT_PREVIEW.level },
+  spotlightHidden: null,
+  justUnlocked: [],
 
   setSettings(patch) {
     set({ settings: { ...get().settings, ...patch } });
@@ -133,6 +157,25 @@ export const useShellStore = create<ShellState>((set, get) => ({
     if (patch.level !== undefined) storeLevel(patch.level);
     set({ preview: { ...get().preview, ...patch } });
   },
+
+  hideSpotlight(beatId) {
+    set({ spotlightHidden: beatId });
+  },
+
+  showSpotlight() {
+    set({ spotlightHidden: null });
+  },
+
+  noteUnlocks(placeIds) {
+    if (placeIds.length === 0) return;
+    set({ justUnlocked: [...new Set([...get().justUnlocked, ...placeIds])] });
+
+    if (typeof window === 'undefined') return;
+    setTimeout(() => {
+      const remaining = get().justUnlocked.filter((id) => !placeIds.includes(id));
+      set({ justUnlocked: remaining });
+    }, UNLOCK_FLOURISH_MS);
+  },
 }));
 
 /** Test seam. */
@@ -142,5 +185,7 @@ export function resetShellStoreForTests(): void {
     settings: { ...DEFAULT_SETTINGS },
     toasts: [],
     preview: { ...DEFAULT_PREVIEW },
+    spotlightHidden: null,
+    justUnlocked: [],
   });
 }

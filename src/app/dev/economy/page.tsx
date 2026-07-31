@@ -9,8 +9,10 @@
  * build checks.
  *
  * Only faucets and sinks that exist in the game are modelled (`MODELLED_FAUCETS` /
- * `MODELLED_SINKS`), which is why the column list is short — it grows as Phase 7's shops and
- * Phase 9's mounts land.
+ * `MODELLED_SINKS`), and the columns are driven off those lists rather than written out, so a
+ * system that joins the sim appears here the same day. Shops and mounts landed in Phase 7,
+ * Fortune's Table in Phase 13, pet feeding in Phase 14; guild donations and dungeon gold are
+ * still outstanding.
  */
 
 import { useMemo, useState } from 'react';

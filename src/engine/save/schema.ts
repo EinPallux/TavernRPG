@@ -15,10 +15,13 @@ import { CRIER_CATEGORIES, RIVAL_ARCHETYPES } from '@/data/crierTemplates';
 import { CHAT_CATEGORIES } from '@/data/guildChat';
 import { BANNER_COLOURS, GUILD_NAME_MAX, SIGIL_ICONS } from '@/data/guilds';
 import { BANNER_IDS, ROLL_OUTCOMES } from '@/data/banners';
+import { PET_ID_LIST, PET_RARITIES } from '@/data/pets';
+import { PROGRESS_METRICS } from '@/data/progress';
+import { BEAT_ID_LIST, EXPLAINER_ID_LIST } from '@/data/tutorial';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 13;
+export const CURRENT_SCHEMA_VERSION = 16;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -275,6 +278,14 @@ export const activitySchema = z.object({
   shops: z.record(z.string(), shopStockSchema),
   /** The mount in the stall, if any (schema v7). */
   mount: mountRentalSchema.nullable(),
+  /**
+   * Missions completed per zone (schema v14).
+   *
+   * Exists for one pet — the Wisp wants forty contracts at the Sunken Chapel — but it is a
+   * *counter of things the player did*, which is the shape every derived-ownership source has to
+   * take. Sparse: a zone the hero has never visited is an absent key, not a zero.
+   */
+  zoneMissions: z.record(z.string(), z.number().int().min(0)),
 });
 
 export const DEFAULT_ACTIVITY: Activity = {
@@ -293,6 +304,7 @@ export const DEFAULT_ACTIVITY: Activity = {
   patrolsCompleted: 0,
   shops: {},
   mount: null,
+  zoneMissions: {},
 };
 
 /* ── The simulated world (schema v8) ───────────────────────────────────────────── */
@@ -683,6 +695,166 @@ export const DEFAULT_GACHA: Gacha = {
   history: [],
 };
 
+/* ── The Menagerie (schema v14) ────────────────────────────────────────────────── */
+
+export const petProgressSchema = z.object({
+  /** 1–50; one feed, one level (pets spec §2). */
+  level: z.number().int().min(1),
+  rarity: z.enum(PET_RARITIES),
+  /** Feeds taken today, against the three-a-day cap. Cleared by the Reset Engine. */
+  fedToday: z.number().int().min(0),
+});
+
+export const petsSchema = z.object({
+  /**
+   * Per-pet progress, **sparse**: a pet that has never been fed has no entry, and reads as
+   * level 1 / common / unfed. Writing twelve default rows into every save to say "nothing has
+   * happened" would be twelve rows of nothing.
+   *
+   * Note what is *not* here: ownership. `engine/pets/ownership.ts` derives that from the facts
+   * that earned each pet — floors cleared, missions run, best rank, what Vesna handed over —
+   * so there is no second list to reconcile and a player who cleared Barrowdeep in Phase 11
+   * owns the Gloom Cat the moment this room opens.
+   */
+  progress: z.record(z.string(), petProgressSchema),
+  /** The one at your side, or null. Switching is free and instant (spec §2). */
+  activeId: z.enum(PET_ID_LIST).nullable(),
+  /** Tavern Scraps — pet food, from missions and the daily loop. */
+  scraps: z.number().int().min(0),
+  /**
+   * Pets that hatched rather than being earned.
+   *
+   * The one place ownership *is* stored, because for a 0.5% egg the luck itself is the fact —
+   * there is nothing else in the save to derive it from.
+   */
+  eggs: z.array(z.enum(PET_ID_LIST)),
+  /** Pets the player had last time they looked, for the "something new" cue on the rail. */
+  seenCount: z.number().int().min(0),
+});
+
+export const DEFAULT_PETS: Pets = {
+  progress: {},
+  activeId: null,
+  scraps: 0,
+  eggs: [],
+  seenCount: 0,
+};
+
+/* ── The Notice Board and the ledger (schema v15) ─────────────────────────────────── */
+
+/**
+ * Everything counted today, keyed by `ProgressMetric`.
+ *
+ * Sparse, and cleared at every day boundary. This is the one thing in the daily loop that has to
+ * be *stored* rather than derived: a task asks what you did **today**, and a lifetime total
+ * cannot answer that without a snapshot to diff against — which would be the same storage wearing
+ * a cleverer name.
+ */
+export const progressTallySchema = z.partialRecord(
+  z.enum(PROGRESS_METRICS),
+  z.number().int().min(0),
+);
+
+export const tasksSchema = z.object({
+  /** The day's three, as ids. Definitions, points and progress are all looked up. */
+  taskIds: z.array(z.string()).max(8),
+  /** Day the board was drawn for; a mismatch redraws lazily on the next read. */
+  drawnFor: dayKeySchema.nullable(),
+  /** Today's counters. Cleared by the Reset Engine, never by a screen. */
+  today: progressTallySchema,
+  /**
+   * Lifetime counters, for the draw's neglect weighting.
+   *
+   * Kept beside the daily tally rather than derived, because most of these metrics have no
+   * lifetime home anywhere else — nothing counts scrapped items or gold spent on training.
+   */
+  lifetime: progressTallySchema,
+  /**
+   * Day the daily chest was last paid. **A high-water mark, not a flag** — the seventh in
+   * CLAUDE.md's list, and it exists because a chest keyed on a day and applied to the save pays
+   * twice on reload without one.
+   */
+  lastChestDay: dayKeySchema.nullable(),
+  /** Week key the weekly chest was last paid for. Same rule, coarser boundary. */
+  lastWeeklyChestWeek: dayKeySchema.nullable(),
+  /** Daily chests claimed in the current week, against the seven the weekly chest wants. */
+  claimsThisWeek: z.number().int().min(0),
+  /** The week `claimsThisWeek` belongs to; a new week zeroes it. */
+  claimsWeek: dayKeySchema.nullable(),
+  /** Lifetime daily-chest claims. Thirty of them earn the Coin Toad (pets spec §1). */
+  totalChests: z.number().int().min(0),
+});
+
+export const DEFAULT_TASKS: Tasks = {
+  taskIds: [],
+  drawnFor: null,
+  today: {},
+  lifetime: {},
+  lastChestDay: null,
+  lastWeeklyChestWeek: null,
+  claimsThisWeek: 0,
+  claimsWeek: null,
+  totalChests: 0,
+};
+
+/**
+ * Marla's ledger (daily-loop spec §2).
+ *
+ * Note the absence of a streak. `day` is a **count of squares attended**, so missing a day
+ * pauses the calendar rather than resetting it — there is no field here a lapse could reduce,
+ * which is the rule implemented as a shape rather than as a branch.
+ */
+export const calendarSchema = z.object({
+  day: z.number().int().min(0).max(28),
+  /** The day the last stamp landed. One stamp per day, guarded by comparison. */
+  lastStampedDay: dayKeySchema.nullable(),
+  /** Closed 28-day cycles. The first one earns the Moss Tortoise (pets spec §1). */
+  cyclesCompleted: z.number().int().min(0),
+});
+
+export const DEFAULT_CALENDAR: Calendar = {
+  day: 0,
+  lastStampedDay: null,
+  cyclesCompleted: 0,
+};
+
+/* ── The tutorial (schema v16) ────────────────────────────────────────────────────── */
+
+/**
+ * Four small lists, and what is *not* here is the point.
+ *
+ * There is no current-beat cursor. `engine/tutorial/beats.ts` derives the active beat as the
+ * first one the save cannot prove happened, so a reload mid-beat resumes for free and nothing
+ * here can disagree with what the player actually did.
+ */
+export const tutorialSchema = z.object({
+  /**
+   * "I have been here before", chosen at creation.
+   *
+   * It does not fast-forward anything and it does not touch the gates — it answers "show the
+   * overlay?" with no, and the curriculum carries on unlocking rooms by level exactly as before.
+   */
+  optedOut: z.boolean(),
+  /**
+   * The two beats with nothing to *do*, once seen.
+   *
+   * Every other beat completes because a fact appeared in the save. These two are things to
+   * notice rather than things to do, so an acknowledgement is the only honest completion.
+   */
+  acknowledged: z.array(z.enum(BEAT_ID_LIST)),
+  /** One-time explainers already fired. Never shown twice, however many Epics turn up. */
+  seenExplainers: z.array(z.enum(EXPLAINER_ID_LIST)),
+  /** Next Step hints waved away today. Cleared by the Reset Engine, like everything daily. */
+  dismissedHints: z.array(z.string()).max(20),
+});
+
+export const DEFAULT_TUTORIAL: Tutorial = {
+  optedOut: false,
+  acknowledged: [],
+  seenExplainers: [],
+  dismissedHints: [],
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -709,6 +881,14 @@ export const saveFileSchema = z.object({
   forge: forgeSchema,
   /** Fortune's Table (schema v13). */
   gacha: gachaSchema,
+  /** The Menagerie (schema v14). */
+  pets: petsSchema,
+  /** The Notice Board (schema v15). */
+  tasks: tasksSchema,
+  /** The login calendar (schema v15). */
+  calendar: calendarSchema,
+  /** Onboarding (schema v16). */
+  tutorial: tutorialSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -717,6 +897,12 @@ export type Hero = z.infer<typeof heroSchema>;
 export type Materials = z.infer<typeof materialsSchema>;
 export type Forge = z.infer<typeof forgeSchema>;
 export type Gacha = z.infer<typeof gachaSchema>;
+export type Pets = z.infer<typeof petsSchema>;
+export type Tasks = z.infer<typeof tasksSchema>;
+export type Calendar = z.infer<typeof calendarSchema>;
+export type Tutorial = z.infer<typeof tutorialSchema>;
+export type StoredProgressTally = z.infer<typeof progressTallySchema>;
+export type StoredPetProgress = z.infer<typeof petProgressSchema>;
 export type StoredRollRecord = z.infer<typeof rollRecordSchema>;
 export type Activity = z.infer<typeof activitySchema>;
 export type StoredMissionOffer = z.infer<typeof missionOfferSchema>;
@@ -766,6 +952,10 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     dungeons: { ...DEFAULT_DUNGEONS },
     forge: { ...DEFAULT_FORGE },
     gacha: { ...DEFAULT_GACHA },
+    pets: { ...DEFAULT_PETS },
+    tasks: { ...DEFAULT_TASKS },
+    calendar: { ...DEFAULT_CALENDAR },
+    tutorial: { ...DEFAULT_TUTORIAL },
   };
 }
 

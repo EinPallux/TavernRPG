@@ -23,7 +23,7 @@
 
 import { deriveSeed, createRng } from '@/engine/rng';
 import { fight } from '@/engine/combat/fight';
-import { buildHeroCombatant } from '@/engine/combat/combatant';
+import { buildHeroCombatant, type PetContribution } from '@/engine/combat/combatant';
 import type { BattleResult } from '@/engine/combat/types';
 import { rollDungeonDrops } from '@/engine/items/drops';
 import type { Rarity, SlotId } from '@/engine/items/types';
@@ -147,8 +147,10 @@ export function delve(options: {
   readonly worldSeed: number;
   readonly now: number;
   readonly bonus?: PayoutBonus;
+  /** The active pet, if any — it goes down the stairs too (pets spec §2). */
+  readonly petBoost?: PetContribution | null;
 }): DelveOutcome | null {
-  const { id, hero, progress, worldSeed, now } = options;
+  const { id, hero, progress, worldSeed, now, petBoost = null } = options;
   const floor = currentFloor(progress);
   if (floor === null || !floorDef(id, floor)) return null;
 
@@ -157,7 +159,7 @@ export function delve(options: {
 
   const attempt = progress.attempts + 1;
   const seed = deriveSeed(worldSeed, 'delve', id, floor, attempt);
-  const battle = fight(buildHeroCombatant(hero), foe, seed);
+  const battle = fight(buildHeroCombatant(hero, 'hero', petBoost), foe, seed);
 
   const won = battle.winner === 'a';
   const share = attemptShare(foe.maxHealth, battle.remainingHealth.b);
