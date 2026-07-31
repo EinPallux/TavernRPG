@@ -27,9 +27,11 @@ import v11Phase11 from './fixtures/v11-phase11.json';
 import v12Phase12 from './fixtures/v12-phase12.json';
 import v13Phase13 from './fixtures/v13-phase13.json';
 import v14Phase14 from './fixtures/v14-phase14.json';
+import v15Phase15 from './fixtures/v15-phase15.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { ownedPets } from '@/engine/pets/ownership';
+import { activeBeat, tutorialComplete } from '@/engine/tutorial/beats';
 import { migrateSave } from './migrations';
 import {
   CURRENT_SCHEMA_VERSION,
@@ -42,6 +44,7 @@ import {
   DEFAULT_CALENDAR,
   DEFAULT_PETS,
   DEFAULT_TASKS,
+  DEFAULT_TUTORIAL,
   EMPTY_MATERIALS,
   DEFAULT_SETTINGS,
   type SaveFile,
@@ -555,6 +558,49 @@ describe('save fixtures — every shipped version still loads', () => {
     // And the Menagerie it arrived with is untouched.
     expect(result.save.pets.activeId).toBe('ember-pup');
     expect(result.save.hero?.name).toBe('Bryn Halloway');
+  });
+
+  it('opens a Phase 15 (v15) save with a day’s work behind it', () => {
+    const result = migrateSave(structuredClone(v15Phase15));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(15);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // A cleared board, a claimed chest and a marked ledger.
+    expect(result.save.tasks.totalChests).toBe(1);
+    expect(result.save.tasks.claimsThisWeek).toBe(1);
+    expect(result.save.calendar.day).toBe(1);
+    expect(result.save.calendar.lastStampedDay).toBe('2026-07-30');
+  });
+
+  it('does not walk a fifteen-phase-old save through its first contract', () => {
+    const result = migrateSave(structuredClone(v15Phase15));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    /*
+     * The one place the onboarding migration takes a position. Ten of the twelve beats would
+     * skip themselves — they are derived from facts this save already holds — but the two
+     * `'read'` beats cannot be, because nothing in a save proves somebody has *looked* at the
+     * Crier. Without the flag a veteran gets two spotlights out of nowhere.
+     */
+    expect(result.save.tutorial.optedOut).toBe(true);
+    expect(activeBeat(result.save)).toBeNull();
+    expect(tutorialComplete(result.save)).toBe(true);
+  });
+
+  it('gives a save with no hero the real tutorial', () => {
+    // A v1 walking-skeleton save has never had a hero, so it has not started — and the whole
+    // point of the opt-out is that it is for people who *have*.
+    const result = migrateSave(structuredClone(v1Phase0));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.save.hero).toBeNull();
+    expect(result.save.tutorial).toEqual(DEFAULT_TUTORIAL);
   });
 
   it('is idempotent — re-migrating an already-current save changes nothing', () => {

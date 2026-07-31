@@ -17,10 +17,11 @@ import { BANNER_COLOURS, GUILD_NAME_MAX, SIGIL_ICONS } from '@/data/guilds';
 import { BANNER_IDS, ROLL_OUTCOMES } from '@/data/banners';
 import { PET_ID_LIST, PET_RARITIES } from '@/data/pets';
 import { PROGRESS_METRICS } from '@/data/progress';
+import { BEAT_ID_LIST, EXPLAINER_ID_LIST } from '@/data/tutorial';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 15;
+export const CURRENT_SCHEMA_VERSION = 16;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -817,6 +818,43 @@ export const DEFAULT_CALENDAR: Calendar = {
   cyclesCompleted: 0,
 };
 
+/* ── The tutorial (schema v16) ────────────────────────────────────────────────────── */
+
+/**
+ * Four small lists, and what is *not* here is the point.
+ *
+ * There is no current-beat cursor. `engine/tutorial/beats.ts` derives the active beat as the
+ * first one the save cannot prove happened, so a reload mid-beat resumes for free and nothing
+ * here can disagree with what the player actually did.
+ */
+export const tutorialSchema = z.object({
+  /**
+   * "I have been here before", chosen at creation.
+   *
+   * It does not fast-forward anything and it does not touch the gates — it answers "show the
+   * overlay?" with no, and the curriculum carries on unlocking rooms by level exactly as before.
+   */
+  optedOut: z.boolean(),
+  /**
+   * The two beats with nothing to *do*, once seen.
+   *
+   * Every other beat completes because a fact appeared in the save. These two are things to
+   * notice rather than things to do, so an acknowledgement is the only honest completion.
+   */
+  acknowledged: z.array(z.enum(BEAT_ID_LIST)),
+  /** One-time explainers already fired. Never shown twice, however many Epics turn up. */
+  seenExplainers: z.array(z.enum(EXPLAINER_ID_LIST)),
+  /** Next Step hints waved away today. Cleared by the Reset Engine, like everything daily. */
+  dismissedHints: z.array(z.string()).max(20),
+});
+
+export const DEFAULT_TUTORIAL: Tutorial = {
+  optedOut: false,
+  acknowledged: [],
+  seenExplainers: [],
+  dismissedHints: [],
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -849,6 +887,8 @@ export const saveFileSchema = z.object({
   tasks: tasksSchema,
   /** The login calendar (schema v15). */
   calendar: calendarSchema,
+  /** Onboarding (schema v16). */
+  tutorial: tutorialSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -860,6 +900,7 @@ export type Gacha = z.infer<typeof gachaSchema>;
 export type Pets = z.infer<typeof petsSchema>;
 export type Tasks = z.infer<typeof tasksSchema>;
 export type Calendar = z.infer<typeof calendarSchema>;
+export type Tutorial = z.infer<typeof tutorialSchema>;
 export type StoredProgressTally = z.infer<typeof progressTallySchema>;
 export type StoredPetProgress = z.infer<typeof petProgressSchema>;
 export type StoredRollRecord = z.infer<typeof rollRecordSchema>;
@@ -914,6 +955,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     pets: { ...DEFAULT_PETS },
     tasks: { ...DEFAULT_TASKS },
     calendar: { ...DEFAULT_CALENDAR },
+    tutorial: { ...DEFAULT_TUTORIAL },
   };
 }
 

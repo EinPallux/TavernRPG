@@ -19,6 +19,7 @@ import {
   DEFAULT_CALENDAR,
   DEFAULT_PETS,
   DEFAULT_TASKS,
+  DEFAULT_TUTORIAL,
   DEFAULT_SETTINGS,
   EMPTY_MATERIALS,
   saveFileSchema,
@@ -250,6 +251,32 @@ export const MIGRATIONS: readonly Migration[] = [
         ...data,
         tasks: { ...DEFAULT_TASKS },
         calendar: { ...DEFAULT_CALENDAR },
+      };
+    },
+  },
+  {
+    from: 15,
+    to: 16,
+    describe: 'Phase 16: onboarding — the opt-out, acknowledgements and one-time explainers',
+    migrate: (data) => {
+      /*
+       * The one migration in the chain that is *not* empty-handed, and for a plain reason: a save
+       * that already has a hero belongs to somebody who has been playing for fifteen phases, and
+       * walking them through accepting their first contract would be insulting rather than
+       * helpful. They are marked as having opted out.
+       *
+       * Most of the tutorial would in fact skip itself — the beats are derived from facts the
+       * save already holds, so ten of the twelve are provably behind an existing player. The two
+       * `'read'` beats are the exception: nothing in a save can prove somebody has *looked* at
+       * the Crier, so without this flag a veteran would be shown two spotlights out of nowhere.
+       * One flag is cheaper and more honest than pre-acknowledging them.
+       *
+       * A save with no hero has not started, so it gets the real thing.
+       */
+      const startedPlaying = data['hero'] !== null && data['hero'] !== undefined;
+      return {
+        ...data,
+        tutorial: { ...DEFAULT_TUTORIAL, optedOut: startedPlaying },
       };
     },
   },
