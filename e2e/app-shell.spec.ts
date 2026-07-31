@@ -142,6 +142,28 @@ test.describe('navigation', () => {
     await expect(page.getByTestId('bark-settings')).toHaveCount(0);
   });
 
+  test('Settings carries the credits, and says what is not in the game', async ({ page }) => {
+    /*
+     * A licence gate rather than a nicety: the fonts are self-hosted by `next/font/google`, so
+     * the build redistributes them and the OFL notice has to travel with them. It also has to be
+     * *accurate* — this section used to claim a CC BY obligation for game-icons.net artwork that
+     * was never vendored, which is why the absences are on screen next to the credits.
+     */
+    await ensureHero(page);
+    await page.goto('/settings');
+    await expect(page.getByTestId('credits')).toBeVisible();
+
+    await expect(page.getByTestId('credits-art')).toContainText('Kenney');
+    await expect(page.getByTestId('credits-fonts')).toContainText('Alegreya Sans SC');
+    await expect(page.getByTestId('credits-fonts')).toContainText('Inter');
+    // The two mandatory attributions are marked as such, and nothing else is.
+    await expect(page.getByTestId('credits-fonts')).toContainText('required');
+    await expect(page.getByTestId('credits-art')).not.toContainText('required');
+
+    await expect(page.getByTestId('credits-absences')).toContainText('No sampled audio');
+    await expect(page.getByTestId('credits-absences')).toContainText('game-icons.net');
+  });
+
   test('Settings turns the things it offers', async ({ page }) => {
     await ensureHero(page);
     await page.goto('/settings');

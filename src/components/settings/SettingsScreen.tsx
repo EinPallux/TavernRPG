@@ -26,6 +26,7 @@ import { AmbientStage } from '@/components/ui/AmbientStage';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { SavePanel } from './SavePanel';
+import { CreditsPanel } from './CreditsPanel';
 import { useShellStore } from '@/state/shellStore';
 import { useGameStore } from '@/state/gameStore';
 import { audioAvailable, play } from '@/state/sfx';
@@ -375,6 +376,11 @@ export function SettingsScreen() {
                   Test sound
                 </ActionButton>
               </Row>
+            </TavernPanel>
+
+            {/* ── Credits ──────────────────────────────────────────────── */}
+            <TavernPanel title="Credits" className="lg:col-span-2">
+              <CreditsPanel />
             </TavernPanel>
           </motion.div>
 
