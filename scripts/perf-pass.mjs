@@ -147,7 +147,8 @@ async function frames(page, cdp) {
         const tick = (now) => {
           marks.push(now - last);
           last = now;
-          marks.length < 240 ? requestAnimationFrame(tick) : resolve(marks);
+          if (marks.length < 240) requestAnimationFrame(tick);
+          else resolve(marks);
         };
         requestAnimationFrame(tick);
       }),

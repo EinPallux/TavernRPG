@@ -369,7 +369,7 @@ to its next rule, six unlock toasts on a 1→4 climb, and a glossary tooltip on 
 1,150 unit + 184 e2e green. **Deferred to Phase 18:** the glossary's settings-screen index, which
 needs the Settings screen. The no-docs playtest is the user's to run.
 
-## Phase 17 — Balancing, Content Fill & Feel (L) 🔲
+## Phase 17 — Balancing, Content Fill & Feel (L) ✅
 Fill content to plan volumes (96 monsters, 160 blurbs, all zones wired to 14 backdrops, barks,
 empty states), run pacing simulations vs §0 targets and tune every `[TUNE]`, class-balance pass
 via harness, economy 90-day sim bands finalized, SFX pass + `bgm.mp3` drop-in music support
@@ -377,6 +377,46 @@ via harness, economy 90-day sim bands finalized, SFX pass + `bgm.mp3` drop-in mu
 performance pass vs budgets (bundle, fps, reconciliation).
 **Accept:** pacing sim hits §0 milestone table ±20%; all `[TUNE]` values have post-tuning entries
 in balancing doc changelog section; Lighthouse perf ≥ 90 on stage screens; zero contrast failures.
+
+**Delivered.** Content to plan volume, every `[TUNE]` accounted for, sound, the last placeholder
+room retired, and two audits that had to be *built* before they could find anything. Save schema
+unchanged at **v16** — the only phase since Phase 1 that needed no migration, which is the right
+shape for a tuning phase. 1,243 unit + 211 e2e green.
+
+Three of the four acceptance criteria are met outright:
+- **Pacing sim hits §0 ±20%** — all six rows, where three were outside. See below.
+- **Every `[TUNE]` has a post-tuning entry** — 68 markers, balancing §16, each changed or defended.
+- **Lighthouse ≥ 90 on stage screens** — 98 · 98 · 98 · 99.
+
+The fourth, **zero contrast failures**, is **not met**: eleven remain out of 500+ at the start,
+each named in `e2e/a11y.spec.ts` and style guide §10.3 with an owner. They fall in two groups —
+type sitting directly on backdrop art (needs a scrim, a visual-design change) and cross-fade
+artifacts the audit harness still catches. Budgeted per room so the count can only come down.
+
+Four things the phase forced:
+
+- **Two measurement bugs were hiding a third.** §0 promised a full set in 45–60 days and the sim
+  said 125. The recorded reason (Q23: only the gacha feeds the chase) was half of it — the sim
+  *excluded the forge* on the stated reasoning that a deterministic craft would flatter the
+  number, and the forge route was itself unreachable at 2 Starmetal a recipe against an Epic
+  scrap paying an average of half of one. ~210 days for the "guaranteed path". Each fact
+  concealed the other: the exclusion hid the price, and the price justified the exclusion. Fixed
+  both; a set closes at day 51.5. **The third instance of "a cap the game cannot supply is a lie
+  on the screen"** — and the new lesson is that a *simulation* can tell it too, by declining to
+  measure something and calling the result pessimistic.
+- **An audit that inspects one element is worse than no audit.** `axe-core` reported zero contrast
+  violations on the tavern — out of **one** node it could resolve, with 103 returned `incomplete`
+  because it cannot see through a `background-image`, and every room has one. Reading real pixels
+  instead found 500+ failures: the muted-parchment ladder measured 2.5–4.3:1, and the semantic
+  colours had only *fill* shades being used as text.
+- **Frame rate was the wrong gate, and finding that out was the work.** A ×4 fight measured 20fps
+  against a 60fps baseline in the same browser — then the container turned out to render through
+  SwiftShader with no GPU. The gate is main-thread cost now (0.7ms of an 8ms budget), which is
+  GPU-independent. `frameAt` was the first suspect and measurement exonerated it at **9
+  microseconds** a call.
+- **Lighthouse 49 → 98 was one asset decision.** 56 MB of backdrop PNGs served exactly as
+  authored, for an LCP of 21.5 seconds on a first paint of 0.3. The sync step transcodes now.
+  No code changed.
 
 ## Phase 18 — Release Hardening & 1.0 (M) 🔲
 Save migration framework proven (beta-save fixtures), export/import UX, multi-tab guard, error

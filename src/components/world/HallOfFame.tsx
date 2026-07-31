@@ -179,6 +179,19 @@ export function HallOfFame() {
         {...(PLACE.tint ? { tint: PLACE.tint } : {})}
         {...(PLACE.effects ? { effects: PLACE.effects } : {})}
       >
+        {/*
+          A scrim, because this room's backdrop is bright water.
+          
+          Every other place in Emberhollow is painted dark, so parchment type sits on it happily.
+          The Hall is lit like an atrium, and the Phase 17 contrast pass measured the header and
+          the top rows at 1.2–2.0:1 against it — the one room where the art, not the token, was
+          the problem. A vertical wash keeps the painting readable at the foot of the page and
+          gives the type something to stand on at the top (style guide §10.3).
+        */}
+        <div
+          aria-hidden
+          className="from-wood-900/92 via-wood-900/72 pointer-events-none absolute inset-0 bg-gradient-to-b to-transparent"
+        />
         <div className="relative flex h-full flex-col px-8 py-6">
           <header className="mb-4 flex items-end justify-between gap-6">
             <div>
@@ -308,7 +321,9 @@ export function HallOfFame() {
                             <span className="font-display text-parchment-500/72 w-10 shrink-0 text-right text-xs font-bold tabular-nums">
                               #{index + 1}
                             </span>
-                            {banner && <GuildBanner field={banner.field} charge={banner.charge} size={20} />}
+                            {banner && (
+                              <GuildBanner field={banner.field} charge={banner.charge} size={20} />
+                            )}
                             <span className="min-w-0 flex-1">
                               <span className="font-display text-parchment-300 block truncate text-sm font-bold">
                                 {standing.name}

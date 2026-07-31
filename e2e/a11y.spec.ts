@@ -155,7 +155,7 @@ const CONTRAST_BUDGET: Readonly<Record<string, number>> = {
   forge: 2,
   patrol: 1,
   arena: 4,
-  hall: 4,
+  hall: 1,
 };
 /** Every other room is already at zero, and must stay there. */
 const CLEAN = 0;
