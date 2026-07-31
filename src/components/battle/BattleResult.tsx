@@ -120,7 +120,7 @@ function RewardLine({ label, value, icon, delay, testId }: RewardLineSpec & { de
       className="border-parchment-500/12 flex items-center justify-between gap-6 border-b py-1.5 last:border-b-0"
       data-testid={testId}
     >
-      <span className="text-parchment-500/70 flex items-center gap-2 text-sm">
+      <span className="text-parchment-500/72 flex items-center gap-2 text-sm">
         {icon}
         {label}
       </span>
@@ -167,12 +167,12 @@ export function BattleResult({
       >
         <p
           className={`font-display text-4xl font-extrabold tracking-wide ${
-            victory ? 'text-amber-400' : 'text-parchment-500/70'
+            victory ? 'text-amber-400' : 'text-parchment-500/72'
           }`}
         >
           {victory ? 'Victory' : 'Defeat'}
         </p>
-        <p className="text-parchment-500/55 mt-1 text-sm">
+        <p className="text-parchment-500/72 mt-1 text-sm">
           {victory
             ? `${heroName} leaves ${opponentName} in the dust after ${analysis.rounds} rounds.`
             : 'The tale continues…'}
@@ -195,7 +195,7 @@ export function BattleResult({
           className="mb-4"
           data-testid="reward-item"
         >
-          <p className="text-parchment-500/45 mb-1.5 text-[11px] tracking-[0.25em] uppercase">
+          <p className="text-parchment-500/72 mb-1.5 text-[11px] tracking-[0.25em] uppercase">
             Spoils
           </p>
           <ItemCard item={rewards.item} />
@@ -210,7 +210,7 @@ export function BattleResult({
           className="chamfer-sm border-blood-600/30 bg-blood-600/8 mb-4 border p-3"
           data-testid="loss-hints"
         >
-          <p className="text-blood-600/85 mb-1.5 text-[11px] tracking-[0.25em] uppercase">
+          <p className="text-blood-400/85 mb-1.5 text-[11px] tracking-[0.25em] uppercase">
             What went wrong
           </p>
           <ul className="space-y-1.5">
@@ -242,7 +242,7 @@ export function BattleResult({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: duration.base, delay: 0.32 }}
-        className="text-parchment-500/45 mb-5 text-center text-xs"
+        className="text-parchment-500/72 mb-5 text-center text-xs"
         data-testid="closest-moment"
       >
         {victory

@@ -331,7 +331,7 @@ export function ArenaScreen() {
             <div className="flex items-center gap-2">
               {/* Rewarded wins is a cap, and a cap the player cannot see is a trap. */}
               <span
-                className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/70 flex items-center gap-2 border px-3 py-1.5 text-xs"
+                className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/72 flex items-center gap-2 border px-3 py-1.5 text-xs"
                 data-testid="rewarded-wins"
               >
                 <LaurelIcon size={13} />
@@ -348,7 +348,7 @@ export function ArenaScreen() {
                   className={`chamfer-sm flex items-center gap-2 border px-3 py-1.5 text-xs ${
                     ready
                       ? 'border-moss-600/60 bg-moss-600/20 text-parchment-300'
-                      : 'border-parchment-500/15 bg-wood-900/70 text-parchment-500/70'
+                      : 'border-parchment-500/15 bg-wood-900/70 text-parchment-500/72'
                   }`}
                   data-testid="arena-cooldown"
                 >
@@ -407,7 +407,7 @@ export function ArenaScreen() {
               data-testid="duel-board"
             >
               {cards.length === 0 ? (
-                <p className="text-parchment-500/55 py-10 text-center text-sm">
+                <p className="text-parchment-500/72 py-10 text-center text-sm">
                   Nobody near your rung is taking challenges. Try again after the bell.
                 </p>
               ) : (
@@ -443,7 +443,7 @@ export function ArenaScreen() {
                   reads as a climb if the player already knows what this looked like. */}
               {standing.length > 0 && (
                 <div className="border-parchment-500/12 mt-6 border-t pt-4">
-                  <p className="font-display text-parchment-500/45 mb-2 flex items-center gap-2 text-[0.62rem] tracking-[0.3em] uppercase">
+                  <p className="font-display text-parchment-500/72 mb-2 flex items-center gap-2 text-[0.62rem] tracking-[0.3em] uppercase">
                     <ArenaIcon size={12} />
                     Your rungs
                   </p>
@@ -471,7 +471,7 @@ export function ArenaScreen() {
                       className={`chamfer-sm border px-1.5 py-0.5 text-xs font-bold tabular-nums ${
                         rankDelta > 0
                           ? 'border-moss-600/60 bg-moss-600/20 text-parchment-300'
-                          : 'border-blood-600/40 bg-blood-600/12 text-blood-600'
+                          : 'border-blood-600/40 bg-blood-600/12 text-blood-400'
                       }`}
                       data-testid="rank-delta"
                     >
@@ -479,13 +479,13 @@ export function ArenaScreen() {
                     </motion.span>
                   )}
                 </div>
-                <p className="text-parchment-500/60 mt-1 text-xs tabular-nums">
+                <p className="text-parchment-500/72 mt-1 text-xs tabular-nums">
                   {hero.honor.toLocaleString()} honour · of {world.ladder.length.toLocaleString()}{' '}
                   heroes
                 </p>
 
                 {arena.bestRank > 0 && arena.bestRank < playerRank && (
-                  <p className="text-parchment-500/45 mt-2 text-xs">
+                  <p className="text-parchment-500/72 mt-2 text-xs">
                     Best ever: #{arena.bestRank.toLocaleString()}
                   </p>
                 )}
@@ -493,7 +493,7 @@ export function ArenaScreen() {
 
               {!ready && (
                 <TavernPanel title="Between fights" data-testid="cooldown-panel">
-                  <p className="text-parchment-500/60 text-xs leading-relaxed">
+                  <p className="text-parchment-500/72 text-xs leading-relaxed">
                     Ten minutes between duels. You can buy past it {MAX_SKIPS_PER_DAY} times a day —{' '}
                     {MAX_SKIPS_PER_DAY - arena.skipsToday} left.
                   </p>
@@ -534,17 +534,17 @@ export function ArenaScreen() {
                       return (
                         <li
                           key={`${grudge.botId}:${grudge.at}`}
-                          className="text-parchment-500/70 flex items-baseline justify-between gap-2 text-xs"
+                          className="text-parchment-500/72 flex items-baseline justify-between gap-2 text-xs"
                         >
                           <span className="truncate">{name}</span>
-                          <span className="text-blood-600 shrink-0 tabular-nums">
+                          <span className="text-blood-400 shrink-0 tabular-nums">
                             {grudge.ranksLost > 0 ? `−${grudge.ranksLost} rungs` : 'beat you'}
                           </span>
                         </li>
                       );
                     })}
                   </ul>
-                  <p className="text-parchment-500/45 mt-3 text-xs leading-relaxed">
+                  <p className="text-parchment-500/72 mt-3 text-xs leading-relaxed">
                     Beat them and the grudge is settled — they will be on the board when they are
                     near your rung.
                   </p>
@@ -552,7 +552,7 @@ export function ArenaScreen() {
               )}
 
               <TavernPanel title="House rules">
-                <ul className="text-parchment-500/55 space-y-1.5 text-xs leading-relaxed">
+                <ul className="text-parchment-500/72 space-y-1.5 text-xs leading-relaxed">
                   <li>Win against someone above you and you take their rung.</li>
                   <li>
                     The first {REWARDED_WINS_PER_DAY} wins a day pay gold and experience. After that
@@ -682,7 +682,7 @@ function StagedDuel({
               transition={{ ...dramatic, delay: 0.35 }}
               className="chamfer-sm border-parchment-500/15 bg-wood-900/85 w-full max-w-lg border p-3"
             >
-              <p className="font-display text-parchment-500/50 mb-2 flex items-center gap-2 text-[0.6rem] tracking-[0.3em] uppercase">
+              <p className="font-display text-parchment-500/72 mb-2 flex items-center gap-2 text-[0.6rem] tracking-[0.3em] uppercase">
                 <ArenaIcon size={12} />
                 The ladder
               </p>

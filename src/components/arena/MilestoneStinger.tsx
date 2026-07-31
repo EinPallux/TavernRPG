@@ -102,7 +102,7 @@ export function MilestoneStinger({ milestone, dice }: MilestoneStingerProps) {
             <h2 className="font-display text-parchment-300 mt-1 text-3xl font-extrabold">
               {HEADLINE[showing] ?? 'A rank worth keeping'}
             </h2>
-            <p className="text-parchment-500/70 mt-1 text-sm">{SUBTITLE[showing] ?? ''}</p>
+            <p className="text-parchment-500/72 mt-1 text-sm">{SUBTITLE[showing] ?? ''}</p>
 
             {dice > 0 && (
               <motion.p

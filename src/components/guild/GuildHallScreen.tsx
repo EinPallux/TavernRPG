@@ -182,7 +182,7 @@ export function GuildHallScreen() {
                     className={`chamfer-sm grid h-11 w-11 shrink-0 place-items-center border ${
                       guildDecision.accepted
                         ? 'border-amber-500/50 bg-amber-500/15 text-amber-400'
-                        : 'border-parchment-500/20 bg-wood-900/70 text-parchment-500/50'
+                        : 'border-parchment-500/20 bg-wood-900/70 text-parchment-500/72'
                     }`}
                   >
                     <BannerIcon size={20} />
@@ -223,7 +223,7 @@ export function GuildHallScreen() {
                 title={guildChest.full ? 'Bounty cleared' : 'Half a chest'}
                 elevation="floating"
               >
-                <p className="text-parchment-500/60 text-sm leading-relaxed">
+                <p className="text-parchment-500/72 text-sm leading-relaxed">
                   {guildChest.full
                     ? 'The hall finished the week. Everybody gets one.'
                     : 'Not all the way, but far enough to be paid for it.'}
@@ -235,7 +235,7 @@ export function GuildHallScreen() {
                   )}
                 </ul>
                 {guildChest.scrap > 0 && (
-                  <p className="text-parchment-500/40 mt-3 text-xs leading-relaxed">
+                  <p className="text-parchment-500/72 mt-3 text-xs leading-relaxed">
                     {guildChest.scrap} scrap and {guildChest.essence} essence are set aside for you
                     at the Emberforge, once Torvald opens it.
                   </p>
@@ -270,7 +270,7 @@ function ChestLine({
       transition={{ ...standard, delay: 0.2 }}
       className="border-parchment-500/10 flex items-center justify-between border-b pb-1.5 text-sm"
     >
-      <span className="text-parchment-500/70 flex items-center gap-2">
+      <span className="text-parchment-500/72 flex items-center gap-2">
         {icon}
         {label}
       </span>

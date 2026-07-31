@@ -191,7 +191,7 @@ export function HallOfFame() {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-parchment-500/60 text-xs tabular-nums">
+              <span className="text-parchment-500/72 text-xs tabular-nums">
                 You stand{' '}
                 <span className="font-bold text-amber-500">#{playerRank.toLocaleString()}</span> of{' '}
                 {entries.length.toLocaleString()}
@@ -212,7 +212,7 @@ export function HallOfFame() {
                 className={`chamfer-sm font-display relative flex items-center gap-2 border px-4 py-2 text-sm font-bold tracking-wide transition-colors ${
                   tab === id
                     ? 'text-ink-900 border-amber-500 bg-amber-500'
-                    : 'border-parchment-500/20 bg-wood-900/60 text-parchment-500/70 hover:text-parchment-300 hover:border-amber-500/50'
+                    : 'border-parchment-500/20 bg-wood-900/60 text-parchment-500/72 hover:text-parchment-300 hover:border-amber-500/50'
                 }`}
                 data-testid={`hall-tab-${id}`}
               >
@@ -243,14 +243,14 @@ export function HallOfFame() {
                           value={query}
                           onChange={(event) => setQuery(event.target.value)}
                           placeholder="Name, guild, or a rank to jump to"
-                          className="chamfer-sm border-parchment-500/20 bg-wood-900/70 text-parchment-300 placeholder:text-parchment-500/40 w-72 border px-3 py-1.5 text-xs outline-none focus:border-amber-500/60"
+                          className="chamfer-sm border-parchment-500/20 bg-wood-900/70 text-parchment-300 placeholder:text-parchment-500/72 w-72 border px-3 py-1.5 text-xs outline-none focus:border-amber-500/60"
                           data-testid="hall-search"
                         />
                       }
                       data-testid="hall-heroes"
                     >
                       {filtered.length === 0 ? (
-                        <p className="text-parchment-500/55 py-10 text-center text-sm">
+                        <p className="text-parchment-500/72 py-10 text-center text-sm">
                           Nobody by that name has set foot in Aldenvale.
                         </p>
                       ) : (
@@ -269,11 +269,11 @@ export function HallOfFame() {
                         <ProfileCard entry={selected} playerRank={playerRank} onClose={close} />
                       ) : (
                         <TavernPanel title="A name, please">
-                          <p className="text-parchment-500/55 text-xs leading-relaxed">
+                          <p className="text-parchment-500/72 text-xs leading-relaxed">
                             Pick anyone on the list to see who they are. Search by name or guild, or
                             type a rank to jump straight to it.
                           </p>
-                          <p className="text-parchment-500/40 mt-3 text-xs leading-relaxed">
+                          <p className="text-parchment-500/72 mt-3 text-xs leading-relaxed">
                             ★ marks a legend — the ten names at the top of Aldenvale since the realm
                             opened. Faded rows have not been seen in a while.
                           </p>
@@ -305,7 +305,7 @@ export function HallOfFame() {
                             className="chamfer-sm border-parchment-500/10 bg-wood-900/45 flex items-center gap-3 border px-3 py-2"
                             data-testid={`guild-row-${standing.guildId}`}
                           >
-                            <span className="font-display text-parchment-500/60 w-10 shrink-0 text-right text-xs font-bold tabular-nums">
+                            <span className="font-display text-parchment-500/72 w-10 shrink-0 text-right text-xs font-bold tabular-nums">
                               #{index + 1}
                             </span>
                             {banner && <GuildBanner field={banner.field} charge={banner.charge} size={20} />}
@@ -313,14 +313,14 @@ export function HallOfFame() {
                               <span className="font-display text-parchment-300 block truncate text-sm font-bold">
                                 {standing.name}
                               </span>
-                              <span className="text-parchment-500/45 block truncate text-xs italic">
+                              <span className="text-parchment-500/72 block truncate text-xs italic">
                                 {standing.motto}
                               </span>
                             </span>
-                            <span className="text-parchment-500/50 w-28 shrink-0 text-right text-xs tabular-nums">
+                            <span className="text-parchment-500/72 w-28 shrink-0 text-right text-xs tabular-nums">
                               {standing.memberCount} members
                             </span>
-                            <span className="text-parchment-500/50 w-24 shrink-0 text-right text-xs tabular-nums">
+                            <span className="text-parchment-500/72 w-24 shrink-0 text-right text-xs tabular-nums">
                               best #{standing.bestRank.toLocaleString()}
                             </span>
                             <span className="w-28 shrink-0 text-right text-sm text-amber-500 tabular-nums">
@@ -341,7 +341,7 @@ export function HallOfFame() {
                     data-testid="hall-legends"
                   >
                     {save.arena.legends.length === 0 ? (
-                      <p className="text-parchment-500/55 py-10 text-center text-sm">
+                      <p className="text-parchment-500/72 py-10 text-center text-sm">
                         The first archive is written on Sunday. Come back then and every week after
                         it will be here.
                       </p>
@@ -357,7 +357,7 @@ export function HallOfFame() {
                               <p className="font-display text-sm font-bold text-amber-500">
                                 Week ending {week.weekKey}
                               </p>
-                              <p className="text-parchment-500/50 text-xs tabular-nums">
+                              <p className="text-parchment-500/72 text-xs tabular-nums">
                                 You finished #{week.playerRank.toLocaleString()}
                               </p>
                             </div>
@@ -373,7 +373,7 @@ export function HallOfFame() {
                                     className={`flex items-baseline gap-2 text-xs ${
                                       id === PLAYER_LADDER_ID
                                         ? 'font-bold text-amber-500'
-                                        : 'text-parchment-500/65'
+                                        : 'text-parchment-500/72'
                                     }`}
                                   >
                                     <span className="w-5 shrink-0 text-right tabular-nums opacity-60">
@@ -432,7 +432,7 @@ function ProfileCard({
           <button
             type="button"
             onClick={onClose}
-            className="text-parchment-500/50 text-xs hover:text-amber-500"
+            className="text-parchment-500/72 text-xs hover:text-amber-500"
           >
             Close
           </button>
@@ -454,26 +454,26 @@ function ProfileCard({
               {entry.name}
               {entry.legend && <span className="ml-2 text-amber-500">★</span>}
             </p>
-            <p className="text-parchment-500/60 text-xs">
+            <p className="text-parchment-500/72 text-xs">
               Rank #{entry.rank.toLocaleString()} · level {entry.level}
             </p>
-            <p className="text-parchment-500/60 text-xs">{hall ? hall.name : 'Unguilded'}</p>
+            <p className="text-parchment-500/72 text-xs">{hall ? hall.name : 'Unguilded'}</p>
             <p className="mt-1 text-xs text-amber-500 tabular-nums">
               {entry.honor.toLocaleString()} honour
             </p>
           </div>
         </div>
 
-        {hall && <p className="text-parchment-500/45 mt-3 text-xs italic">“{hall.motto}”</p>}
+        {hall && <p className="text-parchment-500/72 mt-3 text-xs italic">“{hall.motto}”</p>}
 
         <div className="mt-3 flex flex-wrap gap-1.5">
           {entry.rival && (
-            <span className="chamfer-sm border-blood-600/50 bg-blood-600/12 text-blood-600 border px-2 py-0.5 text-[0.6rem] font-bold tracking-wider uppercase">
+            <span className="chamfer-sm border-blood-600/50 bg-blood-600/12 text-blood-400 border px-2 py-0.5 text-[0.6rem] font-bold tracking-wider uppercase">
               Your rival
             </span>
           )}
           {entry.dormant && (
-            <span className="chamfer-sm border-parchment-500/20 bg-wood-900/60 text-parchment-500/55 border px-2 py-0.5 text-[0.6rem] font-bold tracking-wider uppercase">
+            <span className="chamfer-sm border-parchment-500/20 bg-wood-900/60 text-parchment-500/72 border px-2 py-0.5 text-[0.6rem] font-bold tracking-wider uppercase">
               Not been seen
             </span>
           )}
@@ -493,7 +493,7 @@ function ProfileCard({
             >
               {challengeable ? 'Take it to the sand' : 'Out of reach'}
             </ActionButton>
-            <p className="text-parchment-500/40 mt-2 text-xs leading-relaxed">
+            <p className="text-parchment-500/72 mt-2 text-xs leading-relaxed">
               {challengeable
                 ? 'They are near enough your rung to be drawn at the Proving Grounds.'
                 : 'Only heroes near your own rung sign up to fight you. Climb first.'}

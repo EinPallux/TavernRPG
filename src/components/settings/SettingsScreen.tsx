@@ -54,7 +54,7 @@ function Row({
     >
       <div className="min-w-0">
         <p className="text-parchment-300 text-sm">{label}</p>
-        <p className="text-parchment-500/50 mt-0.5 text-xs leading-snug">{hint}</p>
+        <p className="text-parchment-500/72 mt-0.5 text-xs leading-snug">{hint}</p>
       </div>
       <div className="flex shrink-0 items-center gap-2">{children}</div>
     </motion.div>
@@ -89,7 +89,7 @@ function Toggle({
       className={`chamfer-sm font-display border px-3 py-1.5 text-xs tracking-[0.15em] uppercase transition-colors ${
         on
           ? 'text-ink-900 border-amber-400 bg-amber-500 font-bold'
-          : 'border-parchment-500/25 text-parchment-500/60 hover:border-amber-500/50'
+          : 'border-parchment-500/25 text-parchment-500/72 hover:border-amber-500/50'
       }`}
       data-testid={testId}
     >
@@ -126,7 +126,7 @@ function Choice<T extends string | number>({
           className={`chamfer-sm font-display border px-2.5 py-1.5 text-xs transition-colors ${
             option.value === value
               ? 'text-ink-900 border-amber-400 bg-amber-500 font-bold'
-              : 'border-parchment-500/25 text-parchment-500/60 hover:border-amber-500/50'
+              : 'border-parchment-500/25 text-parchment-500/72 hover:border-amber-500/50'
           }`}
           data-testid={`${testId}-${option.value}`}
         >
@@ -200,7 +200,7 @@ export function SettingsScreen() {
             <TavernPanel
               title="Sound"
               headerSlot={
-                <span className="text-parchment-500/45 text-xs">
+                <span className="text-parchment-500/72 text-xs">
                   {SFX_IDS.length} cues · synthesized
                 </span>
               }
@@ -238,7 +238,7 @@ export function SettingsScreen() {
                       aria-label="Volume"
                       data-testid="slider-volume"
                     />
-                    <span className="text-parchment-500/60 w-9 text-right text-xs tabular-nums">
+                    <span className="text-parchment-500/72 w-9 text-right text-xs tabular-nums">
                       {Math.round(settings.volume * 100)}
                     </span>
                   </Row>
@@ -260,18 +260,18 @@ export function SettingsScreen() {
 
                   {hasMusic === false && (
                     <p
-                      className="text-parchment-500/40 pt-3 text-xs leading-relaxed"
+                      className="text-parchment-500/72 pt-3 text-xs leading-relaxed"
                       data-testid="music-absent"
                     >
                       No background music loaded. Drop an MP3 named{' '}
-                      <span className="text-parchment-500/70">bgm.mp3</span> into{' '}
-                      <span className="text-parchment-500/70">public/assets/audio/</span> and it
+                      <span className="text-parchment-500/72">bgm.mp3</span> into{' '}
+                      <span className="text-parchment-500/72">public/assets/audio/</span> and it
                       will loop here, with its own switch. Remove it and the game is quiet again.
                     </p>
                   )}
                 </>
               ) : (
-                <p className="text-parchment-500/45 py-4 text-sm" data-testid="audio-unavailable">
+                <p className="text-parchment-500/72 py-4 text-sm" data-testid="audio-unavailable">
                   This browser will not give the game a speaker. Everything else still works.
                 </p>
               )}
@@ -371,7 +371,7 @@ export function SettingsScreen() {
 
           {/* Still unfinished, and saying so is the placeholder system's whole job. */}
           <p
-            className="text-parchment-500/40 mx-auto mt-6 max-w-5xl text-xs leading-relaxed"
+            className="text-parchment-500/72 mx-auto mt-6 max-w-5xl text-xs leading-relaxed"
             data-testid="settings-later"
           >
             Save export and import, the credits, and the full glossary index arrive with{' '}

@@ -84,14 +84,14 @@ export function Meter({
       {(label || showNumbers) && (
         <div className="mb-1 flex items-baseline justify-between gap-3">
           {label && (
-            <span className="font-display text-parchment-500/60 text-[11px] tracking-[0.22em] uppercase">
+            <span className="font-display text-parchment-500/72 text-[11px] tracking-[0.22em] uppercase">
               {label}
             </span>
           )}
           {showNumbers && (
             <span className="text-parchment-300/85 text-xs">
               <motion.span>{shownValue}</motion.span>
-              <span className="text-parchment-500/45"> / {max.toLocaleString()}</span>
+              <span className="text-parchment-500/72"> / {max.toLocaleString()}</span>
             </span>
           )}
         </div>

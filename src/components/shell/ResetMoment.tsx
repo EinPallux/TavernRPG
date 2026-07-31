@@ -136,7 +136,7 @@ export function ResetMoment({ suppressed = false }: { suppressed?: boolean }) {
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ ...standard, delay: 0.14 + index * 0.06 }}
-                    className="text-parchment-500/70 flex items-center gap-2 text-xs"
+                    className="text-parchment-500/72 flex items-center gap-2 text-xs"
                   >
                     <span className="h-1 w-1 shrink-0 bg-amber-500/70" />
                     {line.line}
@@ -144,7 +144,7 @@ export function ResetMoment({ suppressed = false }: { suppressed?: boolean }) {
                 ))}
               </ul>
 
-              <p className="text-parchment-500/35 mt-4 text-[10px]">Click anywhere to carry on.</p>
+              <p className="text-parchment-500/72 mt-4 text-[10px]">Click anywhere to carry on.</p>
             </motion.div>
           </motion.div>
         )}

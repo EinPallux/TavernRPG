@@ -26,7 +26,7 @@ export function PlaceScreen({ place }: { place: PlaceDef }) {
           <TavernPanel
             title={place.name}
             headerSlot={
-              <span className="text-parchment-500/45 text-xs tracking-[0.2em] uppercase">
+              <span className="text-parchment-500/72 text-xs tracking-[0.2em] uppercase">
                 {place.buildPhase}
               </span>
             }
@@ -39,7 +39,7 @@ export function PlaceScreen({ place }: { place: PlaceDef }) {
               </span>
               <div className="min-w-0">
                 <p className="text-parchment-300/90 text-sm">{place.blurb}</p>
-                <p className="text-parchment-500/50 mt-2 text-xs leading-relaxed">
+                <p className="text-parchment-500/72 mt-2 text-xs leading-relaxed">
                   This room is dressed but not yet furnished — {place.buildPhase} builds what
                   happens here. The frame around it is real: navigation, HUD, panels and motion all
                   work today.
@@ -58,7 +58,7 @@ export function PlaceScreen({ place }: { place: PlaceDef }) {
             )}
 
             {!place.keeper && (
-              <p className="text-parchment-500/60 border-parchment-500/15 mt-6 border-t pt-4 text-sm italic">
+              <p className="text-parchment-500/72 border-parchment-500/15 mt-6 border-t pt-4 text-sm italic">
                 {place.constructionBark}
               </p>
             )}

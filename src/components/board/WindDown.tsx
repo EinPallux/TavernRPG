@@ -76,7 +76,7 @@ export function WindDown({ save, today, now }: WindDownProps) {
       data-testid="wind-down"
     >
       <TavernPanel title="That’s the day’s work">
-        <p className="text-parchment-500/60 text-xs leading-relaxed">
+        <p className="text-parchment-500/72 text-xs leading-relaxed">
           Your Vigor is spent. Nothing more to sign for tonight — but the Watch still pays, and the
           morning is already set.
         </p>
@@ -95,7 +95,7 @@ export function WindDown({ save, today, now }: WindDownProps) {
 
         <div className="facet-rule my-3" />
 
-        <p className="font-display text-parchment-500/45 mb-2 text-[10px] tracking-[0.28em] uppercase">
+        <p className="font-display text-parchment-500/72 mb-2 text-[10px] tracking-[0.28em] uppercase">
           At dawn
         </p>
         <motion.ul
@@ -109,7 +109,7 @@ export function WindDown({ save, today, now }: WindDownProps) {
             <motion.li
               key={line.text}
               variants={listItemIn}
-              className="text-parchment-500/65 flex items-start gap-2 text-[11px] leading-snug"
+              className="text-parchment-500/72 flex items-start gap-2 text-[11px] leading-snug"
             >
               <span className="mt-px shrink-0 text-amber-500/70">
                 <Icon name={line.icon} size={13} />
@@ -120,7 +120,7 @@ export function WindDown({ save, today, now }: WindDownProps) {
         </motion.ul>
 
         <div className="mt-3 flex items-center justify-between gap-2">
-          <span className="text-parchment-500/40 text-[10px]">The tavern clock turns in</span>
+          <span className="text-parchment-500/72 text-[10px]">The tavern clock turns in</span>
           <TimerChip
             endsAt={now + msUntilNextReset(now)}
             now={() => now}
@@ -129,14 +129,14 @@ export function WindDown({ save, today, now }: WindDownProps) {
         </div>
 
         {!patrolOpen && (
-          <p className="text-parchment-500/35 mt-2 text-[10px] leading-relaxed">
+          <p className="text-parchment-500/72 mt-2 text-[10px] leading-relaxed">
             The City Watch opens at level {PLACES_BY_ID.patrol.gateLevel}. Until then, the night is
             yours.
           </p>
         )}
         <Link
           href={PLACES_BY_ID.board.route}
-          className="text-parchment-500/45 mt-2 block text-[10px] transition-colors hover:text-amber-500"
+          className="text-parchment-500/72 mt-2 block text-[10px] transition-colors hover:text-amber-500"
         >
           Check the Notice Board before you go →
         </Link>

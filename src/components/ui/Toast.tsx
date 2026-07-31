@@ -46,7 +46,7 @@ function ToastRow({ toast, onDismiss }: { toast: ToastData; onDismiss: (id: stri
         type="button"
         onClick={() => onDismiss(toast.id)}
         aria-label={`Dismiss: ${toast.title}`}
-        className="text-parchment-500/40 hover:text-parchment-300 text-xs transition-colors"
+        className="text-parchment-500/72 hover:text-parchment-300 text-xs transition-colors"
       >
         ✕
       </button>
@@ -75,7 +75,7 @@ export function ToastStack() {
           layout
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-parchment-500/50 pr-1 text-xs"
+          className="text-parchment-500/72 pr-1 text-xs"
         >
           +{overflow} more
         </motion.p>

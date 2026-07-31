@@ -38,7 +38,7 @@ export function DamageNumbers({ numbers }: DamageNumbersProps) {
               number.heal
                 ? // A boss drinking your missed swing has to read as the *opposite* of a hit, or
                   // the player watches their damage numbers climb and assumes they are winning.
-                  'text-moss-600 text-xl [text-shadow:0_0_14px_rgb(76_122_63/0.7),0_2px_0_rgb(24_18_14/0.9)]'
+                  'text-moss-400 text-xl [text-shadow:0_0_14px_rgb(76_122_63/0.7),0_2px_0_rgb(24_18_14/0.9)]'
                 : number.crit
                   ? 'text-3xl text-amber-400 [text-shadow:0_0_18px_rgb(240_184_98/0.85),0_2px_0_rgb(24_18_14/0.9)]'
                   : 'text-parchment-300 text-xl [text-shadow:0_2px_0_rgb(24_18_14/0.9)]'

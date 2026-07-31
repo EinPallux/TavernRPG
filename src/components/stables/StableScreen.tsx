@@ -42,7 +42,7 @@ function StallPortrait({ mount, active }: { mount: MountDef; active: boolean }) 
       className={`chamfer-sm grid h-16 w-16 shrink-0 place-items-center border ${
         active
           ? 'border-amber-500/60 bg-amber-500/12 text-amber-400'
-          : 'border-parchment-500/18 bg-wood-900/60 text-parchment-500/60'
+          : 'border-parchment-500/18 bg-wood-900/60 text-parchment-500/72'
       }`}
       animate={{ y: [0, -2.5, 0] }}
       transition={{
@@ -150,8 +150,8 @@ export function StableScreen() {
                 transition={standard}
                 className={`chamfer-sm flex items-center gap-2 border px-3 py-1.5 text-xs ${
                   expiring
-                    ? 'border-ember-600/55 bg-ember-600/12 text-ember-600'
-                    : 'border-parchment-500/15 bg-wood-900/70 text-parchment-500/70'
+                    ? 'border-ember-600/55 bg-ember-600/12 text-ember-400'
+                    : 'border-parchment-500/15 bg-wood-900/70 text-parchment-500/72'
                 }`}
                 data-testid="mount-remaining"
               >
@@ -165,7 +165,7 @@ export function StableScreen() {
                 nothing at all when you do not reads as a rendering gap, not as a state. */}
             {!current && (
               <span
-                className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/55 flex items-center gap-2 border px-3 py-1.5 text-xs"
+                className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/72 flex items-center gap-2 border px-3 py-1.5 text-xs"
                 data-testid="mount-none"
               >
                 Stall empty. You are walking everywhere.
@@ -196,7 +196,7 @@ export function StableScreen() {
             className="w-full max-w-6xl"
             title="The stalls"
             headerSlot={
-              <span className="text-parchment-500/50 text-xs">
+              <span className="text-parchment-500/72 text-xs">
                 {MOUNT_TERM_DAYS}-day rentals · one at a time · mission timers only
               </span>
             }
@@ -242,7 +242,7 @@ export function StableScreen() {
                             −{Math.round(mount.speedBonus * 100)}%
                           </span>
                         </p>
-                        <p className="text-parchment-500/55 mt-1 text-xs leading-snug">
+                        <p className="text-parchment-500/72 mt-1 text-xs leading-snug">
                           {mount.blurb}
                         </p>
                         {isCurrent && (
@@ -266,7 +266,7 @@ export function StableScreen() {
                     >
                       {MISSION_DURATIONS.map((minutes) => (
                         <div key={minutes} className="text-center">
-                          <dt className="text-parchment-500/40 text-[10px] tabular-nums">
+                          <dt className="text-parchment-500/72 text-[10px] tabular-nums">
                             {minutes}m
                           </dt>
                           {/* Body font, not display: Alegreya Sans SC renders the trailing
@@ -290,7 +290,7 @@ export function StableScreen() {
                             transition={snappy}
                             data-testid={`switch-confirm-${mount.id}`}
                           >
-                            <p className="text-ember-600 mb-2 text-xs leading-snug">
+                            <p className="text-ember-400 mb-2 text-xs leading-snug">
                               {quote?.ok && quote.quote.replaces
                                 ? `Turning out the ${quote.quote.replaces.name} loses ${quote.quote.daysForfeited} paid day${quote.quote.daysForfeited === 1 ? '' : 's'}. No refunds.`
                                 : 'This replaces your current mount.'}
@@ -356,7 +356,7 @@ export function StableScreen() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ ...dramatic, delay: 0.2 }}
-            className="text-parchment-500/40 mt-4 text-center text-xs"
+            className="text-parchment-500/72 mt-4 text-center text-xs"
           >
             A mount shortens the road, not the work — mission timers only, never Vigor, rewards or
             patrol.

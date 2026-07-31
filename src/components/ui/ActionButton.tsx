@@ -43,7 +43,7 @@ const VARIANT: Record<ButtonVariant, string> = {
   secondary:
     'bg-wood-700/80 text-parchment-300 border border-parchment-500/25 hover:border-amber-500/60 hover:bg-wood-600/80',
   danger: 'bg-blood-600/85 text-parchment-300 hover:bg-blood-600 font-bold',
-  ghost: 'text-parchment-500/70 hover:text-amber-500 underline underline-offset-4',
+  ghost: 'text-parchment-500/72 hover:text-amber-500 underline underline-offset-4',
 };
 
 const SIZE: Record<ButtonSize, string> = {

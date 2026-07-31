@@ -212,10 +212,10 @@ export function Spotlight({
           aria-live="polite"
         >
           <div className="flex items-baseline justify-between gap-3">
-            <p className="font-display text-[11px] tracking-[0.22em] text-amber-700/85 uppercase">
+            <p className="font-display text-[11px] tracking-[0.22em] text-amber-800 uppercase">
               {speaker}
             </p>
-            <p className="text-ink-900/40 text-[10px] tabular-nums" data-testid="tutorial-step">
+            <p className="text-ink-900/70 text-[10px] tabular-nums" data-testid="tutorial-step">
               Step {step} of {total}
             </p>
           </div>
@@ -230,7 +230,7 @@ export function Spotlight({
             <button
               type="button"
               onClick={onSkip}
-              className="text-ink-900/45 hover:text-ink-900/80 text-[11px] whitespace-nowrap underline underline-offset-2 transition-colors"
+              className="text-ink-900/70 hover:text-ink-900/80 text-[11px] whitespace-nowrap underline underline-offset-2 transition-colors"
               data-testid="tutorial-skip"
             >
               Skip the tour
@@ -240,10 +240,10 @@ export function Spotlight({
               <button
                 type="button"
                 onClick={onHide}
-                className="text-ink-900/45 hover:text-ink-900/80 text-[11px] whitespace-nowrap transition-colors"
+                className="text-ink-900/70 hover:text-ink-900/80 text-[11px] whitespace-nowrap transition-colors"
                 data-testid="tutorial-hide"
               >
-                Not now <span className="text-ink-900/30">· Esc</span>
+                Not now <span className="text-ink-900/70">· Esc</span>
               </button>
 
               {action && (

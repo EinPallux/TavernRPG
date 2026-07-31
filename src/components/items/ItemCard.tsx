@@ -54,7 +54,7 @@ function Delta({ value, suffix = '' }: { value: number; suffix?: string }) {
   if (Math.round(value * 100) === 0) return null;
   const positive = value > 0;
   return (
-    <span className={positive ? 'text-moss-600' : 'text-blood-600'}>
+    <span className={positive ? 'text-moss-400' : 'text-blood-400'}>
       {positive ? '+' : ''}
       {suffix === '%' ? (value * 100).toFixed(1) : Math.round(value)}
       {suffix}
@@ -84,7 +84,7 @@ function SetBand({ setId, worn }: { setId: string; worn: number }) {
       <p className="text-rarity-set flex items-center gap-1.5 text-[11px] font-semibold">
         <Icon name={definition.sigil} size={13} />
         {definition.name}
-        <span className="text-parchment-500/50 ml-auto tabular-nums">
+        <span className="text-parchment-500/72 ml-auto tabular-nums">
           {worn}/{total} worn
         </span>
       </p>
@@ -98,7 +98,7 @@ function SetBand({ setId, worn }: { setId: string; worn: number }) {
         ))}
       </div>
 
-      <p className="text-parchment-500/55 mt-1.5 text-[10px] leading-snug">
+      <p className="text-parchment-500/72 mt-1.5 text-[10px] leading-snug">
         {next ? `At ${next.pieces}: ${next.text}` : 'Every bonus is live.'}
       </p>
     </div>
@@ -137,14 +137,14 @@ export function ItemCard({ item, comparison, setWorn, className = '', ...rest }:
           <p className={`font-display text-sm leading-tight font-bold ${styles.text}`}>
             {item.name}
           </p>
-          <p className="text-parchment-500/50 mt-0.5 text-[11px] tracking-wider uppercase">
+          <p className="text-parchment-500/72 mt-0.5 text-[11px] tracking-wider uppercase">
             {RARITY_LABELS[item.rarity]} · {SLOT_LABELS[item.slot]} · Lv {item.level}
           </p>
         </div>
       </header>
 
       {item.classLock && (
-        <p className="text-parchment-500/60 mt-2 text-[11px] italic">
+        <p className="text-parchment-500/72 mt-2 text-[11px] italic">
           {classDef(item.classLock).name}s only
         </p>
       )}
@@ -154,7 +154,7 @@ export function ItemCard({ item, comparison, setWorn, className = '', ...rest }:
       {/* Weapon damage or armour rating — the headline number for the slot. */}
       {item.weapon && (
         <p className="flex items-baseline justify-between text-sm">
-          <span className="text-parchment-500/70">Damage</span>
+          <span className="text-parchment-500/72">Damage</span>
           <span className="text-parchment-300">
             {item.weapon.min}–{item.weapon.max}
           </span>
@@ -162,7 +162,7 @@ export function ItemCard({ item, comparison, setWorn, className = '', ...rest }:
       )}
       {item.armour !== undefined && (
         <p className="flex items-baseline justify-between text-sm">
-          <span className="text-parchment-500/70">Armour</span>
+          <span className="text-parchment-500/72">Armour</span>
           <span className="text-parchment-300">
             {item.armour}
             {comparison && (
@@ -177,7 +177,7 @@ export function ItemCard({ item, comparison, setWorn, className = '', ...rest }:
       <ul className="mt-2 space-y-1">
         {attributeLines.map(([attribute, amount]) => (
           <li key={attribute} className="flex items-baseline justify-between text-sm">
-            <span className="text-parchment-500/70">{ATTRIBUTE_LABELS[attribute]}</span>
+            <span className="text-parchment-500/72">{ATTRIBUTE_LABELS[attribute]}</span>
             <span className="text-parchment-300">+{amount}</span>
           </li>
         ))}
@@ -196,17 +196,17 @@ export function ItemCard({ item, comparison, setWorn, className = '', ...rest }:
 
       {comparison && (
         <div className="border-parchment-500/15 mt-3 border-t pt-3">
-          <p className="text-parchment-500/45 mb-1.5 text-[10px] tracking-[0.2em] uppercase">
+          <p className="text-parchment-500/72 mb-1.5 text-[10px] tracking-[0.2em] uppercase">
             {comparison.slotWasEmpty ? 'If equipped' : 'Versus equipped'}
           </p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-            <span className="text-parchment-500/70">
+            <span className="text-parchment-500/72">
               Health <Delta value={comparison.health} />
             </span>
-            <span className="text-parchment-500/70">
+            <span className="text-parchment-500/72">
               Damage <Delta value={comparison.damageAverage} />
             </span>
-            <span className="text-parchment-500/70">
+            <span className="text-parchment-500/72">
               Crit <Delta value={comparison.critChance} suffix="%" />
             </span>
           </div>
@@ -215,7 +215,7 @@ export function ItemCard({ item, comparison, setWorn, className = '', ...rest }:
 
       {item.setId && <SetBand setId={item.setId} worn={setWorn ?? 0} />}
 
-      <footer className="border-parchment-500/15 text-parchment-500/50 mt-3 flex items-center justify-between border-t pt-2 text-[11px]">
+      <footer className="border-parchment-500/15 text-parchment-500/72 mt-3 flex items-center justify-between border-t pt-2 text-[11px]">
         <span>
           {item.rarity === 'set' ? 'Not for sale' : `Worth ${item.value.toLocaleString()} gold`}
         </span>

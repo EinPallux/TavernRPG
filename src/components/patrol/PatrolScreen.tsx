@@ -224,7 +224,7 @@ function SignUp({
       title="Sign the watch book"
       headerSlot={
         patrolsCompleted > 0 ? (
-          <span className="text-parchment-500/45 text-xs">
+          <span className="text-parchment-500/72 text-xs">
             {patrolsCompleted} shift{patrolsCompleted === 1 ? '' : 's'} served
           </span>
         ) : null
@@ -234,7 +234,7 @@ function SignUp({
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)]">
         <div>
           <label className="block">
-            <span className="text-parchment-500/60 mb-2 block text-xs tracking-[0.2em] uppercase">
+            <span className="text-parchment-500/72 mb-2 block text-xs tracking-[0.2em] uppercase">
               Shift length
             </span>
             <div className="flex items-center gap-4">
@@ -263,7 +263,7 @@ function SignUp({
             </div>
           </label>
 
-          <p className="text-parchment-500/50 mt-4 text-sm leading-relaxed">
+          <p className="text-parchment-500/72 mt-4 text-sm leading-relaxed">
             The watch pays by the hour and asks nothing of your Vigor. It is the worse rate — about
             half what the same time on the road would earn — but it runs while the tab is shut, and
             you can walk off it whenever you like. You are paid for the minutes you actually served.
@@ -275,12 +275,12 @@ function SignUp({
           className="chamfer-sm border-parchment-500/15 bg-wood-900/60 border p-4"
           data-testid="shift-preview"
         >
-          <p className="text-parchment-500/45 mb-3 text-[10px] tracking-[0.25em] uppercase">
+          <p className="text-parchment-500/72 mb-3 text-[10px] tracking-[0.25em] uppercase">
             On completion
           </p>
           <dl className="space-y-2">
             <div className="flex items-center justify-between">
-              <dt className="text-parchment-500/65 flex items-center gap-2 text-sm">
+              <dt className="text-parchment-500/72 flex items-center gap-2 text-sm">
                 <CoinIcon size={14} />
                 Gold
               </dt>
@@ -289,7 +289,7 @@ function SignUp({
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt className="text-parchment-500/65 flex items-center gap-2 text-sm">
+              <dt className="text-parchment-500/72 flex items-center gap-2 text-sm">
                 <SparkIcon size={14} />
                 Experience
               </dt>
@@ -393,7 +393,7 @@ function OnDuty({
 
       <div className="flex flex-wrap items-end justify-between gap-6 px-6 py-5">
         <div>
-          <p className="text-parchment-500/50 text-[10px] tracking-[0.25em] uppercase">
+          <p className="text-parchment-500/72 text-[10px] tracking-[0.25em] uppercase">
             {done ? 'Shift complete' : 'On the beat'}
           </p>
           <p
@@ -402,7 +402,7 @@ function OnDuty({
           >
             {done ? 'Ready to sign off' : formatRemaining(remaining)}
           </p>
-          <p className="text-parchment-500/45 mt-1 text-xs">
+          <p className="text-parchment-500/72 mt-1 text-xs">
             {shift.hours}-hour shift · earned so far {earned.gold.toLocaleString()} gold,{' '}
             {earned.xp.toLocaleString()} XP
           </p>

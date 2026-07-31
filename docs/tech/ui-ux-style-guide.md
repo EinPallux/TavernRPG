@@ -136,3 +136,66 @@ Storybook-style harness page (`/dev/kit`, dev-only route) shows every component 
 6. **Keyboard:** 1–9 place switching, Esc closes, Enter confirms primary, arrows navigate cards;
    focus-visible brass outline (a11y pass in P17).
 7. **The player is never mocked** for losses/bad luck; keeper barks tease systems, not the player.
+
+## 10. Contrast (Phase 17 pass) — the ladder, and the debt
+
+**Text colour is not a free choice.** The Phase 17 accessibility pass measured every text run in
+every room against the pixels actually painted behind it (`e2e/contrast.ts`) and found **500+**
+below WCAG AA. It is now at eleven. What follows is the rule that got it there and the list of
+what is left.
+
+### 10.1 The muted ladder
+
+Three tiers, and no more, because you cannot have six perceptible grades of muted text and have
+all six readable on timber:
+
+| token | use |
+|---|---|
+| `text-parchment-300` | Headings and anything the eye should land on first. |
+| `text-parchment-500/85`–`/75` | Body text with emphasis. |
+| `text-parchment-500/72` | **The floor.** Every hint, caption, unit and aside. |
+
+Below `/72` is banned. The pass rewrote 408 usages spread across `/18` to `/70`; the old ladder
+measured 2.5:1 to 4.3:1 against the panels it sat on.
+
+### 10.2 Two families, and which surface each belongs on
+
+Emberhollow is dark timber with one light surface — parchment (keeper barks, duelling posters,
+the tutorial card). Semantic colours therefore come in pairs, and using the wrong half is the
+single most common way to reintroduce a failure:
+
+| on dark timber | on parchment | meaning |
+|---|---|---|
+| `text-blood-400` | `text-blood-700` | damage taken, a loss |
+| `text-moss-400` | `text-moss-600` | a gain, a heal |
+| `text-ember-400` | `text-ember-700` | a warning, a keeper's flourish |
+| `text-amber-300` / `-400` | `text-amber-800` | gold, currency, emphasis |
+
+The `-500`/`-600` shades stay exactly as they are **as fills, borders and bar glows** — that is
+what they were chosen for. They are simply not foreground colours.
+
+Two related findings worth keeping: keeper names were `text-amber-700/80` for sixteen phases, and
+`amber-700` was never a project token — it fell through to Tailwind's stock amber and nobody
+noticed. And the rarity colours were lifted a step; the *fills* are unchanged, but epic at
+`#9b5fd0` read 3.7:1 as a label.
+
+### 10.3 The debt, and who owns it
+
+Eleven failures remain, in two groups, budgeted per room in `e2e/a11y.spec.ts` so the count can
+only come down:
+
+1. **Type directly on backdrop art** (Hall of Fame header over bright water; a zone card's name
+   over a painted field; the forge's selected bench under its own amber wash). No token fixes
+   these — the type needs a scrim, which is a visual-design change. **Phase 18.**
+2. **Cross-fade artifacts** (a keeper's bark, the level badge). Motion keeps opacity animations
+   under reduced motion by design, so the audit still catches these part-way in. Both are 5:1 and
+   7.9:1 at rest. **Harness limitation, not a surface defect** — the fix is for the audit to wait
+   on an animation-settled signal rather than a timeout.
+
+### 10.4 Measuring it
+
+`npx playwright test e2e/a11y.spec.ts`. Contrast is read from a screenshot with every glyph made
+transparent, sampling the band the text occupies — `axe-core` cannot do this job here, because it
+gives up (honestly) at a `background-image`, and every room in the game has one. On the tavern it
+could resolve **one** element out of 104. A green audit that inspected one node is worse than no
+audit; that is why this harness exists rather than a call to `axe.run`.

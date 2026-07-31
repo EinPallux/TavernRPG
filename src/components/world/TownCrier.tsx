@@ -26,11 +26,11 @@ const CATEGORY_LOOK: Readonly<
 > = {
   milestone: { label: 'Milestones', icon: 'laurel', tone: 'text-amber-400' },
   ladder: { label: 'The ladder', icon: 'arena', tone: 'text-arcane-500' },
-  taunt: { label: 'Rivals', icon: 'banner', tone: 'text-blood-600' },
-  levelUp: { label: 'Level-ups', icon: 'spark', tone: 'text-moss-600' },
+  taunt: { label: 'Rivals', icon: 'banner', tone: 'text-blood-400' },
+  levelUp: { label: 'Level-ups', icon: 'spark', tone: 'text-moss-400' },
   guild: { label: 'Guilds', icon: 'gem', tone: 'text-amber-500' },
-  lifecycle: { label: 'Comings and goings', icon: 'hero', tone: 'text-parchment-500/70' },
-  flavour: { label: 'Emberhollow', icon: 'tankard', tone: 'text-ember-600' },
+  lifecycle: { label: 'Comings and goings', icon: 'hero', tone: 'text-parchment-500/72' },
+  flavour: { label: 'Emberhollow', icon: 'tankard', tone: 'text-ember-400' },
 };
 
 const CATEGORY_ORDER = Object.keys(CATEGORY_LOOK) as CrierCategory[];
@@ -134,7 +134,7 @@ export function TownCrier({ entries, now, limit = 14 }: TownCrierProps) {
     <TavernPanel
       title="The Town Crier"
       headerSlot={
-        <span className="text-parchment-500/45 text-xs">{entries.length} in the book</span>
+        <span className="text-parchment-500/72 text-xs">{entries.length} in the book</span>
       }
       data-testid="town-crier"
     >
@@ -155,7 +155,7 @@ export function TownCrier({ entries, now, limit = 14 }: TownCrierProps) {
                 className={`chamfer-sm flex items-center gap-1.5 border px-2 py-1 text-[11px] tracking-wide transition-colors ${
                   on
                     ? `bg-wood-900/60 border-amber-500/35 ${look.tone}`
-                    : 'border-parchment-500/10 bg-wood-900/25 text-parchment-500/35'
+                    : 'border-parchment-500/10 bg-wood-900/25 text-parchment-500/72'
                 }`}
               >
                 <Icon name={look.icon} size={11} />
@@ -167,7 +167,7 @@ export function TownCrier({ entries, now, limit = 14 }: TownCrierProps) {
       )}
 
       {shown.length === 0 ? (
-        <p className="text-parchment-500/45 py-6 text-center text-sm" data-testid="crier-empty">
+        <p className="text-parchment-500/72 py-6 text-center text-sm" data-testid="crier-empty">
           The board is bare. Emberhollow is having a quiet morning.
         </p>
       ) : (
@@ -197,14 +197,14 @@ export function TownCrier({ entries, now, limit = 14 }: TownCrierProps) {
                     <span className="text-parchment-300/90 block text-xs leading-snug">
                       {entry.text}
                     </span>
-                    <span className="text-parchment-500/35 mt-0.5 flex items-center gap-2 text-[10px]">
+                    <span className="text-parchment-500/72 mt-0.5 flex items-center gap-2 text-[10px]">
                       {ago(entry.at, now)}
                       {badge && (
                         <span
                           className={`chamfer-sm border px-1 py-px tracking-wider uppercase ${
                             entry.relation === 'rival'
-                              ? 'border-blood-600/45 text-blood-600'
-                              : 'border-parchment-500/20 text-parchment-500/50'
+                              ? 'border-blood-600/45 text-blood-400'
+                              : 'border-parchment-500/20 text-parchment-500/72'
                           }`}
                         >
                           {badge}

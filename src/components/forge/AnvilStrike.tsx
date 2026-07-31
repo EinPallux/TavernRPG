@@ -168,7 +168,7 @@ export function AnvilStrike({ item, pitied, refresh = false, onDone }: AnvilStri
                   />
                 ))}
 
-              <span className="text-parchment-500/45 absolute bottom-2 text-xs tracking-[0.3em] uppercase">
+              <span className="text-parchment-500/72 absolute bottom-2 text-xs tracking-[0.3em] uppercase">
                 {beat >= 2 ? 'Quenching' : 'Striking'}
               </span>
             </motion.div>
@@ -208,7 +208,7 @@ export function AnvilStrike({ item, pitied, refresh = false, onDone }: AnvilStri
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ ...standard, delay: 0.25 }}
-                  className="chamfer-sm border-parchment-500/20 bg-wood-900/80 text-parchment-500/70 border px-3 py-1.5 text-xs"
+                  className="chamfer-sm border-parchment-500/20 bg-wood-900/80 text-parchment-500/72 border px-3 py-1.5 text-xs"
                   data-testid="craft-refresh"
                 >
                   The set was already whole — this is a fresh copy at your level.

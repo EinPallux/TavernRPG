@@ -99,7 +99,7 @@ function BossTrait({
       data-testid="boss-trait"
     >
       <div className="chamfer-md border-ember-600/60 bg-wood-900/92 max-w-lg border-2 px-6 py-4 text-center shadow-[0_0_44px_rgb(217_108_47/0.35)]">
-        <p className="font-display text-ember-600 text-xl font-extrabold tracking-[0.14em] uppercase">
+        <p className="font-display text-ember-400 text-xl font-extrabold tracking-[0.14em] uppercase">
           {label}
         </p>
         <p className="text-parchment-300/85 mt-1.5 text-sm leading-relaxed">{explainer}</p>
@@ -120,7 +120,7 @@ function SwarmCry({ label, side }: { label: string; side: Side }) {
       data-testid="swarm-cry"
     >
       <span
-        className="chamfer-sm border-ember-600/50 bg-wood-900/85 text-ember-600 font-display border px-3 py-1 text-sm font-bold tracking-[0.2em] uppercase"
+        className="chamfer-sm border-ember-600/50 bg-wood-900/85 text-ember-400 font-display border px-3 py-1 text-sm font-bold tracking-[0.2em] uppercase"
         style={{ transform: `translateX(${side === 'a' ? '-18%' : '18%'})` }}
       >
         {label}
@@ -342,7 +342,7 @@ function PlaybackControls({
 
       <div className="bg-wood-900/85 flex items-center justify-between gap-4 px-5 py-2.5 backdrop-blur-sm">
         <div className="flex items-center gap-1.5" role="group" aria-label="Playback speed">
-          <span className="text-parchment-500/50 mr-1 text-[10px] tracking-[0.25em] uppercase">
+          <span className="text-parchment-500/72 mr-1 text-[10px] tracking-[0.25em] uppercase">
             Speed
           </span>
           {SPEED_OPTIONS.map((option) => (
@@ -356,7 +356,7 @@ function PlaybackControls({
               className={`chamfer-sm font-display border px-2.5 py-1 text-xs font-bold transition-colors ${
                 speed === option
                   ? 'text-ink-900 border-amber-400 bg-amber-500'
-                  : 'border-parchment-500/25 text-parchment-500/70 hover:border-amber-500/60 hover:text-amber-500'
+                  : 'border-parchment-500/25 text-parchment-500/72 hover:border-amber-500/60 hover:text-amber-500'
               } ${speedLocked && speed !== option ? 'cursor-not-allowed opacity-40' : ''}`}
               data-testid={`battle-speed-${option}`}
             >

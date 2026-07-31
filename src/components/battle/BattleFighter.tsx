@@ -70,7 +70,7 @@ export function BattleFighter({
         <p className="font-display text-parchment-300 text-lg leading-tight font-bold">
           {card.name}
         </p>
-        <p className="text-parchment-500/50 text-[11px] tracking-[0.2em] uppercase">
+        <p className="text-parchment-500/72 text-[11px] tracking-[0.2em] uppercase">
           Level {card.level} · {card.kind}
         </p>
       </motion.div>
@@ -101,7 +101,7 @@ export function BattleFighter({
           />
         </div>
         <p
-          className={`text-parchment-500/60 mt-1 text-[11px] ${isLeft ? 'text-left' : 'text-right'}`}
+          className={`text-parchment-500/72 mt-1 text-[11px] ${isLeft ? 'text-left' : 'text-right'}`}
         >
           {Math.max(0, Math.round(health)).toLocaleString()} / {card.maxHealth.toLocaleString()}
         </p>
@@ -146,7 +146,7 @@ export function BattleFighter({
               <span className="font-display text-parchment-300/70 text-5xl leading-none font-black">
                 {card.name.charAt(0)}
               </span>
-              <span className="text-parchment-500/55 text-[9px] tracking-[0.18em] uppercase">
+              <span className="text-parchment-500/72 text-[9px] tracking-[0.18em] uppercase">
                 {card.kind}
               </span>
             </div>

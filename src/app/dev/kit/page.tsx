@@ -58,7 +58,7 @@ export default function KitPage() {
           TavernRPG · Design System
         </p>
         <h1 className="font-display text-parchment-300 text-4xl font-extrabold">Component Kit</h1>
-        <p className="text-parchment-500/60 mt-2 max-w-2xl text-sm">
+        <p className="text-parchment-500/72 mt-2 max-w-2xl text-sm">
           Every component and state, checked against the style guide: chamfers not radii, no serifs,
           motion on everything that changes, disabled states that explain themselves.
         </p>
@@ -70,7 +70,7 @@ export default function KitPage() {
             <TavernPanel title="Preview state" animate={false}>
               <div className="space-y-4 text-sm">
                 <label className="block">
-                  <span className="text-parchment-500/70 mb-1 block text-xs tracking-widest uppercase">
+                  <span className="text-parchment-500/72 mb-1 block text-xs tracking-widest uppercase">
                     Hero level — {preview.level} (locks/unlocks rail places)
                   </span>
                   <input
@@ -295,7 +295,7 @@ export default function KitPage() {
               ))}
               <span
                 title="vigor tankard (fills)"
-                className="chamfer-sm bg-wood-800/70 border-parchment-500/15 text-ember-600 grid h-11 w-11 place-items-center border"
+                className="chamfer-sm bg-wood-800/70 border-parchment-500/15 text-ember-400 grid h-11 w-11 place-items-center border"
               >
                 <VigorTankard size={22} ratio={0.55} />
               </span>
@@ -325,7 +325,7 @@ export default function KitPage() {
               <p className="text-parchment-300 text-base">
                 Inter — body copy. Tabular numerals keep counters from jittering: 1,204,880 gold.
               </p>
-              <p className="text-parchment-500/60 text-xs tracking-[0.25em] uppercase">
+              <p className="text-parchment-500/72 text-xs tracking-[0.25em] uppercase">
                 Label / overline treatment
               </p>
             </div>

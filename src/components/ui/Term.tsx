@@ -55,7 +55,7 @@ export function Term({ name, children }: { readonly name: string; readonly child
             className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 block w-64 -translate-x-1/2"
           >
             <span className="chamfer-sm surface-parchment bg-parchment-500 edge-etched text-ink-900 block px-3 py-2">
-              <span className="font-display block text-[10px] tracking-[0.2em] text-amber-700/85 uppercase">
+              <span className="font-display block text-[10px] tracking-[0.2em] text-amber-800 uppercase">
                 {entry.term}
               </span>
               <span className="mt-0.5 block text-xs leading-snug">{entry.definition}</span>

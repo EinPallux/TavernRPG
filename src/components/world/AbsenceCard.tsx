@@ -40,7 +40,7 @@ function Figure({
       className="text-center"
     >
       <p className={`font-display text-2xl font-extrabold tabular-nums ${tone}`}>{value}</p>
-      <p className="text-parchment-500/45 mt-0.5 text-[10px] tracking-widest uppercase">{label}</p>
+      <p className="text-parchment-500/72 mt-0.5 text-[10px] tracking-widest uppercase">{label}</p>
     </motion.div>
   );
 }
@@ -86,8 +86,8 @@ export function AbsenceCard({ summary, onDismiss }: AbsenceCardProps) {
           transition={{ duration: duration.base, delay: 0.36 }}
           className={`chamfer-sm mb-4 flex items-center justify-center gap-2 border px-3 py-2 text-sm ${
             rankDrift < 0
-              ? 'border-blood-600/40 bg-blood-600/10 text-blood-600'
-              : 'border-moss-600/40 bg-moss-600/10 text-moss-600'
+              ? 'border-blood-600/40 bg-blood-600/10 text-blood-400'
+              : 'border-moss-600/40 bg-moss-600/10 text-moss-400'
           }`}
           data-testid="absence-drift"
         >
@@ -106,7 +106,7 @@ export function AbsenceCard({ summary, onDismiss }: AbsenceCardProps) {
           className="chamfer-sm border-parchment-500/12 bg-wood-900/50 mb-5 border p-3"
           data-testid="absence-headline"
         >
-          <p className="text-parchment-500/40 mb-1 text-[10px] tracking-widest uppercase">
+          <p className="text-parchment-500/72 mb-1 text-[10px] tracking-widest uppercase">
             The Crier’s headline
           </p>
           <p className="text-parchment-300/90 text-sm leading-snug">{headline.text}</p>

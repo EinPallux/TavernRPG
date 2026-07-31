@@ -108,7 +108,7 @@ export function MissionProgress({
           <p className="font-display text-parchment-300 text-xl font-bold">
             {zone?.name ?? mission.offer.zoneId}
           </p>
-          <p className="text-parchment-500/65 mt-0.5 max-w-lg text-xs leading-snug">
+          <p className="text-parchment-500/72 mt-0.5 max-w-lg text-xs leading-snug">
             {template
               ? renderBlurb(template.text, {
                   monster: monster?.name ?? 'something',
@@ -121,7 +121,7 @@ export function MissionProgress({
 
       <div className="flex items-center justify-between gap-4 px-5 py-4">
         <div>
-          <p className="text-parchment-500/50 text-[10px] tracking-[0.25em] uppercase">
+          <p className="text-parchment-500/72 text-[10px] tracking-[0.25em] uppercase">
             {arrived ? 'Home' : 'On the road'}
           </p>
           <p
@@ -130,7 +130,7 @@ export function MissionProgress({
           >
             {arrived ? 'Back at the door' : formatRemaining(remaining)}
           </p>
-          <p className="text-parchment-500/45 mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs">
+          <p className="text-parchment-500/72 mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs">
             <span>
               {mission.duration}-minute contract · {monster?.name ?? 'unknown foe'} awaits
             </span>

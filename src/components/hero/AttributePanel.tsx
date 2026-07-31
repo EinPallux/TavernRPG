@@ -38,7 +38,7 @@ export function AttributePanel({ hero, derived, mainStat, onTrain }: AttributePa
     <TavernPanel
       title="Attributes"
       headerSlot={
-        <span className="text-parchment-500/45 text-xs tracking-wider">
+        <span className="text-parchment-500/72 text-xs tracking-wider">
           Trained with gold · price rises per point
         </span>
       }
@@ -64,7 +64,7 @@ export function AttributePanel({ hero, derived, mainStat, onTrain }: AttributePa
                     {ATTRIBUTE_LABELS[attribute]}
                     {isMain && <span className="ml-1 text-[10px] uppercase">main</span>}
                   </p>
-                  <p className="text-parchment-500/45 text-[11px]">{ATTRIBUTE_BLURBS[attribute]}</p>
+                  <p className="text-parchment-500/72 text-[11px]">{ATTRIBUTE_BLURBS[attribute]}</p>
                 </div>
 
                 <div className="text-right">
@@ -78,7 +78,7 @@ export function AttributePanel({ hero, derived, mainStat, onTrain }: AttributePa
                   >
                     {breakdown.total}
                   </motion.p>
-                  <p className="text-parchment-500/40 text-[10px]">
+                  <p className="text-parchment-500/72 text-[10px]">
                     {breakdown.base} base
                     {breakdown.trained > 0 && ` · ${breakdown.trained} trained`}
                     {breakdown.gear > 0 && ` · ${breakdown.gear} gear`}
@@ -129,7 +129,7 @@ export function AttributePanel({ hero, derived, mainStat, onTrain }: AttributePa
                 </ActionButton>
 
                 {!affordable && max.points === 0 && (
-                  <span className="text-parchment-500/35 text-[11px]">
+                  <span className="text-parchment-500/72 text-[11px]">
                     next: {nextPrice.toLocaleString()}g
                   </span>
                 )}

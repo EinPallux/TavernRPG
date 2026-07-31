@@ -53,21 +53,21 @@ export function ChestPanel({
           />
 
           <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
-            <span className="text-parchment-500/60 flex items-center gap-1.5">
+            <span className="text-parchment-500/72 flex items-center gap-1.5">
               <CoinIcon size={12} /> Gold, by your level
             </span>
-            <span className="text-parchment-500/60 flex items-center gap-1.5">
+            <span className="text-parchment-500/72 flex items-center gap-1.5">
               <DiceIcon size={12} /> 1 Golden Die
             </span>
-            <span className="text-parchment-500/60 flex items-center gap-1.5">
+            <span className="text-parchment-500/72 flex items-center gap-1.5">
               <Icon name="essence" size={12} /> 4 Essence
             </span>
-            <span className="text-parchment-500/60 flex items-center gap-1.5">
+            <span className="text-parchment-500/72 flex items-center gap-1.5">
               <Icon name="scrap" size={12} /> 6 Scrap
             </span>
           </div>
 
-          <p className="text-parchment-500/40 mt-2.5 text-[10px] leading-relaxed">
+          <p className="text-parchment-500/72 mt-2.5 text-[10px] leading-relaxed">
             A die every day, for turning up. They are never for sale — this and the Table’s free
             card are the whole supply.
           </p>
@@ -168,14 +168,14 @@ export function ChestPanel({
           })}
         </div>
 
-        <p className="text-parchment-500/55 mt-2.5 text-[11px] leading-relaxed">
+        <p className="text-parchment-500/72 mt-2.5 text-[11px] leading-relaxed">
           <span className="text-parchment-300 tabular-nums">
             {view.claimsThisWeek} of {view.weeklyNeeded}
           </span>{' '}
           daily chests this week. All seven, and the ladder pays {WEEKLY_CHEST.dice} dice,{' '}
           {WEEKLY_CHEST.ale} pints and a Rare — Epic one time in four.
         </p>
-        <p className="text-parchment-500/35 mt-1 text-[10px] leading-relaxed">
+        <p className="text-parchment-500/72 mt-1 text-[10px] leading-relaxed">
           Perfect attendance, deliberately. The ledger is the system that forgives; this one is the
           one that notices.
         </p>

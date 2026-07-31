@@ -87,7 +87,7 @@ export function OddsPanel({ definition }: { definition: BannerDef }) {
 
       <div className="facet-rule my-3" />
 
-      <ul className="text-parchment-500/50 space-y-1.5 text-[10px] leading-relaxed">
+      <ul className="text-parchment-500/72 space-y-1.5 text-[10px] leading-relaxed">
         {definition.pity > 0 && (
           <li>
             Every {definition.pity}th card without a featured hit <em>is</em> a featured hit. The

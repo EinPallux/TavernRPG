@@ -161,12 +161,12 @@ export function TopHud() {
         title={`Vigor ${vigor}/${vigorMax} — refills at midnight`}
         data-testid="hud-vigor"
       >
-        <span className="text-ember-600">
+        <span className="text-ember-400">
           <VigorTankard size={26} ratio={vigorRatio} />
         </span>
         <span className="text-parchment-300 text-sm">
           {vigor}
-          <span className="text-parchment-500/45">/{vigorMax}</span>
+          <span className="text-parchment-500/72">/{vigorMax}</span>
         </span>
       </div>
 
@@ -232,7 +232,7 @@ export function TopHud() {
         href="/settings"
         aria-label="Settings"
         data-testid="hud-settings"
-        className="text-parchment-500/50 transition-colors hover:text-amber-500"
+        className="text-parchment-500/72 transition-colors hover:text-amber-500"
       >
         <GearIcon size={19} />
       </Link>

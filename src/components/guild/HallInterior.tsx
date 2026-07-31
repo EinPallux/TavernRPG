@@ -91,7 +91,7 @@ function BannerPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
               </ActionButton>
             </div>
           ) : (
-            <p className="text-parchment-500/50 text-xs italic">
+            <p className="text-parchment-500/72 text-xs italic">
               {hall.motto || 'No motto yet.'}
               {hall.isOwn && (
                 <button
@@ -105,7 +105,7 @@ function BannerPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
               )}
             </p>
           )}
-          <p className="text-parchment-500/45 mt-1 text-xs tabular-nums">
+          <p className="text-parchment-500/72 mt-1 text-xs tabular-nums">
             {hall.memberCount}/{GUILD_CAPACITY} members
             {hall.isOwn && ' · you are Guildmaster'}
           </p>
@@ -144,7 +144,7 @@ function BannerPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
           </ActionButton>
         )}
         {confirming && (
-          <p className="text-parchment-500/45 mt-2 text-xs leading-relaxed">
+          <p className="text-parchment-500/72 mt-2 text-xs leading-relaxed">
             The Treasury and Drillmaster stop paying you the moment you walk out.
           </p>
         )}
@@ -186,7 +186,7 @@ function TracksPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
             className={`chamfer-sm font-display flex-1 border px-2 py-1.5 text-xs font-bold transition-colors ${
               track === id
                 ? 'text-ink-900 border-amber-500 bg-amber-500'
-                : 'border-parchment-500/20 bg-wood-900/60 text-parchment-500/70 hover:border-amber-500/50'
+                : 'border-parchment-500/20 bg-wood-900/60 text-parchment-500/72 hover:border-amber-500/50'
             }`}
             data-testid={`track-${id}`}
           >
@@ -199,11 +199,11 @@ function TracksPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
         <span className="font-display text-2xl font-extrabold text-amber-500 tabular-nums">
           +{Math.round((bonusFor(step) - 1) * 1000) / 10}%
         </span>
-        <span className="text-parchment-500/50 text-xs tabular-nums">
+        <span className="text-parchment-500/72 text-xs tabular-nums">
           step {step} of {MAX_STEPS}
         </span>
       </div>
-      <p className="text-parchment-500/50 mt-0.5 text-xs">
+      <p className="text-parchment-500/72 mt-0.5 text-xs">
         {track === 'treasury' ? 'gold from missions and the Watch' : 'experience from missions'}
       </p>
 
@@ -215,7 +215,7 @@ function TracksPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
       */}
       <div className="mt-3">
         <Meter value={pool} max={next} tone="xp" showNumbers={false} />
-        <p className="text-parchment-500/45 mt-1 text-xs tabular-nums">
+        <p className="text-parchment-500/72 mt-1 text-xs tabular-nums">
           <motion.span
             key={`${track}-${pool}`}
             initial={{ color: 'rgb(232 163 61)' }}
@@ -255,7 +255,7 @@ function TracksPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
       </div>
 
       {!hall.isOwn && (
-        <p className="text-parchment-500/45 mt-3 text-xs leading-relaxed">
+        <p className="text-parchment-500/72 mt-3 text-xs leading-relaxed">
           This hall has been filling its pot since long before you arrived. Anything you add goes
           in with the rest.
         </p>
@@ -287,7 +287,7 @@ function WeeklyContributions() {
 
   return (
     <div className="border-parchment-500/10 mt-4 border-t pt-3">
-      <p className="text-parchment-500/45 mb-1.5 text-[0.6rem] tracking-[0.25em] uppercase">
+      <p className="text-parchment-500/72 mb-1.5 text-[0.6rem] tracking-[0.25em] uppercase">
         This week
       </p>
       <ul className="space-y-1">
@@ -295,7 +295,7 @@ function WeeklyContributions() {
           <li
             key={row.key}
             className={`flex items-baseline justify-between text-xs ${
-              row.isPlayer ? 'text-amber-500' : 'text-parchment-500/60'
+              row.isPlayer ? 'text-amber-500' : 'text-parchment-500/72'
             }`}
           >
             <span className="truncate">{row.name}</span>
@@ -317,7 +317,7 @@ function BountyPoster() {
   return (
     <TavernPanel title="This week" data-testid="bounty-poster">
       <p className="font-display text-parchment-300 text-sm font-bold">{view.title}</p>
-      <p className="text-parchment-500/45 mt-0.5 text-xs italic">{view.blurb}</p>
+      <p className="text-parchment-500/72 mt-0.5 text-xs italic">{view.blurb}</p>
 
       <div className="mt-3">
         <Meter
@@ -327,21 +327,21 @@ function BountyPoster() {
           showNumbers={false}
         />
         <div className="mt-1 flex items-baseline justify-between text-xs tabular-nums">
-          <span className="text-parchment-500/55">
+          <span className="text-parchment-500/72">
             {view.progress.toLocaleString()} / {view.target.toLocaleString()}
           </span>
-          <span className={view.complete ? 'text-moss-600' : 'text-parchment-500/45'}>
+          <span className={view.complete ? 'text-moss-400' : 'text-parchment-500/72'}>
             {Math.round(view.share * 100)}%
           </span>
         </div>
       </div>
 
       {view.playerShare > 0 && (
-        <p className="text-parchment-500/45 mt-2 text-xs">
+        <p className="text-parchment-500/72 mt-2 text-xs">
           Your share of it: {Math.round(view.playerShare * 100)}%.
         </p>
       )}
-      <p className="text-parchment-500/40 mt-2 text-xs leading-relaxed">
+      <p className="text-parchment-500/72 mt-2 text-xs leading-relaxed">
         {view.complete
           ? 'Cleared. The chest is handed out on Sunday.'
           : view.partial
@@ -386,7 +386,7 @@ function RosterPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
     <TavernPanel
       title="The roster"
       headerSlot={
-        <span className="text-parchment-500/50 text-xs tabular-nums">
+        <span className="text-parchment-500/72 text-xs tabular-nums">
           {hall.memberCount}/{GUILD_CAPACITY}
         </span>
       }
@@ -410,7 +410,7 @@ function RosterPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
               Master
             </span>
           )}
-          <span className="text-parchment-500/50 shrink-0 text-xs tabular-nums">
+          <span className="text-parchment-500/72 shrink-0 text-xs tabular-nums">
             L{save.hero.level}
           </span>
         </li>
@@ -436,7 +436,7 @@ function RosterPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
                 Officer
               </span>
             )}
-            <span className="text-parchment-500/45 shrink-0 text-xs tabular-nums">
+            <span className="text-parchment-500/72 shrink-0 text-xs tabular-nums">
               L{member.level}
             </span>
 
@@ -449,7 +449,7 @@ function RosterPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
                       const refusal = promote(member.botId);
                       if (refusal) onRefusal(refusal);
                     }}
-                    className="text-parchment-500/50 text-xs hover:text-amber-500"
+                    className="text-parchment-500/72 text-xs hover:text-amber-500"
                     data-testid={`promote-${member.botId}`}
                   >
                     promote
@@ -461,7 +461,7 @@ function RosterPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
                     const refusal = kick(member.botId);
                     if (refusal) onRefusal(refusal);
                   }}
-                  className="text-parchment-500/50 hover:text-blood-600 text-xs"
+                  className="text-parchment-500/72 hover:text-blood-400 text-xs"
                   data-testid={`kick-${member.botId}`}
                 >
                   kick
@@ -473,7 +473,7 @@ function RosterPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
       </ul>
 
       {members.length === 0 && (
-        <p className="text-parchment-500/50 py-6 text-center text-xs leading-relaxed">
+        <p className="text-parchment-500/72 py-6 text-center text-xs leading-relaxed">
           Just you so far. Word gets around — expect a knock before long.
         </p>
       )}
@@ -541,14 +541,14 @@ function ApplicantsPanel({ onRefusal }: { onRefusal: (r: GuildRefusal) => void }
                 <span className="font-display text-parchment-300 truncate text-sm font-bold">
                   {resume.name}
                 </span>
-                <span className="text-parchment-500/45 shrink-0 text-xs tabular-nums">
+                <span className="text-parchment-500/72 shrink-0 text-xs tabular-nums">
                   #{resume.rank.toLocaleString()}
                 </span>
               </div>
-              <p className="text-parchment-500/50 text-xs">
+              <p className="text-parchment-500/72 text-xs">
                 Level {resume.level} · {resume.honor.toLocaleString()} honour
               </p>
-              <p className="text-parchment-500/40 text-xs italic">{resume.activity}</p>
+              <p className="text-parchment-500/72 text-xs italic">{resume.activity}</p>
 
               <div className="mt-2 flex gap-1.5">
                 <ActionButton
@@ -620,9 +620,9 @@ function GuildChat({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefusa
     >
       <div ref={scroller} className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
         {messages.every((message) => message.author.kind === 'system') ? (
-          <p className="text-parchment-500/50 py-10 text-center text-sm">
+          <p className="text-parchment-500/72 py-10 text-center text-sm">
             {messages.length > 0 && (
-              <span className="text-parchment-500/40 mb-3 block text-xs italic">
+              <span className="text-parchment-500/72 mb-3 block text-xs italic">
                 {messages[messages.length - 1]!.text}
               </span>
             )}
@@ -637,7 +637,7 @@ function GuildChat({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefusa
               transition={snappy}
               className={
                 message.author.kind === 'system'
-                  ? 'text-parchment-500/40 py-1 text-center text-xs italic'
+                  ? 'text-parchment-500/72 py-1 text-center text-xs italic'
                   : 'flex gap-2 text-sm'
               }
               data-testid={`chat-${message.id}`}
@@ -648,7 +648,7 @@ function GuildChat({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefusa
                 <>
                   <span
                     className={`w-32 shrink-0 truncate text-right text-xs ${
-                      message.author.kind === 'player' ? 'font-bold text-amber-500' : 'text-parchment-500/55'
+                      message.author.kind === 'player' ? 'font-bold text-amber-500' : 'text-parchment-500/72'
                     }`}
                   >
                     {message.author.name}
@@ -670,7 +670,7 @@ function GuildChat({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefusa
           }}
           placeholder="Say something to the hall"
           maxLength={200}
-          className="chamfer-sm border-parchment-500/20 bg-wood-900/70 text-parchment-300 placeholder:text-parchment-500/35 min-w-0 flex-1 border px-3 py-2 text-sm outline-none focus:border-amber-500/60"
+          className="chamfer-sm border-parchment-500/20 bg-wood-900/70 text-parchment-300 placeholder:text-parchment-500/72 min-w-0 flex-1 border px-3 py-2 text-sm outline-none focus:border-amber-500/60"
           data-testid="chat-input"
         />
         <ActionButton

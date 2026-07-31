@@ -36,7 +36,7 @@ const RARITY_FRAME: Readonly<Record<string, string>> = {
 };
 
 const RARITY_TEXT: Readonly<Record<string, string>> = {
-  common: 'text-parchment-500/60',
+  common: 'text-parchment-500/72',
   uncommon: 'text-rarity-uncommon',
   rare: 'text-rarity-rare',
   epic: 'text-rarity-epic',
@@ -128,7 +128,7 @@ export function PetStall({
           className={`chamfer-sm bg-wood-800 grid h-14 w-14 shrink-0 place-items-center border ${
             owned
               ? `${RARITY_FRAME[progress.rarity]} ${RARITY_TEXT[progress.rarity]}`
-              : 'border-parchment-500/10 text-parchment-500/18'
+              : 'border-parchment-500/10 text-parchment-500/72'
           }`}
           data-testid={owned ? undefined : `silhouette-${definition.id}`}
         >
@@ -138,17 +138,17 @@ export function PetStall({
         <div className="min-w-0 flex-1">
           <p
             className={`font-display text-sm leading-tight font-bold ${
-              owned ? 'text-parchment-300' : 'text-parchment-500/45'
+              owned ? 'text-parchment-300' : 'text-parchment-500/72'
             }`}
           >
             {definition.name}
           </p>
           {owned ? (
-            <p className="text-parchment-500/55 mt-0.5 text-[11px] leading-snug italic">
+            <p className="text-parchment-500/72 mt-0.5 text-[11px] leading-snug italic">
               {definition.flavour}
             </p>
           ) : (
-            <p className="text-parchment-500/45 mt-0.5 flex items-start gap-1.5 text-[11px] leading-snug">
+            <p className="text-parchment-500/72 mt-0.5 flex items-start gap-1.5 text-[11px] leading-snug">
               <LockIcon size={11} className="mt-0.5 shrink-0" />
               <span data-testid={`hint-${definition.id}`}>{definition.hint}</span>
             </p>
@@ -157,7 +157,7 @@ export function PetStall({
 
         {owned && (
           <span
-            className="text-parchment-500/50 shrink-0 text-[10px] tracking-wider uppercase"
+            className="text-parchment-500/72 shrink-0 text-[10px] tracking-wider uppercase"
             data-testid={`rarity-${definition.id}`}
           >
             {PET_RARITY_LABELS[progress.rarity]}
@@ -186,17 +186,17 @@ export function PetStall({
             className="chamfer-sm border-parchment-500/10 bg-wood-900/60 mt-3 border px-2.5 py-1.5 text-[11px]"
             data-testid={`boost-${definition.id}`}
           >
-            <span className="text-parchment-500/60">{BOOST_LABELS[definition.boost]}</span>{' '}
+            <span className="text-parchment-500/72">{BOOST_LABELS[definition.boost]}</span>{' '}
             <span className="font-semibold text-amber-400">+{(share * 100).toFixed(1)}%</span>
           </motion.p>
 
           <div className="mt-2.5">
             <div className="mb-1 flex items-baseline justify-between text-[10px]">
-              <span className="text-parchment-500/50">
+              <span className="text-parchment-500/72">
                 Level {progress.level}
                 {progress.level >= PET_MAX_LEVEL ? ' — grown' : ''}
               </span>
-              <span className="text-parchment-500/45 tabular-nums">
+              <span className="text-parchment-500/72 tabular-nums">
                 {FEEDS_PER_DAY - progress.fedToday}/{FEEDS_PER_DAY} feeds left
               </span>
             </div>

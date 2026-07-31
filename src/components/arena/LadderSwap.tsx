@@ -102,7 +102,7 @@ export function LadderSwap({ runs, swapped, playerId, opponentId }: LadderSwapPr
           <li key={row.id} className={gapBefore ? 'pt-1' : undefined}>
             {gapBefore && gapSize > 0 && (
               <p
-                className="text-parchment-500/35 mb-1 text-center text-[0.65rem] tracking-widest"
+                className="text-parchment-500/72 mb-1 text-center text-[0.65rem] tracking-widest"
                 data-testid="ladder-gap"
               >
                 ⋯ {gapSize.toLocaleString()} {gapSize === 1 ? 'rung' : 'rungs'} ⋯
@@ -116,7 +116,7 @@ export function LadderSwap({ runs, swapped, playerId, opponentId }: LadderSwapPr
                   ? 'text-parchment-300 border-amber-500/60 bg-amber-500/12'
                   : involved
                     ? 'border-parchment-500/25 bg-wood-800/70 text-parchment-300/85'
-                    : 'border-parchment-500/10 bg-wood-900/45 text-parchment-500/55'
+                    : 'border-parchment-500/10 bg-wood-900/45 text-parchment-500/72'
               }`}
               data-testid={row.isPlayer ? 'ladder-row-player' : `ladder-row-${row.id}`}
             >

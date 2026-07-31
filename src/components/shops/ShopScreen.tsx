@@ -188,7 +188,7 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
 
             {/* Restock is a promise the player plans around, so it is a clock, not a footnote. */}
             <span
-              className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/70 flex items-center gap-2 border px-3 py-1.5 text-xs"
+              className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/72 flex items-center gap-2 border px-3 py-1.5 text-xs"
               data-testid="restock-timer"
             >
               <HourglassIcon size={13} />
@@ -294,7 +294,7 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
                   </span>
                 }
               >
-                <p className="text-parchment-500/55 text-xs leading-relaxed">
+                <p className="text-parchment-500/72 text-xs leading-relaxed">
                   {chrome.keeper} pays what a piece is worth and asks {'×'}3.2 for one off the
                   shelf. Selling is income; buying is a splurge.
                 </p>
@@ -343,7 +343,7 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
                   initial="hidden"
                   animate="visible"
                   transition={snappy}
-                  className="chamfer-sm border-parchment-500/12 bg-wood-900/50 text-parchment-500/50 border border-dashed px-3 py-4 text-center text-xs"
+                  className="chamfer-sm border-parchment-500/12 bg-wood-900/50 text-parchment-500/72 border border-dashed px-3 py-4 text-center text-xs"
                   data-testid="shelf-empty"
                 >
                   Cleared out. New stock at midnight — or a Golden Die, if you cannot wait.

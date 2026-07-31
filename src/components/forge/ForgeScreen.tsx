@@ -230,8 +230,8 @@ export function ForgeScreen() {
               <span
                 className={`chamfer-sm flex items-center gap-2 border px-3 py-1.5 text-xs ${
                   capped
-                    ? 'border-ember-600/45 bg-ember-600/12 text-ember-600'
-                    : 'border-parchment-500/15 bg-wood-900/70 text-parchment-500/70'
+                    ? 'border-ember-600/45 bg-ember-600/12 text-ember-400'
+                    : 'border-parchment-500/15 bg-wood-900/70 text-parchment-500/72'
                 }`}
                 data-testid="scrap-cap"
               >
@@ -304,7 +304,7 @@ export function ForgeScreen() {
                   aria-selected={active}
                   onClick={() => setBench(entry.id)}
                   className={`font-display relative px-4 py-2 text-sm tracking-wide transition-colors ${
-                    active ? 'text-amber-400' : 'text-parchment-500/50 hover:text-parchment-300'
+                    active ? 'text-amber-300' : 'text-parchment-500/72 hover:text-parchment-300'
                   }`}
                   data-testid={`bench-${entry.id}`}
                 >
@@ -350,7 +350,7 @@ export function ForgeScreen() {
                   </TavernPanel>
 
                   <TavernPanel title="Sell or scrap?">
-                    <p className="text-parchment-500/60 text-xs leading-relaxed">
+                    <p className="text-parchment-500/72 text-xs leading-relaxed">
                       Bram pays gold, and gold buys attributes. Torvald pays materials, and
                       materials buy the slot you actually want. Sell what is cheap; scrap what is
                       interesting.
@@ -365,12 +365,12 @@ export function ForgeScreen() {
                         ['Set', '10 Essence + 3 Starmetal'],
                       ].map(([rarity, yieldText]) => (
                         <div key={rarity} className="flex items-baseline justify-between gap-3">
-                          <dt className="text-parchment-500/60">{rarity}</dt>
+                          <dt className="text-parchment-500/72">{rarity}</dt>
                           <dd className="text-parchment-300/85">{yieldText}</dd>
                         </div>
                       ))}
                     </dl>
-                    <p className="text-parchment-500/40 mt-3 text-[11px] leading-relaxed">
+                    <p className="text-parchment-500/72 mt-3 text-[11px] leading-relaxed">
                       Yields are rolled when the piece is made and stored on it — the same sword
                       melts the same either today or a month from now.
                     </p>
@@ -405,19 +405,19 @@ export function ForgeScreen() {
                   </TavernPanel>
 
                   <TavernPanel title="How a set is finished">
-                    <p className="text-parchment-500/60 text-xs leading-relaxed">
+                    <p className="text-parchment-500/72 text-xs leading-relaxed">
                       Dungeon floors are the chase: below floor four, a Set piece replaces an Epic
                       one time in five, and a cleared boss is a coin-flip. Neither will ever hand
                       you a piece you already own.
                     </p>
                     <div className="facet-rule my-3" />
-                    <p className="text-parchment-500/60 text-xs leading-relaxed">
+                    <p className="text-parchment-500/72 text-xs leading-relaxed">
                       Patterns turn up on the fifth and tenth floors. Spending one is the only way
                       to aim at a <em>specific</em> set — it always rolls a piece you are missing,
                       and once the five are yours it rolls a fresh copy at your current level.
                     </p>
                     <div className="facet-rule my-3" />
-                    <p className="text-parchment-500/40 text-[11px] leading-relaxed">
+                    <p className="text-parchment-500/72 text-[11px] leading-relaxed">
                       Set pieces cannot be sold. Bram will not put an heirloom on a shelf, and
                       Torvald asks twice before melting one.
                     </p>

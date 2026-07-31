@@ -52,8 +52,8 @@ export function TaskRow({ entry }: { entry: TaskProgress }) {
           }
           className={`chamfer-sm grid h-11 w-11 shrink-0 place-items-center border ${
             entry.complete
-              ? 'border-moss-600/60 bg-moss-600/20 text-moss-600'
-              : 'border-parchment-500/15 bg-wood-800 text-parchment-500/65'
+              ? 'border-moss-600/60 bg-moss-600/20 text-moss-400'
+              : 'border-parchment-500/15 bg-wood-800 text-parchment-500/72'
           }`}
         >
           <Icon name={definition.iconId} size={22} />
@@ -66,14 +66,14 @@ export function TaskRow({ entry }: { entry: TaskProgress }) {
             </p>
             <span
               className={`shrink-0 text-xs font-bold tabular-nums ${
-                entry.complete ? 'text-moss-600' : 'text-parchment-500/45'
+                entry.complete ? 'text-moss-400' : 'text-parchment-500/72'
               }`}
               data-testid={`task-points-${definition.id}`}
             >
               {points} pts
             </span>
           </div>
-          <p className="text-parchment-500/50 mt-0.5 text-[11px] leading-snug italic">
+          <p className="text-parchment-500/72 mt-0.5 text-[11px] leading-snug italic">
             {definition.blurb}
           </p>
 
@@ -87,15 +87,15 @@ export function TaskRow({ entry }: { entry: TaskProgress }) {
               data-testid={`task-meter-${definition.id}`}
             />
             <div className="mt-1 flex items-baseline justify-between gap-2 text-[10px]">
-              <span className="text-parchment-500/45 tabular-nums">
+              <span className="text-parchment-500/72 tabular-nums">
                 {entry.done.toLocaleString()} / {entry.target.toLocaleString()}
               </span>
               {entry.complete ? (
-                <span className="text-moss-600 font-semibold tracking-wider uppercase">Done</span>
+                <span className="text-moss-400 font-semibold tracking-wider uppercase">Done</span>
               ) : (
                 <Link
                   href={place.route}
-                  className="text-parchment-500/55 flex items-center gap-0.5 transition-colors hover:text-amber-500"
+                  className="text-parchment-500/72 flex items-center gap-0.5 transition-colors hover:text-amber-500"
                   data-testid={`task-go-${definition.id}`}
                 >
                   {place.railName ?? place.name}

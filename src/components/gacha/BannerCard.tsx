@@ -43,7 +43,7 @@ function PityMeter({ count, of }: { count: number; of: number }) {
         <span className="font-display tracking-[0.25em] text-amber-500 uppercase">
           <Term name="Pity">Guaranteed at {of}</Term>
         </span>
-        <span className="text-parchment-500/60 tabular-nums" data-testid="pity-count">
+        <span className="text-parchment-500/72 tabular-nums" data-testid="pity-count">
           {count}/{of}
         </span>
       </div>
@@ -56,7 +56,7 @@ function PityMeter({ count, of }: { count: number; of: number }) {
         />
       </div>
       {ready && (
-        <p className="text-ember-600 mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold">
+        <p className="text-ember-400 mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold">
           <SparkIcon size={11} />
           The next card is the featured one. Guaranteed.
         </p>
@@ -74,7 +74,7 @@ function TrackMeter({ rolls }: { rolls: number }) {
     <div className="mt-3" data-testid="track-meter">
       <div className="mb-1.5 flex items-baseline justify-between text-[10px]">
         <span className="font-display tracking-[0.25em] text-amber-500 uppercase">The spread</span>
-        <span className="text-parchment-500/60 tabular-nums" data-testid="track-count">
+        <span className="text-parchment-500/72 tabular-nums" data-testid="track-count">
           {earned}/{TRACK_RUNGS}
         </span>
       </div>
@@ -93,12 +93,12 @@ function TrackMeter({ rolls }: { rolls: number }) {
                 className={`chamfer-sm mt-0.5 grid h-4 w-4 shrink-0 place-items-center border text-[9px] font-bold ${
                   paid
                     ? 'border-rarity-set/60 bg-rarity-set/20 text-rarity-set'
-                    : 'border-parchment-500/20 text-parchment-500/50'
+                    : 'border-parchment-500/20 text-parchment-500/72'
                 }`}
               >
                 {rung.at}
               </span>
-              <span className={paid ? 'text-parchment-300' : 'text-parchment-500/70'}>
+              <span className={paid ? 'text-parchment-300' : 'text-parchment-500/72'}>
                 {rung.label}
               </span>
             </li>
@@ -106,7 +106,7 @@ function TrackMeter({ rolls }: { rolls: number }) {
         })}
       </ol>
 
-      <p className="text-parchment-500/45 mt-1.5 text-[10px]">
+      <p className="text-parchment-500/72 mt-1.5 text-[10px]">
         {toGo === null
           ? 'The spread is finished. The cards are still cards.'
           : `${toGo} more ${toGo === 1 ? 'card' : 'cards'} to the next.`}
@@ -156,7 +156,7 @@ export function BannerCard({
           <p className="font-display text-parchment-300 text-sm leading-tight font-bold">
             {definition.name}
           </p>
-          <p className="text-parchment-500/50 mt-0.5 text-[11px] leading-snug">
+          <p className="text-parchment-500/72 mt-0.5 text-[11px] leading-snug">
             {definition.blurb}
           </p>
         </div>
@@ -171,12 +171,12 @@ export function BannerCard({
           {active.featuring}
         </p>
         {definition.id === 'daily' && (
-          <p className="text-parchment-500/45 mt-0.5 text-[10px]">
+          <p className="text-parchment-500/72 mt-0.5 text-[10px]">
             Three times as likely to land in that slot. The featured *rate* is unchanged.
           </p>
         )}
         <p
-          className="text-parchment-500/55 mt-1.5 flex items-center gap-1.5 text-[11px]"
+          className="text-parchment-500/72 mt-1.5 flex items-center gap-1.5 text-[11px]"
           data-testid="banner-countdown"
         >
           <HourglassIcon size={11} />
@@ -189,10 +189,10 @@ export function BannerCard({
 
       {/* The tease: a name and a date, not a mystery box. */}
       <p
-        className="text-parchment-500/40 mt-3 text-[10px] leading-relaxed"
+        className="text-parchment-500/72 mt-3 text-[10px] leading-relaxed"
         data-testid="next-tease"
       >
-        Being shuffled: <span className="text-parchment-500/65">{active.next.featuring}</span>
+        Being shuffled: <span className="text-parchment-500/72">{active.next.featuring}</span>
       </p>
 
       <div className="mt-auto flex gap-2 pt-3">

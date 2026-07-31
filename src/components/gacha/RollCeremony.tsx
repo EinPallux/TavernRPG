@@ -124,7 +124,7 @@ export function RollCeremony({ results, extras, onDone }: RollCeremonyProps) {
                   <DiceIcon size={34} />
                 </motion.span>
               ))}
-              <span className="text-parchment-500/45 absolute bottom-0 text-xs tracking-[0.3em] uppercase">
+              <span className="text-parchment-500/72 absolute bottom-0 text-xs tracking-[0.3em] uppercase">
                 Shuffling
               </span>
             </motion.div>

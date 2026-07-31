@@ -120,7 +120,7 @@ function LadderRow({
           ? 'text-parchment-300 border-amber-500/60 bg-amber-500/12'
           : selected
             ? 'bg-wood-700/70 text-parchment-300 border-amber-500/35'
-            : 'border-parchment-500/8 bg-wood-900/40 text-parchment-500/70 hover:bg-wood-800/60 hover:border-amber-500/30'
+            : 'border-parchment-500/8 bg-wood-900/40 text-parchment-500/72 hover:bg-wood-800/60 hover:border-amber-500/30'
       } ${entry.dormant ? 'opacity-55' : ''}`}
       data-testid={entry.isPlayer ? 'ladder-entry-player' : `ladder-entry-${entry.id}`}
     >
@@ -142,7 +142,7 @@ function LadderRow({
         {entry.name}
         {entry.legend && <span className="ml-1.5 text-xs text-amber-500">★</span>}
         {entry.rival && (
-          <span className="text-blood-600 ml-1.5 text-[0.6rem] font-bold tracking-wider uppercase">
+          <span className="text-blood-400 ml-1.5 text-[0.6rem] font-bold tracking-wider uppercase">
             rival
           </span>
         )}
@@ -154,7 +154,9 @@ function LadderRow({
       <span className="w-14 shrink-0 text-right text-xs tabular-nums opacity-60">
         L{entry.level}
       </span>
-      <span className="w-24 shrink-0 text-right text-xs tabular-nums opacity-80">
+      {/* No `opacity` here: the row's own highlight turns light, and a dimmed foreground on it
+          measured 1.25:1. Hierarchy comes from size and weight, which survive a background. */}
+      <span className="w-24 shrink-0 text-right text-xs tabular-nums">
         {entry.honor.toLocaleString()}
       </span>
     </button>
@@ -172,7 +174,7 @@ export function RankDelta({ delta }: { delta: number }) {
       className={`chamfer-sm border px-1.5 py-0.5 text-xs font-bold tabular-nums ${
         delta > 0
           ? 'border-moss-600/50 bg-moss-600/15 text-parchment-300'
-          : 'border-blood-600/45 bg-blood-600/12 text-blood-600'
+          : 'border-blood-600/45 bg-blood-600/12 text-blood-400'
       }`}
       data-testid="hall-rank-delta"
     >

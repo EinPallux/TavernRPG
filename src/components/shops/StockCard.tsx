@@ -51,7 +51,7 @@ function Delta({
 
   return (
     <span
-      className={`tabular-nums ${rounded > 0 ? 'text-moss-600' : 'text-blood-600'}`}
+      className={`tabular-nums ${rounded > 0 ? 'text-moss-400' : 'text-blood-400'}`}
       title={label}
     >
       {rounded > 0 ? '+' : ''}
@@ -81,10 +81,10 @@ export function StockCard({
         data-testid={`stock-sold-${index}`}
       >
         {/* A wrapped parcel, not an empty hole — the gap should look intentional. */}
-        <span className="chamfer-sm bg-wood-800/70 text-parchment-500/35 grid h-12 w-12 place-items-center border border-amber-500/15">
+        <span className="chamfer-sm bg-wood-800/70 text-parchment-500/72 grid h-12 w-12 place-items-center border border-amber-500/15">
           <Icon name="gear" size={20} />
         </span>
-        <p className="text-parchment-500/40 mt-3 text-xs">Sold — wrapped and waiting.</p>
+        <p className="text-parchment-500/72 mt-3 text-xs">Sold — wrapped and waiting.</p>
       </motion.div>
     );
   }
@@ -107,14 +107,14 @@ export function StockCard({
           <p className={`font-display text-sm leading-tight font-bold ${styles.text}`}>
             {item.name}
           </p>
-          <p className="text-parchment-500/45 mt-0.5 text-[10px] tracking-wider uppercase">
+          <p className="text-parchment-500/72 mt-0.5 text-[10px] tracking-wider uppercase">
             {RARITY_LABELS[item.rarity]} · {SLOT_LABELS[item.slot]}
           </p>
         </div>
       </header>
 
       {item.classLock && (
-        <p className="text-parchment-500/50 mt-1.5 text-[10px] italic">
+        <p className="text-parchment-500/72 mt-1.5 text-[10px] italic">
           {classDef(item.classLock).name}s only
         </p>
       )}
@@ -124,7 +124,7 @@ export function StockCard({
       <dl className="space-y-1 text-xs">
         {item.weapon && (
           <div className="flex justify-between">
-            <dt className="text-parchment-500/60">Damage</dt>
+            <dt className="text-parchment-500/72">Damage</dt>
             <dd className="text-parchment-300 tabular-nums">
               {item.weapon.min}–{item.weapon.max}
             </dd>
@@ -132,19 +132,19 @@ export function StockCard({
         )}
         {item.armour !== undefined && (
           <div className="flex justify-between">
-            <dt className="text-parchment-500/60">Armour</dt>
+            <dt className="text-parchment-500/72">Armour</dt>
             <dd className="text-parchment-300 tabular-nums">{item.armour}</dd>
           </div>
         )}
         {item.specials?.goldFind !== undefined && (
           <div className="flex justify-between">
-            <dt className="text-parchment-500/60">Gold find</dt>
+            <dt className="text-parchment-500/72">Gold find</dt>
             <dd className="text-amber-500 tabular-nums">+{item.specials.goldFind}%</dd>
           </div>
         )}
         {item.specials?.xpBonus !== undefined && (
           <div className="flex justify-between">
-            <dt className="text-parchment-500/60">Experience</dt>
+            <dt className="text-parchment-500/72">Experience</dt>
             <dd className="text-arcane-500 tabular-nums">+{item.specials.xpBonus}%</dd>
           </div>
         )}
@@ -153,7 +153,7 @@ export function StockCard({
             described the item by what it lacked. */}
         {(Object.entries(item.attrs) as [AttributeId, number][]).map(([id, value]) => (
           <div key={id} className="flex justify-between">
-            <dt className="text-parchment-500/60">{ATTRIBUTE_LABELS[id]}</dt>
+            <dt className="text-parchment-500/72">{ATTRIBUTE_LABELS[id]}</dt>
             <dd className="text-parchment-300 tabular-nums">+{value}</dd>
           </div>
         ))}
@@ -169,7 +169,7 @@ export function StockCard({
           <Delta label="dmg" value={comparison.damageAverage} />
           <Delta label="arm" value={comparison.armour} />
           <Delta label="crit" value={comparison.critChance} percent />
-          {comparison.slotWasEmpty && <span className="text-moss-600">empty slot</span>}
+          {comparison.slotWasEmpty && <span className="text-moss-400">empty slot</span>}
         </p>
       )}
 
@@ -184,7 +184,7 @@ export function StockCard({
         >
           Buy
         </ActionButton>
-        <p className="text-parchment-500/35 mt-1.5 flex items-center justify-center gap-1 text-[10px]">
+        <p className="text-parchment-500/72 mt-1.5 flex items-center justify-center gap-1 text-[10px]">
           <CoinIcon size={10} />
           sells back for {item.value.toLocaleString()}
         </p>

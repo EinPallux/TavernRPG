@@ -76,7 +76,7 @@ export function Explainer({
           <div className="flex items-start gap-2.5">
             <motion.span
               aria-hidden
-              className="mt-0.5 shrink-0 text-amber-700"
+              className="mt-0.5 shrink-0 text-amber-800"
               initial={{ rotate: -20, scale: 0.6 }}
               animate={{ rotate: 0, scale: 1 }}
               transition={snappy}
@@ -84,7 +84,7 @@ export function Explainer({
               <Icon name="spark" size={16} />
             </motion.span>
             <div className="min-w-0">
-              <p className="font-display text-[11px] tracking-[0.2em] text-amber-700/85 uppercase">
+              <p className="font-display text-[11px] tracking-[0.2em] text-amber-800 uppercase">
                 {definition.title}
               </p>
               <p className="mt-1 text-xs leading-snug">{definition.body}</p>

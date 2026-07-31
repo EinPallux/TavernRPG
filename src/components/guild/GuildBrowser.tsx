@@ -36,14 +36,14 @@ import { GuildBanner } from './GuildBanner';
 
 /** How each vibe presents itself, so the tag is a glance rather than a word to parse. */
 const VIBE_LOOK: Readonly<Record<VibeTag, { label: string; tone: string }>> = {
-  hardcore: { label: 'Hardcore', tone: 'border-blood-600/45 text-blood-600' },
-  cozy: { label: 'Cozy', tone: 'border-moss-600/45 text-moss-600' },
+  hardcore: { label: 'Hardcore', tone: 'border-blood-600/45 text-blood-400' },
+  cozy: { label: 'Cozy', tone: 'border-moss-600/45 text-moss-400' },
   'night owls': { label: 'Night owls', tone: 'border-arcane-500/45 text-arcane-500' },
   'early risers': { label: 'Early risers', tone: 'border-amber-500/45 text-amber-500' },
-  scrappers: { label: 'Scrappers', tone: 'border-ember-600/45 text-ember-600' },
+  scrappers: { label: 'Scrappers', tone: 'border-ember-600/45 text-ember-400' },
   collectors: { label: 'Collectors', tone: 'border-amber-500/40 text-amber-400' },
-  quiet: { label: 'Quiet', tone: 'border-parchment-500/25 text-parchment-500/70' },
-  loud: { label: 'Loud', tone: 'border-ember-600/45 text-ember-600' },
+  quiet: { label: 'Quiet', tone: 'border-parchment-500/25 text-parchment-500/72' },
+  loud: { label: 'Loud', tone: 'border-ember-600/45 text-ember-400' },
 };
 
 const percent = (step: number) => `+${Math.round((bonusFor(step) - 1) * 1000) / 10}%`;
@@ -90,7 +90,7 @@ export function GuildBrowser({ onRefusal }: { onRefusal: (refusal: GuildRefusal)
         bodyClassName="flex-1 min-h-0 overflow-y-auto"
         title="Halls of Aldenvale"
         headerSlot={
-          <span className="text-parchment-500/50 text-xs">
+          <span className="text-parchment-500/72 text-xs">
             {halls.length} taking members · best funded first
           </span>
         }
@@ -121,11 +121,11 @@ export function GuildBrowser({ onRefusal }: { onRefusal: (refusal: GuildRefusal)
 
       <div className="min-h-0 space-y-4 overflow-y-auto">
         <TavernPanel title="Or found your own" data-testid="found-panel">
-          <p className="text-parchment-500/60 text-xs leading-relaxed">
+          <p className="text-parchment-500/72 text-xs leading-relaxed">
             Five hundred gold and a name nobody has taken. You are Guildmaster from the first day,
             and heroes will start knocking within hours — sooner the higher you stand.
           </p>
-          <p className="text-parchment-500/45 mt-3 text-xs leading-relaxed">
+          <p className="text-parchment-500/72 mt-3 text-xs leading-relaxed">
             An established hall hands you its Treasury and Drillmaster the moment you join — up to
             a quarter more gold and experience. Your own starts at nothing.{' '}
             <span className="text-parchment-300">Identity or income.</span>
@@ -162,7 +162,7 @@ export function GuildBrowser({ onRefusal }: { onRefusal: (refusal: GuildRefusal)
         </AnimatePresence>
 
         <TavernPanel title="What a hall is worth">
-          <ul className="text-parchment-500/55 space-y-1.5 text-xs leading-relaxed">
+          <ul className="text-parchment-500/72 space-y-1.5 text-xs leading-relaxed">
             <li>
               <span className="text-parchment-300">Treasury</span> pays gold on missions and the
               Watch. <span className="text-parchment-300">Drillmaster</span> pays experience.
@@ -260,14 +260,14 @@ function HallCard({
             {look.label}
           </span>
         </div>
-        <p className="text-parchment-500/45 truncate text-xs italic">{hall.motto}</p>
+        <p className="text-parchment-500/72 truncate text-xs italic">{hall.motto}</p>
       </div>
 
       <div className="hidden w-32 shrink-0 text-right text-xs lg:block">
-        <p className="text-parchment-500/60 tabular-nums">
+        <p className="text-parchment-500/72 tabular-nums">
           {hall.memberCount}/{hall.capacity} members
         </p>
-        <p className="text-parchment-500/40 tabular-nums">around level {hall.medianLevel}</p>
+        <p className="text-parchment-500/72 tabular-nums">around level {hall.medianLevel}</p>
       </div>
 
       {/* The two tracks, which are most of why one hall beats another. */}
@@ -344,20 +344,20 @@ function FoundingFlow({
       <div className="flex items-start gap-4">
         <div className="shrink-0 text-center">
           <GuildBanner field={field} charge={charge} sigil={sigil} size={56} animate />
-          <p className="text-parchment-500/40 mt-2 text-[0.6rem] tracking-widest uppercase">
+          <p className="text-parchment-500/72 mt-2 text-[0.6rem] tracking-widest uppercase">
             Preview
           </p>
         </div>
 
         <div className="min-w-0 flex-1 space-y-2">
           <label className="block">
-            <span className="text-parchment-500/60 text-xs">Name</span>
+            <span className="text-parchment-500/72 text-xs">Name</span>
             <input
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="The Quiet Kettle"
               maxLength={28}
-              className="chamfer-sm border-parchment-500/20 bg-wood-900/70 text-parchment-300 placeholder:text-parchment-500/35 mt-1 w-full border px-2.5 py-1.5 text-sm outline-none focus:border-amber-500/60"
+              className="chamfer-sm border-parchment-500/20 bg-wood-900/70 text-parchment-300 placeholder:text-parchment-500/72 mt-1 w-full border px-2.5 py-1.5 text-sm outline-none focus:border-amber-500/60"
               data-testid="guild-name"
             />
           </label>
@@ -368,7 +368,7 @@ function FoundingFlow({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={snappy}
-                className="text-blood-600 text-xs"
+                className="text-blood-400 text-xs"
                 data-testid="name-problem"
               >
                 {nameProblem}
@@ -377,13 +377,13 @@ function FoundingFlow({
           </AnimatePresence>
 
           <label className="block">
-            <span className="text-parchment-500/60 text-xs">Motto</span>
+            <span className="text-parchment-500/72 text-xs">Motto</span>
             <input
               value={motto}
               onChange={(event) => setMotto(event.target.value)}
               placeholder="We put it on at six."
               maxLength={80}
-              className="chamfer-sm border-parchment-500/20 bg-wood-900/70 text-parchment-300 placeholder:text-parchment-500/35 mt-1 w-full border px-2.5 py-1.5 text-sm outline-none focus:border-amber-500/60"
+              className="chamfer-sm border-parchment-500/20 bg-wood-900/70 text-parchment-300 placeholder:text-parchment-500/72 mt-1 w-full border px-2.5 py-1.5 text-sm outline-none focus:border-amber-500/60"
               data-testid="guild-motto"
             />
           </label>
@@ -394,7 +394,7 @@ function FoundingFlow({
       <Swatches label="Charge" selected={charge} onSelect={setCharge} testId="charge" />
 
       <div className="mt-3">
-        <p className="text-parchment-500/60 mb-1.5 text-xs">Sigil</p>
+        <p className="text-parchment-500/72 mb-1.5 text-xs">Sigil</p>
         <div className="flex flex-wrap gap-1.5">
           {SIGIL_ICONS.map((option) => (
             <button
@@ -406,7 +406,7 @@ function FoundingFlow({
               className={`chamfer-sm grid h-8 w-8 place-items-center border transition-colors ${
                 sigil === option
                   ? 'text-ink-900 border-amber-500 bg-amber-500'
-                  : 'border-parchment-500/20 bg-wood-900/60 text-parchment-500/70 hover:border-amber-500/50'
+                  : 'border-parchment-500/20 bg-wood-900/60 text-parchment-500/72 hover:border-amber-500/50'
               }`}
               data-testid={`sigil-${option}`}
             >
@@ -446,7 +446,7 @@ function Swatches({
 }) {
   return (
     <div className="mt-3">
-      <p className="text-parchment-500/60 mb-1.5 text-xs">{label}</p>
+      <p className="text-parchment-500/72 mb-1.5 text-xs">{label}</p>
       <div className="flex flex-wrap gap-1.5">
         {BANNER_COLOURS.map((colour) => (
           <button
