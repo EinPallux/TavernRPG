@@ -28,6 +28,7 @@ import { isUnlocked } from '@/engine/progression/gates';
 import { useGameStore } from '@/state/gameStore';
 import { useShellStore } from '@/state/shellStore';
 import { Icon } from '@/components/icons';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { standard } from '@/styles/motion';
 
 export function TutorialChip() {
@@ -52,6 +53,15 @@ export function TutorialChip() {
   const showing = beat !== null && (folded || !onSite);
   const destination = beat ? PLACES_BY_ID[beat.place] : null;
   const reachable = beat && save?.hero ? isUnlocked(beat.place, save.hero.level) : false;
+
+  const tip = useTooltip(
+    beat && destination
+      ? {
+          title: folded ? 'Show me again' : `Go to ${destination.name}`,
+          detail: folded ? undefined : beat.copy,
+        }
+      : null,
+  );
 
   const label = !beat
     ? ''
@@ -90,7 +100,7 @@ export function TutorialChip() {
             if (useShellStore.getState().spotlightHidden === beat.id) showSpotlight();
             if (!onSite && reachable) router.push(destination.route);
           }}
-          title={folded ? 'Show me again' : `Go to ${destination.name}`}
+          {...tip}
           className="chamfer-sm text-parchment-300/85 hover:text-parchment-300 flex max-w-[22rem] min-w-0 items-center gap-2 border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs transition-colors hover:border-amber-400/70"
           data-testid="tutorial-chip"
           data-beat={beat.id}

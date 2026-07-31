@@ -17,6 +17,7 @@ import type { MaterialBundle } from '@/engine/items/types';
 import { MATERIAL_LABELS } from '@/engine/forge/forgeConfig';
 import { EssenceIcon, ScrapIcon, StarmetalIcon, type IconProps } from '@/components/icons';
 import { Term } from '@/components/ui/Term';
+import { useTooltip } from '@/components/ui/Tooltip';
 
 type MaterialId = keyof MaterialBundle;
 
@@ -61,20 +62,41 @@ export function MaterialCost({
 
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      {shown.map((id) => {
-        const Glyph = MATERIAL_ICONS[id];
-        return (
-          <span
-            key={id}
-            className={`inline-flex items-center gap-1 tabular-nums ${MATERIAL_TONE[id]}`}
-            title={MATERIAL_LABELS[id]}
-          >
-            <Glyph size={size} />
-            {signed && bundle[id] > 0 ? '+' : ''}
-            {bundle[id]}
-          </span>
-        );
-      })}
+      {shown.map((id) => (
+        <Tally key={id} id={id} amount={bundle[id]} size={size} signed={signed} />
+      ))}
+    </span>
+  );
+}
+
+/**
+ * One material in an inline tally.
+ *
+ * Its own component only because a hook cannot be called inside a `.map` callback — which is the
+ * rule doing its job: this *is* a thing with behaviour of its own now, not a styled span.
+ */
+function Tally({
+  id,
+  amount,
+  size,
+  signed,
+}: {
+  id: MaterialId;
+  amount: number;
+  size: number;
+  signed: boolean;
+}) {
+  const Glyph = MATERIAL_ICONS[id];
+  const tip = useTooltip(MATERIAL_LABELS[id]);
+  return (
+    <span
+      {...tip}
+      tabIndex={0}
+      className={`inline-flex items-center gap-1 tabular-nums ${MATERIAL_TONE[id]}`}
+    >
+      <Glyph size={size} />
+      {signed && amount > 0 ? '+' : ''}
+      {amount}
     </span>
   );
 }

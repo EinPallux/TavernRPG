@@ -106,14 +106,14 @@ test.describe('three save slots', () => {
     // player is looking at one hero and spending another's gold.
     await page.goto('/tavern');
     await expect(page.getByTestId('place-tavern')).toBeVisible({ timeout: SETUP_TIMEOUT });
-    await expect(page.getByTestId('hud-portrait')).toHaveAttribute('title', /Kargath/);
+    await expect(page.getByTestId('hud-portrait')).toHaveAttribute('aria-label', /Kargath/);
 
     await openSettings(page);
     await page.getByTestId('slot-1-enter').click();
     await expect(page.getByTestId('slot-1-here')).toBeVisible({ timeout: SETUP_TIMEOUT });
 
     await page.goto('/tavern');
-    await expect(page.getByTestId('hud-portrait')).toHaveAttribute('title', /Ysolde/);
+    await expect(page.getByTestId('hud-portrait')).toHaveAttribute('aria-label', /Ysolde/);
   });
 
   test('a third hero fills the shelf', async () => {

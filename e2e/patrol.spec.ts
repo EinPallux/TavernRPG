@@ -284,7 +284,7 @@ test.describe('one place at a time', () => {
     // Style guide §8: the disabled control explains itself.
     const start = page.getByTestId('start-shift');
     await expect(start).toBeDisabled();
-    await expect(start).toHaveAttribute('title', /one at a time/i);
+    await expect(start).toHaveAttribute('data-reason', /one at a time/i);
   });
 
   test('frees the hero again once the shift is collected', async ({ page }) => {

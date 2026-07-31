@@ -127,9 +127,21 @@ feedback, edge cases and tests. Deployed on Vercel.
 - **The Town Map** — `data/townMap.ts` (fourteen hotspots as percentages of the painting, with a
   census test), the `map` place, `components/map/TownMapScreen.tsx`, and `/` redirecting to it.
   The rail keeps its job; both now read badges from `state/townSignals.ts`.
+- **Our own tooltips** — `components/ui/Tooltip.tsx` + `state/tooltipStore.ts`. One element at
+  shell level; `useTooltip()` at every trigger; **`title=` on a DOM element is banned** and
+  `components/ui/tooltips.test.ts` reads the source to enforce it. Style guide §8.1.
 
-1,334 unit tests + 274 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
+1,343 unit tests + 280 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
 the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
+
+**A dismissal has to cancel what is on its way, not just what is showing.** Clicking a button
+re-renders the panel under a stationary cursor, so `pointerover` fires on whatever moved into that
+spot and its hover timer starts. Press Escape in that window and the tooltip store empties — and
+then the timer fires, and dismissing a tooltip has *produced* one, for something the player never
+pointed at. Anything with an open-after-a-delay has this shape: the close path must reach the
+pending timers too (`dismissTooltips()` walks a module-level set of them). Found by an e2e
+assertion that Escape closes the rail's tooltip, which instead found a stat row the cursor had been
+left sitting on after hero creation — the test was right for a reason it was not written for.
 
 **Two ways to do the same thing means two places for a signal to go missing.** The nav rail and
 the town map are the same list of places drawn as a list and as a picture, and a player who
@@ -401,7 +413,7 @@ bounties, dungeons, gearSets, banners, pets, progress, dailyTasks, calendar, leg
 crierTemplates, tutorial, glossary, sfx ·
 `src/state/` stores + persistence (three save slots + the remembered active one) + the shared
 clock + the audio singletons (`sfx`, `bgm`) + `townSignals` (the badges the rail and the map
-both read) ·
+both read) + `tooltipStore` (the one tooltip) ·
 `src/components/{ui,shell,map,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board,tutorial,settings}/` ·
 `src/app/(game)/<place>/` one route per place, `/` redirecting to `/map` · `src/styles/motion.ts`
 springs.

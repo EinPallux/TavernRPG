@@ -16,6 +16,7 @@ import { ResetMoment } from './ResetMoment';
 import { TopHud } from './TopHud';
 import { PlaceStage } from './PlaceStage';
 import { ToastStack } from '@/components/ui/Toast';
+import { TooltipLayer } from '@/components/ui/Tooltip';
 import { HeroCreation } from '@/components/hero/HeroCreation';
 import { TutorialLayer } from '@/components/tutorial/TutorialLayer';
 import { UnlockWatcher } from './UnlockWatcher';
@@ -209,6 +210,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             its own layer and the moment queues behind it (daily-loop spec §4). */}
         {inTown && <ResetMoment />}
         <ToastStack />
+
+        {/* Above everything, including modals and ceremonies — a tooltip explains whatever is on
+            top, so it has to be on top of that. One element for the whole game; triggers only
+            publish to the store (`components/ui/Tooltip.tsx`). Mounted outside the settling and
+            shadowed branches too, because hero creation and the takeover screen have controls. */}
+        <TooltipLayer />
       </div>
     </MotionConfig>
   );

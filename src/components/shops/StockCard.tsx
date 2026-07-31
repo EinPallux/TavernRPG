@@ -50,10 +50,8 @@ function Delta({
   if (rounded === 0) return null;
 
   return (
-    <span
-      className={`tabular-nums ${rounded > 0 ? 'text-moss-400' : 'text-blood-400'}`}
-      title={label}
-    >
+    /* No tooltip: the label is printed right after the number. */
+    <span className={`tabular-nums ${rounded > 0 ? 'text-moss-400' : 'text-blood-400'}`}>
       {rounded > 0 ? '+' : ''}
       {rounded}
       {percent ? '%' : ''} {label}

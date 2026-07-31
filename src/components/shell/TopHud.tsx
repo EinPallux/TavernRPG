@@ -18,6 +18,7 @@ import { motion } from 'motion/react';
 import { CoinIcon, DiceIcon, GearIcon, VigorTankard } from '@/components/icons';
 import { Meter } from '@/components/ui/Meter';
 import { TimerChip } from '@/components/ui/TimerChip';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { HintChip } from '@/components/tutorial/HintChip';
 import { TutorialChip } from '@/components/tutorial/TutorialChip';
 import { useShellStore } from '@/state/shellStore';
@@ -42,11 +43,13 @@ function CurrencyChip({
   tone: 'gold' | 'dice';
   testId: string;
 }) {
+  const tip = useTooltip(label);
   return (
     <motion.div
       whileHover={{ y: -1 }}
       transition={snappy}
-      title={label}
+      {...tip}
+      tabIndex={0}
       data-testid={testId}
       className={`chamfer-sm bg-wood-900/70 flex items-center gap-2 border px-3 py-1.5 ${
         tone === 'gold' ? 'border-amber-500/25' : 'border-amber-400/35'
@@ -93,6 +96,20 @@ export function TopHud() {
   const mount = activeMount(rental, gameNow());
   const mountExpiring = needsRenewalSoon(rental, gameNow());
 
+  /*
+   * The HUD's three explanations. Declared up here rather than inline because hooks cannot be
+   * called conditionally and the mount chip only sometimes exists — an empty tooltip is a hook
+   * that returns nothing to spread, which is exactly what `useTooltip(null)` does.
+   */
+  const heroTip = useTooltip(heroLabel);
+  const vigorTip = useTooltip({
+    title: `Vigor ${vigor}/${vigorMax}`,
+    detail: 'Spent on contracts. Refills at midnight.',
+  });
+  const mountTip = useTooltip(
+    mount && `${mount.name} — mission timers −${Math.round(mount.speedBonus * 100)}%`,
+  );
+
   return (
     <header className="surface-timber bg-wood-800/95 relative z-30 flex h-[72px] items-center gap-6 border-b border-amber-500/20 px-5">
       {/* Hero: portrait, level ring, XP sliver. */}
@@ -100,7 +117,8 @@ export function TopHud() {
         <Link
           href="/character"
           className="relative block shrink-0"
-          title={heroLabel}
+          {...heroTip}
+          aria-label={heroLabel}
           data-testid="hud-portrait"
         >
           <span
@@ -156,11 +174,7 @@ export function TopHud() {
       </div>
 
       {/* Vigor: the tankard *is* the meter. */}
-      <div
-        className="flex items-center gap-2"
-        title={`Vigor ${vigor}/${vigorMax} — refills at midnight`}
-        data-testid="hud-vigor"
-      >
+      <div className="flex items-center gap-2" {...vigorTip} tabIndex={0} data-testid="hud-vigor">
         <span className="text-ember-400">
           <VigorTankard size={26} ratio={vigorRatio} />
         </span>
@@ -204,7 +218,7 @@ export function TopHud() {
         {mount && rental ? (
           <Link
             href="/stables"
-            title={`${mount.name} — mission timers −${Math.round(mount.speedBonus * 100)}%`}
+            {...mountTip}
             className={mountExpiring ? 'animate-pulse' : ''}
             data-testid={mountExpiring ? 'hud-mount-expiring' : 'hud-mount'}
           >

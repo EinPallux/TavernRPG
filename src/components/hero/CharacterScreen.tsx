@@ -25,6 +25,7 @@ import { currentBoost } from '@/state/petActions';
 import { SLOT_LABELS, type Item, type SlotId } from '@/engine/items/types';
 import type { Hero } from '@/engine/save/schema';
 import { TavernPanel } from '@/components/ui/TavernPanel';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { Meter } from '@/components/ui/Meter';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { AmbientStage } from '@/components/ui/AmbientStage';
@@ -60,8 +61,9 @@ function StatLine({
   hint?: string;
   term?: string;
 }) {
+  const tip = useTooltip(hint ? { title: label, detail: hint } : null);
   return (
-    <div className="flex items-baseline justify-between gap-3 text-sm" title={hint}>
+    <div className="flex items-baseline justify-between gap-3 text-sm" {...tip}>
       <span className="text-parchment-500/72">
         {term ? <Term name={term}>{label}</Term> : label}
       </span>

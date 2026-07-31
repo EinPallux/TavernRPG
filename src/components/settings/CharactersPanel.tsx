@@ -25,12 +25,48 @@ import { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { Icon } from '@/components/icons';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { classDef } from '@/data/classes';
 import { SAVE_SLOTS, type SaveSlot } from '@/engine/save/schema';
 import { useGameStore } from '@/state/gameStore';
 import { listSlots, type SlotSummary } from '@/state/persistence';
 import { play } from '@/state/sfx';
 import { listItemIn, standard } from '@/styles/motion';
+
+/**
+ * The bin, per slot.
+ *
+ * Its own component so it can hold a tooltip hook — hooks cannot run inside the `map` over the
+ * three slots. The tooltip names the hero rather than the slot number, which is the same rule the
+ * confirm below follows: "Delete Ysolde" is a question somebody can answer.
+ */
+function DeleteButton({
+  slot,
+  who,
+  busy,
+  onPress,
+}: {
+  slot: SaveSlot;
+  who: string | null;
+  busy: boolean;
+  onPress: () => void;
+}) {
+  const label = who ? `Delete ${who}` : `Delete slot ${slot}`;
+  const tip = useTooltip({ title: label, detail: 'There is no undo — export first.' });
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onPress}
+      {...tip}
+      aria-label={label}
+      className="text-parchment-500/72 hover:text-blood-400 shrink-0 p-1 transition-colors disabled:opacity-40"
+      data-testid={`slot-${slot}-delete`}
+    >
+      <Icon name="scrap" size={15} />
+    </button>
+  );
+}
 
 /** When a character was last put down, in words rather than a timestamp. */
 function lastPlayed(savedAt: number | null, now: number): string {
@@ -189,17 +225,12 @@ export function CharactersPanel() {
               )}
 
               {(hero || broken) && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setConfirming(confirming === slot ? null : slot)}
-                  className="text-parchment-500/72 hover:text-blood-400 shrink-0 p-1 transition-colors disabled:opacity-40"
-                  title={`Delete slot ${slot}`}
-                  aria-label={`Delete slot ${slot}`}
-                  data-testid={`slot-${slot}-delete`}
-                >
-                  <Icon name="scrap" size={15} />
-                </button>
+                <DeleteButton
+                  slot={slot}
+                  who={hero?.name ?? null}
+                  busy={busy}
+                  onPress={() => setConfirming(confirming === slot ? null : slot)}
+                />
               )}
             </motion.li>
           );

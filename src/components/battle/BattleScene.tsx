@@ -15,6 +15,7 @@
 import { useCallback, useMemo, type ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { BattleEvent, CombatantCard, Side } from '@/engine/combat/types';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { dramatic, snappy } from '@/styles/motion';
 import { BattleCallouts, CALLOUT_DURATION } from './BattleCallouts';
 import { BattleFighter } from './BattleFighter';
@@ -328,6 +329,12 @@ function PlaybackControls({
   speedLocked?: boolean;
 }) {
   const { speed, skip, replay, isFinished } = playback;
+  const speedTip = useTooltip(
+    speedLocked && {
+      title: 'Locked at ×1',
+      detail: 'The first fight plays at normal speed — there is a bit to read.',
+    },
+  );
 
   return (
     <div className="absolute right-0 bottom-0 left-0 z-20">
@@ -351,7 +358,7 @@ function PlaybackControls({
               type="button"
               onClick={() => onSelectSpeed(option)}
               disabled={speedLocked}
-              title={speedLocked ? 'The first fight plays at ×1 — there is a bit to read.' : ''}
+              {...speedTip}
               aria-pressed={speed === option}
               className={`chamfer-sm font-display border px-2.5 py-1 text-xs font-bold transition-colors ${
                 speed === option

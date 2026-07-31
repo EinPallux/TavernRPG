@@ -15,6 +15,7 @@ import { SKIP_DICE_COST } from '@/engine/missions/board';
 import { isQuickened } from '@/engine/tutorial/firstMission';
 import { formatRemaining } from '@/components/ui/TimerChip';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { HeroIcon, Icon } from '@/components/icons';
 import type { MountDef } from '@/data/mounts';
 import { blurb as blurbById, renderBlurb } from '@/data/missionBlurbs';
@@ -42,6 +43,12 @@ export function MissionProgress({
 }: MissionProgressProps) {
   const reduceMotion = useReducedMotion();
   const [now, setNow] = useState(() => gameNow());
+  const mountTip = useTooltip(
+    mount && {
+      title: mount.name,
+      detail: `The road is ${Math.round(mount.speedBonus * 100)}% shorter while it is stabled.`,
+    },
+  );
 
   // One timer for the whole scene. Ticking per second is plenty — nothing here is frame-rate
   // sensitive, and a rAF loop for a twenty-minute countdown would be silly.
@@ -137,7 +144,7 @@ export function MissionProgress({
             {mount && (
               <span
                 className="flex items-center gap-1 text-amber-500"
-                title={`${mount.name} — the road is ${Math.round(mount.speedBonus * 100)}% shorter`}
+                {...mountTip}
                 data-testid="mission-mount"
               >
                 <Icon name={mount.iconId} size={12} />

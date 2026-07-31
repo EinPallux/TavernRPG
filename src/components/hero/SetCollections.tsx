@@ -25,6 +25,7 @@ import { SLOT_LABELS, type Item } from '@/engine/items/types';
 import type { Equipment } from '@/engine/hero/derived';
 import type { Hero } from '@/engine/save/schema';
 import { TavernPanel } from '@/components/ui/TavernPanel';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { Icon, LockIcon, SparkIcon } from '@/components/icons';
 import type { IconId } from '@/data/icons';
 import { dramatic, listItemIn, snappy, staggerChildren } from '@/styles/motion';
@@ -57,13 +58,23 @@ function PieceCell({
       : state === 'owned'
         ? 'border-rarity-set/35 bg-wood-900/70 text-rarity-set/70'
         : 'border-parchment-500/12 bg-wood-900/40 text-parchment-500/72';
+  const tip = useTooltip({
+    title: name,
+    detail:
+      state === 'equipped'
+        ? 'Worn right now.'
+        : state === 'owned'
+          ? 'In your bags — put it on.'
+          : 'Not found yet.',
+  });
 
   return (
     <motion.div
       variants={listItemIn}
       transition={{ ...snappy, delay: index * 0.03 }}
       className="flex w-[4.75rem] min-w-0 flex-col items-center gap-1"
-      title={`${name} — ${state === 'equipped' ? 'worn' : state === 'owned' ? 'in your bags' : 'not found yet'}`}
+      {...tip}
+      tabIndex={0}
       data-testid={`set-piece-${slot}`}
       data-state={state}
     >
@@ -129,6 +140,41 @@ function BonusRow({
 }
 
 /**
+ * One opening verse to pick.
+ *
+ * A component rather than three lines inside the `map`, because the tooltip is a hook — which is
+ * the rule pointing at something true: a button with hover behaviour, pressed state and an
+ * explanation is a thing, not markup.
+ */
+function VerseChoice({
+  verse,
+  active,
+  onChoose,
+}: {
+  verse: VerseId;
+  active: boolean;
+  onChoose: () => void;
+}) {
+  const tip = useTooltip({ title: VERSES[verse].name, detail: VERSES[verse].blurb });
+  return (
+    <button
+      type="button"
+      onClick={onChoose}
+      aria-pressed={active}
+      {...tip}
+      className={`chamfer-sm border px-2 py-1.5 text-[11px] transition-colors ${
+        active
+          ? 'border-amber-500/70 bg-amber-500/15 text-amber-400'
+          : 'border-parchment-500/12 bg-wood-900/55 text-parchment-500/72 hover:text-parchment-300 hover:border-amber-500/40'
+      }`}
+      data-testid={`verse-${verse}`}
+    >
+      {VERSES[verse].name}
+    </button>
+  );
+}
+
+/**
  * The Maestro five-piece: pick the Verse the fight opens on.
  *
  * A choice with no interface is not a choice, and this is the one set bonus in the game that is
@@ -156,26 +202,14 @@ function VersePicker({
         Opening Verse
       </p>
       <div className="mt-2 grid grid-cols-3 gap-1.5">
-        {OPENING_VERSES.map((verse) => {
-          const active = chosen === verse;
-          return (
-            <button
-              key={verse}
-              type="button"
-              onClick={() => onChoose(verse)}
-              aria-pressed={active}
-              title={VERSES[verse].blurb}
-              className={`chamfer-sm border px-2 py-1.5 text-[11px] transition-colors ${
-                active
-                  ? 'border-amber-500/70 bg-amber-500/15 text-amber-400'
-                  : 'border-parchment-500/12 bg-wood-900/55 text-parchment-500/72 hover:text-parchment-300 hover:border-amber-500/40'
-              }`}
-              data-testid={`verse-${verse}`}
-            >
-              {VERSES[verse].name}
-            </button>
-          );
-        })}
+        {OPENING_VERSES.map((verse) => (
+          <VerseChoice
+            key={verse}
+            verse={verse}
+            active={chosen === verse}
+            onChoose={() => onChoose(verse)}
+          />
+        ))}
       </div>
       <p className="text-parchment-500/72 mt-2 text-[10px] leading-relaxed">
         {chosen

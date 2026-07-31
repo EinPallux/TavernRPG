@@ -7,6 +7,28 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — tooltips that belong to this game
+
+- **Every explanation in Emberhollow is now drawn by the game**, not by the browser. Chamfered
+  timber, the facet strip, a display-face heading and a quiet second line — the same surface as
+  the panels, instead of a grey OS rectangle in a system font. Twenty-six of them.
+- **They open on keyboard focus, not only on hover**, which a native `title` has never done. Half
+  the game's explanations were invisible to anybody navigating by keyboard.
+- **A disabled button explains itself properly.** "Not enough gold", "one shift at a time" — the
+  most useful tooltip in the game, on the one control the browser refuses to talk about.
+- Hover waits a beat before opening and then stays warm, so reading along the HUD does not cost a
+  third of a second per chip. Press, scroll, resize or Escape closes it.
+- `src/components/ui/tooltips.test.ts` reads the source and fails on a new `title` attribute; a
+  browser tooltip renders identically whether it was deliberate or forgotten, so it cannot be left
+  to review. `/dev/kit` gained a tooltip section.
+
+### Fixed
+
+- **Dismissing a tooltip could produce another one.** Clicking a button re-renders the panel under
+  a stationary cursor, which starts the hover timer of whatever moved into that spot; Escape
+  emptied the tooltip but not the timer, so one appeared a third of a second *after* the player
+  dismissed one. A dismissal now cancels what is on its way as well as what is open.
+
 ### Added — the town, as a place you can stand in
 
 - **The Town Map.** Emberhollow painted from above, with all fourteen buildings clickable, and it

@@ -159,7 +159,7 @@ test.describe('attribute training', () => {
     // 100 starting gold cannot cover 25 points.
     const button = page.getByTestId('buy-con-25');
     await expect(button).toBeDisabled();
-    await expect(button).toHaveAttribute('title', /costs .* gold/i);
+    await expect(button).toHaveAttribute('data-reason', /costs .* gold/i);
   });
 
   test('training survives a reload', async ({ page }) => {

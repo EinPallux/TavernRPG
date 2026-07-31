@@ -14,6 +14,7 @@
 import { useState } from 'react';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { Meter } from '@/components/ui/Meter';
 import { TimerChip } from '@/components/ui/TimerChip';
 import { KeeperBark } from '@/components/ui/KeeperBark';
@@ -31,6 +32,43 @@ const RARITIES = [
   ['Epic', 'text-rarity-epic border-rarity-epic/40'],
   ['Set', 'text-rarity-set border-rarity-set/40'],
 ] as const;
+
+/** A chip that exists to be hovered. */
+function TipDemo({ label, title, detail }: { label?: string; title?: string; detail?: string }) {
+  const tip = useTooltip(label ?? (title ? { title, ...(detail ? { detail } : {}) } : null));
+  return (
+    <span
+      {...tip}
+      tabIndex={0}
+      className="chamfer-sm bg-wood-800/70 border-parchment-500/20 text-parchment-300/85 border px-3 py-1.5 text-xs"
+    >
+      {label ?? title}
+    </span>
+  );
+}
+
+/**
+ * One icon in the showroom, with its name on a tooltip.
+ *
+ * A component because the tooltip is a hook and the grid is a `map` — and because the kit should
+ * demonstrate the kit: this is a real `useTooltip` call, on the page whose job is to show every
+ * component state.
+ */
+function IconCell({ name }: { name: keyof typeof ICONS | '__tankard' }) {
+  const tankard = name === '__tankard';
+  const tip = useTooltip(tankard ? 'Vigor tankard (fills)' : name);
+  return (
+    <span
+      {...tip}
+      tabIndex={0}
+      className={`chamfer-sm bg-wood-800/70 border-parchment-500/15 grid h-11 w-11 place-items-center border ${
+        tankard ? 'text-ember-400' : 'text-parchment-300/80'
+      }`}
+    >
+      {tankard ? <VigorTankard size={22} ratio={0.55} /> : <Icon name={name} size={20} />}
+    </span>
+  );
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -269,6 +307,35 @@ export default function KitPage() {
             </div>
           </Section>
 
+          <Section title="Tooltips (hover, or tab to them)">
+            <div className="space-y-3">
+              <p className="text-parchment-500/72 text-xs leading-relaxed">
+                One element for the whole game, above everything, clipped by nothing. Hover opens
+                after a beat; keyboard focus opens at once; press, scroll or Escape closes. Move
+                between two and the second is instant — a row of chips should not cost a third of a
+                second each.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <TipDemo label="Gold" />
+                <TipDemo title="Vigor 100/100" detail="Spent on contracts. Refills at midnight." />
+                <TipDemo
+                  title="Near the edge"
+                  detail="Long enough to need clamping, so it stays inside the window rather than hanging off it."
+                />
+              </div>
+              <div className="flex justify-end">
+                <TipDemo title="Bottom right" detail="Flips above when there is no room below." />
+              </div>
+              <ActionButton
+                size="sm"
+                disabledReason="Not enough gold — 240 short."
+                onClick={() => undefined}
+              >
+                Disabled, with a reason
+              </ActionButton>
+            </div>
+          </Section>
+
           <Section title="Rarities">
             <div className="flex flex-wrap gap-2">
               {RARITIES.map(([name, classes]) => (
@@ -285,20 +352,9 @@ export default function KitPage() {
           <Section title={`Icons (${ICON_IDS.length}, hand-authored)`}>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(ICONS) as (keyof typeof ICONS)[]).map((name) => (
-                <span
-                  key={name}
-                  title={name}
-                  className="chamfer-sm bg-wood-800/70 border-parchment-500/15 text-parchment-300/80 grid h-11 w-11 place-items-center border"
-                >
-                  <Icon name={name} size={20} />
-                </span>
+                <IconCell key={name} name={name} />
               ))}
-              <span
-                title="vigor tankard (fills)"
-                className="chamfer-sm bg-wood-800/70 border-parchment-500/15 text-ember-400 grid h-11 w-11 place-items-center border"
-              >
-                <VigorTankard size={22} ratio={0.55} />
-              </span>
+              <IconCell name="__tankard" />
             </div>
           </Section>
 

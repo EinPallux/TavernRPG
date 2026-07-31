@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { HourglassIcon } from '@/components/icons';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { gameNow } from '@/state/clock';
 
 export interface TimerChipProps {
@@ -67,11 +68,15 @@ export function TimerChip({
   }, [endsAt]);
 
   const isReady = remaining <= 0;
+  const tip = useTooltip({
+    title: label || 'Timer',
+    detail: isReady ? 'Ready now.' : `Due at ${formatAbsolute(endsAt)}.`,
+  });
 
   return (
     <span
       data-testid={rest['data-testid']}
-      title={`${label ? `${label} · ` : ''}${isReady ? 'ready now' : `at ${formatAbsolute(endsAt)}`}`}
+      {...tip}
       className={`chamfer-sm inline-flex items-center gap-1.5 px-2.5 py-1 text-xs ${
         isReady
           ? 'bg-moss-600/20 text-moss-400 border-moss-600/40 border'

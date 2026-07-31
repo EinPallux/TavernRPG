@@ -7,12 +7,19 @@
  *  - **Costs are visible before the click** — pass `cost` and the price rides on the button.
  *  - **Disabled states explain themselves** — pass `disabledReason` and it becomes the tooltip,
  *    because a grey button with no explanation is the single most common UX failure in games.
+ *
+ * The second one is the reason this component gets a tooltip rather than a `title`, and it turns
+ * on a browser quirk worth knowing: a `disabled` button never fires `click`, but Chromium *does*
+ * still fire `pointerenter` on it. So the one control the browser refuses to let you interact with
+ * is still able to explain itself. (Measured, not assumed — the first draft was going to wrap
+ * every disabled button in a span for this.)
  */
 
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { snappy } from '@/styles/motion';
 import { CoinIcon, DiceIcon } from '@/components/icons';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { play } from '@/state/sfx';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -86,6 +93,7 @@ export function ActionButton({
 }: ActionButtonProps) {
   const isDisabled = disabled || Boolean(disabledReason);
   const shape = variant === 'ghost' ? '' : 'chamfer-sm';
+  const tip = useTooltip(disabledReason);
 
   /*
    * Every button in the game clicks here, which is the point.
@@ -108,7 +116,17 @@ export function ActionButton({
       transition={snappy}
       onClick={handleClick}
       disabled={isDisabled}
-      title={disabledReason}
+      {...tip}
+      /*
+       * The reason, also as an attribute.
+       *
+       * Ten e2e tests assert *why* a button is grey — "not enough gold", "one shift at a time" —
+       * and they were reading the `title` this replaced. Hovering to read a tooltip would make
+       * each of them slower and racier for no extra confidence, since the tooltip renders this
+       * exact string and one dedicated test proves that. Cheap assertions for the ten, one real
+       * assertion for the rendering.
+       */
+      data-reason={disabledReason}
       aria-disabled={isDisabled}
       className={`${shape} font-display inline-flex items-center justify-center gap-2 tracking-[0.12em] uppercase transition-colors ${
         VARIANT[variant]

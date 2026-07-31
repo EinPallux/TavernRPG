@@ -193,7 +193,7 @@ test.describe('feeding', () => {
     // The fourth is refused with a sentence, not a dead button.
     const feed = page.getByTestId('feed-gloom-cat');
     await expect(feed).toBeDisabled();
-    await expect(feed).toHaveAttribute('title', /Three a day/);
+    await expect(feed).toHaveAttribute('data-reason', /Three a day/);
 
     // ...and the cap is per pet, so the rest of the stable is still worth visiting.
     await expect(page.getByTestId('feed-tankard-imp')).toBeEnabled();
@@ -206,7 +206,7 @@ test.describe('feeding', () => {
 
     const feed = page.getByTestId('feed-gloom-cat');
     await expect(feed).toBeDisabled();
-    await expect(feed).toHaveAttribute('title', /Tavern Scraps/);
+    await expect(feed).toHaveAttribute('data-reason', /Tavern Scraps/);
   });
 
   test('survives a reload with the level and the day intact', async ({ page }) => {
@@ -271,7 +271,7 @@ test.describe('rarity upgrades', () => {
 
     const upgrade = page.getByTestId('upgrade-gloom-cat');
     await expect(upgrade).toBeDisabled();
-    await expect(upgrade).toHaveAttribute('title', /level 15/);
+    await expect(upgrade).toHaveAttribute('data-reason', /level 15/);
   });
 });
 
