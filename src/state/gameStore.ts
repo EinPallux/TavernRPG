@@ -134,7 +134,17 @@ import {
   resetClockForTests,
   restoreClock,
 } from './clock';
-import { archiveSave, exportRaw, exportSave, importSave, readSave, writeSave } from './persistence';
+import {
+  archiveSave,
+  deleteSave,
+  exportRaw,
+  exportSave,
+  importSave,
+  listSlots,
+  readSave,
+  writeActiveSlot,
+  writeSave,
+} from './persistence';
 
 /**
  * A fresh world seed. Not gameplay randomness (which must be seeded and replayable) but
@@ -168,6 +178,16 @@ export interface GameStoreState {
   saveError: string | null;
 
   hydrate: (slot?: SaveSlot) => Promise<void>;
+  /**
+   * Leave this character and open another slot (architecture.md §3).
+   *
+   * Flushes first — the save being left is mid-session by definition, and the whole point of a
+   * slot is that going back to it finds everything where you put it. Then the choice is
+   * remembered, so a reload comes back to the hero you were actually playing.
+   */
+  switchSlot: (slot: SaveSlot) => Promise<void>;
+  /** Delete a character for good. Switches away first if it is the one being played. */
+  deleteSlot: (slot: SaveSlot) => Promise<void>;
   /** Triage: hand back whatever is on disk, valid or not, so the player can keep a copy. */
   exportRawSave: () => Promise<string | null>;
   /** Triage: set the unreadable save aside — never delete it — and begin again. */
@@ -621,6 +641,44 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
     grantGold(amount) {
       updateHero((hero) => ({ ...hero, gold: Math.max(0, hero.gold + amount) }));
+    },
+
+    async switchSlot(slot) {
+      if (slot === get().slot) return;
+
+      /*
+       * Flush before leaving, and do it even though every mutation already writes through.
+       *
+       * The one write that might still be in the air is the one the player just made — the whole
+       * grievance a slot system has to avoid is "I swapped characters and lost my last fight".
+       * `persistNow` resolves once the disk reflects everything known now, which is exactly the
+       * guarantee this needs and the reason it is awaited rather than fired.
+       */
+      await persistNow();
+      await writeActiveSlot(slot);
+      await get().hydrate(slot);
+    },
+
+    async deleteSlot(slot) {
+      const wasActive = slot === get().slot;
+      if (wasActive) await persistNow();
+
+      await deleteSave(slot);
+
+      if (!wasActive) return;
+
+      /*
+       * Deleting the character you are playing has to land somewhere.
+       *
+       * Prefer another slot that already has a hero — being dropped into a stranger's session is
+       * odd, but being dropped into *nothing* after deleting your only save is worse, and the
+       * empty-slot path lands on hero creation, which is the honest answer for a player who has
+       * just cleared the shelf.
+       */
+      const remaining = (await listSlots()).find((entry) => entry.slot !== slot && entry.hero);
+      const next = remaining?.slot ?? 1;
+      await writeActiveSlot(next);
+      await get().hydrate(next);
     },
 
     async exportRawSave() {

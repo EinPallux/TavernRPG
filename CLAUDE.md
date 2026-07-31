@@ -166,6 +166,12 @@ a level-4 beat placed before two level-3 ones a total silence, not a reordering.
 who finished the Notice Board beat got no guidance at all until they hit four, with two rooms open
 and unmentioned. Asserted now in `engine/release/onboarding.test.ts`.
 
+**An effect keyed on one record is blind to its siblings.** The Characters shelf re-read the disk
+whenever the *active* save changed — its slot, its `savedAt`, the load status — which is every
+change except the one that matters: deleting a character you are not playing. Their name stayed on
+screen until something unrelated nudged the component. Whatever performs a change outside the
+watched record has to say so; there is no dependency array that covers "a sibling moved".
+
 **Run the gate, not the files you touched.** `npm run format:check` — a CI step since Phase 0 —
 had been failing since **Phase 8**, on 31 files, because every phase ran `prettier --check` over
 its own diff and called it green. Nobody saw it, because nobody ran the command CI runs. Before
@@ -364,7 +370,8 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, vesnaBarks, names, guilds, guildChat,
 bounties, dungeons, gearSets, banners, pets, progress, dailyTasks, calendar, legends,
 crierTemplates, tutorial, glossary, sfx ·
-`src/state/` stores + persistence + the shared clock + the audio singletons (`sfx`, `bgm`) ·
+`src/state/` stores + persistence (three save slots + the remembered active one) + the shared
+clock + the audio singletons (`sfx`, `bgm`) ·
 `src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board,tutorial,settings}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`

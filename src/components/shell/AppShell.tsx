@@ -24,6 +24,7 @@ import { TabConflict } from './TabConflict';
 import { RoomBoundary } from './RoomBoundary';
 import { claimTabLock, type TabLock, type TabRole } from '@/state/tabLock';
 import { useGameStore } from '@/state/gameStore';
+import { readActiveSlot } from '@/state/persistence';
 import { useShellStore } from '@/state/shellStore';
 import { configureSfx } from '@/state/sfx';
 import { configureBgm, watchVisibility } from '@/state/bgm';
@@ -65,13 +66,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const takeOver = useCallback(() => {
     lock.current?.takeOver();
-    // The save may have moved on in the other tab; re-read rather than trusting what is in hand.
-    void hydrate(1);
+    /*
+     * The save may have moved on in the other tab — and so may the *slot*, since the other tab
+     * could have swapped characters. Re-read the remembered slot rather than trusting either the
+     * store or a hardcoded 1.
+     */
+    void readActiveSlot().then((slot) => hydrate(slot));
   }, [hydrate]);
 
   useEffect(() => {
     if (tabRole !== 'leader') return;
-    void hydrate(1);
+    // Open the slot the player was last in. Three characters are no use if closing the tab always
+    // hands you the first one back.
+    void readActiveSlot().then((slot) => hydrate(slot));
   }, [hydrate, tabRole]);
 
   // Save -> shell, once the save lands.

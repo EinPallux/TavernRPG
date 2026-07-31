@@ -463,6 +463,11 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
 
 ## Post-1.0 backlog (headline patches, rough order)
 
+**Shipped since 1.0:** *Three save slots.* Settings → Characters. The slot argument had threaded
+through the save layer since Phase 0 with nothing able to reach past slot 1 — this is the room
+that plumbing was always for, plus a remembered active slot that lives beside the saves rather
+than inside one. `architecture.md` §3.
+
 1. **The Collector's Album** — S&F-scrapbook-style collection of items/monsters with % XP bonus.
 2. **Guild Wars & Raid Bosses** — scheduled guild-vs-guild battles + co-op PvE chains (sim ready).
 3. **Seasonal Events** — 2-week themed events (new banners, event currency shop, decorated tavern).
