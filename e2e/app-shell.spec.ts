@@ -61,9 +61,14 @@ async function levelHeroToTen(page: Page) {
 }
 
 test.describe('navigation', () => {
-  test('the root sends you to the tavern', async ({ page }) => {
+  test('the root sends you outside, into the town', async ({ page }) => {
     await ensureHero(page);
     await page.goto('/');
+    await expect(page).toHaveURL(/\/map$/);
+    await expect(page.getByTestId('place-map')).toBeVisible();
+
+    // And the town is a door to the tavern, not a picture of one.
+    await page.getByTestId('map-tavern').click();
     await expect(page).toHaveURL(/\/tavern$/);
     await expect(page.getByRole('heading', { name: 'The Gilded Tankard' })).toBeVisible();
   });

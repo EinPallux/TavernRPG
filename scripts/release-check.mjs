@@ -110,7 +110,7 @@ const CHECKS = [
 
 /** The parts of the definition no script can settle. */
 const BY_HAND = [
-  'Lighthouse ≥ 90 on the four stage screens: `npm run perf`, on an idle machine (see the note above CHECKS).',
+  'Lighthouse ≥ 90 on the five stage screens: `npm run perf`, on an idle machine (see the note above CHECKS).',
   'Play the opening in a fresh browser profile: create a hero, take a contract, come home to the fight, reload mid-session.',
   'Watch a ×4 battle at 1080p on a mid-range laptop — the fps line, which no CI container can answer.',
   'Read the tour as a newcomer would: twelve beats, no docs open.',

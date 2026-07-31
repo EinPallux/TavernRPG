@@ -11,11 +11,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'motion/react';
-import { GROUP_LABELS, NAV_GROUPS, PLACES, type PlaceDef } from '@/data/places';
+import { GROUP_LABELS, NAV_GROUPS, PLACES, PLACES_BY_ID, type PlaceDef } from '@/data/places';
 import { gateFor, nextUnlock } from '@/engine/progression/gates';
-import { newArrivals } from '@/engine/pets/ownership';
-import { boardHasClaim } from '@/state/boardActions';
 import { currentDayKey } from '@/state/clock';
+import { townSignals } from '@/state/townSignals';
 import { Icon, ChevronIcon, LockIcon } from '@/components/icons';
 import { useShellStore } from '@/state/shellStore';
 import { useGameStore } from '@/state/gameStore';
@@ -188,15 +187,11 @@ export function NavRail() {
   const level = heroLevel ?? previewLevel;
 
   const upcoming = nextUnlock(level);
-  const settingsPlace = PLACES.find((place) => place.id === 'settings');
 
-  // Companions arrive *while you are somewhere else* — a floor cleared, a rank held, a hundredth
-  // contract run — so without a cue the room only gets visited by players who already suspect.
+  // The rail and the town map are the same list drawn two ways, so their badges come from one
+  // place — a signal on one and not the other is a player missing a companion for a fortnight.
   const save = useGameStore((state) => state.save);
-  const arrivals = save ? newArrivals(save) : 0;
-  // An unclaimed chest on the Notice Board gets a dot rather than a count: "1" beside a room
-  // that only ever has one thing waiting is a number pretending to be information.
-  const chestWaiting = save ? boardHasClaim(save, currentDayKey()) : false;
+  const signals = townSignals(save, currentDayKey());
 
   return (
     <motion.nav
@@ -232,6 +227,16 @@ export function NavRail() {
 
       <div className="facet-rule mx-4 mb-2" />
 
+      {/* Outside, above everything — the town itself is not one of the town's rooms. */}
+      <ul className="border-parchment-500/10 mb-2 border-b pb-2">
+        <RailItem
+          place={PLACES_BY_ID.map}
+          level={level}
+          active={pathname === PLACES_BY_ID.map.route}
+          collapsed={collapsed}
+        />
+      </ul>
+
       <div className="flex-1 overflow-y-auto">
         {NAV_GROUPS.map((group) => {
           const places = PLACES.filter((place) => place.group === group);
@@ -252,9 +257,9 @@ export function NavRail() {
                     level={level}
                     active={pathname === place.route}
                     collapsed={collapsed}
-                    badge={place.id === 'menagerie' ? arrivals : 0}
+                    badge={signals[place.id]?.badge ?? 0}
                     revealed={justUnlocked.includes(place.id)}
-                    {...(place.id === 'board' && chestWaiting ? { dot: true } : {})}
+                    {...(signals[place.id]?.dot ? { dot: true } : {})}
                   />
                 ))}
               </ul>
@@ -271,16 +276,14 @@ export function NavRail() {
         </p>
       )}
 
-      {settingsPlace && (
-        <ul className="border-parchment-500/10 border-t py-1">
-          <RailItem
-            place={settingsPlace}
-            level={level}
-            active={pathname === settingsPlace.route}
-            collapsed={collapsed}
-          />
-        </ul>
-      )}
+      <ul className="border-parchment-500/10 border-t py-1">
+        <RailItem
+          place={PLACES_BY_ID.settings}
+          level={level}
+          active={pathname === PLACES_BY_ID.settings.route}
+          collapsed={collapsed}
+        />
+      </ul>
     </motion.nav>
   );
 }

@@ -8,9 +8,10 @@ delving key-gated dungeons, chasing class gear sets, and rolling the Fortune's T
 single-player, all free, heavily inspired by *Shakes & Fidget* without copying it.
 
 > **Status: 🍻 1.0 — Emberhollow is open.** All eighteen phases complete: fifteen rooms, five
-> classes, three dungeons, sixty guilds and 1,500 simulated heroes, with 1,311 unit tests and 256
+> classes, three dungeons, sixty guilds and 1,500 simulated heroes, with 1,334 unit tests and 274
 > end-to-end tests green. `npm run release` runs the release definition (GDD §7) line by line.
-> What comes next is the post-1.0 backlog in `ROADMAP.md`.
+> Since 1.0: three save slots, and a clickable **town map** you can navigate by instead of the
+> menu. What comes next is the post-1.0 backlog in `ROADMAP.md`.
 
 ## Running it
 

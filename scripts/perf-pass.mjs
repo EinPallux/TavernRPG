@@ -25,8 +25,14 @@ const BASE = 'http://127.0.0.1:3100';
 const CHROME = process.env.PLAYWRIGHT_CHROMIUM_PATH;
 const QUICK = process.argv.includes('--quick');
 
-/** The rooms the acceptance calls "stage screens": the ones a player actually stands in. */
-const STAGE = ['/tavern', '/character', '/arena', '/hall'];
+/**
+ * The rooms the acceptance calls "stage screens": the ones a player actually stands in.
+ *
+ * `/map` leads because it is the front door — every session starts there, so its LCP is the
+ * number a player experiences as "how long the game takes to open", and it is the one screen
+ * whose largest asset is a 2560-wide painting rather than a panel.
+ */
+const STAGE = ['/map', '/tavern', '/character', '/arena', '/hall'];
 
 /** `[TUNE]` Budgets. First-load JS for one room, and the shared chunk every room pays for. */
 const ROUTE_JS_BUDGET_KB = 600;

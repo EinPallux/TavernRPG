@@ -233,6 +233,16 @@ export const DiceIcon = (props: IconProps) => (
   </Glyph>
 );
 
+/** A folded map with a road wandering across it — the town seen from above. */
+export const MapIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d="M3 6.2 9 4l6 2.2L21 4v13.8L15 20l-6-2.2L3 20V6.2Z" />
+    <path d="M9 4v13.8M15 6.2V20" opacity={0.5} />
+    <path d="M6.4 15.4c1.8-1.1 2.2-2.6 1.2-4.4M12 8.6c1.5.6 1.9 1.7 1.2 3.2" opacity={0.75} />
+    <circle cx="17.4" cy="12.6" r="1.1" fill="currentColor" stroke="none" />
+  </Glyph>
+);
+
 /** A cog with real teeth — thin radial spokes read as a sunburst at small sizes. */
 export const GearIcon = (props: IconProps) => (
   <Glyph {...props}>
@@ -420,6 +430,7 @@ export const ICONS = {
   banner: BannerIcon,
   stairsDown: StairsDownIcon,
   dice: DiceIcon,
+  map: MapIcon,
   gear: GearIcon,
   coin: CoinIcon,
   lock: LockIcon,

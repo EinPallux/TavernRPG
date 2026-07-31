@@ -40,7 +40,7 @@ bytes are a changed URL and a year-long cache cannot ever be wrong. Next already
 that header and `next.config.ts` deliberately does not repeat it; the e2e asserts Next's value
 instead of mirroring ours.
 
-`/assets/*` does **not** earn it. Those 505 files are served at their authored paths —
+`/assets/*` does **not** earn it. Those 506 files are served at their authored paths —
 `/assets/backgrounds/tavern_background.webp` is written as a literal in `data/places.ts`,
 `data/zones.ts`, `data/dungeons.ts`, `data/classes.ts` and a dozen components — and
 `scripts/sync-assets.mjs` rewrites the bytes *at that same path* whenever a painting is re-authored
@@ -132,7 +132,7 @@ is the half that would be a real bug.
 ## 6. Deploy checklist
 
 1. `npm run verify` (typecheck → lint → unit → build) and `npm run test:e2e`.
-2. `npm run perf` — Lighthouse ≥ 90 on the four stage screens, bundle within budget
+2. `npm run perf` — Lighthouse ≥ 90 on the five stage screens, bundle within budget
    (`asset-pipeline.md` §5b).
 3. Confirm the build log ends with 24 `○ (Static)` routes and no `ƒ`.
 4. Tag the release; Vercel builds production from the tag. Previews come from branches.

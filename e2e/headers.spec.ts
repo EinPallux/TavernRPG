@@ -142,7 +142,7 @@ test.describe('the production response headers', () => {
       (JSON.parse(readFileSync('.next/prerender-manifest.json', 'utf8')) as { routes: object })
         .routes,
     );
-    for (const place of ['/tavern', '/character', '/board', '/arena', '/settings']) {
+    for (const place of ['/map', '/tavern', '/character', '/board', '/arena', '/settings']) {
       expect(prerendered, `${place} is not prerendered`).toContain(place);
     }
   });

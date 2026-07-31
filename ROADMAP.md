@@ -463,10 +463,18 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
 
 ## Post-1.0 backlog (headline patches, rough order)
 
-**Shipped since 1.0:** *Three save slots.* Settings → Characters. The slot argument had threaded
-through the save layer since Phase 0 with nothing able to reach past slot 1 — this is the room
-that plumbing was always for, plus a remembered active slot that lives beside the saves rather
-than inside one. `architecture.md` §3.
+**Shipped since 1.0:**
+
+- *Three save slots.* Settings → Characters. The slot argument had threaded through the save layer
+  since Phase 0 with nothing able to reach past slot 1 — this is the room that plumbing was always
+  for, plus a remembered active slot that lives beside the saves rather than inside one.
+  `architecture.md` §3.
+- *The Town Map.* Emberhollow painted from above with all fourteen buildings clickable, and the
+  screen the game opens on — `/` redirects to `/map`, because standing outside is a place. The rail
+  stays, does the same job as a list, and reads its badges from the same `state/townSignals.ts`;
+  neither way of getting around is the real one. Hotspots are data (`data/townMap.ts`) with a
+  census test, and `e2e/map.spec.ts` measures the real boxes at three window sizes because the fit
+  is CSS, not arithmetic. Style guide §2.1, §7.2.
 
 1. **The Collector's Album** — S&F-scrapbook-style collection of items/monsters with % XP bonus.
 2. **Guild Wars & Raid Bosses** — scheduled guild-vs-guild battles + co-op PvE chains (sim ready).

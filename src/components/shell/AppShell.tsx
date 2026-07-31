@@ -186,7 +186,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex min-w-0 flex-1 flex-col">
               <TopHud />
               <main className="relative min-h-0 flex-1">
-                <RoomBoundary onLeave={() => router.push('/tavern')}>
+                {/* Out of a broken room and into the street, which is the one screen that
+                    cannot fail for the same reason twice — it renders a picture and fourteen
+                    buttons, and every other room is one of them. */}
+                <RoomBoundary onLeave={() => router.push('/map')}>
                   <PlaceStage>{children}</PlaceStage>
                 </RoomBoundary>
               </main>

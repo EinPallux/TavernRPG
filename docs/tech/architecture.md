@@ -49,6 +49,7 @@ What the install actually resolved to, and the three places reality differed fro
 ```
 src/
   app/                    # Next.js routes: one route per town place + layout shell
+                          # `/` redirects to `/map` — outside is a place, not an absence
   engine/                 # PURE game logic — no React, no DOM, no Date.now/Math.random
     combat/               # fight(), procs, battle log types, choreo-independent
     economy/              # gold/dice/materials mutations, prices, resets

@@ -198,7 +198,7 @@ test.describe('a room that throws', () => {
     await expect(page.getByTestId('room-error')).toBeVisible();
 
     await page.getByTestId('room-error-leave').click();
-    await expect(page.getByTestId('place-tavern')).toBeVisible({ timeout: SETUP_TIMEOUT });
+    await expect(page.getByTestId('place-map')).toBeVisible({ timeout: SETUP_TIMEOUT });
   });
 
   test('does not follow the player to the next room', async ({ page }) => {

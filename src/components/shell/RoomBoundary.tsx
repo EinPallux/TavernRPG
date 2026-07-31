@@ -71,7 +71,7 @@ class Boundary extends Component<Props, State> {
 
           <div className="mt-4">
             <ActionButton onClick={this.props.onLeave} data-testid="room-error-leave">
-              Back to the tavern
+              Back out to the town
             </ActionButton>
           </div>
         </div>
