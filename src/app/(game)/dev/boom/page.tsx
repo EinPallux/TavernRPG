@@ -31,8 +31,8 @@ export default function BoomPage() {
           A room that breaks
         </h1>
         <p className="text-parchment-500/72 mt-2 text-sm leading-relaxed">
-          Throws during render, so the shell&rsquo;s error boundary has something real to catch.
-          The rail and the HUD should survive; this room should not.
+          Throws during render, so the shell&rsquo;s error boundary has something real to catch. The
+          rail and the HUD should survive; this room should not.
         </p>
         <div className="mt-4">
           <ActionButton variant="danger" onClick={() => setBroken(true)} data-testid="dev-boom">

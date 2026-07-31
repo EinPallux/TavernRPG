@@ -133,11 +133,12 @@ it cannot do.
 | tutorial to level 10 unaided | `src/engine/release/onboarding.test.ts` — every room open by level 10 is introduced by a beat or announced when its gate lifts; the tour never points at a room the player cannot enter; the pacing sim reaches 10 inside the §0 budget |
 | 30-day player at ~level 55 | `npm run pacing` — the §0 table, ±20%, all six rows |
 | saves survive migration | `src/engine/save/fixtures.test.ts` — a captured fixture per shipped version and the whole v1→current chain |
-| 60 fps at 1080p | **partly.** `npm run perf` gates *main-thread cost per frame* (budget 8 ms, measured 0.8 ms) and Lighthouse ≥ 90. Frames per second is a property of a graphics card and the CI container renders through SwiftShader with none — see style guide §11.1. The number is real and must be taken on the target laptop, by a person, once. |
+| 60 fps at 1080p | **partly, and the split is deliberate.** `npm run release` gates the deterministic half — bundle budget, per-route JS, main-thread cost per frame (8 ms budget, 0.8 ms measured). Lighthouse ≥ 90 lives in `npm run perf`, on an idle machine, because it measures the machine as much as the build (style guide §11). Frames per second is a property of a graphics card, and the CI container renders through SwiftShader with none — it must be read on the target laptop, by a person, once. |
 
-Three things stay human and no harness replaces them: the fresh-profile playthrough, that fps
-reading, and reading the tour as a newcomer with no docs open. `npm run release` lists them every
-run so signing off cannot mean "the green ones passed".
+Four things stay human and no harness replaces them: the Lighthouse reading on a quiet machine,
+the fresh-profile playthrough, the fps reading, and reading the tour as a newcomer with no docs
+open. `npm run release` lists all four every run, so signing off cannot mean "the green ones
+passed".
 
 ## 8. Post-1.0 direction (headline patches)
 

@@ -5,7 +5,104 @@ All notable changes to TavernRPG are documented here. Format follows
 [SemVer](https://semver.org/) once code exists (0.x during development, 1.0.0 at release —
 see `ROADMAP.md` phase gates).
 
-## [Unreleased]
+## [1.0.0] — Emberhollow opens
+
+Eighteen phases. The game is complete against the definition in GDD §7, and `npm run release`
+runs that definition line by line rather than restating it.
+
+**What 1.0 is.** A single-player fantasy RPG that behaves like an MMO: five classes, a
+deterministic combat engine you watch rather than play, contracts and patrols priced in a daily
+Vigor budget, ten gear slots and ten sets, two shops, a forge, a gacha with its odds on the wall,
+twelve companions, three dungeons, a weekly guild bounty, and 1,500 simulated heroes who level,
+duel and gossip whether or not anyone is looking. Everything lives in the player's own browser.
+No accounts, no server, no purchase of any kind.
+
+### Added — Phase 18: release hardening
+
+- **The save can be got out and put back.** Export writes a file named after the hero; import
+  reads it, validates it through the real migration chain, and names both saves in the confirm
+  before it replaces anything. There is no cloud, so a file is the only thing that survives a
+  cleared browser.
+- **A save that will not open now says so, and offers the raw bytes before anything is reset.**
+  Sixteen phases of migration care ended at the point where a file was too broken to migrate.
+- **Two tabs no longer race.** A `BroadcastChannel` leader election with a heartbeat — a crashed
+  tab hands ownership back by doing nothing, which is the only thing a crashed tab reliably does.
+  The second tab watches, and "play here instead" moves the save without hunting for a window.
+- **A room that throws fails inside its own frame.** The rail and the HUD survive, the message is
+  the real one, and leaving the room clears it by construction (the boundary is re-keyed on the
+  path) rather than by a reset handler somebody has to remember to call.
+- **A credits screen**, and the absences listed as prominently as the credits.
+- **Production headers**, verified against a live server rather than read off the config: a CSP
+  with no third-party origin and no `eval`, the security set on every response, and caching split
+  by whether the URL is content-addressed.
+- **`npm run release`** — the GDD §7 definition, executed. Four gates run their real harness; the
+  fifth says plainly that frames per second on real hardware is a person's job.
+- **`e2e/regression.spec.ts`** — thirteen steps over one save, from hero creation to the day
+  after, with a reload between each.
+- **The tutorial's "to level 10 unaided" claim has a harness** for the first time: every room open
+  by level 10 is introduced from inside the game, the tour is walkable by the player it is written
+  for, and the pacing sim reaches ten inside the §0 budget.
+
+### Changed — Phase 18
+
+- **The tour teaches Patrol and the Crier before the arena.** Not a preference — see *Fixed*.
+- **Zod validates without `eval`** (`jitless`), which is what lets the CSP forbid it outright.
+  3.20 ms → 4.16 ms on a 175 KB save, once, at load.
+- **`/assets/*` caches for a day with a week of stale-while-revalidate**, and `/_next/static/*`
+  keeps its immutable year. `immutable` is a promise about the URL, and only one of those two is
+  content-addressed.
+- **Item stat lines list `ATTRIBUTE_IDS`**, the order the rest of the game already uses, instead
+  of whatever order the object was built in.
+- The dev harness routes ship, deliberately, and carry `X-Robots-Tag: noindex`.
+
+### Fixed — Phase 18
+
+- **The town was being drawn over a save that had not loaded.** The tab-lock election put 350 ms
+  in front of `hydrate()` and the shell rendered straight through it — so Settings offered
+  "Export this save" against `save === null`, and a quick click produced a file named
+  `tavernrpg-hero-slot1.json` holding the *previous* session. A guard that delays a load has to
+  gate the render too.
+- **The tour went silent for a whole level.** `activeBeat` stops at a beat gated above the hero
+  rather than skipping it — deliberately — but the arena beat (level 4) sat in front of Patrol and
+  the Crier (both level 3). A level-3 player who finished the Notice Board got no guidance at all
+  until they hit four, with two rooms open and unmentioned.
+- **A chip on its way out still took clicks.** `AnimatePresence mode="wait"` keeps the outgoing
+  child mounted; keying the tutorial chip on its *state* rather than its identity meant a click in
+  the hand-over window ran a handler with nothing to do. It looked live and did nothing.
+- **Item stat lines re-ordered themselves across a reload.** Object key order is not a data model:
+  insertion order agreed with schema order only by accident, and stopped agreeing the day the
+  parser went interpreted.
+- **The credits list was wrong in both directions** — a claimed CC BY obligation for artwork the
+  build has never contained, and an unlisted OFL obligation for fonts it self-hosts and therefore
+  redistributes.
+- **Phase 16 bumped the save schema and never captured a fixture.** Fixed, and a census now makes
+  the omission impossible rather than unlikely.
+- Eleven contrast readings closed, down to **three** budgeted with their evidence written down.
+- **A release gate that cries wolf.** Lighthouse scores 97–98 here against a threshold of 90 and
+  drops a room under it whenever anything else is resident — a different room each time, and
+  reproducibly so: the same sequence passed from `node` and failed through `npm run`. The release
+  command now gates the deterministic half of performance and hands the Lighthouse reading to
+  `npm run perf` with "on an idle machine" written next to it.
+- **`npm run format:check` had been failing since Phase 8** — 31 files, none of them noticed,
+  because every phase checked the files it had touched rather than the tree. A CI step nobody runs
+  locally is a CI step that reports on whoever pushes next. Swept, and the captured save fixtures
+  are now ignored by Prettier: a fixture is a record of what the game wrote, and reformatting one
+  is editing evidence that the next capture would undo anyway.
+
+### Known at 1.0
+
+- Three contrast readings remain, each a measurement artefact rather than a colour, named in style
+  guide §10.3.
+- The frames-per-second line of GDD §7 is measured as main-thread cost (0.8 ms of an 8 ms budget)
+  plus Lighthouse ≥ 90. The fps reading itself needs real hardware.
+- Three open questions run on stated defaults: game-icons.net (unreachable from the build
+  environment; the hand-drawn set stays), the §0 milestone middle row, and whether the full OFL
+  text should ship beside the fonts. All are recorded in `USER_QUESTIONS.md`.
+
+---
+
+*Everything below is also 1.0.0 — eighteen phases of one unreleased line, kept phase by phase
+because that is how it was built and how the reasoning reads. Nothing here shipped separately.*
 
 ### Added — Phase 17: balancing, content fill and feel
 - **Content to plan volume.** 96 mission monsters (9–10 a zone, up from 70), 124 blurb

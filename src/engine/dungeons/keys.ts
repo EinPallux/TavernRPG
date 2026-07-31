@@ -34,9 +34,7 @@ export const KEY_DROP_CHANCE = 0.06;
  */
 export function keyInPlay(heroLevel: number, owned: readonly string[]): DungeonDef | null {
   return (
-    DUNGEONS.find(
-      (entry) => heroLevel >= entry.gateLevel && !owned.includes(entry.keyId),
-    ) ?? null
+    DUNGEONS.find((entry) => heroLevel >= entry.gateLevel && !owned.includes(entry.keyId)) ?? null
   );
 }
 

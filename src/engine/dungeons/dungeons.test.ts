@@ -239,12 +239,14 @@ describe('the delve', () => {
 
   it('refuses the door for each reason separately, so the hub can say which', () => {
     const progress = emptyProgress();
-    expect(
-      checkDelve({ id: rat, heroLevel: 4, hasKey: true, progress, now: 0 }),
-    ).toEqual({ kind: 'below-gate', gateLevel: 10 });
-    expect(
-      checkDelve({ id: rat, heroLevel: 20, hasKey: false, progress, now: 0 }),
-    ).toEqual({ kind: 'no-key', keyName: 'Rusty Key' });
+    expect(checkDelve({ id: rat, heroLevel: 4, hasKey: true, progress, now: 0 })).toEqual({
+      kind: 'below-gate',
+      gateLevel: 10,
+    });
+    expect(checkDelve({ id: rat, heroLevel: 20, hasKey: false, progress, now: 0 })).toEqual({
+      kind: 'no-key',
+      keyName: 'Rusty Key',
+    });
     expect(
       checkDelve({
         id: rat,
@@ -291,7 +293,13 @@ describe('the delve', () => {
   it('shuts the door for half an hour on a loss, and costs nothing else', () => {
     // A level-6 hero against a level-14 floor: a loss, reliably.
     const hero = outmatchedHero();
-    const result = delve({ id: rat, hero, progress: emptyProgress(), worldSeed: SEED, now: 9_000 })!;
+    const result = delve({
+      id: rat,
+      hero,
+      progress: emptyProgress(),
+      worldSeed: SEED,
+      now: 9_000,
+    })!;
 
     expect(result.won).toBe(false);
     expect(result.progress.floorsCleared).toBe(0);
@@ -312,7 +320,10 @@ describe('the delve', () => {
     const worse = delve({
       id: rat,
       hero: outmatchedHero(),
-      progress: { ...result.progress, bestAttempts: [0.99, ...result.progress.bestAttempts.slice(1)] },
+      progress: {
+        ...result.progress,
+        bestAttempts: [0.99, ...result.progress.bestAttempts.slice(1)],
+      },
       worldSeed: SEED,
       now: 0,
     })!;
@@ -333,7 +344,13 @@ describe('the delve', () => {
     const again = delve({ id: rat, hero, progress, worldSeed: SEED, now: 5_000 })!;
     expect(again.battle.log).toEqual(once.battle.log);
 
-    const next = delve({ id: rat, hero, progress: { ...progress, attempts: 1 }, worldSeed: SEED, now: 0 })!;
+    const next = delve({
+      id: rat,
+      hero,
+      progress: { ...progress, attempts: 1 },
+      worldSeed: SEED,
+      now: 0,
+    })!;
     expect(next.battle.log).not.toEqual(once.battle.log);
   });
 
@@ -413,7 +430,9 @@ describe('keys — ROADMAP acceptance', () => {
 
     // Owned, so nothing is in the pool and the roll cannot fire at all.
     for (let i = 0; i < 500; i += 1) {
-      expect(rollKeyDrop({ heroLevel: 12, owned: ['rusty-key'], rng: rng.fork(`o${i}`) })).toBeNull();
+      expect(
+        rollKeyDrop({ heroLevel: 12, owned: ['rusty-key'], rng: rng.fork(`o${i}`) }),
+      ).toBeNull();
     }
   });
 

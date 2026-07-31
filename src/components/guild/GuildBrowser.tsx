@@ -96,7 +96,9 @@ export function GuildBrowser({ onRefusal }: { onRefusal: (refusal: GuildRefusal)
         }
         data-testid="guild-browser"
       >
-        {pending && <PendingLetter guildId={pending.guildId} decidesAt={pending.decidesAt} now={now} />}
+        {pending && (
+          <PendingLetter guildId={pending.guildId} decidesAt={pending.decidesAt} now={now} />
+        )}
 
         <motion.ul
           initial="hidden"
@@ -126,8 +128,8 @@ export function GuildBrowser({ onRefusal }: { onRefusal: (refusal: GuildRefusal)
             and heroes will start knocking within hours — sooner the higher you stand.
           </p>
           <p className="text-parchment-500/72 mt-3 text-xs leading-relaxed">
-            An established hall hands you its Treasury and Drillmaster the moment you join — up to
-            a quarter more gold and experience. Your own starts at nothing.{' '}
+            An established hall hands you its Treasury and Drillmaster the moment you join — up to a
+            quarter more gold and experience. Your own starts at nothing.{' '}
             <span className="text-parchment-300">Identity or income.</span>
           </p>
 
@@ -138,7 +140,9 @@ export function GuildBrowser({ onRefusal }: { onRefusal: (refusal: GuildRefusal)
               fullWidth
               cost={{ gold: FOUNDING_COST }}
               {...(hero.gold < FOUNDING_COST
-                ? { disabledReason: `You are ${(FOUNDING_COST - hero.gold).toLocaleString()} gold short.` }
+                ? {
+                    disabledReason: `You are ${(FOUNDING_COST - hero.gold).toLocaleString()} gold short.`,
+                  }
                 : {})}
               onClick={() => setFounding((open) => !open)}
               data-testid="toggle-founding"
@@ -197,7 +201,7 @@ function PendingLetter({
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={standard}
-      className="chamfer-sm border-amber-500/40 bg-amber-500/10 text-parchment-300 mb-3 flex items-center gap-2 border px-3 py-2 text-sm"
+      className="chamfer-sm text-parchment-300 mb-3 flex items-center gap-2 border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm"
       data-testid="pending-application"
     >
       <HourglassIcon size={14} />
@@ -225,7 +229,8 @@ function HallCard({
 }) {
   const look = VIBE_LOOK[hall.vibe];
   const full = hall.memberCount >= hall.capacity;
-  const qualified = heroLevel >= hall.requirements.minLevel && heroHonor >= hall.requirements.minHonor;
+  const qualified =
+    heroLevel >= hall.requirements.minLevel && heroHonor >= hall.requirements.minHonor;
   const cooling = refusedAt > 0 && now - refusedAt < 24 * 3_600_000;
 
   const reason = full
@@ -410,7 +415,12 @@ function FoundingFlow({
               }`}
               data-testid={`sigil-${option}`}
             >
-              <GuildBanner field="ink" charge={sigil === option ? 'ink' : 'parchment'} sigil={option} size={16} />
+              <GuildBanner
+                field="ink"
+                charge={sigil === option ? 'ink' : 'parchment'}
+                sigil={option}
+                size={16}
+              />
             </button>
           ))}
         </div>

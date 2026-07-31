@@ -18,7 +18,14 @@ import type { DoorView } from '@/state/dungeonActions';
 import { FLOORS_PER_DUNGEON } from '@/data/dungeons';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { ActionButton } from '@/components/ui/ActionButton';
-import { CoinIcon, KeyIcon, LaurelIcon, LockIcon, StairsDownIcon, TrophyIcon } from '@/components/icons';
+import {
+  CoinIcon,
+  KeyIcon,
+  LaurelIcon,
+  LockIcon,
+  StairsDownIcon,
+  TrophyIcon,
+} from '@/components/icons';
 import { snappy, standard } from '@/styles/motion';
 
 /** Minutes and seconds, for a cooldown the player is watching tick down. */
@@ -67,11 +74,7 @@ function Rungs({ view }: { view: DoorView }) {
             )}
             <span
               className={`font-display absolute inset-0 grid place-items-center text-[0.65rem] font-bold tabular-nums ${
-                done
-                  ? 'text-amber-300'
-                  : current
-                    ? 'text-ember-400'
-                    : 'text-parchment-500/72'
+                done ? 'text-amber-300' : current ? 'text-ember-400' : 'text-parchment-500/72'
               }`}
             >
               {boss ? '★' : floor}
@@ -245,7 +248,7 @@ function Shut({
     <p
       className={`chamfer-sm flex items-start gap-2 border px-3 py-2 text-xs leading-relaxed ${
         tone === 'amber'
-          ? 'border-amber-500/30 bg-amber-500/8 text-parchment-300/80'
+          ? 'text-parchment-300/80 border-amber-500/30 bg-amber-500/8'
           : 'border-parchment-500/15 bg-wood-900/60 text-parchment-500/72'
       }`}
       data-testid="dungeon-locked"

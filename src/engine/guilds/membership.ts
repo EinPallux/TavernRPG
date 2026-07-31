@@ -183,7 +183,9 @@ export interface GuildRequirements {
 }
 
 export function requirementsFor(world: WorldState, members: readonly number[]): GuildRequirements {
-  const bots = members.map((id) => world.bots[id]).filter((bot): bot is NonNullable<typeof bot> => !!bot);
+  const bots = members
+    .map((id) => world.bots[id])
+    .filter((bot): bot is NonNullable<typeof bot> => !!bot);
   if (bots.length === 0) return { minLevel: 1, minHonor: 0 };
 
   const levels = bots.map((bot) => bot.level).sort((a, b) => a - b);
@@ -259,9 +261,7 @@ export function guildProfile(world: WorldState, guildId: number): GuildProfile |
   const definition = guildDef(guildId);
   if (!record || !definition) return null;
 
-  const levels = record.memberIds
-    .map((id) => world.bots[id]?.level ?? 0)
-    .sort((a, b) => a - b);
+  const levels = record.memberIds.map((id) => world.bots[id]?.level ?? 0).sort((a, b) => a - b);
   const steps = derivedSteps(world.seed, record);
 
   return {
@@ -332,7 +332,9 @@ export interface ApplyOptions {
  */
 export function applyToGuild(
   options: ApplyOptions,
-): { readonly ok: true; readonly application: Application } | { readonly ok: false; readonly refusal: ApplyRefusal } {
+):
+  | { readonly ok: true; readonly application: Application }
+  | { readonly ok: false; readonly refusal: ApplyRefusal } {
   const { world, guildId, heroLevel, heroHonor, now, inGuild, pending, refusedAt } = options;
 
   if (inGuild) return { ok: false, refusal: { kind: 'already-in-a-guild' } };
@@ -356,8 +358,14 @@ export function applyToGuild(
 
   // A chatty hall reads its post; a quiet one gets to it eventually.
   const mix = rosterPersonality(world, record.memberIds);
-  const promptness = Math.min(1, Math.max(0, mix.sociability * 0.6 + (mix.dedication - 0.15) / 0.95 * 0.4));
-  const rng = createRng(deriveSeed(world.seed, 'apply', guildId, Math.floor(now / 60_000)), 'apply');
+  const promptness = Math.min(
+    1,
+    Math.max(0, mix.sociability * 0.6 + ((mix.dedication - 0.15) / 0.95) * 0.4),
+  );
+  const rng = createRng(
+    deriveSeed(world.seed, 'apply', guildId, Math.floor(now / 60_000)),
+    'apply',
+  );
   const span = DECISION_MAX_MS - DECISION_MIN_MS;
   const wait = DECISION_MIN_MS + Math.round(span * (1 - promptness) * rng.float(0.6, 1.2));
 
@@ -413,7 +421,10 @@ export function decideApplication(options: {
     return { accepted: false, reason: 'That hall is no longer taking anybody.' };
   }
   if (record.memberIds.length >= GUILD_CAPACITY) {
-    return { accepted: false, reason: `${definition.name} filled the last place while you waited.` };
+    return {
+      accepted: false,
+      reason: `${definition.name} filled the last place while you waited.`,
+    };
   }
 
   const levels = record.memberIds.map((id) => world.bots[id]?.level ?? 0);
@@ -431,7 +442,10 @@ export function decideApplication(options: {
     'decision',
   );
   const accepted = rng.bool(odds);
-  const leader = record.memberIds[0] !== undefined ? botIdentity(world.seed, record.memberIds[0]).name : 'the Guildmaster';
+  const leader =
+    record.memberIds[0] !== undefined
+      ? botIdentity(world.seed, record.memberIds[0]).name
+      : 'the Guildmaster';
   const pool = accepted ? ACCEPTANCES : REJECTIONS;
   const line = pool[Math.floor(rng.next() * pool.length) % pool.length]!;
 
@@ -463,7 +477,11 @@ export interface FoundedGuild {
 export const BASE_APPLICANTS_PER_DAY = 0.42;
 export const MAX_APPLICANTS_PER_DAY = 2;
 
-export function applicantsPerDay(playerRank: number, ladderSize: number, memberCount: number): number {
+export function applicantsPerDay(
+  playerRank: number,
+  ladderSize: number,
+  memberCount: number,
+): number {
   // Standing, as a 0–1 share. Rank 1 is 1, the foot of the ladder is 0.
   const standing = ladderSize > 1 ? 1 - (playerRank - 1) / (ladderSize - 1) : 0;
   // A hall filling up is less of a novelty; interest tails off as it approaches capacity.
@@ -506,7 +524,10 @@ export function rollApplicants(options: {
   let count = options.memberIds.length;
 
   for (let dayIndex = firstDay; dayIndex <= lastDay; dayIndex += 1) {
-    const rng = createRng(deriveSeed(options.world.seed, 'applicants', dayIndex), `applicants:${dayIndex}`);
+    const rng = createRng(
+      deriveSeed(options.world.seed, 'applicants', dayIndex),
+      `applicants:${dayIndex}`,
+    );
     const rate = applicantsPerDay(options.playerRank, options.world.ladder.length, count);
 
     // A fractional rate is a probability, a rate above one is that many plus a probability.

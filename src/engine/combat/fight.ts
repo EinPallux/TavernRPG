@@ -251,7 +251,13 @@ export function fight(
       if (target.health / Math.max(1, target.combatant.maxHealth) < absorb.threshold) {
         target.shieldSpent = true;
         target.shield = Math.round(target.combatant.maxHealth * absorb.share);
-        log.push({ t: 'set_proc', side, effect: 'absorb', label: 'The tide holds', amount: target.shield });
+        log.push({
+          t: 'set_proc',
+          side,
+          effect: 'absorb',
+          label: 'The tide holds',
+          amount: target.shield,
+        });
       }
     }
 
@@ -265,7 +271,10 @@ export function fight(
   /** Mend a fighter, capped at full. Returns what actually landed. */
   const mend = (side: Side, amount: number): number => {
     const self = state[side];
-    const healed = Math.min(self.combatant.maxHealth - self.health, Math.max(0, Math.round(amount)));
+    const healed = Math.min(
+      self.combatant.maxHealth - self.health,
+      Math.max(0, Math.round(amount)),
+    );
     if (healed > 0) self.health += healed;
     return healed;
   };
@@ -315,9 +324,16 @@ export function fight(
        * not be worth the same as reflecting 15% of a boss's.
        */
       if (theirs.reflect > 0) {
-        const prevented = rng.float(me.weapon.min, me.weapon.max) * (1 + me.attributes[me.mainStat] / 10);
+        const prevented =
+          rng.float(me.weapon.min, me.weapon.max) * (1 + me.attributes[me.mainStat] / 10);
         const thrown = Math.max(1, Math.round(prevented * theirs.reflect));
-        log.push({ t: 'set_proc', side: other(source), effect: 'reflect', label: 'Turned aside', amount: thrown });
+        log.push({
+          t: 'set_proc',
+          side: other(source),
+          effect: 'reflect',
+          label: 'Turned aside',
+          amount: thrown,
+        });
         if (applyDamage(source, thrown, other(source))) return false;
       }
       return false;
@@ -434,7 +450,13 @@ export function fight(
     if (mine.lifesteal > 0 && self.health > 0) {
       const mended = mend(source, final * mine.lifesteal);
       if (mended > 0) {
-        log.push({ t: 'set_proc', side: source, effect: 'lifesteal', label: 'Undertow', amount: mended });
+        log.push({
+          t: 'set_proc',
+          side: source,
+          effect: 'lifesteal',
+          label: 'Undertow',
+          amount: mended,
+        });
         log.push({ t: 'heal', target: source, amount: mended, hpAfter: self.health });
       }
     }
@@ -450,7 +472,13 @@ export function fight(
     if (mine.execute > 0 && !self.executeSpent) {
       if (target.health / Math.max(1, them.maxHealth) < mine.execute) {
         self.executeSpent = true;
-        log.push({ t: 'set_proc', side: source, effect: 'execute', label: 'Blood in the water', amount: 1 });
+        log.push({
+          t: 'set_proc',
+          side: source,
+          effect: 'execute',
+          label: 'Blood in the water',
+          amount: 1,
+        });
         if (swing(source)) return true;
       }
     }
@@ -543,7 +571,13 @@ export function fight(
       if (changed && mine.verseHeal > 0) {
         const mended = mend(side, self.combatant.maxHealth * mine.verseHeal);
         if (mended > 0) {
-          log.push({ t: 'set_proc', side, effect: 'verse-heal', label: 'Dawnchorus', amount: mended });
+          log.push({
+            t: 'set_proc',
+            side,
+            effect: 'verse-heal',
+            label: 'Dawnchorus',
+            amount: mended,
+          });
           log.push({ t: 'heal', target: side, amount: mended, hpAfter: self.health });
         }
       }
@@ -554,7 +588,10 @@ export function fight(
     for (const side of ['a', 'b'] as Side[]) {
       const harden = findProc(state[side].combatant, 'hardening');
       if (harden && state[side].extraReduction < harden.cap) {
-        state[side].extraReduction = Math.min(harden.cap, state[side].extraReduction + harden.perRound);
+        state[side].extraReduction = Math.min(
+          harden.cap,
+          state[side].extraReduction + harden.perRound,
+        );
         log.push({ t: 'harden', side, reduction: state[side].extraReduction });
       }
     }
@@ -563,7 +600,9 @@ export function fight(
     for (const side of ['a', 'b'] as Side[]) {
       const swarm = findProc(state[side].combatant, 'swarm-call');
       if (!swarm || round % Math.max(1, swarm.everyRounds) !== 0) continue;
-      if (callSwarm(side, state[side].combatant.signature?.label ?? 'The swarm', swarm.damageShare)) {
+      if (
+        callSwarm(side, state[side].combatant.signature?.label ?? 'The swarm', swarm.damageShare)
+      ) {
         winner = side;
         finished = true;
         swarmed = true;

@@ -52,7 +52,40 @@ function run(command, args) {
   }
 }
 
+/*
+ * **The performance gate here is the deterministic half, and that is a deliberate line.**
+ *
+ * Bundle size, per-route JS and main-thread cost per frame are properties of the build: same
+ * numbers every run, on any machine. Lighthouse is not — it is an instrument pointed at a
+ * *machine*, and on this four-core container it scores 97 idle against a gate of 90 and drops a
+ * room under it the moment anything else is resident. Chasing that produced a memorable
+ * measurement: the identical sequence passed when driven from `node` and failed through
+ * `npm run`, on nothing but the npm wrapper still being alive. A different room lost each time,
+ * which is contention, not a slow screen.
+ *
+ * So this runs `perf-pass --quick` and the Lighthouse reading moves to the by-hand list with its
+ * exact command. Not a weakened gate — `npm run perf` still fails under 90 and is step 2 of the
+ * deploy checklist. A release command that cries wolf teaches you to re-run it until it agrees
+ * with you, which is worse than one that says plainly which readings need a quiet machine.
+ */
 const CHECKS = [
+  {
+    line: 'the game runs 60 fps on a mid-range laptop at 1080p',
+    how: 'bundle budget, per-route JS and main-thread cost per frame. Lighthouse and fps are below.',
+    run: async () => {
+      if (!existsSync('.next/BUILD_ID')) {
+        return { skipped: true, detail: 'no production build — run `npm run build` first' };
+      }
+      if (!(await serving())) {
+        return {
+          skipped: true,
+          detail: `nothing serving on :${PERF_PORT} — run \`npx next start --port ${PERF_PORT}\` first`,
+        };
+      }
+      return run('node', ['scripts/perf-pass.mjs', '--quick']);
+    },
+    manual: 'Play a ×4 fight on the target laptop and watch it, once.',
+  },
   {
     line: 'every feature in §4 is complete, with animation/feedback polish',
     how: 'census: the GDD table vs src/engine/release/checklist.ts, and every path it names',
@@ -73,27 +106,11 @@ const CHECKS = [
     how: 'a captured fixture per shipped version, and the whole v1→current chain walked',
     run: () => run('npx', ['vitest', 'run', 'src/engine/save']),
   },
-  {
-    line: 'the game runs 60 fps on a mid-range laptop at 1080p',
-    how: 'main-thread cost per frame + Lighthouse — see GDD §7. Frames on real hardware is yours.',
-    run: async () => {
-      if (!existsSync('.next/BUILD_ID')) {
-        return { skipped: true, detail: 'no production build — run `npm run build` first' };
-      }
-      if (!(await serving())) {
-        return {
-          skipped: true,
-          detail: `nothing serving on :${PERF_PORT} — run \`npx next start --port ${PERF_PORT}\` first`,
-        };
-      }
-      return run('node', ['scripts/perf-pass.mjs']);
-    },
-    manual: 'Play a ×4 fight on the target laptop and watch it, once.',
-  },
 ];
 
 /** The parts of the definition no script can settle. */
 const BY_HAND = [
+  'Lighthouse ≥ 90 on the four stage screens: `npm run perf`, on an idle machine (see the note above CHECKS).',
   'Play the opening in a fresh browser profile: create a hero, take a contract, come home to the fight, reload mid-session.',
   'Watch a ×4 battle at 1080p on a mid-range laptop — the fps line, which no CI container can answer.',
   'Read the tour as a newcomer would: twelve beats, no docs open.',

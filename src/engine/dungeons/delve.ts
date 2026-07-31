@@ -182,7 +182,12 @@ export function delve(options: {
       share,
       newBest,
       spoils: NO_SPOILS,
-      progress: { ...progress, cooldownUntil: now + LOSS_COOLDOWN_MS, bestAttempts, attempts: attempt },
+      progress: {
+        ...progress,
+        cooldownUntil: now + LOSS_COOLDOWN_MS,
+        bestAttempts,
+        attempts: attempt,
+      },
     };
   }
 

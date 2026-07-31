@@ -166,7 +166,10 @@ export function resolveMission(
     };
   }
 
-  const dropStream = createRng(deriveSeed(mission.offer.seed, 'drops'), `drops/${mission.offer.id}`);
+  const dropStream = createRng(
+    deriveSeed(mission.offer.seed, 'drops'),
+    `drops/${mission.offer.id}`,
+  );
   const drops = rollMissionDrops(missionDropTable(mission.duration), dropStream, {
     weaponLevelsBehind: hero.level - (hero.equipment.weapon?.level ?? 1),
   });

@@ -192,7 +192,11 @@ export function GuildHallScreen() {
                   </p>
                 </div>
                 <div className="mt-5">
-                  <ActionButton fullWidth onClick={dismissGuildDecision} data-testid="dismiss-decision">
+                  <ActionButton
+                    fullWidth
+                    onClick={dismissGuildDecision}
+                    data-testid="dismiss-decision"
+                  >
                     {guildDecision.accepted ? 'Walk in' : 'Fair enough'}
                   </ActionButton>
                 </div>
@@ -231,7 +235,11 @@ export function GuildHallScreen() {
                 <ul className="mt-4 space-y-1.5">
                   <ChestLine icon={<CoinIcon size={14} />} label="Gold" amount={guildChest.gold} />
                   {guildChest.dice > 0 && (
-                    <ChestLine icon={<DiceIcon size={14} />} label="Golden Dice" amount={guildChest.dice} />
+                    <ChestLine
+                      icon={<DiceIcon size={14} />}
+                      label="Golden Dice"
+                      amount={guildChest.dice}
+                    />
                   )}
                 </ul>
                 {guildChest.scrap > 0 && (

@@ -185,7 +185,11 @@ export function simulateBotContribution(options: {
   readonly from: number;
   readonly to: number;
   readonly lastRollDay: number;
-}): { readonly units: number; readonly lastRollDay: number; readonly byBot: ReadonlyMap<number, number> } {
+}): {
+  readonly units: number;
+  readonly lastRollDay: number;
+  readonly byBot: ReadonlyMap<number, number>;
+} {
   const DAY = 86_400_000;
   const lastDay = Math.floor(options.to / DAY);
   const firstDay = Math.max(Math.floor(options.from / DAY), options.lastRollDay + 1, lastDay - 13);

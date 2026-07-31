@@ -439,7 +439,9 @@ export function floorDef(id: DungeonId, floor: number): DungeonFloorDef | null {
  */
 export function floorLevel(id: DungeonId, floor: number): number {
   const definition = dungeon(id);
-  return definition.levelBase + Math.max(1, Math.min(FLOORS_PER_DUNGEON, floor)) * definition.levelStep;
+  return (
+    definition.levelBase + Math.max(1, Math.min(FLOORS_PER_DUNGEON, floor)) * definition.levelStep
+  );
 }
 
 /** Every key in the game, in the order the doors open. */

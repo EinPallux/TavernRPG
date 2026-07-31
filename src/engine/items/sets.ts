@@ -204,11 +204,9 @@ export function ownedSetPieces(hero: {
   readonly satchel: readonly Item[];
 }): Set<string> {
   const owned = new Set<string>();
-  const all = [
-    ...Object.values(hero.equipment),
-    ...hero.backpack,
-    ...hero.satchel,
-  ].filter((item): item is Item => Boolean(item));
+  const all = [...Object.values(hero.equipment), ...hero.backpack, ...hero.satchel].filter(
+    (item): item is Item => Boolean(item),
+  );
 
   for (const item of all) {
     if (item.setId) owned.add(`${item.setId}:${item.slot}`);

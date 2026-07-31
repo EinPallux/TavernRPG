@@ -252,6 +252,17 @@ main-thread cost. Needs a production server on :3100.
 **The whole score was one asset decision.** See asset-pipeline §5b: 56 MB of backdrop PNGs served
 as authored. Nothing about the code changed to take Lighthouse from 49 to 98.
 
+**Lighthouse measures the machine as much as the build, and near a boundary that matters.** Idle,
+the four rooms sit at 97–98 against a gate of 90. With anything else resident, one of them drops
+under it — a *different* one each attempt, which is contention rather than a slow screen. The
+sharpest version: the identical check sequence passed when driven straight from `node` and failed
+through `npm run`, on nothing but the npm wrapper still being alive.
+
+So `npm run release` gates the deterministic half (bundle, per-route JS, main-thread cost — same
+numbers every run) and hands Lighthouse to `npm run perf` with "on an idle machine" attached. The
+gate is not weakened: `npm run perf` still fails under 90 and is step 2 of the deploy checklist.
+A release command that cries wolf teaches you to re-run it until it agrees with you.
+
 **The point or two Phase 18 gave back is the tab-lock election, and it was bought deliberately.**
 The shell now paints nothing until the save has loaded (architecture §3), so the largest element
 arrives after a 350ms election rather than during it. Every room stays comfortably over the ≥ 90

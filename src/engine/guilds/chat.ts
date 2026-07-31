@@ -161,8 +161,7 @@ function talkFor(
 ): { category: ChatCategory; slots: ChatSlots } | null {
   const subject = world.bots[event.botId];
   if (!subject) return null;
-  const name =
-    event.botId === PLAYER_LADDER_ID ? 'you' : botIdentity(world.seed, event.botId).name;
+  const name = event.botId === PLAYER_LADDER_ID ? 'you' : botIdentity(world.seed, event.botId).name;
   const other =
     event.otherId !== undefined && world.bots[event.otherId]
       ? botIdentity(world.seed, event.otherId).name
@@ -245,7 +244,10 @@ export function generateChat({
 
     for (let slot = 0; slot < perDay; slot += 1) {
       // Spread across the day, then filtered by who is actually up at that hour.
-      const at = Math.min(to, dayIndex * DAY + Math.floor(((slot + rng.float(0, 1)) / perDay) * DAY));
+      const at = Math.min(
+        to,
+        dayIndex * DAY + Math.floor(((slot + rng.float(0, 1)) / perDay) * DAY),
+      );
       if (at < from) continue;
 
       const awake = awakeMembers(world, memberIds, at);

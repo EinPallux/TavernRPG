@@ -8,3 +8,8 @@ public/assets/
 game_assets/
 package-lock.json
 *.md
+
+# Captured saves, not authored source. A fixture is a byte-for-byte record of what the game
+# actually wrote on a given day (architecture.md §3); reformatting one is editing evidence, and
+# the next capture would arrive unformatted and fail the check all over again.
+src/engine/save/fixtures/

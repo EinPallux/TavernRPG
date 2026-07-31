@@ -333,9 +333,7 @@ describe('fight — boss signatures', () => {
     expect(traits).toHaveLength(1);
     expect(traits[0]).toMatchObject({ side: 'b', ...SIGNATURE });
     // Before anything is swung, so it is a warning rather than a post-mortem.
-    expect(log.indexOf(traits[0]!)).toBeLessThan(
-      log.findIndex((event) => event.t === 'attack'),
-    );
+    expect(log.indexOf(traits[0]!)).toBeLessThan(log.findIndex((event) => event.t === 'attack'));
   });
 
   it('calls the swarm on its rhythm, and lands it through any defence', () => {

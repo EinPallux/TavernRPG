@@ -7,9 +7,10 @@ timed tavern missions, climbing an arena ladder of 1,500 simulated heroes, joini
 delving key-gated dungeons, chasing class gear sets, and rolling the Fortune's Table gacha — all
 single-player, all free, heavily inspired by *Shakes & Fidget* without copying it.
 
-> **Status: 🔨 Phase 0 complete — the foundation runs.** Planning is reviewed and locked (all 20
-> open questions answered); the project scaffold, determinism primitives, save system and a
-> walking-skeleton screen are in place with tests green. Next: Phase 1 (design system & app shell).
+> **Status: 🍻 1.0 — Emberhollow is open.** All eighteen phases complete: fifteen rooms, five
+> classes, three dungeons, sixty guilds and 1,500 simulated heroes, with 1,311 unit tests and 256
+> end-to-end tests green. `npm run release` runs the release definition (GDD §7) line by line.
+> What comes next is the post-1.0 backlog in `ROADMAP.md`.
 
 ## Running it
 
@@ -25,7 +26,11 @@ npm run dev          # http://localhost:3000
 | `npm run test:e2e` | End-to-end tests — Playwright |
 | `npm run lint` / `typecheck` / `format` | ESLint · `tsc --noEmit` · Prettier |
 | `npm run verify` | The full gate: typecheck → lint → test → build |
-| `npm run assets:sync` | Copies `game_assets/` into `public/assets/` (runs automatically before dev/build) |
+| `npm run assets:sync` | Transcodes `game_assets/` into `public/assets/` (runs automatically before dev/build) |
+| `npm run release` | The GDD §7 release definition, run line by line |
+| `npm run balance` / `economy` / `pacing` | The combat harness, the 90-day economy sim, the §0 milestone ladder |
+| `npm run tuning` | Every `[TUNE]` value with its post-tuning verdict |
+| `npm run perf` | Lighthouse, bundle budget and main-thread cost (needs a server on :3100) |
 
 Want background music? Drop an MP3 at `public/assets/audio/bgm.mp3` — the game picks it up and
 gives it its own volume control. No file, no music, no errors.
