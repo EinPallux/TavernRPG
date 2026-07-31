@@ -133,8 +133,11 @@ test.describe('navigation', () => {
     await levelHeroToTen(page);
 
     await page.goto('/settings');
+    // Phase 18 built the export/import this line used to promise, so the promise shrank to the
+    // one thing still outstanding. When the glossary index lands, this whole strip goes.
     await expect(page.getByTestId('settings-later')).toContainText('Phase 18');
-    await expect(page.getByTestId('settings-later')).toContainText('export and import');
+    await expect(page.getByTestId('settings-later')).toContainText('glossary');
+    await expect(page.getByTestId('settings-later')).not.toContainText('export');
     // No keeper, so no bubble — the room speaks for itself instead of inventing a proprietor.
     await expect(page.getByTestId('bark-settings')).toHaveCount(0);
   });

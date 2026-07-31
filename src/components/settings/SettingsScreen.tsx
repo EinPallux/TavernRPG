@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * Settings (Phase 17 — sound, motion and playback).
+ * Settings (Phase 17 — sound, motion, playback; Phase 18 — the save).
  *
  * The room existed as a dressed placeholder for sixteen phases because nothing in it was real
- * yet. Phase 17 made three things real — the SFX mix, the music drop-in and the motion
- * preference — so the panel opens with those, and the rest of it (export/import, credits, the
- * glossary index) lands with Phase 18, which is what the strip at the bottom says.
+ * yet. Phase 17 made the SFX mix, the music drop-in and the motion preference real; Phase 18
+ * added the panel that matters most and reads least — export and import. Only the glossary index
+ * is still outstanding, and the strip at the foot says so.
  *
  * Everything here writes to `shellStore.settings`, which the shell mirrors into the save *and*
  * into the audio singletons. Nothing on this screen touches a volume or an `AudioContext`
@@ -25,6 +25,7 @@ import { SFX_IDS } from '@/data/sfx';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { SavePanel } from './SavePanel';
 import { useShellStore } from '@/state/shellStore';
 import { useGameStore } from '@/state/gameStore';
 import { audioAvailable, play } from '@/state/sfx';
@@ -340,6 +341,14 @@ export function SettingsScreen() {
               </Row>
             </TavernPanel>
 
+            {/* ── Your save ────────────────────────────────────────────── */}
+            <TavernPanel
+              title="Your save"
+              headerSlot={<span className="text-parchment-500/72 text-xs">this browser only</span>}
+            >
+              <SavePanel />
+            </TavernPanel>
+
             {/* ── The tour ─────────────────────────────────────────────── */}
             <TavernPanel title="Marla’s tour">
               <Row
@@ -374,8 +383,8 @@ export function SettingsScreen() {
             className="text-parchment-500/72 mx-auto mt-6 max-w-5xl text-xs leading-relaxed"
             data-testid="settings-later"
           >
-            Save export and import, the credits, and the full glossary index arrive with{' '}
-            {PLACE.buildPhase}.
+            The full glossary index arrives with {PLACE.buildPhase}. Every term in the game is
+            already explained where it appears — hover any underlined word.
           </p>
         </div>
       </AmbientStage>

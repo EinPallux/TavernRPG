@@ -134,7 +134,7 @@ import {
   resetClockForTests,
   restoreClock,
 } from './clock';
-import { archiveSave, exportRaw, readSave, writeSave } from './persistence';
+import { archiveSave, exportRaw, exportSave, importSave, readSave, writeSave } from './persistence';
 
 /**
  * A fresh world seed. Not gameplay randomness (which must be seeded and replayable) but
@@ -172,6 +172,10 @@ export interface GameStoreState {
   exportRawSave: () => Promise<string | null>;
   /** Triage: set the unreadable save aside — never delete it — and begin again. */
   archiveAndStartOver: () => Promise<void>;
+  /** The current save, as text a player can keep. Null if the slot will not open. */
+  exportCurrentSave: () => Promise<string | null>;
+  /** Replace this slot from exported text, then reload the game around it. */
+  importIntoSlot: (text: string) => Promise<{ ok: boolean; message: string }>;
   startOver: () => Promise<void>;
 
   /** Creation. Writes through immediately — nobody should lose a new hero to a debounce. */
@@ -646,6 +650,30 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       });
       await writeSave(fresh);
       set({ lastSavedAt: fresh.savedAt, isSaving: false, saveError: null });
+    },
+
+    async exportCurrentSave() {
+      // Flush first. Exporting a save that is three actions behind the screen is the kind of
+      // bug a player only discovers on the day they need the file.
+      await persistNow();
+      return exportSave(get().slot);
+    },
+
+    async importIntoSlot(text) {
+      const { slot } = get();
+      const result = await importSave(text, slot);
+      if (!result.ok) return { ok: false, message: result.message };
+
+      /*
+       * Re-hydrate rather than dropping the save straight into state.
+       *
+       * An import is a *load*, and the load path does things this action must not skip: it
+       * restores the clock from the file (so a save from a rewound device cannot rewind
+       * progress), it runs the day boundary, and it raises the world. Setting `save` directly
+       * would produce a session that looks right and drifts within a minute.
+       */
+      await get().hydrate(slot);
+      return { ok: true, message: 'Save loaded.' };
     },
 
     async startOver() {
