@@ -33,11 +33,11 @@ import { TavernPanel } from '@/components/ui/TavernPanel';
 type Opponent = { kind: 'class'; id: ClassId } | { kind: 'monster'; id: ArchetypeId };
 
 const BACKDROPS = [
-  '/assets/backgrounds/mission_background_3.png',
-  '/assets/backgrounds/mission_background_7.png',
-  '/assets/backgrounds/mission_background_12.png',
-  '/assets/backgrounds/arena_background.png',
-  '/assets/backgrounds/dungeons_background.png',
+  '/assets/backgrounds/mission_background_3.webp',
+  '/assets/backgrounds/mission_background_7.webp',
+  '/assets/backgrounds/mission_background_12.webp',
+  '/assets/backgrounds/arena_background.webp',
+  '/assets/backgrounds/dungeons_background.webp',
 ] as const;
 
 export default function BattleDevPage() {

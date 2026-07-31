@@ -199,3 +199,46 @@ transparent, sampling the band the text occupies — `axe-core` cannot do this j
 gives up (honestly) at a `background-image`, and every room in the game has one. On the tavern it
 could resolve **one** element out of 104. A green audit that inspected one node is worse than no
 audit; that is why this harness exists rather than a call to `axe.run`.
+
+
+## 11. Performance (Phase 17 pass)
+
+`npm run perf` — Lighthouse on the stage screens, a bundle budget, and the battle scene's
+main-thread cost. Needs a production server on :3100.
+
+| measure | budget | measured |
+|---|---|---|
+| Lighthouse performance, `/tavern` `/character` `/arena` `/hall` | ≥ 90 | **98 · 98 · 98 · 99** |
+| LCP | — | 1.0–1.1s (was **21.5s**) |
+| Total blocking time | — | 10–30ms (was 530ms) |
+| Cumulative layout shift | — | 0 |
+| First-load JS per room | 600 KB | 225–326 KB |
+| Largest single chunk | 400 KB | 312 KB |
+| Battle scene, main thread | 8ms/frame | **0.7ms** |
+
+**The whole score was one asset decision.** See asset-pipeline §5b: 56 MB of backdrop PNGs served
+as authored. Nothing about the code changed to take Lighthouse from 49 to 98.
+
+### 11.1 Frame rate is not a gate here, and that is deliberate
+
+The pass measured a ×4 fight at 20fps against a 60fps baseline on a static room — and then found
+the container renders through **SwiftShader**, with no GPU, so every composited layer, blur,
+shadow and canvas blit is CPU work. Reporting that as a defect would be reporting the absence of
+a graphics card.
+
+So the gate is **main-thread cost** — script, layout and style recalc per frame, read from CDP,
+all GPU-independent. The scene spends **0.7ms** of an 8ms budget. The raw fps is still printed
+because it is the number a human wants to see; it is just not the number that can fail a build.
+
+Two things were fixed along the way, and both are rules rather than one-offs:
+
+- **A value the timeline already computed is `style`, not `animate`.** The fighter's lunge offset
+  was in Motion's `animate`, which asked it to start a new tween toward a target that changed
+  again on the next frame — sixty times a second, for two fighters — paired with a `transition`
+  object whose identity swapped every tick, so each tween tore down the last. `animate` is for
+  state changes; per-frame values go through `style`.
+- **`filter` is the most expensive thing Motion can tween.** The knockout desaturation is binary,
+  so it is a CSS transition now.
+
+`frameAt` was the first suspect and was exonerated by measurement: **9 microseconds** a call,
+folding the whole timeline from beat zero. The pure-fold design costs nothing worth naming.

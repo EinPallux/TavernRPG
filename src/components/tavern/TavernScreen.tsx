@@ -166,7 +166,7 @@ export function TavernScreen() {
   return (
     <div className="relative h-full w-full" data-testid="place-tavern">
       <AmbientStage
-        backdrop="/assets/backgrounds/tavern_background.png"
+        backdrop="/assets/backgrounds/tavern_background.webp"
         tint="from-wood-900 via-wood-900/80 to-wood-900/55"
         effects={['hearth', 'motes']}
       >

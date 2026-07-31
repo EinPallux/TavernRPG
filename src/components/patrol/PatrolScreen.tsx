@@ -115,7 +115,7 @@ export function PatrolScreen() {
   return (
     <div className="relative h-full w-full" data-testid="place-patrol">
       <AmbientStage
-        backdrop="/assets/backgrounds/patrol_background.png"
+        backdrop="/assets/backgrounds/patrol_background.webp"
         tint="from-wood-900 via-wood-900/78 to-wood-900/50"
         effects={['lantern', 'motes']}
       >
@@ -362,7 +362,7 @@ function OnDuty({
         <div
           aria-hidden
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/assets/backgrounds/patrol_background.png')" }}
+          style={{ backgroundImage: "url('/assets/backgrounds/patrol_background.webp')" }}
         />
         <div
           aria-hidden

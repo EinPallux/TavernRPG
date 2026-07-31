@@ -146,7 +146,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
 
   return (
     <AmbientStage
-      backdrop="/assets/backgrounds/tavern_background.png"
+      backdrop="/assets/backgrounds/tavern_background.webp"
       tint="from-wood-900 via-wood-900/90 to-wood-900/75"
       effects={['motes']}
     >

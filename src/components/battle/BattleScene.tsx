@@ -131,7 +131,7 @@ function SwarmCry({ label, side }: { label: string; side: Side }) {
 
 export function BattleScene({
   log,
-  backdrop = '/assets/backgrounds/mission_background_3.png',
+  backdrop = '/assets/backgrounds/mission_background_3.webp',
   initialSpeed = 1,
   onSpeedChange,
   startFinished = false,

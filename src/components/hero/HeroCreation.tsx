@@ -60,7 +60,7 @@ export function HeroCreation() {
 
   return (
     <AmbientStage
-      backdrop="/assets/backgrounds/tavern_background.png"
+      backdrop="/assets/backgrounds/tavern_background.webp"
       effects={['hearth', 'embers', 'motes']}
     >
       <div className="flex h-full flex-col items-center justify-center gap-6 overflow-y-auto p-8">

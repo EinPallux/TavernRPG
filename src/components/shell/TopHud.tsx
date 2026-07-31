@@ -69,7 +69,7 @@ export function TopHud() {
   const xpForNext = hero ? xpNeeded(hero.level) : preview.xpForNext;
   const gold = hero ? Math.floor(hero.gold) : preview.gold;
   const dice = hero?.dice ?? preview.dice;
-  const portrait = hero ? classDef(hero.classId).portrait : '/assets/classes/Warrior.png';
+  const portrait = hero ? classDef(hero.classId).portrait : '/assets/classes/Warrior.webp';
   const heroLabel = hero
     ? `${hero.name} — level ${hero.level} ${classDef(hero.classId).name}`
     : 'Your hero';

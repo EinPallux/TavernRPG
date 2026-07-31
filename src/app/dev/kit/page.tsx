@@ -305,7 +305,7 @@ export default function KitPage() {
           <Section title="Ambient stage">
             <div className="chamfer-md h-56 overflow-hidden">
               <AmbientStage
-                backdrop="/assets/backgrounds/tavern_background.png"
+                backdrop="/assets/backgrounds/tavern_background.webp"
                 effects={['hearth', 'embers', 'motes']}
               >
                 <div className="flex h-full items-end p-4">

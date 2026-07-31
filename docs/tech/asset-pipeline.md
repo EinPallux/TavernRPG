@@ -59,6 +59,27 @@ blend), dust motes / ember particles (canvas layer), lantern flicker (CSS), para
 battle-scene push-ins. One `<AmbientStage>` component takes a backdrop + effect recipe from the
 screen config.
 
+## 5b. Delivery format (Phase 17 performance pass)
+
+`scripts/sync-assets.mjs` no longer copies the art — it **transcodes** it. Backdrops go to WebP
+capped at 1920px, class portraits at 768px, both at quality 78. `game_assets/` keeps the authored
+PNGs at full resolution; that is the archive and nothing in the pipeline touches it.
+
+| group | before | after |
+|---|---|---|
+| `backgrounds/` (23) | 57.7 MB | **2.2 MB** (−96%) |
+| `classes/` (5) | 21.8 MB | **0.2 MB** (−99%) |
+
+**Why it needed doing, in one number: LCP was 21.5 seconds.** The authored backdrops are
+2730×1536 PNGs at 4–5 MB each and the game was serving them exactly as painted. First contentful
+paint was 0.3s — the room appeared at once and then waited twenty seconds for its own wallpaper.
+A faithful copy was the right Phase 0 behaviour ("a faithful copy plus a manifest") and the wrong
+thing to ship; the note in that file's header saying variants would come "with the asset pipeline
+proper" is now discharged. Lighthouse went 49 → **98**.
+
+Kenney's UI and VFX sheets are still copied verbatim: they are small, already optimised, and the
+particle sprites are read pixel-for-pixel by the canvas layer.
+
 ## 6. Sound (Q13 answered: approved)
 
 - **SFX (1.0, Phase 17 — built, synthesized):** 24 cues (UI ticks, coin, forge strike,
