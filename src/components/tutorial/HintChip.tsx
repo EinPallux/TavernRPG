@@ -24,6 +24,7 @@ import { activeBeat } from '@/engine/tutorial/beats';
 import { nextHint } from '@/engine/tutorial/hints';
 import { useGameStore } from '@/state/gameStore';
 import { Icon } from '@/components/icons';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { snappy, standard } from '@/styles/motion';
 
 export function HintChip() {
@@ -33,6 +34,11 @@ export function HintChip() {
 
   // Nothing to say, nobody to say it to, or Marla is already mid-sentence.
   const hint = save && activeBeat(save) === null ? nextHint(save) : null;
+
+  // Both hooks run every render, with or without a hint — `useTooltip(null)` returns nothing to
+  // spread, which is how a conditional tooltip stays an unconditional hook.
+  const goTip = useTooltip(hint && { title: PLACES_BY_ID[hint.place].name, detail: hint.text });
+  const dismissTip = useTooltip('Not today');
 
   return (
     <AnimatePresence mode="wait">
@@ -62,7 +68,7 @@ export function HintChip() {
             whileTap={{ y: 1 }}
             transition={snappy}
             onClick={() => router.push(PLACES_BY_ID[hint.place].route)}
-            title={`${hint.text} → ${PLACES_BY_ID[hint.place].name}`}
+            {...goTip}
             className="text-parchment-300/85 hover:text-parchment-300 min-w-0 truncate text-xs"
             data-testid="hint-go"
           >
@@ -73,7 +79,7 @@ export function HintChip() {
             type="button"
             onClick={() => dismissHint(hint.id)}
             aria-label="Dismiss this suggestion"
-            title="Not today"
+            {...dismissTip}
             className="text-parchment-500/72 hover:text-parchment-300 shrink-0 px-1.5 text-sm leading-none transition-colors"
             data-testid="hint-dismiss"
           >

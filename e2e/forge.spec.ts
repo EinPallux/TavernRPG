@@ -259,7 +259,7 @@ test.describe('the anvil', () => {
 
     const strike = page.getByTestId('craft-master');
     await expect(strike).toBeDisabled();
-    await expect(strike).toHaveAttribute('title', /bucket/i);
+    await expect(strike).toHaveAttribute('data-reason', /bucket/i);
     expect((await read(page)).crafted).toBe(0);
   });
 });

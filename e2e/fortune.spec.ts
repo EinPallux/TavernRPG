@@ -197,11 +197,11 @@ test.describe('the free card', () => {
 
     const weekly = page.getByTestId('roll-weekly');
     await expect(weekly).toBeDisabled();
-    await expect(weekly).toHaveAttribute('title', /earned/i);
+    await expect(weekly).toHaveAttribute('data-reason', /earned/i);
 
     const ten = page.getByTestId('roll-ten-monthly');
     await expect(ten).toBeDisabled();
-    await expect(ten).toHaveAttribute('title', /no discount/i);
+    await expect(ten).toHaveAttribute('data-reason', /no discount/i);
     expect((await read(page)).gacha.rolls).toBe(0);
   });
 });

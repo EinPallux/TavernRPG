@@ -232,7 +232,7 @@ export default function WorldDevPage() {
                     <div
                       className="w-full bg-amber-500/70"
                       style={{ height: `${Math.max(1, (count / tallest) * 100)}%` }}
-                      title={`${count} heroes`}
+                      aria-label={`${count} heroes`}
                     />
                   </div>
                   <span className="text-parchment-500/72 text-[9px] tabular-nums">

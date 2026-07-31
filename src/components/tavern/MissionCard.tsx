@@ -25,6 +25,7 @@ import { blurb as blurbById, renderBlurb } from '@/data/missionBlurbs';
 import { monster as monsterById } from '@/data/monsters';
 import { ZONES_BY_ID, backdropFor, type ZoneId } from '@/data/zones';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { CoinIcon, SparkIcon } from '@/components/icons';
 import { snappy, standard } from '@/styles/motion';
 
@@ -48,6 +49,10 @@ export function MissionCard({
   index = 0,
 }: MissionCardProps) {
   const [duration, setDuration] = useState<MissionDuration>(10);
+  const oddsTip = useTooltip({
+    title: 'Published odds',
+    detail: 'The same numbers the game rolls against — never rounded in the house’s favour.',
+  });
 
   const zone = ZONES_BY_ID[offer.zoneId as ZoneId];
   const monster = monsterById(offer.monsterId);
@@ -169,7 +174,8 @@ export function MissionCard({
         <div
           className="border-parchment-500/10 border-t pt-2"
           data-testid={`odds-${offer.id}`}
-          title="Odds are always shown, and are the same numbers the game rolls against."
+          {...oddsTip}
+          tabIndex={0}
         >
           <div className="text-parchment-500/72 flex items-center justify-between text-[11px]">
             <span>Item drop</span>

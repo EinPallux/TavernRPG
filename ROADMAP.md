@@ -469,6 +469,9 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
   since Phase 0 with nothing able to reach past slot 1 — this is the room that plumbing was always
   for, plus a remembered active slot that lives beside the saves rather than inside one.
   `architecture.md` §3.
+- *Tooltips of our own.* `components/ui/Tooltip.tsx` + `state/tooltipStore.ts` — one element at
+  shell level, opening on hover *and* focus, and every native `title` in the game converted to it.
+  `tooltips.test.ts` reads the source so a twenty-seventh cannot arrive quietly. Style guide §8.1.
 - *The Town Map.* Emberhollow painted from above with all fourteen buildings clickable, and the
   screen the game opens on — `/` redirects to `/map`, because standing outside is a place. The rail
   stays, does the same job as a list, and reads its badges from the same `state/townSignals.ts`;

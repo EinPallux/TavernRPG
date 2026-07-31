@@ -276,7 +276,7 @@ test.describe('the core loop', () => {
     // Style guide §8: a disabled control explains itself rather than going quietly grey.
     const accept = page.getByTestId(`accept-${id}`);
     await expect(accept).toBeDisabled();
-    await expect(accept).toHaveAttribute('title', /20 Vigor/);
+    await expect(accept).toHaveAttribute('data-reason', /20 Vigor/);
 
     // The 5-minute option is still affordable, so the card stays usable.
     await page.getByTestId(`duration-${id}-5`).click();

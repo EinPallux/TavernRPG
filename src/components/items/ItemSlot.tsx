@@ -11,6 +11,7 @@ import { useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Icon } from '@/components/icons';
 import { ItemCard, rarityStyles } from './ItemCard';
+import { useTooltip } from '@/components/ui/Tooltip';
 import type { Item, SlotId } from '@/engine/items/types';
 import type { ComparisonDelta } from '@/engine/hero/derived';
 import { SLOT_LABELS } from '@/engine/items/types';
@@ -63,6 +64,12 @@ export function ItemSlot({
   ...rest
 }: ItemSlotProps) {
   const [hovered, setHovered] = useState(false);
+  /*
+   * A filled cell already opens the full `ItemCard` on hover — a tooltip repeating the item's name
+   * over the top of it would be a label on a label. The tooltip is for the two things the card
+   * cannot say: this slot is empty, or this cell is refusing you.
+   */
+  const tip = useTooltip(disabledReason ?? (item ? null : `${SLOT_LABELS[slot]} — empty`));
   const styles = item ? rarityStyles(item.rarity) : null;
   const dimensions = size === 'lg' ? 'h-16 w-16' : 'h-14 w-14';
   /* A worn set piece breathes. Only from two up: one piece is a gold item, not a set. */
@@ -85,14 +92,27 @@ export function ItemSlot({
         type="button"
         onClick={onClick}
         onContextMenu={onContextMenu}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        onFocus={() => setHovered(true)}
-        onBlur={() => setHovered(false)}
+        onPointerEnter={(event) => {
+          setHovered(true);
+          tip.onPointerEnter?.(event);
+        }}
+        onPointerLeave={(event) => {
+          setHovered(false);
+          tip.onPointerLeave?.(event);
+        }}
+        onPointerDown={tip.onPointerDown}
+        onFocus={(event) => {
+          setHovered(true);
+          tip.onFocus?.(event);
+        }}
+        onBlur={(event) => {
+          setHovered(false);
+          tip.onBlur?.(event);
+        }}
         whileHover={{ y: -2 }}
         whileTap={onClick ? { y: 1, scale: 0.97 } : undefined}
         transition={snappy}
-        title={disabledReason ?? (item ? item.name : `${SLOT_LABELS[slot]} — empty`)}
+        aria-describedby={tip['aria-describedby']}
         aria-label={item ? `${item.name} (${SLOT_LABELS[slot]})` : `${SLOT_LABELS[slot]}, empty`}
         data-testid={rest['data-testid']}
         data-filled={item ? 'true' : 'false'}

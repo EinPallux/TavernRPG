@@ -18,6 +18,7 @@ import { CALENDAR_DAYS, isMilestone, nextMilestone } from '@/data/calendar';
 import type { CalendarSquare } from '@/engine/calendar/calendar';
 import { Icon } from '@/components/icons';
 import { TavernPanel } from '@/components/ui/TavernPanel';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { staggerChildren, standard } from '@/styles/motion';
 
 export interface LedgerProps {
@@ -85,13 +86,17 @@ export function Ledger({ squares, cyclesCompleted, justStamped }: LedgerProps) {
 function Square({ square, thumping }: { square: CalendarSquare; thumping: boolean }) {
   const { reward, stamped, today } = square;
   const milestone = isMilestone(reward.day);
+  const tip = useTooltip({
+    title: `Day ${reward.day}`,
+    detail: `${reward.label}${stamped ? ' — collected' : today ? ' — today' : ''}`,
+  });
 
   return (
     <motion.div
       variants={{ hidden: { opacity: 0, scale: 0.85 }, visible: { opacity: 1, scale: 1 } }}
       animate={thumping ? { scale: [1, 1.22, 0.96, 1] } : undefined}
       transition={thumping ? { duration: 0.55, ease: 'easeOut' } : standard}
-      title={`Day ${reward.day} — ${reward.label}`}
+      {...tip}
       className={`chamfer-sm relative grid aspect-square place-items-center border ${
         stamped
           ? 'border-amber-500/45 bg-amber-500/12 text-amber-400'

@@ -184,6 +184,35 @@ bubble, auto-dismiss 4s) · `<Toast>` stack (max 3, collapse to summary) · `<Mo
 darkened stage, never stacks >1) · `<RevealCeremony>` (loot/gacha shared) · `<AmbientStage>`.
 Storybook-style harness page (`/dev/kit`, dev-only route) shows every component & state for review.
 
+### 8.1 Tooltips are ours, and `title=` is banned
+
+A native `title` is the one piece of another product's interface the game cannot restyle: a grey OS
+rectangle, in a system font, after a second and a half, hover-only and never on focus. All
+twenty-six of them are `useTooltip()` now, and `src/components/ui/tooltips.test.ts` reads the source
+so the twenty-seventh cannot arrive by accident — a rendered `title` breaks nothing, it just quietly
+looks like Windows in one corner of Emberhollow. (`title` as a *prop* stays: `<TavernPanel
+title="Backpack">` is a heading.)
+
+The design, and the reasons that are not taste:
+
+- **One element, at shell level.** Triggers publish to `state/tooltipStore`; `TooltipLayer` renders
+  the only tooltip in the game. Not tidiness — §7.2: nearly everything here wears a chamfer, a
+  chamfer is a `clip-path`, and a clip path clips descendants. A tooltip nested in the thing it
+  describes is a tooltip that vanishes inside a panel.
+- **Hover waits 340 ms, focus does not, and the row stays warm for 600 ms.** Dragging the cursor
+  across the HUD must not fire six tooltips; reading along the same row must not cost a third of a
+  second per chip. Keyboard focus opens at once — that user asked for it and cannot hover past it.
+- **Press, scroll, resize and Escape all close it — and cancel the ones on the way.** A dismissal
+  that only clears what is open lets a hover timer started before it fire afterwards, which is a
+  tooltip appearing *because* the player dismissed one.
+- **Two lines, not one.** `title` and an optional `detail`; a plain string containing `" — "` splits
+  itself, which is how half the old ones were already written.
+- **It works on a `disabled` button**, because Chromium fires `pointerenter` on one even though it
+  never fires `click` — so the one control the browser refuses to let you use can still explain
+  itself. That is UX rule 2's other half, and the most valuable tooltip in the game.
+- **Placement is measured, not guessed** (`place()`, unit-tested): under the trigger, flipped above
+  when the window runs out, clamped inside both edges.
+
 ## 9. UX rules (opinionated, binding)
 
 1. **No dead ends:** every empty state names the next action ("No missions? The board refreshes at
@@ -192,7 +221,7 @@ Storybook-style harness page (`/dev/kit`, dev-only route) shows every component 
    scrapping, mount replacement, guild leave. Everything else is undo-free but cheap.
 3. **One primary CTA per screen state**; hint chip system (tutorial doc §4) never competes with it.
 4. **Tooltips everywhere numbers appear** (breakdowns: where a stat comes from, what a % means);
-   glossary terms dotted-underlined.
+   glossary terms dotted-underlined. Ours, never the browser's — §8.1.
 5. **Timers show absolute + relative** on hover ("in 7m · 14:32").
 6. **Keyboard:** 1–9 place switching, Esc closes, Enter confirms primary, arrows navigate cards;
    focus-visible brass outline (a11y pass in P17).

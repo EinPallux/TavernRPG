@@ -18,6 +18,7 @@ import type { DoorView } from '@/state/dungeonActions';
 import { FLOORS_PER_DUNGEON } from '@/data/dungeons';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { ActionButton } from '@/components/ui/ActionButton';
+import { useTooltip } from '@/components/ui/Tooltip';
 import {
   CoinIcon,
   KeyIcon,
@@ -34,6 +35,75 @@ function countdown(ms: number): string {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
+/**
+ * One floor of ten.
+ *
+ * Extracted from the loop so it can carry a tooltip: at a glance the rungs are ten identical
+ * slivers, and "which one is the boss" and "how close did I get" are the two questions they
+ * cannot answer without words.
+ */
+function Rung({
+  floor,
+  done,
+  current,
+  best,
+  boss,
+  reduced,
+}: {
+  floor: number;
+  done: boolean;
+  current: boolean;
+  best: number;
+  boss: boolean;
+  reduced: boolean;
+}) {
+  const tip = useTooltip({
+    title: `Floor ${floor}${boss ? ' — boss' : ''}`,
+    detail: done
+      ? 'Cleared.'
+      : current
+        ? best > 0
+          ? `Furthest yet: ${Math.round(best * 100)}% off its health.`
+          : 'Next one down.'
+        : 'Not reached.',
+  });
+
+  return (
+    <div
+      {...tip}
+      tabIndex={0}
+      className={`chamfer-sm relative h-7 flex-1 overflow-hidden border ${
+        done
+          ? 'border-amber-500/60 bg-amber-500/25'
+          : current
+            ? 'border-ember-600/60 bg-wood-900/80'
+            : 'border-parchment-500/12 bg-wood-900/50'
+      }`}
+    >
+      {/*
+              The best attempt, as a filled share of the rung. This is the only progress a loss
+              leaves behind, so it is drawn on the rung itself rather than in a tooltip.
+            */}
+      {!done && best > 0 && (
+        <motion.span
+          aria-hidden
+          className="bg-ember-600/35 absolute inset-y-0 left-0"
+          initial={reduced ? false : { width: 0 }}
+          animate={{ width: `${Math.round(best * 100)}%` }}
+          transition={standard}
+        />
+      )}
+      <span
+        className={`font-display absolute inset-0 grid place-items-center text-[0.65rem] font-bold tabular-nums ${
+          done ? 'text-amber-300' : current ? 'text-ember-400' : 'text-parchment-500/72'
+        }`}
+      >
+        {boss ? '★' : floor}
+      </span>
+    </div>
+  );
+}
+
 /** The ten rungs, filled to the floors cleared, with the current one part-filled. */
 function Rungs({ view }: { view: DoorView }) {
   const reduced = useReducedMotion();
@@ -48,38 +118,15 @@ function Rungs({ view }: { view: DoorView }) {
         const boss = floor === 5 || floor === FLOORS_PER_DUNGEON;
 
         return (
-          <div
+          <Rung
             key={floor}
-            className={`chamfer-sm relative h-7 flex-1 overflow-hidden border ${
-              done
-                ? 'border-amber-500/60 bg-amber-500/25'
-                : current
-                  ? 'border-ember-600/60 bg-wood-900/80'
-                  : 'border-parchment-500/12 bg-wood-900/50'
-            }`}
-            title={`Floor ${floor}${boss ? ' — boss' : ''}`}
-          >
-            {/*
-              The best attempt, as a filled share of the rung. This is the only progress a loss
-              leaves behind, so it is drawn on the rung itself rather than in a tooltip.
-            */}
-            {!done && best > 0 && (
-              <motion.span
-                aria-hidden
-                className="bg-ember-600/35 absolute inset-y-0 left-0"
-                initial={reduced ? false : { width: 0 }}
-                animate={{ width: `${Math.round(best * 100)}%` }}
-                transition={standard}
-              />
-            )}
-            <span
-              className={`font-display absolute inset-0 grid place-items-center text-[0.65rem] font-bold tabular-nums ${
-                done ? 'text-amber-300' : current ? 'text-ember-400' : 'text-parchment-500/72'
-              }`}
-            >
-              {boss ? '★' : floor}
-            </span>
-          </div>
+            floor={floor}
+            done={done}
+            current={current}
+            best={best}
+            boss={boss}
+            reduced={reduced ?? false}
+          />
         );
       })}
     </div>

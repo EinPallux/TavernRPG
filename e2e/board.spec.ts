@@ -187,7 +187,7 @@ test.describe('the chest', () => {
 
     // A second claim is refused, and says why rather than going dead.
     await expect(page.getByTestId('claim-daily')).toBeDisabled();
-    await expect(page.getByTestId('claim-daily')).toHaveAttribute('title', /Claimed/);
+    await expect(page.getByTestId('claim-daily')).toHaveAttribute('data-reason', /Claimed/);
   });
 
   test('survives a reload without paying twice', async ({ page }) => {
@@ -223,7 +223,10 @@ test.describe('the chest', () => {
     await expect(rungs.filter({ has: page.locator('[data-filled="true"]') })).toHaveCount(0);
 
     await expect(page.getByTestId('claim-weekly')).toBeDisabled();
-    await expect(page.getByTestId('claim-weekly')).toHaveAttribute('title', /7 more daily chests/);
+    await expect(page.getByTestId('claim-weekly')).toHaveAttribute(
+      'data-reason',
+      /7 more daily chests/,
+    );
   });
 });
 

@@ -16,6 +16,7 @@ import { gateFor, nextUnlock } from '@/engine/progression/gates';
 import { currentDayKey } from '@/state/clock';
 import { townSignals } from '@/state/townSignals';
 import { Icon, ChevronIcon, LockIcon } from '@/components/icons';
+import { useTooltip } from '@/components/ui/Tooltip';
 import { useShellStore } from '@/state/shellStore';
 import { useGameStore } from '@/state/gameStore';
 import { snappy } from '@/styles/motion';
@@ -46,6 +47,22 @@ function RailItem({
   const gate = gateFor(place.id, level);
   const flagged = gate.unlocked && badge > 0;
   const dotted = gate.unlocked && dot;
+
+  /*
+   * The rail's tooltip carries the *blurb*, always — including when the rail is open and the name
+   * is right there. What a room is for is the part a new player does not know, and the collapsed
+   * rail needs the name on top of it.
+   */
+  const tip = useTooltip(
+    gate.unlocked
+      ? { title: place.name, detail: place.blurb }
+      : {
+          title: place.name,
+          detail: `Opens at level ${gate.gateLevel} — ${
+            gate.levelsRemaining === 1 ? 'one more level' : `${gate.levelsRemaining} more levels`
+          } to go.`,
+        },
+  );
 
   const body = (
     <>
@@ -147,7 +164,8 @@ function RailItem({
       <li>
         <div
           className={`${shared} cursor-not-allowed`}
-          title={`${place.name} — unlocks at level ${gate.gateLevel} (${gate.levelsRemaining} to go)`}
+          {...tip}
+          tabIndex={0}
           aria-disabled="true"
           data-testid={`nav-${place.id}`}
           data-locked="true"
@@ -162,7 +180,8 @@ function RailItem({
     <li>
       <Link
         href={place.route}
-        title={collapsed ? `${place.name} — ${place.blurb}` : place.blurb}
+        {...tip}
+        aria-label={place.name}
         aria-current={active ? 'page' : undefined}
         data-testid={`nav-${place.id}`}
         data-locked="false"

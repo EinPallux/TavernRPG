@@ -206,7 +206,7 @@ test.describe('buying', () => {
 
     const buy = page.getByTestId('buy-0');
     await expect(buy).toBeDisabled();
-    await expect(buy).toHaveAttribute('title', /gold/i);
+    await expect(buy).toHaveAttribute('data-reason', /gold/i);
   });
 });
 
@@ -309,7 +309,7 @@ test.describe('rerolling the shelf', () => {
     // Unlike the mission board, where the day's work must always be there.
     const reroll = page.getByTestId('reroll-stock');
     await expect(reroll).toBeDisabled();
-    await expect(reroll).toHaveAttribute('title', /earned/i);
+    await expect(reroll).toHaveAttribute('data-reason', /earned/i);
   });
 });
 
@@ -394,7 +394,7 @@ test.describe('the stables', () => {
     // F2P forever (CLAUDE.md rule 6): no pile of gold buys the premium stall.
     const griffin = page.getByTestId('rent-griffin');
     await expect(griffin).toBeDisabled();
-    await expect(griffin).toHaveAttribute('title', /earned/i);
+    await expect(griffin).toHaveAttribute('data-reason', /earned/i);
 
     await grantDice(page, 6);
     await expect(griffin).toBeEnabled();
