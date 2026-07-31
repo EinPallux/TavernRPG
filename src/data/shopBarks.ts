@@ -103,7 +103,10 @@ export const ODO_LINES: Lines = {
     'Your coin. Your call.',
   ],
   broke: ['Feed costs what feed costs.', 'Come back when the purse is heavier.'],
-  full: ['I cannot book her out further than a fortnight. Come back when some of it is walked.'],
+  full: [
+    'I cannot book her out further than a fortnight. Come back when some of it is walked.',
+    'Two terms is my limit. She is a horse, not a subscription.',
+  ],
 };
 
 /** Pick a line by index — deterministic, never rolled. */

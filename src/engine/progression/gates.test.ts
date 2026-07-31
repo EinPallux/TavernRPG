@@ -68,7 +68,7 @@ describe('places data integrity', () => {
 
   it('gives every place a backdrop, a blurb and a build phase', () => {
     for (const place of PLACES) {
-      expect(place.backdrop).toMatch(/^\/assets\/backgrounds\/.+\.png$/);
+      expect(place.backdrop).toMatch(/^\/assets\/backgrounds\/.+\.webp$/);
       expect(place.blurb.length).toBeGreaterThan(8);
       expect(place.buildPhase).toMatch(/^Phase \d+$/);
       expect(place.constructionBark.length).toBeGreaterThan(8);

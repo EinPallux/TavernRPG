@@ -74,12 +74,12 @@ export function TimerChip({
       title={`${label ? `${label} · ` : ''}${isReady ? 'ready now' : `at ${formatAbsolute(endsAt)}`}`}
       className={`chamfer-sm inline-flex items-center gap-1.5 px-2.5 py-1 text-xs ${
         isReady
-          ? 'bg-moss-600/20 text-moss-600 border-moss-600/40 border'
+          ? 'bg-moss-600/20 text-moss-400 border-moss-600/40 border'
           : 'bg-wood-900/70 text-parchment-300/85 border-parchment-500/20 border'
       } ${className}`}
     >
       <HourglassIcon size={12} className={isReady ? '' : 'animate-lantern'} />
-      {label && <span className="text-parchment-500/60">{label}</span>}
+      {label && <span className="text-parchment-500/72">{label}</span>}
       <span className={isReady ? 'font-semibold' : ''}>{formatRemaining(remaining)}</span>
     </span>
   );

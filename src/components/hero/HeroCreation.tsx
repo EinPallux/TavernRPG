@@ -60,7 +60,7 @@ export function HeroCreation() {
 
   return (
     <AmbientStage
-      backdrop="/assets/backgrounds/tavern_background.png"
+      backdrop="/assets/backgrounds/tavern_background.webp"
       effects={['hearth', 'embers', 'motes']}
     >
       <div className="flex h-full flex-col items-center justify-center gap-6 overflow-y-auto p-8">
@@ -113,7 +113,7 @@ export function HeroCreation() {
                   >
                     {definition.name}
                   </span>
-                  <span className="text-parchment-500/50 block text-[11px] tracking-wider uppercase">
+                  <span className="text-parchment-500/72 block text-[11px] tracking-wider uppercase">
                     {DEMAND_LABEL[definition.demand]}
                   </span>
                   <span className="text-parchment-500/75 mt-2 block text-xs leading-snug">
@@ -141,13 +141,13 @@ export function HeroCreation() {
                   <p className="text-parchment-500/80 mt-1 text-sm leading-relaxed">
                     {chosen.proc.description}
                   </p>
-                  <p className="text-parchment-500/60 mt-3 text-xs">
+                  <p className="text-parchment-500/72 mt-3 text-xs">
                     {chosen.weaponFamily} · {chosen.offhandFamily}
                   </p>
                 </div>
 
                 <div>
-                  <p className="font-display text-parchment-500/50 text-xs tracking-[0.2em] uppercase">
+                  <p className="font-display text-parchment-500/72 text-xs tracking-[0.2em] uppercase">
                     Starting attributes
                   </p>
                   <ul className="mt-2 space-y-1">
@@ -157,7 +157,7 @@ export function HeroCreation() {
                           className={
                             attribute === chosen.mainStat
                               ? 'text-amber-500'
-                              : 'text-parchment-500/70'
+                              : 'text-parchment-500/72'
                           }
                         >
                           {ATTRIBUTE_LABELS[attribute]}
@@ -174,7 +174,7 @@ export function HeroCreation() {
 
               <div className="border-parchment-500/15 mt-5 flex flex-wrap items-end gap-3 border-t pt-5">
                 <label className="flex-1">
-                  <span className="font-display text-parchment-500/60 mb-1 block text-[11px] tracking-[0.2em] uppercase">
+                  <span className="font-display text-parchment-500/72 mb-1 block text-[11px] tracking-[0.2em] uppercase">
                     Name
                   </span>
                   <input
@@ -186,7 +186,7 @@ export function HeroCreation() {
                     maxLength={16}
                     placeholder="Your hero's name"
                     data-testid="hero-name"
-                    className="chamfer-sm bg-wood-900/80 text-parchment-300 placeholder:text-parchment-500/30 border-parchment-500/25 w-full border px-3 py-2 text-sm outline-none focus:border-amber-500/70"
+                    className="chamfer-sm bg-wood-900/80 text-parchment-300 placeholder:text-parchment-500/72 border-parchment-500/25 w-full border px-3 py-2 text-sm outline-none focus:border-amber-500/70"
                   />
                 </label>
 
@@ -219,7 +219,7 @@ export function HeroCreation() {
               </div>
 
               {name.length > 0 && !validation.ok && (
-                <p className="text-blood-600 mt-2 text-xs" data-testid="name-error">
+                <p className="text-blood-400 mt-2 text-xs" data-testid="name-error">
                   {validation.reason}
                 </p>
               )}
@@ -234,7 +234,7 @@ export function HeroCreation() {
                 anything.
               */}
               <label
-                className="text-parchment-500/55 hover:text-parchment-500/85 mt-4 flex cursor-pointer items-center gap-2.5 text-xs transition-colors"
+                className="text-parchment-500/72 hover:text-parchment-500/85 mt-4 flex cursor-pointer items-center gap-2.5 text-xs transition-colors"
                 data-testid="skip-tutorial-row"
               >
                 <input

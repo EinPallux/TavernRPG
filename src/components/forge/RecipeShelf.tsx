@@ -63,18 +63,18 @@ function RecipeCard({
           className={`chamfer-sm bg-wood-800 grid h-10 w-10 shrink-0 place-items-center border ${
             held
               ? 'border-rarity-set/45 text-rarity-set'
-              : 'border-parchment-500/15 text-parchment-500/40'
+              : 'border-parchment-500/15 text-parchment-500/72'
           }`}
         >
           {held ? <Icon name={definition.sigil} size={20} /> : <LockIcon size={17} />}
         </span>
         <div className="min-w-0">
           <p
-            className={`font-display truncate text-sm font-bold ${held ? 'text-rarity-set' : 'text-parchment-500/60'}`}
+            className={`font-display truncate text-sm font-bold ${held ? 'text-rarity-set' : 'text-parchment-500/72'}`}
           >
             {definition.name}
           </p>
-          <p className="text-parchment-500/45 mt-0.5 text-[11px] tabular-nums">
+          <p className="text-parchment-500/72 mt-0.5 text-[11px] tabular-nums">
             {owned}/{total} pieces held
           </p>
         </div>
@@ -95,7 +95,7 @@ function RecipeCard({
 
       {held ? (
         <>
-          <p className="text-parchment-500/50 mt-2.5 text-[11px] leading-relaxed">
+          <p className="text-parchment-500/72 mt-2.5 text-[11px] leading-relaxed">
             {complete
               ? 'Whole. A craft now rolls a fresh copy at your level.'
               : 'Rolls a piece you are missing. Never a duplicate.'}
@@ -120,7 +120,7 @@ function RecipeCard({
           </div>
         </>
       ) : (
-        <p className="text-parchment-500/45 mt-2.5 text-[11px] leading-relaxed">
+        <p className="text-parchment-500/72 mt-2.5 text-[11px] leading-relaxed">
           Recipe not found yet. {definition.source}
         </p>
       )}

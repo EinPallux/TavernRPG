@@ -105,7 +105,7 @@ export default function EconomyDevPage() {
           TavernRPG · Engine
         </p>
         <h1 className="font-display text-parchment-300 text-4xl font-extrabold">Economy Ledger</h1>
-        <p className="text-parchment-500/60 mt-2 max-w-2xl text-sm">
+        <p className="text-parchment-500/72 mt-2 max-w-2xl text-sm">
           Modeled days through the real reward curves — every coin in, every coin out. The CI sim
           asserts the bands; this shows where a broken band actually went wrong.
         </p>
@@ -116,7 +116,7 @@ export default function EconomyDevPage() {
           <TavernPanel title="Model" animate={false}>
             <div className="space-y-4 text-sm">
               <div>
-                <p className="text-parchment-500/60 mb-1.5 text-xs tracking-widest uppercase">
+                <p className="text-parchment-500/72 mb-1.5 text-xs tracking-widest uppercase">
                   Play style
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -132,11 +132,11 @@ export default function EconomyDevPage() {
                     </ActionButton>
                   ))}
                 </div>
-                <p className="text-parchment-500/55 mt-2 text-xs leading-snug">{chosen.blurb}</p>
+                <p className="text-parchment-500/72 mt-2 text-xs leading-snug">{chosen.blurb}</p>
               </div>
 
               <div>
-                <p className="text-parchment-500/60 mb-1.5 text-xs tracking-widest uppercase">
+                <p className="text-parchment-500/72 mb-1.5 text-xs tracking-widest uppercase">
                   Span
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -155,17 +155,17 @@ export default function EconomyDevPage() {
 
               <dl className="border-parchment-500/12 space-y-1.5 border-t pt-3">
                 <div className="flex justify-between">
-                  <dt className="text-parchment-500/65">Vigor a day</dt>
+                  <dt className="text-parchment-500/72">Vigor a day</dt>
                   <dd className="text-parchment-300 tabular-nums">
                     {Math.floor(VIGOR_PER_DAY * chosen.style.vigorUsed)} / {VIGOR_PER_DAY}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-parchment-500/65">Mission length</dt>
+                  <dt className="text-parchment-500/72">Mission length</dt>
                   <dd className="text-parchment-300 tabular-nums">{chosen.style.duration}m</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-parchment-500/65">Patrol</dt>
+                  <dt className="text-parchment-500/72">Patrol</dt>
                   <dd className="text-parchment-300 tabular-nums">{chosen.style.patrolHours}h</dd>
                 </div>
               </dl>
@@ -175,29 +175,29 @@ export default function EconomyDevPage() {
           <TavernPanel title={`After ${days} days`} animate={false}>
             <dl className="space-y-1.5 text-sm">
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Level</dt>
+                <dt className="text-parchment-500/72">Level</dt>
                 <dd className="text-parchment-300 tabular-nums">{finalLevel}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Gold in</dt>
+                <dt className="text-parchment-500/72">Gold in</dt>
                 <dd className="text-parchment-300 tabular-nums">{gold(earned)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Gold out</dt>
+                <dt className="text-parchment-500/72">Gold out</dt>
                 <dd className="text-parchment-300 tabular-nums">{gold(spent)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Attribute points</dt>
+                <dt className="text-parchment-500/72">Attribute points</dt>
                 <dd className="text-parchment-300 tabular-nums">{gold(totalPointsBought)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Purse, end / peak</dt>
+                <dt className="text-parchment-500/72">Purse, end / peak</dt>
                 <dd className="text-parchment-300 tabular-nums">
                   {gold(finalPurse)} / {gold(peakPurse)}
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Patrol&rsquo;s share of income</dt>
+                <dt className="text-parchment-500/72">Patrol&rsquo;s share of income</dt>
                 <dd className="text-parchment-300 tabular-nums">
                   {(patrolShare * 100).toFixed(1)}%
                 </dd>
@@ -206,27 +206,27 @@ export default function EconomyDevPage() {
           </TavernPanel>
 
           <TavernPanel title="Pacing milestones" animate={false}>
-            <p className="text-parchment-500/55 mb-3 text-xs leading-snug">
+            <p className="text-parchment-500/72 mb-3 text-xs leading-snug">
               Balancing §0. The L100 target needs a deceleration the current curve does not have —
               flagged for Phase 17, measured here every time.
             </p>
             <dl className="space-y-1.5 text-sm">
               {reached.map((milestone) => (
                 <div key={milestone.level} className="flex items-baseline justify-between">
-                  <dt className="text-parchment-500/65">Level {milestone.level}</dt>
+                  <dt className="text-parchment-500/72">Level {milestone.level}</dt>
                   <dd className="tabular-nums">
                     <span
                       className={
                         milestone.day === null
-                          ? 'text-parchment-500/40'
+                          ? 'text-parchment-500/72'
                           : onPace(milestone.day, milestone.targetDay)
-                            ? 'text-moss-600'
+                            ? 'text-moss-400'
                             : 'text-amber-500'
                       }
                     >
                       {milestone.day === null ? `not in ${days}d` : `day ${milestone.day}`}
                     </span>
-                    <span className="text-parchment-500/45"> · target {milestone.targetDay}</span>
+                    <span className="text-parchment-500/72"> · target {milestone.targetDay}</span>
                   </dd>
                 </div>
               ))}
@@ -237,14 +237,14 @@ export default function EconomyDevPage() {
         <TavernPanel title="Daily ledger" animate={false}>
           <div className="max-h-[76vh] overflow-y-auto">
             <table className="w-full text-left text-xs tabular-nums">
-              <thead className="bg-wood-800/95 text-parchment-500/60 sticky top-0">
+              <thead className="bg-wood-800/95 text-parchment-500/72 sticky top-0">
                 <tr className="border-parchment-500/12 border-b">
                   <th className="py-2 pr-3 font-normal tracking-widest uppercase">Day</th>
                   <th className="py-2 pr-3 font-normal tracking-widest uppercase">Lv</th>
                   {MODELLED_FAUCETS.map((faucet) => (
                     <th
                       key={faucet}
-                      className="text-moss-600 py-2 pr-3 text-right font-normal tracking-widest uppercase"
+                      className="text-moss-400 py-2 pr-3 text-right font-normal tracking-widest uppercase"
                     >
                       +{faucet}
                     </th>
@@ -252,7 +252,7 @@ export default function EconomyDevPage() {
                   {MODELLED_SINKS.map((sink) => (
                     <th
                       key={sink}
-                      className="text-ember-600 py-2 pr-3 text-right font-normal tracking-widest uppercase"
+                      className="text-ember-400 py-2 pr-3 text-right font-normal tracking-widest uppercase"
                     >
                       −{sink}
                     </th>
@@ -278,7 +278,7 @@ export default function EconomyDevPage() {
                       key={entry.day}
                       className="border-parchment-500/8 text-parchment-300/85 border-b last:border-0"
                     >
-                      <td className="text-parchment-500/60 py-1 pr-3">{entry.day}</td>
+                      <td className="text-parchment-500/72 py-1 pr-3">{entry.day}</td>
                       <td className={`py-1 pr-3 ${levelledToday ? 'text-amber-500' : ''}`}>
                         {entry.level}
                       </td>
@@ -293,7 +293,7 @@ export default function EconomyDevPage() {
                         </td>
                       ))}
                       <td className="py-1 pr-3 text-right">{entry.pointsBought}</td>
-                      <td className="text-parchment-500/55 py-1 pr-3 text-right">
+                      <td className="text-parchment-500/72 py-1 pr-3 text-right">
                         {pointsPerDayAffordable(entry, trainedSoFar)}
                       </td>
                       <td className="py-1 text-right">{gold(entry.purse)}</td>
@@ -321,7 +321,7 @@ export default function EconomyDevPage() {
                   <td className="py-2 text-right">{gold(finalPurse)}</td>
                 </tr>
                 <tr>
-                  <td className="text-parchment-500/45 pb-1 text-[11px]" colSpan={9}>
+                  <td className="text-parchment-500/72 pb-1 text-[11px]" colSpan={9}>
                     Average day: {gold(Math.round(earned / Math.max(1, ledger.length)))} in,{' '}
                     {gold(Math.round(spent / Math.max(1, ledger.length)))} out, peak single-day
                     income {gold(Math.max(...ledger.map(dayIncome)))}.

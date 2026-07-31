@@ -62,7 +62,7 @@ function StatLine({
 }) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-sm" title={hint}>
-      <span className="text-parchment-500/65">
+      <span className="text-parchment-500/72">
         {term ? <Term name={term}>{label}</Term> : label}
       </span>
       <span className="text-parchment-300">{value}</span>
@@ -146,7 +146,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
 
   return (
     <AmbientStage
-      backdrop="/assets/backgrounds/tavern_background.png"
+      backdrop="/assets/backgrounds/tavern_background.webp"
       tint="from-wood-900 via-wood-900/90 to-wood-900/75"
       effects={['motes']}
     >
@@ -167,7 +167,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                 aria-selected={active}
                 onClick={() => setTab(entry.id)}
                 className={`font-display relative px-4 py-2 text-sm tracking-wide transition-colors ${
-                  active ? 'text-amber-400' : 'text-parchment-500/50 hover:text-parchment-300'
+                  active ? 'text-amber-400' : 'text-parchment-500/72 hover:text-parchment-300'
                 }`}
                 data-testid={`character-tab-${entry.id}`}
               >
@@ -209,7 +209,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                 <TavernPanel
                   title={hero.name}
                   headerSlot={
-                    <span className="text-parchment-500/50 text-xs tracking-wider uppercase">
+                    <span className="text-parchment-500/72 text-xs tracking-wider uppercase">
                       Level {hero.level} {definition.name}
                     </span>
                   }
@@ -300,7 +300,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                         <span className="text-parchment-300 block truncate text-xs font-semibold">
                           {pet.name}
                         </span>
-                        <span className="text-parchment-500/55 block text-[10px]">
+                        <span className="text-parchment-500/72 block text-[10px]">
                           {BOOST_LABELS[pet.stat]} +{(pet.share * 100).toFixed(1)}% · level{' '}
                           {pet.progress.level}
                         </span>
@@ -317,7 +317,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                     />
                   </div>
 
-                  <p className="text-parchment-500/40 mt-3 text-[11px]">
+                  <p className="text-parchment-500/72 mt-3 text-[11px]">
                     Click an equipped piece to take it off. Hover anything to compare.
                   </p>
                 </TavernPanel>
@@ -374,7 +374,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                       <p className="font-display text-xs tracking-[0.2em] text-amber-500 uppercase">
                         {definition.proc.name}
                       </p>
-                      <p className="text-parchment-500/70 mt-1 text-sm">
+                      <p className="text-parchment-500/72 mt-1 text-sm">
                         {definition.proc.description}
                       </p>
                     </div>
@@ -386,7 +386,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                   <TavernPanel
                     title="Backpack"
                     headerSlot={
-                      <span className="text-parchment-500/45 text-xs">
+                      <span className="text-parchment-500/72 text-xs">
                         {hero.backpack.filter(Boolean).length}/{hero.backpack.length}
                         {hero.satchel.length > 0 && ` · satchel ${hero.satchel.length}`}
                       </span>
@@ -422,7 +422,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                     </div>
 
                     {bagItems.every(({ item }) => !item) && (
-                      <p className="text-parchment-500/45 mt-4 text-sm">
+                      <p className="text-parchment-500/72 mt-4 text-sm">
                         Empty. Take a contract at the Gilded Tankard and it will not stay that way.
                       </p>
                     )}
@@ -436,7 +436,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                         data-testid="selected-item"
                       >
                         <p className="font-display text-parchment-300 text-sm">{selected.name}</p>
-                        <p className="text-parchment-500/50 mb-3 text-xs">
+                        <p className="text-parchment-500/72 mb-3 text-xs">
                           {SLOT_LABELS[selected.slot]}
                         </p>
 
@@ -479,7 +479,7 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                             Discard
                           </ActionButton>
                         </div>
-                        <p className="text-parchment-500/35 mt-2 text-[11px]">
+                        <p className="text-parchment-500/72 mt-2 text-[11px]">
                           Bram buys what you do not want; Torvald melts it. Both are one street
                           over.
                         </p>

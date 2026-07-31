@@ -26,13 +26,13 @@ const TONE: Readonly<Record<RollOutcome, string>> = {
   uncommon: 'text-rarity-uncommon',
   materials: 'text-arcane-500',
   gold: 'text-amber-500',
-  ale: 'text-parchment-500/70',
+  ale: 'text-parchment-500/72',
 };
 
 export function RollHistory({ entries }: { entries: readonly StoredRollRecord[] }) {
   if (entries.length === 0) {
     return (
-      <p className="text-parchment-500/45 py-6 text-center text-sm" data-testid="history-empty">
+      <p className="text-parchment-500/72 py-6 text-center text-sm" data-testid="history-empty">
         Nothing yet. The deck is shuffled and waiting.
       </p>
     );
@@ -58,17 +58,17 @@ export function RollHistory({ entries }: { entries: readonly StoredRollRecord[] 
           </span>
           <span className="text-parchment-300/85 min-w-0 flex-1 truncate">{entry.label}</span>
           {entry.pitied && (
-            <span className="text-ember-600 flex shrink-0 items-center gap-0.5 text-[9px] tracking-wider uppercase">
+            <span className="text-ember-400 flex shrink-0 items-center gap-0.5 text-[9px] tracking-wider uppercase">
               <SparkIcon size={9} />
               owed
             </span>
           )}
           {entry.free && (
-            <span className="text-parchment-500/40 shrink-0 text-[9px] tracking-wider uppercase">
+            <span className="text-parchment-500/72 shrink-0 text-[9px] tracking-wider uppercase">
               free
             </span>
           )}
-          <span className="text-parchment-500/30 w-12 shrink-0 text-right text-[9px]">
+          <span className="text-parchment-500/72 w-12 shrink-0 text-right text-[9px]">
             {banner(entry.bannerId).rotation}
           </span>
         </motion.li>

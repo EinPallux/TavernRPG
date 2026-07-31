@@ -110,7 +110,7 @@ export function BattleCallouts({
           aria-live="polite"
         >
           <div className="chamfer-sm surface-parchment bg-parchment-500 edge-etched text-ink-900 flex items-start gap-2.5 px-3.5 py-2.5">
-            <span className="mt-0.5 shrink-0 text-amber-700">
+            <span className="mt-0.5 shrink-0 text-amber-800">
               <Icon name="spark" size={14} />
             </span>
             <p className="text-xs leading-snug">{active.line(hero, foe)}</p>

@@ -99,7 +99,7 @@ export function ItemSlot({
         className={`chamfer-sm relative ${dimensions} grid place-items-center border transition-colors ${
           item
             ? `bg-wood-800 ${styles?.border} ${styles?.text} ${styles?.glow}`
-            : 'border-parchment-500/15 bg-wood-900/60 text-parchment-500/20 hover:border-amber-500/40'
+            : 'border-parchment-500/15 bg-wood-900/60 text-parchment-500/72 hover:border-amber-500/40'
         } ${disabledReason ? 'cursor-not-allowed opacity-50' : ''}`}
       >
         <Icon name={item ? item.iconId : SLOT_PLACEHOLDER[slot]} size={size === 'lg' ? 28 : 24} />

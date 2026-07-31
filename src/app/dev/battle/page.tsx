@@ -33,11 +33,11 @@ import { TavernPanel } from '@/components/ui/TavernPanel';
 type Opponent = { kind: 'class'; id: ClassId } | { kind: 'monster'; id: ArchetypeId };
 
 const BACKDROPS = [
-  '/assets/backgrounds/mission_background_3.png',
-  '/assets/backgrounds/mission_background_7.png',
-  '/assets/backgrounds/mission_background_12.png',
-  '/assets/backgrounds/arena_background.png',
-  '/assets/backgrounds/dungeons_background.png',
+  '/assets/backgrounds/mission_background_3.webp',
+  '/assets/backgrounds/mission_background_7.webp',
+  '/assets/backgrounds/mission_background_12.webp',
+  '/assets/backgrounds/arena_background.webp',
+  '/assets/backgrounds/dungeons_background.webp',
 ] as const;
 
 export default function BattleDevPage() {
@@ -98,7 +98,7 @@ export default function BattleDevPage() {
           TavernRPG · Scene
         </p>
         <h1 className="font-display text-parchment-300 text-4xl font-extrabold">Battle Scene</h1>
-        <p className="text-parchment-500/60 mt-1.5 max-w-2xl text-sm">
+        <p className="text-parchment-500/72 mt-1.5 max-w-2xl text-sm">
           The same seeded log the engine viewer prints, choreographed. Nothing here can change the
           outcome — the fight is already decided before the first frame draws.
         </p>
@@ -109,7 +109,7 @@ export default function BattleDevPage() {
           <TavernPanel title="Matchup" animate={false}>
             <div className="space-y-4 text-sm">
               <div>
-                <p className="text-parchment-500/60 mb-1.5 text-xs tracking-widest uppercase">
+                <p className="text-parchment-500/72 mb-1.5 text-xs tracking-widest uppercase">
                   Hero
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -128,7 +128,7 @@ export default function BattleDevPage() {
               </div>
 
               <div>
-                <p className="text-parchment-500/60 mb-1.5 text-xs tracking-widest uppercase">
+                <p className="text-parchment-500/72 mb-1.5 text-xs tracking-widest uppercase">
                   Opponent
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -164,7 +164,7 @@ export default function BattleDevPage() {
               </div>
 
               <label className="block">
-                <span className="text-parchment-500/60 mb-1 block text-xs tracking-widest uppercase">
+                <span className="text-parchment-500/72 mb-1 block text-xs tracking-widest uppercase">
                   Level {level}
                 </span>
                 <input
@@ -178,7 +178,7 @@ export default function BattleDevPage() {
               </label>
 
               <div>
-                <p className="text-parchment-500/60 mb-1.5 text-xs tracking-widest uppercase">
+                <p className="text-parchment-500/72 mb-1.5 text-xs tracking-widest uppercase">
                   Backdrop
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -221,25 +221,25 @@ export default function BattleDevPage() {
           <TavernPanel title="Pacing" animate={false}>
             <dl className="space-y-1.5 text-sm">
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Events</dt>
+                <dt className="text-parchment-500/72">Events</dt>
                 <dd className="text-parchment-300">{result.log.length}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Rounds</dt>
+                <dt className="text-parchment-500/72">Rounds</dt>
                 <dd className="text-parchment-300">{result.rounds}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Run time at ×{speed}</dt>
+                <dt className="text-parchment-500/72">Run time at ×{speed}</dt>
                 <dd
-                  className={withinTarget ? 'text-moss-600' : 'text-blood-600'}
+                  className={withinTarget ? 'text-moss-400' : 'text-blood-400'}
                   data-testid="scene-runtime"
                 >
                   {runtime.toFixed(1)}s
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Target (mission, ×1)</dt>
-                <dd className="text-parchment-500/50">≤ 8.0s</dd>
+                <dt className="text-parchment-500/72">Target (mission, ×1)</dt>
+                <dd className="text-parchment-500/72">≤ 8.0s</dd>
               </div>
             </dl>
             <div className="mt-3 flex gap-1.5">

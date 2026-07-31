@@ -105,8 +105,49 @@ feedback, edge cases and tests. Deployed on Vercel.
   three facts the save could not previously answer — `missionsAccepted`, `missionsReturned`,
   `itemsEquipped` — because the beats needed them and nothing counted a contract *signed*.
 
-1,150 unit tests + 184 e2e green. Next work: `ROADMAP.md` **Phase 17 (Balancing, Content Fill &
-Feel)**.
+- **Phase 17:** balancing, content fill and feel — the roster to plan volume (96 monsters, 124
+  blurb definitions over 340 zone pairings), `data/sfx.ts` (24 cues as oscillator recipes) with
+  `state/sfx.ts` and `state/bgm.ts`, the Settings screen, `scripts/tuning-pass.ts` and the
+  balancing §16 record of all 68 `[TUNE]` markers, 90-day economy bands, `e2e/contrast.ts` +
+  `e2e/a11y.spec.ts`, `scripts/perf-pass.mjs`, and a `sync-assets` step that transcodes the art.
+  **Save schema unchanged at v16** — the only phase since Phase 1 with no migration, which is what
+  a tuning phase should look like.
+
+1,243 unit tests + 211 e2e green. Next work: `ROADMAP.md` **Phase 18 (Release Hardening & 1.0)**.
+
+**An audit that inspects one element is worse than no audit.** `axe-core` reported zero contrast
+violations on the tavern — out of **one** node it could resolve, because it gives up (honestly, as
+`incomplete`) at a `background-image` and every room in Emberhollow has one. `e2e/contrast.ts`
+reads real pixels instead: hide every glyph, screenshot, sample the band each text run occupies.
+That found 500+ failures. Before trusting a green audit, ask what it *inspected* — `textRunCount`
+and the planted-failure test exist so this one can answer.
+
+**A simulation can tell the "cap the game cannot supply" lie too.** §0 promised a full gear set in
+45–60 days; the sim said 125 and blamed the gacha. It had also *excluded the forge*, on the
+reasoning that folding in a deterministic craft would flatter the number — while the forge route
+was itself priced at ~210 days, because a recipe costs 2 Starmetal and the only source paid an
+average of half of one. Neither was visible without costing the other. A measurement you declined
+to take is not a pessimistic estimate; it is an unexamined one.
+
+**A pacing milestone is a schedule or a deadline, and it matters which.** Level 55 on day 5 is as
+wrong as day 90 — a content gate is two-sided. "1–2 set pieces *by* day 30" is not: arriving early
+is the game being generous. Two rows were failing a two-sided band while describing a game that
+over-delivers by three weeks. `MILESTONE_KIND` makes the distinction explicit and
+`pacing.test.ts` asserts the distinction itself, because a semantic that lives only in a comment
+gets rewritten by whoever is in a hurry.
+
+**A value the timeline already computed goes in `style`, never `animate`.** The fighter's lunge
+offset sat in Motion's `animate`, asking it to start a tween toward a target that changed again on
+the next frame — sixty times a second, for two fighters — with a `transition` object whose
+identity swapped every tick, so each tween tore down the last. `animate` is for state changes.
+And `filter` is the most expensive property Motion can touch: the knockout desaturation is a CSS
+transition.
+
+**Every text colour belongs to a surface.** Emberhollow is dark timber with one light surface —
+parchment (keeper barks, duelling posters, the tutorial card). `blood`/`moss`/`ember` therefore
+come in pairs: a `-400` for timber, a `-600`/`-700` for parchment, and the `-500`/`-600` fills
+stay fills. Using the wrong half is the single easiest way to put a contrast failure back. Muted
+parchment text has a floor of `/72` and there is no tier below it (style guide §10).
 
 **A derived cursor demands monotone predicates.** The tutorial's active beat is the first of twelve
 the save cannot prove happened — no stored position, so a mid-beat reload resumes for free and two
@@ -253,13 +294,13 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 `dungeons/` (floors, delve, keys), `forge/` (forgeConfig, craft),
 `gacha/` (schedule, roll, track), `pets/` (ownership, feeding, boost, eggs),
 `board/` (tasks, chest), `calendar/`, `tutorial/` (beats, hints, firstMission), `economy/`,
-`reset/` (resetEngine + the one-owner audit) ·
+`pacing/` (the §0 ladder), `reset/` (resetEngine + the one-owner audit) ·
 `src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
 patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, vesnaBarks, names, guilds, guildChat,
 bounties, dungeons, gearSets, banners, pets, progress, dailyTasks, calendar, legends,
-crierTemplates, tutorial, glossary ·
-`src/state/` stores + persistence + the shared clock ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board,tutorial}/` ·
+crierTemplates, tutorial, glossary, sfx ·
+`src/state/` stores + persistence + the shared clock + the audio singletons (`sfx`, `bgm`) ·
+`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board,tutorial,settings}/` ·
 `src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,
@@ -316,7 +357,9 @@ conjures any combination of gear, levels and gold on demand.
   deployed preview plays clean.
 - Commands: `npm run dev` / `build` / `test` / `test:e2e` / `lint` / `typecheck` / `format` /
   `verify` (typecheck → lint → test → build) / `balance` (combat harness) / `economy` (economy
-  sim) / `assets:sync` — keep this list current as scripts appear.
+  sim) / `pacing` (the §0 ladder) / `tuning` (the `[TUNE]` inventory + 90-day ledger) /
+  `perf` (Lighthouse + bundle + main-thread cost, needs a server on :3100) / `assets:sync`
+  — keep this list current as scripts appear.
 
 ## Canon quick-reference (avoid re-deciding)
 

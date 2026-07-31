@@ -44,10 +44,18 @@ function gapLabel(gap: number): string {
  * and `amber-400` are chosen to sit on dark wood and disappear entirely here.
  */
 const THREAT_LOOK: Readonly<Record<ThreatLevel, { label: string; tone: string; edge: string }>> = {
+  /*
+   * The *dark* semantic colours, deliberately, and the one place in the game that wants them.
+   *
+   * A duelling poster is pinned parchment, so this is light-surface text — the exact inverse of
+   * every panel in Emberhollow, and the Phase 17 pass caught the -400 siblings sitting on it at
+   * 1.5:1. The -400s exist for dark timber; on parchment they are almost invisible. Anything
+   * added to this map is on a light background and takes a -600.
+   */
   easy: { label: 'Favourable', tone: 'text-moss-600', edge: 'border-moss-600/35' },
   even: { label: 'Even', tone: 'text-ink-900/75', edge: 'border-ink-900/20' },
-  risky: { label: 'Risky', tone: 'text-ember-600', edge: 'border-amber-500/50' },
-  dangerous: { label: 'Dangerous', tone: 'text-blood-600', edge: 'border-blood-600/45' },
+  risky: { label: 'Risky', tone: 'text-ember-700', edge: 'border-amber-500/50' },
+  dangerous: { label: 'Dangerous', tone: 'text-blood-700', edge: 'border-blood-600/45' },
 };
 
 /**
@@ -66,7 +74,7 @@ function RankSeal({ rank, pressed }: { rank: number; pressed: boolean }) {
       data-testid="rank-seal"
       aria-hidden
     >
-      <svg viewBox="0 0 48 48" className="text-blood-600 absolute inset-0 h-full w-full">
+      <svg viewBox="0 0 48 48" className="text-blood-400 absolute inset-0 h-full w-full">
         {/* An irregular blob: a perfect circle reads as a button, not as wax. */}
         <path
           d="M24 2c6 0 9 4 13 6s9 1 9 7-4 8-4 13 4 7 2 12-8 3-12 6-6 4-12 3-8-6-12-8-8-2-8-8 3-7 3-12-3-8-1-13 8-3 12-4 4-2 10-2Z"
@@ -80,7 +88,7 @@ function RankSeal({ rank, pressed }: { rank: number; pressed: boolean }) {
           strokeWidth="1.5"
         />
       </svg>
-      <span className="font-display text-parchment-300 relative text-[0.62rem] leading-none font-extrabold tabular-nums drop-shadow">
+      <span className="font-display text-ink-900 relative text-[0.62rem] leading-none font-extrabold tabular-nums">
         {rank > 999 ? `${Math.round(rank / 100) / 10}k` : rank}
       </span>
     </motion.span>
@@ -147,7 +155,7 @@ export function DuelPoster({
 
       <RankSeal rank={rank} pressed={!reduced} />
 
-      <p className="font-display text-ink-900/45 text-[0.6rem] tracking-[0.3em] uppercase">
+      <p className="font-display text-ink-900/70 text-[0.6rem] tracking-[0.3em] uppercase">
         {gapLabel(gap)}
       </p>
 
@@ -168,11 +176,11 @@ export function DuelPoster({
           <h3 className="font-display text-ink-900 truncate text-lg leading-tight font-extrabold">
             {profile.name}
           </h3>
-          <p className="text-ink-900/60 truncate text-xs">
+          <p className="text-ink-900/70 truncate text-xs">
             Level {profile.level}
             {hall ? ` · ${hall.name}` : ' · unguilded'}
           </p>
-          <p className="text-ink-900/50 mt-0.5 text-xs tabular-nums">
+          <p className="text-ink-900/70 mt-0.5 text-xs tabular-nums">
             {profile.honor.toLocaleString()} honour
           </p>
         </div>
@@ -182,7 +190,7 @@ export function DuelPoster({
         <div className="mt-2 flex flex-wrap gap-1.5">
           {revenge && (
             <span
-              className="chamfer-sm border-blood-600/50 bg-blood-600/15 text-blood-600 border px-1.5 py-0.5 text-[0.6rem] font-bold tracking-wider uppercase"
+              className="chamfer-sm border-blood-600/50 bg-blood-600/15 text-blood-400 border px-1.5 py-0.5 text-[0.6rem] font-bold tracking-wider uppercase"
               data-testid="revenge-chip"
             >
               Owes you one
@@ -200,10 +208,10 @@ export function DuelPoster({
         <p className={`font-display text-xs font-bold ${look.tone}`} data-testid="threat-level">
           {look.label} — {threat.summary}
         </p>
-        <ul className="text-ink-900/65 mt-1.5 space-y-0.5 text-xs leading-snug">
+        <ul className="text-ink-900/70 mt-1.5 space-y-0.5 text-xs leading-snug">
           {threat.notes.map((note) => (
             <li key={note} className="flex gap-1.5">
-              <span aria-hidden className="text-ink-900/30">
+              <span aria-hidden className="text-ink-900/70">
                 ·
               </span>
               {note}
@@ -233,7 +241,7 @@ export function DuelPoster({
           initial={reduced ? false : { scale: 2.4, opacity: 0, rotate: -34 }}
           animate={{ scale: 1, opacity: 1, rotate: -13 }}
           transition={snappy}
-          className="text-blood-600/75 pointer-events-none absolute inset-0 grid place-items-center"
+          className="text-blood-400/75 pointer-events-none absolute inset-0 grid place-items-center"
           data-testid="laurel-stamp"
           aria-hidden
         >

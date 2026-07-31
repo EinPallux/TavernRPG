@@ -62,8 +62,8 @@ function RailItem({
           active
             ? 'text-amber-500'
             : gate.unlocked
-              ? 'text-parchment-500/70'
-              : 'text-parchment-500/25'
+              ? 'text-parchment-500/72'
+              : 'text-parchment-500/72'
         }`}
       >
         {gate.unlocked ? <Icon name={place.icon} size={19} /> : <LockIcon size={16} />}
@@ -77,13 +77,13 @@ function RailItem({
                 ? 'text-amber-500'
                 : gate.unlocked
                   ? 'text-parchment-300/90 group-hover:text-parchment-300'
-                  : 'text-parchment-500/35'
+                  : 'text-parchment-500/72'
             }`}
           >
             {place.railName ?? place.name}
           </span>
           {!gate.unlocked && (
-            <span className="text-parchment-500/40 shrink-0 text-[10px] tracking-wider">
+            <span className="text-parchment-500/72 shrink-0 text-[10px] tracking-wider">
               Lv {gate.gateLevel}
             </span>
           )}
@@ -224,7 +224,7 @@ export function NavRail() {
           onClick={toggleNav}
           aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
           data-testid="nav-toggle"
-          className="text-parchment-500/45 transition-colors hover:text-amber-500"
+          className="text-parchment-500/72 transition-colors hover:text-amber-500"
         >
           <ChevronIcon size={16} className={collapsed ? '' : 'rotate-180'} />
         </button>
@@ -240,7 +240,7 @@ export function NavRail() {
           return (
             <div key={group} className="mb-3">
               {!collapsed && (
-                <p className="font-display text-parchment-500/35 px-4 py-1 text-[10px] tracking-[0.28em] uppercase">
+                <p className="font-display text-parchment-500/72 px-4 py-1 text-[10px] tracking-[0.28em] uppercase">
                   {GROUP_LABELS[group]}
                 </p>
               )}
@@ -265,7 +265,7 @@ export function NavRail() {
 
       {/* Footer: what opens next, then settings. */}
       {!collapsed && upcoming && (
-        <p className="text-parchment-500/40 border-parchment-500/10 border-t px-4 py-2.5 text-[11px] leading-snug">
+        <p className="text-parchment-500/72 border-parchment-500/10 border-t px-4 py-2.5 text-[11px] leading-snug">
           <span className="text-amber-500/70">{upcoming.place.name}</span> opens at level{' '}
           {upcoming.place.gateLevel}.
         </p>

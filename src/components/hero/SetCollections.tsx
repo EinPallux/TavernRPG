@@ -56,7 +56,7 @@ function PieceCell({
       ? 'border-rarity-set/70 bg-rarity-set/12 text-rarity-set shadow-[0_0_18px_-6px_rgb(232_163_61/0.85)]'
       : state === 'owned'
         ? 'border-rarity-set/35 bg-wood-900/70 text-rarity-set/70'
-        : 'border-parchment-500/12 bg-wood-900/40 text-parchment-500/22';
+        : 'border-parchment-500/12 bg-wood-900/40 text-parchment-500/72';
 
   return (
     <motion.div
@@ -74,7 +74,7 @@ function PieceCell({
       </span>
       <span
         className={`w-full truncate text-center text-[10px] ${
-          state === 'missing' ? 'text-parchment-500/30' : 'text-parchment-500/60'
+          state === 'missing' ? 'text-parchment-500/72' : 'text-parchment-500/72'
         }`}
       >
         {SLOT_LABELS[slot]}
@@ -105,19 +105,19 @@ function BonusRow({
         className={`chamfer-sm mt-0.5 grid h-6 w-8 shrink-0 place-items-center border text-[11px] font-bold tabular-nums ${
           active
             ? 'border-rarity-set/60 bg-rarity-set/15 text-rarity-set'
-            : 'border-parchment-500/15 bg-wood-900/60 text-parchment-500/50'
+            : 'border-parchment-500/15 bg-wood-900/60 text-parchment-500/72'
         }`}
       >
         {pieces}
       </span>
       <span className="min-w-0 flex-1">
         <span
-          className={`block text-xs leading-relaxed ${active ? 'text-parchment-300' : 'text-parchment-500/65'}`}
+          className={`block text-xs leading-relaxed ${active ? 'text-parchment-300' : 'text-parchment-500/72'}`}
         >
           {text}
         </span>
         {!active && (
-          <span className="text-parchment-500/40 mt-0.5 block text-[10px]">
+          <span className="text-parchment-500/72 mt-0.5 block text-[10px]">
             {pieces - worn === 1
               ? 'One more piece on the body.'
               : `${pieces - worn} more pieces on the body.`}
@@ -168,7 +168,7 @@ function VersePicker({
               className={`chamfer-sm border px-2 py-1.5 text-[11px] transition-colors ${
                 active
                   ? 'border-amber-500/70 bg-amber-500/15 text-amber-400'
-                  : 'border-parchment-500/12 bg-wood-900/55 text-parchment-500/60 hover:text-parchment-300 hover:border-amber-500/40'
+                  : 'border-parchment-500/12 bg-wood-900/55 text-parchment-500/72 hover:text-parchment-300 hover:border-amber-500/40'
               }`}
               data-testid={`verse-${verse}`}
             >
@@ -177,7 +177,7 @@ function VersePicker({
           );
         })}
       </div>
-      <p className="text-parchment-500/45 mt-2 text-[10px] leading-relaxed">
+      <p className="text-parchment-500/72 mt-2 text-[10px] leading-relaxed">
         {chosen
           ? `Every fight starts on ${VERSES[chosen].name}. ${VERSES[chosen].blurb}`
           : 'Unpicked — the room still chooses. Pick one and it never does again.'}
@@ -215,7 +215,7 @@ function SetCard({
           className={`chamfer-sm bg-wood-800 grid h-12 w-12 shrink-0 place-items-center border ${
             owned.size > 0
               ? 'border-rarity-set/55 text-rarity-set'
-              : 'border-parchment-500/15 text-parchment-500/35'
+              : 'border-parchment-500/15 text-parchment-500/72'
           }`}
         >
           <Icon name={definition.sigil} size={24} />
@@ -223,12 +223,12 @@ function SetCard({
         <div className="min-w-0 flex-1">
           <p
             className={`font-display text-base leading-tight font-bold ${
-              owned.size > 0 ? 'text-rarity-set' : 'text-parchment-500/70'
+              owned.size > 0 ? 'text-rarity-set' : 'text-parchment-500/72'
             }`}
           >
             {definition.name}
           </p>
-          <p className="text-parchment-500/55 mt-0.5 text-[11px] leading-snug italic">
+          <p className="text-parchment-500/72 mt-0.5 text-[11px] leading-snug italic">
             {definition.theme}
           </p>
         </div>
@@ -277,7 +277,7 @@ function SetCard({
 
       {verseSlot}
 
-      <p className="text-parchment-500/40 border-parchment-500/10 mt-3.5 flex items-start gap-1.5 border-t pt-3 text-[11px] leading-relaxed">
+      <p className="text-parchment-500/72 border-parchment-500/10 mt-3.5 flex items-start gap-1.5 border-t pt-3 text-[11px] leading-relaxed">
         <LockIcon size={11} className="mt-0.5 shrink-0" />
         {complete ? (
           <span>
@@ -310,7 +310,7 @@ export function SetCollections({
     <TavernPanel
       title="Set collections"
       headerSlot={
-        <span className="text-parchment-500/45 text-xs tabular-nums" data-testid="set-total">
+        <span className="text-parchment-500/72 text-xs tabular-nums" data-testid="set-total">
           {held}/{wanted} pieces
         </span>
       }
@@ -345,7 +345,7 @@ export function SetCollections({
         })}
       </motion.div>
 
-      <p className="text-parchment-500/40 mt-4 text-[11px] leading-relaxed">
+      <p className="text-parchment-500/72 mt-4 text-[11px] leading-relaxed">
         Bonuses count what you are <em>wearing</em>, not what you own — a piece in the bag still
         fills a silhouette, but it does not fire anything. Pieces are Set rarity, class-locked, and
         roll their curated statline at whatever level you find them.

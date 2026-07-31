@@ -131,11 +131,19 @@ describe('progress integration', () => {
   });
 
   it('respects the rising XP wall rather than multiplying through it', () => {
+    /*
+     * Measured over a *long* stretch on purpose.
+     *
+     * At a hundred hours from level 10 the early curve is nearly flat, so ten times the hours
+     * really does buy close to ten times the levels — the wall has not started biting yet, and
+     * the assertion was passing on a rounding step rather than on the property. A thousand hours
+     * against ten thousand is where the shape is actually visible, and where a regression to a
+     * flat divisor would show up as the two being proportional.
+     */
     const personality = botIdentity(SEED, 500).personality;
-    const short = integrateProgress(10, 0, 100, personality);
-    const long = integrateProgress(10, 0, 1_000, personality);
+    const short = integrateProgress(10, 0, 1_000, personality);
+    const long = integrateProgress(10, 0, 10_000, personality);
 
-    // Ten times the hours must not be ten times the levels.
     expect(long.gained).toBeGreaterThan(short.gained);
     expect(long.gained).toBeLessThan(short.gained * 10);
   });

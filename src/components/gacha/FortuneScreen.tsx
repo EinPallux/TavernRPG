@@ -238,7 +238,7 @@ export function FortuneScreen() {
               <TavernPanel
                 title="The odds"
                 headerSlot={
-                  <span className="text-parchment-500/45 text-xs">{selectedDefinition.name}</span>
+                  <span className="text-parchment-500/72 text-xs">{selectedDefinition.name}</span>
                 }
               >
                 <OddsPanel definition={selectedDefinition} />
@@ -247,7 +247,7 @@ export function FortuneScreen() {
               <TavernPanel
                 title="What you drew"
                 headerSlot={
-                  <span className="text-parchment-500/45 text-xs tabular-nums">
+                  <span className="text-parchment-500/72 text-xs tabular-nums">
                     {save.gacha.rolls.toLocaleString()} lifetime
                   </span>
                 }

@@ -19,7 +19,10 @@
     "format:check": "prettier --check .",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
     "balance": "vitest run src/engine/combat/balance.test.ts",
-    "economy": "vitest run src/engine/economy/economy.test.ts"
+    "economy": "vitest run src/engine/economy/economy.test.ts",
+    "pacing": "vitest run src/engine/pacing/pacing.test.ts",
+    "tuning": "npx tsx scripts/tuning-pass.ts",
+    "perf": "node scripts/perf-pass.mjs"
   },
   "engines": {
     "node": ">=20.11"
@@ -51,6 +54,7 @@
     "eslint-config-next": "^16.2.12",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.1",
+    "lighthouse": "^13.4.1",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4.3.3",

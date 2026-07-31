@@ -34,7 +34,7 @@ export function SellDrawer({ items, quoteFor, onSell, keeper }: SellDrawerProps)
 
   if (items.length === 0) {
     return (
-      <p className="text-parchment-500/45 py-6 text-center text-sm" data-testid="sell-empty">
+      <p className="text-parchment-500/72 py-6 text-center text-sm" data-testid="sell-empty">
         Nothing in your bags {keeper} would take.
       </p>
     );
@@ -67,7 +67,7 @@ export function SellDrawer({ items, quoteFor, onSell, keeper }: SellDrawerProps)
               <span className={`block truncate text-xs font-semibold ${styles.text}`}>
                 {item.name}
               </span>
-              <span className="text-parchment-500/40 block text-[10px] tracking-wide uppercase">
+              <span className="text-parchment-500/72 block text-[10px] tracking-wide uppercase">
                 {RARITY_LABELS[item.rarity]} · Lv {item.level}
               </span>
             </span>
@@ -75,7 +75,7 @@ export function SellDrawer({ items, quoteFor, onSell, keeper }: SellDrawerProps)
             {/* No quote means the service refused it — a locked piece or an heirloom. The row
                 stays visible and says why, rather than the item silently vanishing from the list. */}
             {!quote ? (
-              <span className="text-parchment-500/40 flex shrink-0 items-center gap-1 text-[10px]">
+              <span className="text-parchment-500/72 flex shrink-0 items-center gap-1 text-[10px]">
                 <LockIcon size={11} />
                 {item.locked ? 'locked' : 'not for sale'}
               </span>

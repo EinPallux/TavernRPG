@@ -23,6 +23,7 @@ import { bramSays, selaSays, type ShopMoment } from '@/data/shopBarks';
 import { PLACES_BY_ID, type PlaceDef } from '@/data/places';
 import { quoteSale, shopStock } from '@/state/shopActions';
 import { useGameStore } from '@/state/gameStore';
+import { play } from '@/state/sfx';
 import { gameNow } from '@/state/clock';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { KeeperBark } from '@/components/ui/KeeperBark';
@@ -113,11 +114,15 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
               : 'That one has gone.',
         );
         say(result.kind === 'insufficient-gold' ? 'broke' : 'browse');
+        // A refusal gets a sound too. Silence reads as a dropped click, and the player's next
+        // move is to press the same button harder.
+        play('refuse');
         return;
       }
 
       setMessage(null);
       say('bought');
+      play('buy');
     },
     [buyStockItem, say, shopId],
   );
@@ -129,11 +134,13 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
         const heirloom = result.kind === 'cannot-dispose' && result.reason.kind === 'set-piece';
         setMessage(heirloom ? 'That is a set piece. It is not for sale.' : 'That cannot be sold.');
         say(heirloom ? 'heirloom' : 'browse');
+        play('refuse');
         return;
       }
 
       setMessage(null);
       say('sold');
+      play('sell');
     },
     [say, sellItem],
   );
@@ -181,7 +188,7 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
 
             {/* Restock is a promise the player plans around, so it is a clock, not a footnote. */}
             <span
-              className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/70 flex items-center gap-2 border px-3 py-1.5 text-xs"
+              className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/72 flex items-center gap-2 border px-3 py-1.5 text-xs"
               data-testid="restock-timer"
             >
               <HourglassIcon size={13} />
@@ -287,7 +294,7 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
                   </span>
                 }
               >
-                <p className="text-parchment-500/55 text-xs leading-relaxed">
+                <p className="text-parchment-500/72 text-xs leading-relaxed">
                   {chrome.keeper} pays what a piece is worth and asks {'×'}3.2 for one off the
                   shelf. Selling is income; buying is a splurge.
                 </p>
@@ -336,7 +343,7 @@ export function ShopScreen({ shopId }: { shopId: ShopId }) {
                   initial="hidden"
                   animate="visible"
                   transition={snappy}
-                  className="chamfer-sm border-parchment-500/12 bg-wood-900/50 text-parchment-500/50 border border-dashed px-3 py-4 text-center text-xs"
+                  className="chamfer-sm border-parchment-500/12 bg-wood-900/50 text-parchment-500/72 border border-dashed px-3 py-4 text-center text-xs"
                   data-testid="shelf-empty"
                 >
                   Cleared out. New stock at midnight — or a Golden Die, if you cannot wait.

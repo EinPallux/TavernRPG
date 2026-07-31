@@ -17,15 +17,43 @@
 
   --color-amber-500: #e8a33d;
   --color-amber-400: #f0b862;
+  /** Bright enough to stay legible where an amber wash lightens the surface under it. */
+  --color-amber-300: #f7d9a3;
+  /*
+   * The one amber that goes *on* parchment rather than under it.
+   *
+   * Keeper names were `text-amber-700/80` — Tailwind's stock amber, not a project token, because
+   * nothing here defined a 700 and the fallback went unnoticed for sixteen phases. It measures
+   * 2.7:1 on a speech bubble. This is the same hue taken dark enough to clear AA at 5:1, and it
+   * exists so the next person reaching for a darker amber finds one.
+   */
+  --color-amber-800: #8a4a00;
   --color-ember-600: #d96c2f;
   --color-arcane-500: #3fa7a0;
   --color-blood-600: #a73a2e;
   --color-moss-600: #4c7a3f;
 
-  --color-rarity-common: #9a938b;
-  --color-rarity-uncommon: #6fa84e;
-  --color-rarity-rare: #4a8fd4;
-  --color-rarity-epic: #9b5fd0;
+  /*
+   * Text-safe siblings, added in the Phase 17 accessibility pass.
+   *
+   * `blood-600` and `moss-600` are right as fills, borders and bar glows and cannot be text: on
+   * the timber surfaces they measure 2.9:1 and 3.7:1, and the numbers they are used for — the
+   * damage a hit took off, the armour a piece added — are exactly the text a player reads at a
+   * glance. Same hue, lifted until it clears AA on the darkest panel in the game. Never use these
+   * as a background; never use the -600s as a foreground.
+   */
+  --color-blood-400: #e0655a;
+  /** The dark blood, for the duelling posters. `-600` is a fill colour and reads 3.7:1 as text. */
+  --color-blood-700: #8a2f24;
+  --color-moss-400: #6cae58;
+  --color-ember-400: #f0895a;
+  /** The dark ember, for the one light surface in the game: a duelling poster. */
+  --color-ember-700: #8c3200;
+
+  --color-rarity-common: #aaa49c;
+  --color-rarity-uncommon: #82bd60;
+  --color-rarity-rare: #62a5e4;
+  --color-rarity-epic: #b47ee0;
   --color-rarity-set: #e8a33d;
 
   --font-display: var(--font-alegreya-sans-sc), ui-sans-serif, system-ui, sans-serif;

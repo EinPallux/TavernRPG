@@ -38,7 +38,7 @@ export interface ZoneDef {
   readonly tint: string;
 }
 
-const BG = (name: string) => `/assets/backgrounds/${name}.png`;
+const BG = (name: string) => `/assets/backgrounds/${name}.webp`;
 
 /**
  * Backdrops are matched to what the art actually *depicts*, not to the numbering in

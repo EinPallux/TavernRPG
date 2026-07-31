@@ -82,7 +82,7 @@ export function MissionCard({
           <p className="font-display text-parchment-300 text-lg leading-tight font-bold">
             {zone?.name ?? offer.zoneId}
           </p>
-          <p className="text-parchment-500/60 text-[11px] italic">{zone?.tagline}</p>
+          <p className="text-parchment-500/72 text-[11px] italic">{zone?.tagline}</p>
         </div>
       </div>
 
@@ -99,16 +99,16 @@ export function MissionCard({
 
         {/* Who is out there */}
         <div className="chamfer-sm bg-wood-900/60 border-parchment-500/12 flex items-center gap-2.5 border px-2.5 py-2">
-          <span className="text-parchment-500/45 text-[10px] tracking-[0.2em] uppercase">Foe</span>
+          <span className="text-parchment-500/72 text-[10px] tracking-[0.2em] uppercase">Foe</span>
           <span className="text-parchment-300 text-sm font-bold">{monster?.name ?? 'Unknown'}</span>
-          <span className="text-parchment-500/50 ml-auto text-xs">
+          <span className="text-parchment-500/72 ml-auto text-xs">
             Lv {offer.monsterLevel} · {monster?.archetypeId ?? '—'}
           </span>
         </div>
 
         {/* Length. Rewards scale with it, so the buttons live next to the numbers. */}
         <div>
-          <p className="text-parchment-500/50 mb-1.5 text-[10px] tracking-[0.2em] uppercase">
+          <p className="text-parchment-500/72 mb-1.5 text-[10px] tracking-[0.2em] uppercase">
             Length · costs Vigor
           </p>
           <div className="flex gap-1.5" role="group" aria-label="Mission length">
@@ -124,7 +124,7 @@ export function MissionCard({
                     ? 'text-ink-900 border-amber-400 bg-amber-500'
                     : vigor >= option
                       ? 'border-parchment-500/25 text-parchment-500/75 hover:border-amber-500/60 hover:text-amber-500'
-                      : 'border-parchment-500/10 text-parchment-500/30'
+                      : 'border-parchment-500/10 text-parchment-500/72'
                 }`}
                 data-testid={`duration-${offer.id}-${option}`}
               >
@@ -143,14 +143,14 @@ export function MissionCard({
           className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm"
         >
           <div className="flex items-center justify-between">
-            <dt className="text-parchment-500/60 flex items-center gap-1.5">
+            <dt className="text-parchment-500/72 flex items-center gap-1.5">
               <CoinIcon size={13} />
               Gold
             </dt>
             <dd className="text-parchment-300 tabular-nums">{payout.gold.toLocaleString()}</dd>
           </div>
           <div className="flex items-center justify-between">
-            <dt className="text-parchment-500/60 flex items-center gap-1.5">
+            <dt className="text-parchment-500/72 flex items-center gap-1.5">
               <SparkIcon size={13} />
               XP
             </dt>
@@ -164,11 +164,11 @@ export function MissionCard({
           data-testid={`odds-${offer.id}`}
           title="Odds are always shown, and are the same numbers the game rolls against."
         >
-          <div className="text-parchment-500/50 flex items-center justify-between text-[11px]">
+          <div className="text-parchment-500/72 flex items-center justify-between text-[11px]">
             <span>Item drop</span>
             <span className="tabular-nums">{Math.round(table.itemChance * 100)}%</span>
           </div>
-          <div className="text-parchment-500/40 mt-0.5 flex items-center justify-between text-[10px]">
+          <div className="text-parchment-500/72 mt-0.5 flex items-center justify-between text-[10px]">
             <span>Rare / Epic</span>
             <span className="tabular-nums">
               {rarityOdds(table, 'rare').toFixed(1)}% / {rarityOdds(table, 'epic').toFixed(1)}%

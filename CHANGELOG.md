@@ -7,6 +7,58 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Phase 17: balancing, content fill and feel
+- **Content to plan volume.** 96 mission monsters (9–10 a zone, up from 70), 124 blurb
+  definitions across 340 zone pairings, and keeper barks floored at twelve a keeper with at least
+  two per moment — `data/content.test.ts` asserts all three, because a roster that is one line
+  short in one zone is invisible until a player reads the same sentence twice.
+- **Sound, synthesized.** 24 cues written as oscillator recipes in `data/sfx.ts` and built at play
+  time — ~2 KB of data instead of twenty files, nothing to attribute, and a cue is a number you
+  can edit. The context opens on the first gesture and never before it, a muted player never gets
+  one at all, and throttling is per family so a flurry of interface ticks cannot eat the crit
+  landing in the same frame. Music is one file the player supplies; its absence is the documented
+  default and shows no toggle at all.
+- **The Settings screen.** Sound, volume, motion, rail, playback speed, skip-by-default and
+  Marla's tour. The last placeholder room in Emberhollow is now a working panel.
+- **The tuning pass.** All 68 `[TUNE]` markers carry a verdict in balancing §16 — changed, held
+  against a named harness, or (for the three simulation parameters) held to a stricter standard.
+  Plus 90-day economy bands and `npm run tuning`.
+- **The accessibility pass.** A contrast harness that reads real pixels, WCAG 2 A/AA via axe on
+  five screens, tab order asserted against reading order, a visible focus indicator on twenty
+  consecutive stops, and reduced motion checked for the states an animation was carrying.
+- **The performance pass.** `npm run perf`: Lighthouse on the stage screens, a per-route bundle
+  budget, and the battle scene's main-thread cost.
+
+### Changed — Phase 17
+- **Set pieces are reachable.** An Epic scrap yields 1–2 Starmetal, up from 0–1, and the pacing
+  sim costs the forge's recipe route it had been excluding. A full five-piece set closes at day
+  51.5 against §0's 52, where it read 125.
+- **The muted-text ladder.** 408 usages spread from `/18` to `/70` collapsed into three tiers with
+  `/72` as the floor. The semantic colours gained text-safe siblings — light for timber, dark for
+  the parchment of a duelling poster — and the style guide §10 says which surface takes which.
+- **The art ships transcoded.** `sync-assets.mjs` re-encodes backdrops and portraits to WebP at
+  display size: 79 MB of PNG becomes 2.4 MB. Lighthouse 49 → 98.
+- **Milestones are schedules or deadlines.** A content gate is wrong early *and* late; a long
+  chase is only wrong late. All six §0 rows are inside ±20% and `pacing.test.ts` asserts the
+  distinction itself.
+
+### Fixed — Phase 17
+- **The fight was silent in one specific way.** `play(frame.reaction.kind)` handed the timeline's
+  `blocked`/`dodged`/`missed` to a mixer that knows `block`/`dodge`/`miss`. It type-checked
+  against `play(id: string)` and no-opped forever. `play` takes a typed `SfxId` now and the hook
+  bridges the two vocabularies through a checked map.
+- **Settings hydrated wrong on every load.** `audioAvailable()` reads `window` during render, so
+  the server shipped "no speaker" and the client built the mix — a React 19 hydration failure that
+  announced itself only as a minified error number.
+- **`sfx('constructor')` returned the `Object` constructor.** The lookup was an object literal.
+- **The `XP_DIVISOR_*` constants had no `[TUNE]` marker** — the two numbers that set the pace of
+  the whole game were invisible to the pass whose job is to review every tunable.
+- **A latent Phase 7 race.** Two selling tests conjured an item and navigated without flushing;
+  they only began failing once a click grew a few milliseconds of work.
+- **Per-frame values were going through Motion's `animate`.** The fighter's lunge offset asked
+  Motion to tween toward a target that changed again next frame, sixty times a second, with a
+  `transition` object whose identity swapped every tick.
+
 ### Added — Phase 16: the first twenty minutes
 - **The active beat is derived, not stored.** Twelve beats in `data/tutorial.ts`, each a place, a
   thing to point at, two sentences and a predicate — and the live one is simply the first the save

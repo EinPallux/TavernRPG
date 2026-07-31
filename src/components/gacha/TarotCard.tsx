@@ -74,12 +74,12 @@ function Face({ result }: { result: GachaResult }) {
       </p>
 
       {reward.kind === 'gold' && (
-        <p className="text-parchment-500/70 text-[11px] tabular-nums">
+        <p className="text-parchment-500/72 text-[11px] tabular-nums">
           {reward.gold.toLocaleString()} gold
         </p>
       )}
       {reward.kind === 'materials' && (
-        <p className="text-parchment-500/70 text-[10px]">
+        <p className="text-parchment-500/72 text-[10px]">
           {[
             reward.materials.scrap && `${reward.materials.scrap} Scrap`,
             reward.materials.essence && `${reward.materials.essence} Essence`,
@@ -90,7 +90,7 @@ function Face({ result }: { result: GachaResult }) {
         </p>
       )}
       {reward.kind === 'dupe' && (
-        <p className="text-parchment-500/70 text-[10px] leading-snug">
+        <p className="text-parchment-500/72 text-[10px] leading-snug">
           {reward.materials.starmetal} Starmetal + a shard
         </p>
       )}
@@ -99,7 +99,7 @@ function Face({ result }: { result: GachaResult }) {
       )}
 
       {result.pitied && (
-        <span className="text-ember-600 flex items-center gap-1 text-[9px] tracking-wider uppercase">
+        <span className="text-ember-400 flex items-center gap-1 text-[9px] tracking-wider uppercase">
           <SparkIcon size={9} />
           owed
         </span>

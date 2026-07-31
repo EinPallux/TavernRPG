@@ -13,6 +13,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { snappy } from '@/styles/motion';
 import { CoinIcon, DiceIcon } from '@/components/icons';
+import { play } from '@/state/sfx';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -42,7 +43,7 @@ const VARIANT: Record<ButtonVariant, string> = {
   secondary:
     'bg-wood-700/80 text-parchment-300 border border-parchment-500/25 hover:border-amber-500/60 hover:bg-wood-600/80',
   danger: 'bg-blood-600/85 text-parchment-300 hover:bg-blood-600 font-bold',
-  ghost: 'text-parchment-500/70 hover:text-amber-500 underline underline-offset-4',
+  ghost: 'text-parchment-500/72 hover:text-amber-500 underline underline-offset-4',
 };
 
 const SIZE: Record<ButtonSize, string> = {
@@ -80,10 +81,24 @@ export function ActionButton({
   fullWidth = false,
   disabled,
   className = '',
+  onClick,
   ...rest
 }: ActionButtonProps) {
   const isDisabled = disabled || Boolean(disabledReason);
   const shape = variant === 'ghost' ? '' : 'chamfer-sm';
+
+  /*
+   * Every button in the game clicks here, which is the point.
+   *
+   * One call site rather than a `play()` sprinkled through fifteen screens: the cue belongs to
+   * *pressing a thing*, not to any particular thing, and a screen that forgot it would be the
+   * only silent button in the game. `play()` no-ops when SFX are off or there is no audio at
+   * all, so nothing here needs a guard.
+   */
+  const handleClick: typeof onClick = (event) => {
+    play('select');
+    onClick?.(event);
+  };
 
   return (
     <motion.button
@@ -91,6 +106,7 @@ export function ActionButton({
       whileHover={isDisabled ? undefined : { y: -1 }}
       whileTap={isDisabled ? undefined : { y: 1, scale: 0.985 }}
       transition={snappy}
+      onClick={handleClick}
       disabled={isDisabled}
       title={disabledReason}
       aria-disabled={isDisabled}

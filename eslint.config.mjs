@@ -98,7 +98,7 @@ const eslintConfig = [
 
   // Tests may reach for real timers/randomness when they are the thing under test.
   {
-    files: ['**/*.test.ts', '**/*.test.tsx', 'e2e/**/*.ts', 'scripts/**/*.mjs'],
+    files: ['**/*.test.ts', '**/*.test.tsx', 'e2e/**/*.ts', 'scripts/**/*.mjs', 'scripts/**/*.ts'],
     rules: { 'no-restricted-syntax': 'off', 'no-console': 'off' },
   },
 ];

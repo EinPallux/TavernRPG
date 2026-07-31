@@ -63,6 +63,18 @@ async function outfit(page: Page, { gold = 5 }: { gold?: number } = {}) {
 
   // Every caller navigates straight afterwards, and a page load reads from storage — without
   // this the test races its own autosave.
+  await flush(page);
+}
+
+/**
+ * Wait for the autosave to reach disk.
+ *
+ * Named, because "mutates then navigates must flush" (CLAUDE.md) applies to the *test bodies*
+ * below as much as to the fixtures: the two selling cases conjured an item and went straight to
+ * the shop, and only started failing when a click grew a few milliseconds of work. A latent race
+ * is not a passing test, it is a test that has not lost yet.
+ */
+async function flush(page: Page) {
   await page.evaluate(async () => {
     const store = (window as unknown as { __tavernStore?: StoreHandle }).__tavernStore;
     await store?.getState().flush();
@@ -228,6 +240,7 @@ test.describe('selling', () => {
     await page.getByTestId('dev-drawer-toggle').click();
     await page.getByTestId('dev-rarity-common').click();
     await page.getByTestId('dev-conjure-belt').click();
+    await flush(page);
 
     await gotoShop(page, 'armory');
     await page.getByTestId('toggle-sell').click();
@@ -254,6 +267,7 @@ test.describe('selling', () => {
     await page.getByTestId('dev-drawer-toggle').click();
     await page.getByTestId('dev-rarity-rare').click();
     await page.getByTestId('dev-conjure-amulet').click();
+    await flush(page);
 
     await gotoShop(page, 'armory');
     await page.getByTestId('toggle-sell').click();

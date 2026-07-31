@@ -74,7 +74,7 @@ export function HintChip() {
             onClick={() => dismissHint(hint.id)}
             aria-label="Dismiss this suggestion"
             title="Not today"
-            className="text-parchment-500/40 hover:text-parchment-300 shrink-0 px-1.5 text-sm leading-none transition-colors"
+            className="text-parchment-500/72 hover:text-parchment-300 shrink-0 px-1.5 text-sm leading-none transition-colors"
             data-testid="hint-dismiss"
           >
             ×

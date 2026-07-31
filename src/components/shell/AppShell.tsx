@@ -20,6 +20,16 @@ import { TutorialLayer } from '@/components/tutorial/TutorialLayer';
 import { UnlockWatcher } from './UnlockWatcher';
 import { useGameStore } from '@/state/gameStore';
 import { useShellStore } from '@/state/shellStore';
+import { configureSfx } from '@/state/sfx';
+import { configureBgm, watchVisibility } from '@/state/bgm';
+
+/**
+ * `[TUNE]` Music sits under the cues at this share of the master volume.
+ *
+ * One slider, two jobs: the spec gives music its own toggle but not its own level, and a loop at
+ * the same loudness as a crit would bury the crit. Music is a floor, not an event.
+ */
+const BGM_SHARE = 0.45;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const hydrate = useGameStore((state) => state.hydrate);
@@ -42,6 +52,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     applySettings(settings);
   }, [settings, applySettings]);
+
+  /*
+   * Shell -> speakers.
+   *
+   * Both audio modules are module-level singletons rather than React state, because the things
+   * that make noise are a battle timeline and a click handler — neither of which should have to
+   * hold a context or thread a volume down. This effect is the only place the player's
+   * preference reaches them, so a toggle and a volume drag cannot disagree.
+   */
+  useEffect(() => {
+    configureSfx({ enabled: settings.sfxEnabled, volume: settings.volume });
+  }, [settings.sfxEnabled, settings.volume]);
+
+  useEffect(() => {
+    configureBgm({ enabled: settings.musicEnabled, volume: settings.volume * BGM_SHARE });
+  }, [settings.musicEnabled, settings.volume]);
+
+  // A loop still playing in a tab nobody is looking at is why people mute games for good.
+  useEffect(() => watchVisibility(), []);
 
   /**
    * `reducedMotion` respects the OS by default, and the explicit setting overrides it in

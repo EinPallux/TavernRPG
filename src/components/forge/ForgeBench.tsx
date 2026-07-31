@@ -93,7 +93,7 @@ function OddsBar({ tier }: { tier: ForgeTierDef }) {
             <dt className={`${rarityStyles(rarity).text} opacity-80`}>
               {RARITY_LABELS[rarity].slice(0, 1)}
             </dt>
-            <dd className="text-parchment-500/60 tabular-nums">
+            <dd className="text-parchment-500/72 tabular-nums">
               {forgeOdds(tier, rarity).toFixed(0)}%
             </dd>
           </div>
@@ -135,7 +135,7 @@ export function ForgeBench({
       <div className="space-y-4">
         {/* ── The slot ──────────────────────────────────────────────── */}
         <div>
-          <p className="font-display text-parchment-500/50 mb-2 text-[0.65rem] tracking-[0.3em] uppercase">
+          <p className="font-display text-parchment-500/72 mb-2 text-[0.65rem] tracking-[0.3em] uppercase">
             What are we making?
           </p>
           <motion.div
@@ -157,8 +157,8 @@ export function ForgeBench({
                   aria-pressed={active}
                   className={`chamfer-sm flex flex-col items-center gap-1 border px-1 py-2.5 text-[10px] transition-colors ${
                     active
-                      ? 'border-amber-500/70 bg-amber-500/12 text-amber-400'
-                      : 'border-parchment-500/12 bg-wood-900/55 text-parchment-500/55 hover:text-parchment-300 hover:border-amber-500/40'
+                      ? 'border-amber-500/70 bg-amber-500/12 text-amber-300'
+                      : 'border-parchment-500/12 bg-wood-900/55 text-parchment-500/72 hover:text-parchment-300 hover:border-amber-500/40'
                   }`}
                   data-testid={`forge-slot-${id}`}
                 >
@@ -183,7 +183,7 @@ export function ForgeBench({
             <p className="font-display text-[0.65rem] tracking-[0.3em] text-amber-500 uppercase">
               Ember meter
             </p>
-            <span className="text-parchment-500/60 text-[11px] tabular-nums">
+            <span className="text-parchment-500/72 text-[11px] tabular-nums">
               {Math.min(emberMeter, EMBER_PITY)}/{EMBER_PITY}
             </span>
           </div>
@@ -203,9 +203,9 @@ export function ForgeBench({
             ))}
           </div>
 
-          <p className="text-parchment-500/50 mt-2 text-[11px] leading-relaxed">
+          <p className="text-parchment-500/72 mt-2 text-[11px] leading-relaxed">
             {pityReady ? (
-              <span className="text-ember-600 flex items-center gap-1.5 font-semibold">
+              <span className="text-ember-400 flex items-center gap-1.5 font-semibold">
                 <SparkIcon size={12} />
                 The next Master forge is an Epic. Guaranteed.
               </span>
@@ -215,7 +215,7 @@ export function ForgeBench({
           </p>
         </div>
 
-        <p className="text-parchment-500/40 text-[11px] leading-relaxed">
+        <p className="text-parchment-500/72 text-[11px] leading-relaxed">
           The world decides what it drops. Here you decide the slot — that is what the materials are
           buying, on top of Epic odds no drop table comes close to.
         </p>
@@ -245,7 +245,7 @@ export function ForgeBench({
               data-testid={`forge-tier-${tier.id}`}
             >
               <p className="font-display text-parchment-300 text-sm font-bold">{tier.name}</p>
-              <p className="text-parchment-500/50 mt-0.5 mb-3 min-h-[2.4rem] text-[11px] leading-snug">
+              <p className="text-parchment-500/72 mt-0.5 mb-3 min-h-[2.4rem] text-[11px] leading-snug">
                 {tier.blurb}
               </p>
 

@@ -67,7 +67,7 @@ export function ShiftReport({
         <p className="font-display text-3xl font-extrabold tracking-wide text-amber-400">
           {early ? 'Off Early' : 'Shift Complete'}
         </p>
-        <p className="text-parchment-500/55 mt-1 text-sm">
+        <p className="text-parchment-500/72 mt-1 text-sm">
           {early
             ? `Hildy signs you out after ${formatSpan(minutes)} of a ${hours}-hour shift. Paid for what you walked.`
             : `${formatSpan(minutes)} on the beat. Hildy signs the book.`}
@@ -82,7 +82,7 @@ export function ShiftReport({
           className="border-parchment-500/12 flex items-center justify-between border-b py-2"
           data-testid="shift-gold"
         >
-          <dt className="text-parchment-500/70 flex items-center gap-2 text-sm">
+          <dt className="text-parchment-500/72 flex items-center gap-2 text-sm">
             <CoinIcon size={14} />
             Watch pay
           </dt>
@@ -97,7 +97,7 @@ export function ShiftReport({
           className="flex items-center justify-between py-2"
           data-testid="shift-xp"
         >
-          <dt className="text-parchment-500/70 flex items-center gap-2 text-sm">
+          <dt className="text-parchment-500/72 flex items-center gap-2 text-sm">
             <SparkIcon size={14} />
             Experience
           </dt>
@@ -127,7 +127,7 @@ export function ShiftReport({
         data-testid="shift-log"
       >
         {lines.map((line) => (
-          <li key={line.id} className="text-parchment-500/70 text-xs leading-snug">
+          <li key={line.id} className="text-parchment-500/72 text-xs leading-snug">
             — {line.text}
           </li>
         ))}

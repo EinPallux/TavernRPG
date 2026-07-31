@@ -73,7 +73,10 @@ export const TORVALD_LINES: Lines = {
     'Come back with more in the bucket.',
     'Fire runs on stock, not on optimism.',
   ],
-  full: ['Your bags are full. I am not putting a fresh blade on the floor.'],
+  full: [
+    'Your bags are full. I am not putting a fresh blade on the floor.',
+    'Make room first. I have watched too many good pieces get stood in a corner.',
+  ],
 };
 
 /** Pick a line by index — deterministic, never rolled. */

@@ -20,6 +20,7 @@ import {
   goldPatrolPerHour,
   goldPerVigor,
   missionPayout,
+  xpPatrolPerHour,
   type MissionDuration,
 } from '@/engine/progression/rewards';
 import { applyXp, xpNeeded } from '@/engine/progression/xp';
@@ -57,6 +58,14 @@ export interface DayLedger {
   /** Gold out, by destination. */
   readonly spent: Readonly<Record<Sink, number>>;
   readonly xpEarned: number;
+  /**
+   * Lifetime XP at end of day.
+   *
+   * Recorded so the pacing sim can say *when in the day* a level landed. A ledger that only
+   * carries the end-of-day level can answer "which day", and "which day" rounds a milestone up
+   * by as much as a whole day — which at the level-10 target is a third of the budget.
+   */
+  readonly xpTotal: number;
   /** Attribute points bought today — the thing the player is actually here for. */
   readonly pointsBought: number;
   /** Gold left in the purse at end of day. */
@@ -221,6 +230,7 @@ export function simulateEconomy({
 
   let level = startLevel;
   let xp = 0;
+  let xpTotal = 0;
   let purse = startGold;
   // Points bought per attribute, since `statCost` prices the *n*-th point of each one.
   const trained = { str: 0, dex: 0, int: 0, con: 0, lck: 0 };
@@ -251,6 +261,7 @@ export function simulateEconomy({
       const payout = missionPayout(level, style.duration, xpNeeded(level), bonus);
       missionGold += payout.gold;
       xpEarned += payout.xp;
+      xpTotal += payout.xp;
 
       // Level up as it happens: later missions in the day pay the new level's rate, which is
       // what actually occurs in play and matters a lot in the first week.
@@ -260,6 +271,26 @@ export function simulateEconomy({
     }
 
     const patrolGold = Math.floor(goldPatrolPerHour(level) * style.patrolHours * bonus.gold);
+
+    /*
+     * Patrol pays experience too, and until the Phase 17 pacing pass this model did not count it.
+     *
+     * The omission was not small: eight hours of watch is `4 × xpPerVigor` an hour, which is
+     * thirty-two Vigor-equivalents against a hundred spent on contracts — a third of the day's
+     * progression, missing. Every level milestone this file reported was therefore pessimistic,
+     * including the "L10 day 4" figure that had been sitting in `rewards.ts` as a measured fact
+     * since Phase 6.
+     */
+    const patrolXp = Math.floor(
+      xpPatrolPerHour(level, xpNeeded(level)) * style.patrolHours * bonus.xp,
+    );
+    if (patrolXp > 0) {
+      xpEarned += patrolXp;
+      xpTotal += patrolXp;
+      const levelled = applyXp(level, xp, patrolXp);
+      level = levelled.level;
+      xp = levelled.xp;
+    }
 
     // Loot sold. Every mission has a chance of an item; the player wears the occasional
     // upgrade and sells the rest, which is the same thing at this resolution.
@@ -336,6 +367,7 @@ export function simulateEconomy({
         pets: petSpend,
       },
       xpEarned,
+      xpTotal,
       pointsBought,
       purse,
       missionsRun,

@@ -78,7 +78,7 @@ export interface DungeonDef {
 
 export type DungeonKeyId = 'rusty-key' | 'bone-key' | 'brand-key';
 
-const BG = '/assets/backgrounds/dungeons_background.png';
+const BG = '/assets/backgrounds/dungeons_background.webp';
 
 /*
  * ── Why the archetypes climb in the order they do ─────────────────────────────────

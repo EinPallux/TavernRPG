@@ -156,7 +156,7 @@ export function MenagerieScreen() {
 
             <div className="flex items-center gap-2">
               <span
-                className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/70 flex items-center gap-2 border px-3 py-1.5 text-xs"
+                className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/72 flex items-center gap-2 border px-3 py-1.5 text-xs"
                 data-testid="scraps-purse"
               >
                 <PawIcon size={13} />
@@ -253,19 +253,19 @@ export function MenagerieScreen() {
                         <p className="font-display text-parchment-300 text-sm font-bold">
                           {boost.name}
                         </p>
-                        <p className="text-parchment-500/55 text-[11px]">
+                        <p className="text-parchment-500/72 text-[11px]">
                           Level {boost.progress.level}
                         </p>
                       </div>
                     </div>
 
                     <p className="text-parchment-300 mt-3 text-sm" data-testid="active-boost">
-                      <span className="text-parchment-500/60">{BOOST_LABELS[boost.stat]}</span>{' '}
+                      <span className="text-parchment-500/72">{BOOST_LABELS[boost.stat]}</span>{' '}
                       <span className="font-bold text-amber-400">
                         +{(boost.share * 100).toFixed(1)}%
                       </span>
                     </p>
-                    <p className="text-parchment-500/45 mt-1.5 text-[11px] leading-relaxed">
+                    <p className="text-parchment-500/72 mt-1.5 text-[11px] leading-relaxed">
                       Applied wherever it counts — the fight, the paperdoll and the payout all read
                       this same figure.
                     </p>
@@ -283,14 +283,14 @@ export function MenagerieScreen() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-parchment-500/50 py-4 text-sm" data-testid="no-active-pet">
+                  <p className="text-parchment-500/72 py-4 text-sm" data-testid="no-active-pet">
                     Nobody is coming with you. Pick one — switching is free, and always will be.
                   </p>
                 )}
               </TavernPanel>
 
               <TavernPanel title="How this works">
-                <ul className="text-parchment-500/60 space-y-2 text-[11px] leading-relaxed">
+                <ul className="text-parchment-500/72 space-y-2 text-[11px] leading-relaxed">
                   <li>
                     <span className="text-parchment-300">One at a time.</span> Only the companion at
                     your side boosts anything, and switching costs nothing.
@@ -309,7 +309,7 @@ export function MenagerieScreen() {
                     Skipping every one of them costs you almost nothing — which is why the materials
                     price can be steep.
                   </li>
-                  <li className="text-parchment-500/40">
+                  <li className="text-parchment-500/72">
                     Armour, gold-find and experience companions run at half rate: a percentage of
                     gold found is worth rather more over a month than a percentage of Strength.
                   </li>
@@ -320,7 +320,7 @@ export function MenagerieScreen() {
                 <dl className="space-y-1.5 text-xs">
                   {[1, 10, 25, 40].map((level) => (
                     <div key={level} className="flex items-baseline justify-between gap-3">
-                      <dt className="text-parchment-500/55">
+                      <dt className="text-parchment-500/72">
                         Level {level} → {level + 1}
                       </dt>
                       <dd className="flex items-center gap-1.5 text-amber-500 tabular-nums">

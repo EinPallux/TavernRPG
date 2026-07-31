@@ -20,6 +20,7 @@ import { boardView } from '@/state/boardActions';
 import { ledger } from '@/state/calendarActions';
 import { currentDayKey } from '@/state/clock';
 import { useGameStore } from '@/state/gameStore';
+import { play } from '@/state/sfx';
 import type { DailyChest, WeeklyChest } from '@/engine/board/chest';
 import { AmbientStage } from '@/components/ui/AmbientStage';
 import { TavernPanel } from '@/components/ui/TavernPanel';
@@ -64,20 +65,25 @@ export function BoardScreen() {
     const result = claimDailyChest();
     if (!result.ok) {
       setMessage('Not yet — all three notices first.');
+      play('refuse');
       return;
     }
     setMessage(null);
     setOpened({ kind: 'daily', chest: result.chest });
+    play('coin');
   }, [claimDailyChest]);
 
   const handleWeekly = useCallback(() => {
     const result = claimWeeklyChest();
     if (!result.ok) {
       setMessage('The ladder wants all seven rungs.');
+      play('refuse');
       return;
     }
     setMessage(null);
     setOpenedWeekly({ kind: 'weekly', chest: result.chest });
+    // The week's chest pays Golden Dice, and the premium currency has its own three notes.
+    play('dice');
   }, [claimWeeklyChest]);
 
   const clearBurst = useCallback(() => {
@@ -119,7 +125,7 @@ export function BoardScreen() {
                   className={`font-display relative px-4 py-2 text-[13px] tracking-[0.12em] transition-colors ${
                     face === entry.id
                       ? 'text-amber-500'
-                      : 'text-parchment-500/55 hover:text-parchment-300'
+                      : 'text-parchment-500/72 hover:text-parchment-300'
                   }`}
                 >
                   {entry.label}
@@ -181,7 +187,7 @@ export function BoardScreen() {
                     {view.tasks.length === 0 && (
                       <motion.li
                         variants={listItemIn}
-                        className="chamfer-md border-parchment-500/10 bg-wood-900/45 text-parchment-500/50 border p-6 text-sm"
+                        className="chamfer-md border-parchment-500/10 bg-wood-900/45 text-parchment-500/72 border p-6 text-sm"
                       >
                         The board is bare. Marla will have something pinned up shortly.
                       </motion.li>
@@ -213,7 +219,7 @@ export function BoardScreen() {
                   />
 
                   <TavernPanel title="How the ledger works">
-                    <ul className="text-parchment-500/60 space-y-2 text-[11px] leading-relaxed">
+                    <ul className="text-parchment-500/72 space-y-2 text-[11px] leading-relaxed">
                       <li>
                         <span className="text-parchment-300">It marks itself.</span> The first time
                         you open the game each day, Marla makes the mark. There is nothing to click
@@ -229,7 +235,7 @@ export function BoardScreen() {
                         twenty-eighth closes the ledger with an Epic and the Moss Tortoise. Then it
                         starts again.
                       </li>
-                      <li className="text-parchment-500/40">
+                      <li className="text-parchment-500/72">
                         Gold on the ledger scales with your level, so a square is worth the same
                         share of a day’s work at forty as it was at four.
                       </li>

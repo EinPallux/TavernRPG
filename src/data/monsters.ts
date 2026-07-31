@@ -9,9 +9,10 @@
  * `art/monsters/<id>.png` in and it appears, with no code change. Until then a monster shows an
  * archetype silhouette tinted by its zone, which is the documented fallback.
  *
- * Names lean cozy-grim. Zones 1–5 (levels 1–36) carry the full roster this phase needs; the
- * later zones have a starter set and are filled to plan volume in the content pass
- * (ROADMAP Phase 15).
+ * Names lean cozy-grim. Ninety-six of them, nine or ten per zone — filled to plan volume in the
+ * Phase 17 content pass. The even spread is deliberate: a zone with five monsters repeats its
+ * roster twice as often as its neighbour, and a player reads that as "the game ran out" long
+ * before they could name why. `content.test.ts` holds the floor and the ceiling.
  *
  * Pure data module.
  */
@@ -80,6 +81,13 @@ const MONSTER_LIST = [
     zoneId: 'whispering-woods',
     archetypeId: 'skirmisher',
     flavor: 'Moves under the leaf litter like a rumour.',
+  },
+  {
+    id: 'charcoal-burner',
+    name: 'The Charcoal Burner',
+    zoneId: 'whispering-woods',
+    archetypeId: 'tank',
+    flavor: 'Been out here alone eleven years. Does not want the company.',
   },
   {
     id: 'bramble-hound',
@@ -356,7 +364,7 @@ const MONSTER_LIST = [
     flavor: 'He built the place. He is still finishing it.',
   },
 
-  // ── Later zones: starter rosters, filled to plan volume in the content pass ──────
+  // ── Silverpine Pass (32–46) ──────────────────────────────────────────────────────
   {
     id: 'pass-clansman',
     name: 'Silverpine Clansman',
@@ -391,6 +399,42 @@ const MONSTER_LIST = [
     zoneId: 'silverpine-pass',
     archetypeId: 'tank',
     flavor: 'Two hundred kilos of clan pride in borrowed plate.',
+  },
+
+  {
+    id: 'toll-of-the-pass',
+    name: 'Toll of the Pass',
+    zoneId: 'silverpine-pass',
+    archetypeId: 'tank',
+    flavor: 'A gate, a ledger, and a man who has never once been argued down.',
+  },
+  {
+    id: 'snowblind-scout',
+    name: 'Snowblind Scout',
+    zoneId: 'silverpine-pass',
+    archetypeId: 'skirmisher',
+    flavor: 'Sees perfectly well. Prefers you to think otherwise.',
+  },
+  {
+    id: 'avalanche-caller',
+    name: 'Avalanche Caller',
+    zoneId: 'silverpine-pass',
+    archetypeId: 'caster',
+    flavor: 'Does not throw the mountain. Only asks it nicely.',
+  },
+  {
+    id: 'pine-bear',
+    name: 'Silverpine Bear',
+    zoneId: 'silverpine-pass',
+    archetypeId: 'bruiser',
+    flavor: 'Woke up early. Nothing about that is good news.',
+  },
+  {
+    id: 'rope-bridge-kin',
+    name: 'The Rope-Bridge Kin',
+    zoneId: 'silverpine-pass',
+    archetypeId: 'swarm',
+    flavor: 'They own every crossing and they charge in teeth.',
   },
 
   {
@@ -430,6 +474,42 @@ const MONSTER_LIST = [
   },
 
   {
+    id: 'bellows-drake',
+    name: 'Bellows Drake',
+    zoneId: 'ember-caves',
+    archetypeId: 'bruiser',
+    flavor: 'Breathes in for a very long time before it does anything else.',
+  },
+  {
+    id: 'tunnel-scrapper',
+    name: 'Tunnel Scrapper',
+    zoneId: 'ember-caves',
+    archetypeId: 'skirmisher',
+    flavor: 'Fights in the dark because it knows where the dark ends.',
+  },
+  {
+    id: 'ashfall-priest',
+    name: 'Ashfall Priest',
+    zoneId: 'ember-caves',
+    archetypeId: 'caster',
+    flavor: 'Preaches that the fire is listening. Annoyingly, it is.',
+  },
+  {
+    id: 'obsidian-sentinel',
+    name: 'Obsidian Sentinel',
+    zoneId: 'ember-caves',
+    archetypeId: 'tank',
+    flavor: 'Glass all the way through, and none of it breaks.',
+  },
+  {
+    id: 'cinder-motes',
+    name: 'Cinder Motes',
+    zoneId: 'ember-caves',
+    archetypeId: 'swarm',
+    flavor: 'Beautiful, briefly, and then in your lungs.',
+  },
+
+  {
     id: 'hollow-shade',
     name: 'Hollow Shade',
     zoneId: 'gloomhollow',
@@ -463,6 +543,42 @@ const MONSTER_LIST = [
     zoneId: 'gloomhollow',
     archetypeId: 'swarm',
     flavor: 'They go for the light first. Always the light.',
+  },
+
+  {
+    id: 'candle-thief',
+    name: 'The Candle Thief',
+    zoneId: 'gloomhollow',
+    archetypeId: 'skirmisher',
+    flavor: 'Takes the light, never the lantern. Nobody knows why.',
+  },
+  {
+    id: 'widows-loom',
+    name: 'The Widow’s Loom',
+    zoneId: 'gloomhollow',
+    archetypeId: 'tank',
+    flavor: 'Something is still working it, and the cloth is getting longer.',
+  },
+  {
+    id: 'hollow-choirboy',
+    name: 'Hollow Choirboy',
+    zoneId: 'gloomhollow',
+    archetypeId: 'caster',
+    flavor: 'Sings one note. Holds it far too long.',
+  },
+  {
+    id: 'pallid-stalker',
+    name: 'Pallid Stalker',
+    zoneId: 'gloomhollow',
+    archetypeId: 'bruiser',
+    flavor: 'It has been three paces behind you since the treeline.',
+  },
+  {
+    id: 'cellar-spiders',
+    name: 'Cellar Spiders',
+    zoneId: 'gloomhollow',
+    archetypeId: 'swarm',
+    flavor: 'Not one big one. That would be simpler.',
   },
 
   {
@@ -502,6 +618,42 @@ const MONSTER_LIST = [
   },
 
   {
+    id: 'bell-diver',
+    name: 'The Bell Diver',
+    zoneId: 'sunken-chapel',
+    archetypeId: 'skirmisher',
+    flavor: 'Went down for the bronze. Came up for everything else.',
+  },
+  {
+    id: 'barnacle-abbot',
+    name: 'Barnacle Abbot',
+    zoneId: 'sunken-chapel',
+    archetypeId: 'tank',
+    flavor: 'Grew into the pulpit. Has not left it since the flood.',
+  },
+  {
+    id: 'salt-psalmist',
+    name: 'Salt Psalmist',
+    zoneId: 'sunken-chapel',
+    archetypeId: 'caster',
+    flavor: 'Reads from a book that dissolved a century ago.',
+  },
+  {
+    id: 'undertow-brute',
+    name: 'Undertow Brute',
+    zoneId: 'sunken-chapel',
+    archetypeId: 'bruiser',
+    flavor: 'Does not swing so much as arrive.',
+  },
+  {
+    id: 'votive-drowned',
+    name: 'The Votive Drowned',
+    zoneId: 'sunken-chapel',
+    archetypeId: 'swarm',
+    flavor: 'Each one carrying a candle that has no business still burning.',
+  },
+
+  {
     id: 'frost-giants-kin',
     name: "Frost Giant's Kin",
     zoneId: 'frostfell-ridge',
@@ -535,6 +687,41 @@ const MONSTER_LIST = [
     zoneId: 'frostfell-ridge',
     archetypeId: 'swarm',
     flavor: 'Snow that moves against the wind.',
+  },
+  {
+    id: 'crevasse-lurker',
+    name: 'Crevasse Lurker',
+    zoneId: 'frostfell-ridge',
+    archetypeId: 'skirmisher',
+    flavor: 'The blue light down there is not the ice.',
+  },
+  {
+    id: 'hoarfrost-jarl',
+    name: 'Hoarfrost Jarl',
+    zoneId: 'frostfell-ridge',
+    archetypeId: 'tank',
+    flavor: 'Holds a hall nobody has seen and a grudge everyone has heard about.',
+  },
+  {
+    id: 'whiteout-singer',
+    name: 'Whiteout Singer',
+    zoneId: 'frostfell-ridge',
+    archetypeId: 'caster',
+    flavor: 'The storm arrives when she does. Opinions differ on the order.',
+  },
+  {
+    id: 'mammoth-of-the-pass',
+    name: 'The Long-Tusked',
+    zoneId: 'frostfell-ridge',
+    archetypeId: 'bruiser',
+    flavor: 'Older than the ridge road, and it remembers who built it.',
+  },
+  {
+    id: 'scrimshaw-flock',
+    name: 'Scrimshaw Flock',
+    zoneId: 'frostfell-ridge',
+    archetypeId: 'swarm',
+    flavor: 'Bone-white, and every one of them carved with a name.',
   },
 ] as const satisfies readonly MonsterDef[];
 

@@ -48,12 +48,12 @@ export function GatedPlace({ place, children }: { place: PlaceDef; children: Rea
         >
           <TavernPanel title={place.name} elevation="floating" data-testid={`locked-${place.id}`}>
             <div className="flex items-start gap-4">
-              <span className="chamfer-sm bg-wood-900/70 text-parchment-500/50 grid h-11 w-11 shrink-0 place-items-center border border-amber-500/20">
+              <span className="chamfer-sm bg-wood-900/70 text-parchment-500/72 grid h-11 w-11 shrink-0 place-items-center border border-amber-500/20">
                 <LockIcon size={20} />
               </span>
               <div className="min-w-0">
                 <p className="text-parchment-300/90 text-sm">{place.blurb}</p>
-                <p className="text-parchment-500/60 mt-2 text-sm">
+                <p className="text-parchment-500/72 mt-2 text-sm">
                   Opens at <span className="font-bold text-amber-500">level {gate.gateLevel}</span>
                   {' — '}
                   {gate.levelsRemaining === 1
@@ -73,7 +73,7 @@ export function GatedPlace({ place, children }: { place: PlaceDef; children: Rea
               </div>
             )}
 
-            <p className="text-parchment-500/45 border-parchment-500/12 mt-6 flex items-center gap-2 border-t pt-4 text-xs">
+            <p className="text-parchment-500/72 border-parchment-500/12 mt-6 flex items-center gap-2 border-t pt-4 text-xs">
               <Icon name={place.icon} size={14} />
               Run missions from the Gilded Tankard to get there.
             </p>

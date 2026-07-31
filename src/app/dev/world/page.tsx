@@ -133,7 +133,7 @@ export default function WorldDevPage() {
           TavernRPG · Engine
         </p>
         <h1 className="font-display text-parchment-300 text-4xl font-extrabold">The 1,500</h1>
-        <p className="text-parchment-500/60 mt-2 max-w-2xl text-sm">
+        <p className="text-parchment-500/72 mt-2 max-w-2xl text-sm">
           A whole world from one number. The generator and the tick here are the ones the game runs,
           so the reconciliation cost below is the cost a player pays on load.
         </p>
@@ -153,7 +153,7 @@ export default function WorldDevPage() {
               </div>
 
               <div>
-                <p className="text-parchment-500/60 mb-1.5 text-xs tracking-widest uppercase">
+                <p className="text-parchment-500/72 mb-1.5 text-xs tracking-widest uppercase">
                   Simulate
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -171,7 +171,7 @@ export default function WorldDevPage() {
               </div>
 
               <label className="block">
-                <span className="text-parchment-500/60 mb-1 block text-xs tracking-widest uppercase">
+                <span className="text-parchment-500/72 mb-1 block text-xs tracking-widest uppercase">
                   Player at rank {playerRank}
                 </span>
                 <input
@@ -186,25 +186,25 @@ export default function WorldDevPage() {
 
               <dl className="border-parchment-500/12 space-y-1.5 border-t pt-3">
                 <div className="flex justify-between">
-                  <dt className="text-parchment-500/65">Reconcile cost</dt>
+                  <dt className="text-parchment-500/72">Reconcile cost</dt>
                   <dd
-                    className={`tabular-nums ${elapsedMs > 1_000 ? 'text-blood-600' : 'text-moss-600'}`}
+                    className={`tabular-nums ${elapsedMs > 1_000 ? 'text-blood-400' : 'text-moss-400'}`}
                   >
                     {elapsedMs.toFixed(0)}ms {integrated ? '(integrated)' : ''}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-parchment-500/65">Events</dt>
+                  <dt className="text-parchment-500/72">Events</dt>
                   <dd className="text-parchment-300 tabular-nums">{events.length}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-parchment-500/65">Median / p95 / max</dt>
+                  <dt className="text-parchment-500/72">Median / p95 / max</dt>
                   <dd className="text-parchment-300 tabular-nums">
                     {at(0.5)} / {at(0.95)} / {levels.at(-1)}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-parchment-500/65">Guilded</dt>
+                  <dt className="text-parchment-500/72">Guilded</dt>
                   <dd className="text-parchment-300 tabular-nums">
                     {((world.bots.filter((b) => b.guildId >= 0).length / BOT_COUNT) * 100).toFixed(
                       0,
@@ -217,7 +217,7 @@ export default function WorldDevPage() {
           </TavernPanel>
 
           <TavernPanel title="Level distribution" animate={false}>
-            <p className="text-parchment-500/50 mb-3 text-xs leading-snug">
+            <p className="text-parchment-500/72 mb-3 text-xs leading-snug">
               Balancing §12 wants median 28, p95 74, max 92. A spike in the last bucket means the
               ceiling is clamping instead of compressing.
             </p>
@@ -227,7 +227,7 @@ export default function WorldDevPage() {
             <div className="flex h-36 items-stretch gap-1">
               {histogram.map((count, index) => (
                 <div key={index} className="flex h-full flex-1 flex-col items-center gap-1">
-                  <span className="text-parchment-500/40 text-[9px] tabular-nums">{count}</span>
+                  <span className="text-parchment-500/72 text-[9px] tabular-nums">{count}</span>
                   <div className="flex w-full flex-1 items-end">
                     <div
                       className="w-full bg-amber-500/70"
@@ -235,7 +235,7 @@ export default function WorldDevPage() {
                       title={`${count} heroes`}
                     />
                   </div>
-                  <span className="text-parchment-500/35 text-[9px] tabular-nums">
+                  <span className="text-parchment-500/72 text-[9px] tabular-nums">
                     {Math.round((index * MAX_BOT_LEVEL) / 10)}
                   </span>
                 </div>
@@ -245,7 +245,7 @@ export default function WorldDevPage() {
 
           <TavernPanel title="Rivals at this rank" animate={false}>
             {rivals.length === 0 ? (
-              <p className="text-parchment-500/45 text-xs">Simulate a day to draw rivals.</p>
+              <p className="text-parchment-500/72 text-xs">Simulate a day to draw rivals.</p>
             ) : (
               <ul className="space-y-1.5 text-xs">
                 {rivals.map((rival) => {
@@ -253,7 +253,7 @@ export default function WorldDevPage() {
                   return (
                     <li key={rival.botId} className="flex items-baseline justify-between gap-2">
                       <span className="text-parchment-300 truncate">{identity.name}</span>
-                      <span className="text-parchment-500/50 shrink-0 tabular-nums">
+                      <span className="text-parchment-500/72 shrink-0 tabular-nums">
                         #{rankOf(world, rival.botId)} · {rival.archetype} · heat{' '}
                         {Math.round(rival.heat)}
                       </span>
@@ -268,7 +268,7 @@ export default function WorldDevPage() {
         <div className="space-y-4">
           <TavernPanel title="The ladder, around the player" animate={false}>
             <table className="w-full text-left text-xs tabular-nums">
-              <thead className="text-parchment-500/55">
+              <thead className="text-parchment-500/72">
                 <tr className="border-parchment-500/12 border-b">
                   <th className="py-1.5 pr-3 font-normal tracking-widest uppercase">#</th>
                   <th className="py-1.5 pr-3 font-normal tracking-widest uppercase">Hero</th>
@@ -300,23 +300,23 @@ export default function WorldDevPage() {
                         isPlayerRow ? 'bg-amber-500/10' : ''
                       }`}
                     >
-                      <td className="text-parchment-500/55 py-1 pr-3">{rank}</td>
+                      <td className="text-parchment-500/72 py-1 pr-3">{rank}</td>
                       <td
                         className={`py-1 pr-3 ${identity.legend ? 'text-amber-400' : 'text-parchment-300/85'}`}
                       >
                         {identity.name}
                       </td>
-                      <td className="text-parchment-500/60 py-1 pr-3">{identity.classId}</td>
+                      <td className="text-parchment-500/72 py-1 pr-3">{identity.classId}</td>
                       <td className="text-parchment-300/85 py-1 pr-3 text-right">{bot.level}</td>
-                      <td className="text-parchment-500/60 py-1 pr-3 text-right">
+                      <td className="text-parchment-500/72 py-1 pr-3 text-right">
                         {materializeBot(world.seed, bot, identity).maxHealth.toLocaleString()}
                       </td>
                       <td className="text-parchment-300/85 py-1 pr-3 text-right">
                         {bot.honor.toLocaleString()}
                       </td>
-                      <td className="text-parchment-500/50 truncate py-1">
+                      <td className="text-parchment-500/72 truncate py-1">
                         {home?.name ?? '—'}{' '}
-                        <span className="text-parchment-500/30">
+                        <span className="text-parchment-500/72">
                           {archetypeOf(identity.personality)}
                         </span>
                       </td>
@@ -325,25 +325,25 @@ export default function WorldDevPage() {
                 })}
               </tbody>
             </table>
-            <p className="text-parchment-500/35 mt-3 text-[11px]">
+            <p className="text-parchment-500/72 mt-3 text-[11px]">
               Top ten, then the eleven around rank {playerRank}.
             </p>
           </TavernPanel>
 
           <TavernPanel title="What the Crier would say" animate={false}>
             {feed.length === 0 ? (
-              <p className="text-parchment-500/45 text-xs">Simulate a day to fill the board.</p>
+              <p className="text-parchment-500/72 text-xs">Simulate a day to fill the board.</p>
             ) : (
               <ul className="space-y-1 text-xs">
                 {feed.slice(0, 24).map((entry) => (
                   <li key={entry.id} className="flex items-baseline gap-2">
-                    <span className="text-parchment-500/35 w-24 shrink-0 tracking-wider uppercase">
+                    <span className="text-parchment-500/72 w-24 shrink-0 tracking-wider uppercase">
                       {entry.category}
                     </span>
                     <span className="text-parchment-300/85 flex-1">{entry.text}</span>
                     <span
                       className={`shrink-0 text-[10px] ${
-                        entry.relation === 'rival' ? 'text-blood-600' : 'text-parchment-500/30'
+                        entry.relation === 'rival' ? 'text-blood-400' : 'text-parchment-500/72'
                       }`}
                     >
                       {entry.relation}

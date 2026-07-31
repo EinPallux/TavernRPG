@@ -70,7 +70,7 @@ export function BattleFighter({
         <p className="font-display text-parchment-300 text-lg leading-tight font-bold">
           {card.name}
         </p>
-        <p className="text-parchment-500/50 text-[11px] tracking-[0.2em] uppercase">
+        <p className="text-parchment-500/72 text-[11px] tracking-[0.2em] uppercase">
           Level {card.level} · {card.kind}
         </p>
       </motion.div>
@@ -101,27 +101,45 @@ export function BattleFighter({
           />
         </div>
         <p
-          className={`text-parchment-500/60 mt-1 text-[11px] ${isLeft ? 'text-left' : 'text-right'}`}
+          className={`text-parchment-500/72 mt-1 text-[11px] ${isLeft ? 'text-left' : 'text-right'}`}
         >
           {Math.max(0, Math.round(health)).toLocaleString()} / {card.maxHealth.toLocaleString()}
         </p>
       </div>
 
       {/* Portrait, and everything that happens to it */}
+      {/*
+        The lunge is *set*, not animated — and that distinction is worth 40fps.
+
+        `x` here comes from the timeline, which already computed where the fighter should be at
+        this exact millisecond. Putting it in `animate` asked Motion to start a new tween toward a
+        target that would change again on the next frame, sixty times a second, for two fighters —
+        and it was paired with a `transition` object that swapped identity every tick, so each new
+        tween tore down the last one. The Phase 17 pass measured the scene at **20fps against a
+        60fps baseline on the same machine**, and reduced motion (which skips all of this) at 60.
+
+        `style` takes the value straight through. `animate` keeps only the things that genuinely
+        are state changes — a knockout, an entrance — which is what it is for.
+      */}
       <motion.div
         className="relative"
+        style={{ x: lungeOffset }}
         initial={entering ? { opacity: 0, x: isLeft ? -80 : 80, scale: 0.9 } : false}
         animate={{
           opacity: knockedOut ? 0.35 : 1,
-          x: lungeOffset,
           scale: 1,
           rotate: knockedOut ? (isLeft ? -12 : 12) : 0,
           y: knockedOut ? 14 : 0,
-          filter: knockedOut ? 'grayscale(1) brightness(0.6)' : 'grayscale(0) brightness(1)',
         }}
-        transition={lunging ? { duration: 0 } : snappy}
+        transition={snappy}
       >
         <div
+          // Desaturation on a knockout: a CSS transition rather than a Motion `filter` tween.
+          // Filters are the most expensive thing Motion can animate and this one is binary.
+          style={{
+            filter: knockedOut ? 'grayscale(1) brightness(0.6)' : undefined,
+            transition: 'filter 320ms ease-out',
+          }}
           className={`chamfer-md bg-wood-900 h-44 w-36 overflow-hidden border-2 ${
             lunging?.crit
               ? 'border-amber-400 shadow-[0_0_36px_-6px_rgb(240_184_98/0.95)]'
@@ -146,7 +164,7 @@ export function BattleFighter({
               <span className="font-display text-parchment-300/70 text-5xl leading-none font-black">
                 {card.name.charAt(0)}
               </span>
-              <span className="text-parchment-500/55 text-[9px] tracking-[0.18em] uppercase">
+              <span className="text-parchment-500/72 text-[9px] tracking-[0.18em] uppercase">
                 {card.kind}
               </span>
             </div>

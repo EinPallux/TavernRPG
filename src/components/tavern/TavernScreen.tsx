@@ -166,7 +166,7 @@ export function TavernScreen() {
   return (
     <div className="relative h-full w-full" data-testid="place-tavern">
       <AmbientStage
-        backdrop="/assets/backgrounds/tavern_background.png"
+        backdrop="/assets/backgrounds/tavern_background.webp"
         tint="from-wood-900 via-wood-900/80 to-wood-900/55"
         effects={['hearth', 'motes']}
       >
@@ -252,7 +252,7 @@ export function TavernScreen() {
                 ))}
               </div>
               {activity.board.length === 0 && (
-                <p className="text-parchment-500/60 py-8 text-center text-sm">
+                <p className="text-parchment-500/72 py-8 text-center text-sm">
                   The table is bare. Marla will pin up fresh postings shortly.
                 </p>
               )}
@@ -378,7 +378,7 @@ function ReturnedCard({ mission, onFight }: { mission: StoredActiveMission; onFi
           <p className="text-parchment-300 text-sm">
             {monster?.name ?? 'Something'} is waiting in {zone?.name ?? 'the wilds'}.
           </p>
-          <p className="text-parchment-500/55 mt-1 text-xs italic">{monster?.flavor}</p>
+          <p className="text-parchment-500/72 mt-1 text-xs italic">{monster?.flavor}</p>
         </div>
         <ActionButton size="lg" onClick={onFight} data-testid="watch-fight">
           Hear how it went

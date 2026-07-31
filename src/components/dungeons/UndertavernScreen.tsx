@@ -86,11 +86,11 @@ function Descent({ name, floor, onDone }: { name: string; floor: number; onDone:
         transition={dramatic}
         className="text-center"
       >
-        <StairsDownIcon size={38} className="text-ember-600 mx-auto" />
+        <StairsDownIcon size={38} className="text-ember-400 mx-auto" />
         <p className="font-display text-parchment-300 mt-3 text-2xl font-extrabold tracking-[0.1em]">
           {name}
         </p>
-        <p className="text-parchment-500/55 mt-1 text-sm tracking-[0.3em] uppercase">
+        <p className="text-parchment-500/72 mt-1 text-sm tracking-[0.3em] uppercase">
           Floor {floor}
         </p>
       </motion.div>
@@ -186,7 +186,7 @@ export function UndertavernScreen() {
 
             <div className="flex items-center gap-2">
               <span
-                className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/70 flex items-center gap-2 border px-3 py-1.5 text-xs"
+                className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/72 flex items-center gap-2 border px-3 py-1.5 text-xs"
                 data-testid="key-count"
               >
                 <KeyIcon size={13} />
@@ -229,7 +229,7 @@ export function UndertavernScreen() {
           </div>
 
           {save.dungeons.keys.length === 0 && (
-            <p className="text-parchment-500/45 mt-4 shrink-0 text-center text-xs leading-relaxed">
+            <p className="text-parchment-500/72 mt-4 shrink-0 text-center text-xs leading-relaxed">
               Keys turn up on the roads — about one contract in sixteen, once you are old enough for
               the door they open.
             </p>
@@ -358,7 +358,7 @@ function ClearCeremony({ trophyId }: { trophyId: string | null }) {
         Ten floors, and nothing left standing on any of them.
         {trophyId ? ' The crest is yours.' : ''}
       </p>
-      <p className="text-parchment-500/55 mt-2 flex items-center justify-center gap-1.5 text-xs">
+      <p className="text-parchment-500/72 mt-2 flex items-center justify-center gap-1.5 text-xs">
         <DiceIcon size={12} />
         Three Golden Dice, earned.
       </p>
@@ -377,10 +377,10 @@ function BestAttempt({ share, newBest }: { share: number; newBest: boolean }) {
       data-testid="best-attempt"
     >
       <div className="mb-1.5 flex items-baseline justify-between">
-        <p className="font-display text-parchment-500/50 text-[0.6rem] tracking-[0.3em] uppercase">
+        <p className="font-display text-parchment-500/72 text-[0.6rem] tracking-[0.3em] uppercase">
           {newBest ? 'A new best' : 'This attempt'}
         </p>
-        <span className="text-ember-600 text-sm font-bold tabular-nums">
+        <span className="text-ember-400 text-sm font-bold tabular-nums">
           {Math.round(share * 100)}%
         </span>
       </div>
@@ -392,7 +392,7 @@ function BestAttempt({ share, newBest }: { share: number; newBest: boolean }) {
           transition={{ ...standard, delay: 0.5 }}
         />
       </div>
-      <p className="text-parchment-500/45 mt-2 text-xs leading-relaxed">
+      <p className="text-parchment-500/72 mt-2 text-xs leading-relaxed">
         Thirty minutes and it will be back on its feet. Bring something heavier.
       </p>
     </motion.div>

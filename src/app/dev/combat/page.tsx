@@ -32,7 +32,7 @@ function eventLine(event: BattleEvent): { text: string; tone: string } {
         tone: 'text-amber-500',
       };
     case 'round_start':
-      return { text: `Round ${event.n}`, tone: 'text-parchment-500/45 mt-2' };
+      return { text: `Round ${event.n}`, tone: 'text-parchment-500/72 mt-2' };
     case 'verse_change':
       return {
         text: `  ${event.side.toUpperCase()} strikes up ${VERSES[event.verse].name} — ${VERSES[event.verse].blurb}`,
@@ -44,27 +44,27 @@ function eventLine(event: BattleEvent): { text: string; tone: string } {
         tone: event.crit ? 'text-amber-400' : 'text-parchment-300/85',
       };
     case 'blocked':
-      return { text: `  ${event.target.toUpperCase()} blocks`, tone: 'text-parchment-500/60' };
+      return { text: `  ${event.target.toUpperCase()} blocks`, tone: 'text-parchment-500/72' };
     case 'dodged':
-      return { text: `  ${event.target.toUpperCase()} slips aside`, tone: 'text-parchment-500/60' };
+      return { text: `  ${event.target.toUpperCase()} slips aside`, tone: 'text-parchment-500/72' };
     case 'missed':
-      return { text: `  ${event.source.toUpperCase()} swings wide`, tone: 'text-parchment-500/60' };
+      return { text: `  ${event.source.toUpperCase()} swings wide`, tone: 'text-parchment-500/72' };
     case 'boss_trait':
       return {
         text: `${event.side.toUpperCase()}: ${event.label} — ${event.explainer}`,
-        tone: 'text-ember-600 font-bold',
+        tone: 'text-ember-400 font-bold',
       };
     case 'swarm':
-      return { text: `  ${event.label} arrives`, tone: 'text-ember-600' };
+      return { text: `  ${event.label} arrives`, tone: 'text-ember-400' };
     case 'heal':
       return {
         text: `      ${event.target.toUpperCase()} +${event.amount} → ${event.hpAfter} hp`,
-        tone: 'text-moss-600',
+        tone: 'text-moss-400',
       };
     case 'harden':
       return {
         text: `  ${event.side.toUpperCase()} hardens (+${Math.round(event.reduction * 100)}pp cap)`,
-        tone: 'text-parchment-500/60',
+        tone: 'text-parchment-500/72',
       };
     case 'set_proc':
       return {
@@ -74,17 +74,17 @@ function eventLine(event: BattleEvent): { text: string; tone: string } {
     case 'damage':
       return {
         text: `      ${event.target.toUpperCase()} −${event.amount} → ${event.hpAfter} hp`,
-        tone: 'text-blood-600/90',
+        tone: 'text-blood-400/90',
       };
     case 'ko':
       return {
         text: `  ${event.target.toUpperCase()} goes down`,
-        tone: 'text-blood-600 font-bold',
+        tone: 'text-blood-400 font-bold',
       };
     case 'battle_end':
       return {
         text: `${event.winner.toUpperCase()} wins after ${event.rounds} rounds (${event.reason.replace('_', ' ')})`,
-        tone: 'text-moss-600 font-bold mt-2',
+        tone: 'text-moss-400 font-bold mt-2',
       };
   }
 }
@@ -120,7 +120,7 @@ export default function CombatDevPage() {
           TavernRPG · Engine
         </p>
         <h1 className="font-display text-parchment-300 text-4xl font-extrabold">Combat Viewer</h1>
-        <p className="text-parchment-500/60 mt-2 max-w-2xl text-sm">
+        <p className="text-parchment-500/72 mt-2 max-w-2xl text-sm">
           Every roll the engine made, for one seeded fight. Phase 4 turns this same log into an
           animated scene — nothing about the maths changes, only how it is shown.
         </p>
@@ -131,7 +131,7 @@ export default function CombatDevPage() {
           <TavernPanel title="Matchup" animate={false}>
             <div className="space-y-4 text-sm">
               <div>
-                <p className="text-parchment-500/60 mb-1.5 text-xs tracking-widest uppercase">
+                <p className="text-parchment-500/72 mb-1.5 text-xs tracking-widest uppercase">
                   Hero
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -150,7 +150,7 @@ export default function CombatDevPage() {
               </div>
 
               <div>
-                <p className="text-parchment-500/60 mb-1.5 text-xs tracking-widest uppercase">
+                <p className="text-parchment-500/72 mb-1.5 text-xs tracking-widest uppercase">
                   Opponent
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -186,7 +186,7 @@ export default function CombatDevPage() {
               </div>
 
               <label className="block">
-                <span className="text-parchment-500/60 mb-1 block text-xs tracking-widest uppercase">
+                <span className="text-parchment-500/72 mb-1 block text-xs tracking-widest uppercase">
                   Level {level}
                 </span>
                 <input
@@ -213,15 +213,15 @@ export default function CombatDevPage() {
           <TavernPanel title="Over 600 fights" animate={false}>
             <dl className="space-y-1.5 text-sm">
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Hero win rate</dt>
+                <dt className="text-parchment-500/72">Hero win rate</dt>
                 <dd className="text-parchment-300">{(summary.winRateA * 100).toFixed(1)}%</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Average length</dt>
+                <dt className="text-parchment-500/72">Average length</dt>
                 <dd className="text-parchment-300">{summary.averageRounds.toFixed(1)} rounds</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-parchment-500/65">Hit the round limit</dt>
+                <dt className="text-parchment-500/72">Hit the round limit</dt>
                 <dd className="text-parchment-300">{(summary.roundLimitRate * 100).toFixed(1)}%</dd>
               </div>
             </dl>
@@ -231,7 +231,7 @@ export default function CombatDevPage() {
         <TavernPanel
           title="Battle log"
           headerSlot={
-            <span className="text-parchment-500/45 text-xs">
+            <span className="text-parchment-500/72 text-xs">
               {result.log.length} events · seed {seed}
             </span>
           }

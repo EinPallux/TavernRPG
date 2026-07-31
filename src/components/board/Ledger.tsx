@@ -35,13 +35,13 @@ export function Ledger({ squares, cyclesCompleted, justStamped }: LedgerProps) {
     <div className="space-y-4">
       <TavernPanel title="Marla’s ledger">
         <div className="mb-3 flex items-baseline justify-between gap-3">
-          <p className="text-parchment-500/60 text-xs">
+          <p className="text-parchment-500/72 text-xs">
             <span className="text-parchment-300 tabular-nums">
               {stamped} of {CALENDAR_DAYS}
             </span>{' '}
             squares marked
             {cyclesCompleted > 0 && (
-              <span className="text-parchment-500/40">
+              <span className="text-parchment-500/72">
                 {' '}
                 · {cyclesCompleted} ledger{cyclesCompleted === 1 ? '' : 's'} finished
               </span>
@@ -72,7 +72,7 @@ export function Ledger({ squares, cyclesCompleted, justStamped }: LedgerProps) {
           ))}
         </motion.div>
 
-        <p className="text-parchment-500/45 mt-3 text-[11px] leading-relaxed">
+        <p className="text-parchment-500/72 mt-3 text-[11px] leading-relaxed">
           <span className="text-parchment-300">Missing a day pauses the ledger.</span> It never
           resets it — day nineteen is still day nineteen when you come back, however long that
           takes. The mark lands by itself on your first visit of the day.
@@ -98,14 +98,14 @@ function Square({ square, thumping }: { square: CalendarSquare; thumping: boolea
           : today
             ? 'border-amber-500/70 bg-amber-500/5 text-amber-500'
             : milestone
-              ? 'border-parchment-500/20 bg-wood-900/70 text-parchment-500/45'
-              : 'border-parchment-500/10 bg-wood-900/45 text-parchment-500/22'
+              ? 'border-parchment-500/20 bg-wood-900/70 text-parchment-500/72'
+              : 'border-parchment-500/10 bg-wood-900/45 text-parchment-500/72'
       }`}
       data-testid={`ledger-day-${reward.day}`}
       data-stamped={stamped}
       data-today={today}
     >
-      <span className="text-parchment-500/35 absolute top-0.5 left-1 text-[9px] tabular-nums">
+      <span className="text-parchment-500/72 absolute top-0.5 left-1 text-[9px] tabular-nums">
         {reward.day}
       </span>
       <Icon name={reward.iconId} size={milestone ? 20 : 16} />

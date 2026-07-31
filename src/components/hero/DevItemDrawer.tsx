@@ -59,7 +59,7 @@ export function DevItemDrawer({ hero }: { hero: Hero }) {
           type="button"
           onClick={() => setOpen((value) => !value)}
           data-testid="dev-drawer-toggle"
-          className="text-parchment-500/50 text-xs underline underline-offset-2 hover:text-amber-500"
+          className="text-parchment-500/72 text-xs underline underline-offset-2 hover:text-amber-500"
         >
           {open ? 'hide' : 'show'}
         </button>
@@ -69,7 +69,7 @@ export function DevItemDrawer({ hero }: { hero: Hero }) {
     >
       {open ? (
         <div className="space-y-3">
-          <p className="text-parchment-500/50 text-[11px]">
+          <p className="text-parchment-500/72 text-[11px]">
             A development tool. Missions, shops and dungeons drop the real thing; this exists so any
             combination of gear can be put on the paperdoll on demand.
           </p>
@@ -137,7 +137,7 @@ export function DevItemDrawer({ hero }: { hero: Hero }) {
           </div>
         </div>
       ) : (
-        <p className="text-parchment-500/40 text-xs">
+        <p className="text-parchment-500/72 text-xs">
           Hidden. Open to spawn gear while loot sources are still being built.
         </p>
       )}

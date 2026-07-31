@@ -70,8 +70,8 @@ function Rungs({ view }: { view: DoorView }) {
                 done
                   ? 'text-amber-300'
                   : current
-                    ? 'text-ember-600'
-                    : 'text-parchment-500/35'
+                    ? 'text-ember-400'
+                    : 'text-parchment-500/72'
               }`}
             >
               {boss ? '★' : floor}
@@ -106,14 +106,14 @@ export function DungeonDoor({ view, onDescend }: DungeonDoorProps) {
             Cleared
           </span>
         ) : (
-          <span className="text-parchment-500/50 text-xs tabular-nums">
+          <span className="text-parchment-500/72 text-xs tabular-nums">
             {progress.floorsCleared}/{FLOORS_PER_DUNGEON}
           </span>
         )
       }
       data-testid={`door-${definition.id}`}
     >
-      <p className="text-parchment-500/50 -mt-1 text-xs italic">{definition.tagline}</p>
+      <p className="text-parchment-500/72 -mt-1 text-xs italic">{definition.tagline}</p>
 
       <div className="mt-3">
         <Rungs view={view} />
@@ -136,17 +136,17 @@ export function DungeonDoor({ view, onDescend }: DungeonDoorProps) {
             <div className="flex items-baseline justify-between gap-3">
               <p className="font-display text-parchment-300 truncate text-sm font-bold">
                 {view.isBoss && (
-                  <span className="text-ember-600 mr-1.5 text-xs tracking-widest">BOSS</span>
+                  <span className="text-ember-400 mr-1.5 text-xs tracking-widest">BOSS</span>
                 )}
                 {view.floorName}
               </p>
-              <span className="text-parchment-500/50 shrink-0 text-xs tabular-nums">
+              <span className="text-parchment-500/72 shrink-0 text-xs tabular-nums">
                 Floor {view.floor} · L{view.floorLevel}
               </span>
             </div>
 
             {best > 0 && (
-              <p className="text-ember-600/80 mt-1 text-xs tabular-nums">
+              <p className="text-ember-400/80 mt-1 text-xs tabular-nums">
                 Best attempt: {Math.round(best * 100)}% of its health.
               </p>
             )}
@@ -158,7 +158,7 @@ export function DungeonDoor({ view, onDescend }: DungeonDoorProps) {
               itself, not to quote a price nobody can pay.
             */}
             {view.reward && refusal === null && (
-              <p className="text-parchment-500/45 mt-1 flex items-center gap-3 text-xs tabular-nums">
+              <p className="text-parchment-500/72 mt-1 flex items-center gap-3 text-xs tabular-nums">
                 <span className="flex items-center gap-1">
                   <CoinIcon size={11} />
                   {view.reward.gold.toLocaleString()}
@@ -220,7 +220,7 @@ function LockedDoor({
           className="chamfer-sm border-blood-600/35 bg-blood-600/10 text-parchment-300/80 flex items-center gap-2 border px-3 py-2 text-xs leading-relaxed"
           data-testid="dungeon-cooldown"
         >
-          <span className="text-blood-600 font-display shrink-0 font-bold tabular-nums">
+          <span className="text-blood-400 font-display shrink-0 font-bold tabular-nums">
             {countdown(refusal.msRemaining)}
           </span>
           The horrors are regrouping. They will be ready before you are.
@@ -246,7 +246,7 @@ function Shut({
       className={`chamfer-sm flex items-start gap-2 border px-3 py-2 text-xs leading-relaxed ${
         tone === 'amber'
           ? 'border-amber-500/30 bg-amber-500/8 text-parchment-300/80'
-          : 'border-parchment-500/15 bg-wood-900/60 text-parchment-500/60'
+          : 'border-parchment-500/15 bg-wood-900/60 text-parchment-500/72'
       }`}
       data-testid="dungeon-locked"
     >

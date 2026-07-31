@@ -52,7 +52,7 @@ export function Crucible({ items, quoteFor, onScrap, capReason }: CrucibleProps)
 
   if (items.length === 0) {
     return (
-      <p className="text-parchment-500/45 py-8 text-center text-sm" data-testid="crucible-empty">
+      <p className="text-parchment-500/72 py-8 text-center text-sm" data-testid="crucible-empty">
         Nothing in your bags. Torvald melts loot, not enthusiasm.
       </p>
     );
@@ -87,7 +87,7 @@ export function Crucible({ items, quoteFor, onScrap, capReason }: CrucibleProps)
                 <span className={`block truncate text-xs font-semibold ${styles.text}`}>
                   {item.name}
                 </span>
-                <span className="text-parchment-500/40 block text-[10px] tracking-wide uppercase">
+                <span className="text-parchment-500/72 block text-[10px] tracking-wide uppercase">
                   {RARITY_LABELS[item.rarity]} · Lv {item.level}
                 </span>
               </span>
@@ -99,7 +99,7 @@ export function Crucible({ items, quoteFor, onScrap, capReason }: CrucibleProps)
               {/* A locked piece keeps its row and says why. Disappearing from the list would
                   read as "the game lost my item", which is a worse bug than the real one. */}
               {!quote ? (
-                <span className="text-parchment-500/40 flex w-24 shrink-0 items-center justify-end gap-1 text-[10px]">
+                <span className="text-parchment-500/72 flex w-24 shrink-0 items-center justify-end gap-1 text-[10px]">
                   <LockIcon size={11} />
                   {item.locked ? 'locked' : capReason ? 'cap reached' : 'not meltable'}
                 </span>
@@ -135,7 +135,7 @@ export function Crucible({ items, quoteFor, onScrap, capReason }: CrucibleProps)
                   className="overflow-hidden"
                 >
                   <div className="border-ember-600/30 mt-2 border-t pt-2 pl-7">
-                    <p className="text-parchment-500/70 text-[11px] leading-relaxed">
+                    <p className="text-parchment-500/72 text-[11px] leading-relaxed">
                       {warningFor(item)}
                     </p>
                     <div className="mt-2 flex items-center gap-2">

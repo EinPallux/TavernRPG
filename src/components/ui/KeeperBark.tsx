@@ -43,7 +43,7 @@ export function KeeperBark({
           aria-live="polite"
         >
           <div className="chamfer-sm surface-parchment bg-parchment-500 edge-etched text-ink-900 relative px-4 py-3">
-            <p className="font-display text-[11px] tracking-[0.22em] text-amber-700/80 uppercase">
+            <p className="font-display text-[11px] tracking-[0.22em] text-amber-800 uppercase">
               {keeper}
             </p>
             <p className="mt-1 text-sm leading-snug">{line}</p>

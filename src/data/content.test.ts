@@ -31,8 +31,12 @@ import {
 } from './dungeons';
 import { GUILD_NAME_MAX, SIGIL_ICONS, validateGuildName } from './guilds';
 import { ICON_IDS } from './icons';
+import { MARLA_BARKS } from './barks';
+import { BRAM_LINES, ODO_LINES, SELA_LINES } from './shopBarks';
+import { TORVALD_LINES } from './forgeBarks';
+import { VESNA_LINES } from './vesnaBarks';
 import { ARCHETYPES_BY_ID } from './monsterArchetypes';
-import { MISSION_BLURBS, blurbsForDuration, renderBlurb } from './missionBlurbs';
+import { MISSION_BLURBS, blurbsForDuration, blurbsForZone, renderBlurb } from './missionBlurbs';
 import { MONSTERS, monstersInZone } from './monsters';
 import { MIN_ZONE_CHOICES, ZONES, ZONES_BY_ID, backdropFor, zonesForLevel } from './zones';
 
@@ -126,22 +130,16 @@ describe('monsters', () => {
     }
   });
 
-  it('gives every zone a populated roster', () => {
-    for (const zone of ZONES) {
-      expect(monstersInZone(zone.id).length, zone.id).toBeGreaterThanOrEqual(5);
-    }
+  it('carries the plan volume — 96 across ten zones (content-plan §2)', () => {
+    expect(MONSTERS.length).toBe(96);
   });
 
-  it('carries the full roster through the bands this phase ships (levels 1–36)', () => {
-    // content-plan §2 targets ~9–10 per zone; the later zones fill in the content pass.
-    for (const id of [
-      'whispering-woods',
-      'millers-fields',
-      'old-kings-road',
-      'fogmoor-marsh',
-      'thornhill-ruins',
-    ] as const) {
-      expect(monstersInZone(id).length, id).toBeGreaterThanOrEqual(9);
+  it('gives every zone nine or ten, so no band is thinner than another', () => {
+    // A zone with five monsters repeats its roster twice as often as its neighbour, which the
+    // player reads as "the game ran out" long before they could name why.
+    for (const zone of ZONES) {
+      expect(monstersInZone(zone.id).length, zone.id).toBeGreaterThanOrEqual(9);
+      expect(monstersInZone(zone.id).length, zone.id).toBeLessThanOrEqual(10);
     }
   });
 
@@ -287,6 +285,42 @@ describe('mission blurbs', () => {
     // Short missions must not draw the "you will not be home before dark" lines.
     expect(blurbsForDuration(5).some((blurb) => blurb.minMinutes)).toBe(false);
     expect(blurbsForDuration(20).length).toBeGreaterThan(blurbsForDuration(5).length);
+  });
+
+  it('gives every zone its own colour on top of the shared pool', () => {
+    // The shared lines can never say "marsh". Ten per zone is what stops one zone's contracts
+    // reading like another's with a different backdrop (content-plan §6).
+    for (const zone of ZONES) {
+      const own = MISSION_BLURBS.filter((blurb) => blurb.zones?.includes(zone.id));
+      expect(own.length, zone.id).toBeGreaterThanOrEqual(10);
+
+      const pool = blurbsForZone(zone.id, 20);
+      expect(pool.length, zone.id).toBeGreaterThanOrEqual(30);
+      // Nothing from another zone leaks in.
+      for (const blurb of pool) {
+        if (blurb.zones) expect(blurb.zones, `${zone.id}/${blurb.id}`).toContain(zone.id);
+      }
+    }
+  });
+
+  it('leaves the shared pool usable everywhere', () => {
+    const shared = MISSION_BLURBS.filter((blurb) => blurb.zones === undefined);
+    expect(shared.length).toBeGreaterThanOrEqual(20);
+    for (const zone of ZONES) {
+      for (const blurb of shared) {
+        expect(
+          blurbsForZone(zone.id, 20).map((entry) => entry.id),
+          zone.id,
+        ).toContain(blurb.id);
+      }
+    }
+  });
+
+  it('carries the plan volume in pairings, not just in rows', () => {
+    // 124 definitions, but the number the player meets is zone × eligible-blurb.
+    const pairings = ZONES.reduce((total, zone) => total + blurbsForZone(zone.id, 20).length, 0);
+    expect(MISSION_BLURBS.length).toBeGreaterThanOrEqual(120);
+    expect(pairings).toBeGreaterThanOrEqual(160);
   });
 });
 
@@ -434,7 +468,10 @@ describe('guild chat corpus', () => {
 describe('the weekly bounty pool', () => {
   it('covers every metric it declares', () => {
     for (const metric of BOUNTY_METRICS) {
-      expect(BOUNTIES.some((bounty) => bounty.metric === metric), metric).toBe(true);
+      expect(
+        BOUNTIES.some((bounty) => bounty.metric === metric),
+        metric,
+      ).toBe(true);
     }
     expect(new Set(BOUNTIES.map((bounty) => bounty.id)).size).toBe(BOUNTIES.length);
   });
@@ -485,6 +522,51 @@ describe('founding a hall', () => {
   it('offers sigils the icon family can actually draw', () => {
     for (const sigil of SIGIL_ICONS) {
       expect(ICON_IDS, sigil).toContain(sigil);
+    }
+  });
+});
+
+describe('the keepers have enough to say (content-plan §6)', () => {
+  /**
+   * Twelve lines per NPC is the plan's floor, and two per *moment* is the floor under that.
+   *
+   * The second one is the real rule. A keeper with thirty lines can still have a moment carrying
+   * exactly one, and that moment is the only thing the player ever hears there — the shop's
+   * "you cannot afford that" fires far more often than its "fresh stock this morning".
+   */
+  const KEEPERS: readonly (readonly [string, Readonly<Record<string, readonly string[]>>])[] = [
+    ['Marla', MARLA_BARKS],
+    ['Bram', BRAM_LINES],
+    ['Sela', SELA_LINES],
+    ['Odo', ODO_LINES],
+    ['Hildy', HILDY_ARENA_LINES],
+    ['Torvald', TORVALD_LINES],
+    ['Vesna', VESNA_LINES],
+  ];
+
+  it('gives each of the seven at least twelve lines', () => {
+    for (const [name, lines] of KEEPERS) {
+      const total = Object.values(lines).reduce((sum, group) => sum + group.length, 0);
+      expect(total, name).toBeGreaterThanOrEqual(12);
+    }
+  });
+
+  it('never leaves a moment with a single line to repeat forever', () => {
+    for (const [name, lines] of KEEPERS) {
+      for (const [moment, group] of Object.entries(lines)) {
+        expect(group.length, `${name}/${moment}`).toBeGreaterThanOrEqual(2);
+      }
+    }
+  });
+
+  it('keeps every line short enough to read in a bubble', () => {
+    for (const [name, lines] of KEEPERS) {
+      for (const [moment, group] of Object.entries(lines)) {
+        for (const line of group) {
+          expect(line.length, `${name}/${moment}: ${line}`).toBeLessThan(140);
+          expect(line.trim().length, `${name}/${moment}`).toBeGreaterThan(5);
+        }
+      }
     }
   });
 });

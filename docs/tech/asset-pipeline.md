@@ -59,15 +59,58 @@ blend), dust motes / ember particles (canvas layer), lantern flicker (CSS), para
 battle-scene push-ins. One `<AmbientStage>` component takes a backdrop + effect recipe from the
 screen config.
 
+## 5b. Delivery format (Phase 17 performance pass)
+
+`scripts/sync-assets.mjs` no longer copies the art — it **transcodes** it. Backdrops go to WebP
+capped at 1920px, class portraits at 768px, both at quality 78. `game_assets/` keeps the authored
+PNGs at full resolution; that is the archive and nothing in the pipeline touches it.
+
+| group | before | after |
+|---|---|---|
+| `backgrounds/` (23) | 57.7 MB | **2.2 MB** (−96%) |
+| `classes/` (5) | 21.8 MB | **0.2 MB** (−99%) |
+
+**Why it needed doing, in one number: LCP was 21.5 seconds.** The authored backdrops are
+2730×1536 PNGs at 4–5 MB each and the game was serving them exactly as painted. First contentful
+paint was 0.3s — the room appeared at once and then waited twenty seconds for its own wallpaper.
+A faithful copy was the right Phase 0 behaviour ("a faithful copy plus a manifest") and the wrong
+thing to ship; the note in that file's header saying variants would come "with the asset pipeline
+proper" is now discharged. Lighthouse went 49 → **98**.
+
+Kenney's UI and VFX sheets are still copied verbatim: they are small, already optimised, and the
+particle sprites are read pixel-for-pixel by the canvas layer.
+
 ## 6. Sound (Q13 answered: approved)
 
-- **SFX (1.0, Phase 17):** ~20 sounds (UI ticks, coin, forge strike, hit/crit/block/dodge,
-  victory sting, loot/gacha reveal, level-up) from CC0 packs (Kenney audio), one `useSfx` hook
-  with per-category throttling, master toggle + volume in Settings. Lazy-loaded after first
-  interaction (autoplay policies; also keeps initial bundle clean).
+- **SFX (1.0, Phase 17 — built, synthesized):** 24 cues (UI ticks, coin, forge strike,
+  hit/crit/block/dodge, victory sting, loot/gacha reveal, level-up, unlock) with per-category
+  throttling and a master toggle + volume in Settings. The context is built lazily on the first
+  real interaction — every browser refuses one before a gesture, and asking early fails silently
+  by leaving it suspended.
+
+  **Written as oscillator recipes rather than sampled from the CC0 packs this section originally
+  named.** The packs could not be fetched from the build environment, and synthesis turned out to
+  be the better answer regardless: the whole sound design is ~2 KB of data in `src/data/sfx.ts`
+  instead of twenty files, there is no attribution to keep in step with a licence (see
+  `CREDITS.md`), and a cue is *editable* — "the coin is too bright" is a number rather than a
+  request to whoever made the sample. A cue is layers; each layer is one oscillator or a burst of
+  filtered noise with a frequency slide and an attack/decay envelope. `src/state/sfx.ts` is the
+  only module that touches Web Audio; every screen just calls `play('coin')`. Swapping in real
+  samples later is a change to that one player, not to any caller.
+
+  Two rules the cue set is held to by `src/data/sfx.test.ts`: nothing runs past **900ms** (the
+  Epic reveal, the only cue allowed to take its time), and the interface family — the cues that
+  fire on every click — stays under **150ms**.
 - **Background music — user drop-in (Q13 requirement):** the game checks for
   `public/assets/audio/bgm.mp3` at startup. If present → looping background music with its own
   Settings row (toggle + volume, independent of SFX), gentle fade-in on start and fade-out/in on
   tab blur/focus. If absent → silence, zero errors, Settings row hidden. Swapping the file is the
   whole workflow — no code, no manifest entry. (Optional later: `bgm_<place>.mp3` per-screen
   variants; documented as post-1.0.)
+
+  **Built as specified.** The probe is a `HEAD` whose failure is an ordinary answer — a 404 here
+  is the *documented default state of the game*, not a problem, so it resolves `false` and never
+  reaches the console. The Settings panel shows no music toggle at all in that case, only a line
+  saying where to put a file: a control for something the player has not supplied can only
+  disappoint them. Music plays under the cues at **45% of the master volume** (`BGM_SHARE`) —
+  one slider, two jobs, and a loop as loud as a crit would bury the crit.
