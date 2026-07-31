@@ -14,7 +14,7 @@
 
 import { createRng, deriveSeed, type RngStream } from '@/engine/rng';
 import { MISSION_DURATIONS } from '@/engine/progression/rewards';
-import { blurbsForDuration } from '@/data/missionBlurbs';
+import { blurbsForZone } from '@/data/missionBlurbs';
 import { monstersInZone } from '@/data/monsters';
 import { zonesForLevel, type ZoneDef } from '@/data/zones';
 import type { MissionOffer } from './types';
@@ -111,9 +111,14 @@ function drawOffer(
   const roster = monstersInZone(zone.id);
   const monster = rng.fork('monster').pick(roster);
 
-  // Blurbs are drawn against the longest duration, because the player picks the length *after*
-  // reading the card — the text must not become a lie when they choose 20 minutes.
-  const blurb = rng.fork('blurb').pick(blurbsForDuration(MISSION_DURATIONS.at(-1)!));
+  /*
+   * Blurbs are drawn against the longest duration, because the player picks the length *after*
+   * reading the card — the text must not become a lie when they choose 20 minutes.
+   *
+   * The pool is the shared lines plus this zone's own, so a marsh contract is allowed to mention
+   * the reeds and a cave contract the heat (content-plan §6).
+   */
+  const blurb = rng.fork('blurb').pick(blurbsForZone(zone.id, MISSION_DURATIONS.at(-1)!));
 
   const rolled = rng.fork('level').pick(LEVEL_JITTER);
   const jitter = heroLevel < JITTER_GRACE_LEVEL ? Math.min(0, rolled) : rolled;

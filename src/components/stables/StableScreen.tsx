@@ -160,6 +160,17 @@ export function StableScreen() {
                 {daysRemainingOnMount(rental, now) === 1 ? '' : 's'} left
               </motion.span>
             )}
+
+            {/* The empty stall says so. A header that shows a chip when you have a mount and
+                nothing at all when you do not reads as a rendering gap, not as a state. */}
+            {!current && (
+              <span
+                className="chamfer-sm border-parchment-500/15 bg-wood-900/70 text-parchment-500/55 flex items-center gap-2 border px-3 py-1.5 text-xs"
+                data-testid="mount-none"
+              >
+                Stall empty. You are walking everywhere.
+              </span>
+            )}
           </header>
 
           <div className="mb-5">

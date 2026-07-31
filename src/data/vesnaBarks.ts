@@ -71,7 +71,10 @@ export const VESNA_LINES: Lines = {
     'Oh! Oh, he never comes out for just anyone.',
     'The Gilded Snail. One in a hundred, and slower than all of them.',
   ],
-  full: ['Your bags are full, dear. I am not putting a blade on my tablecloth.'],
+  full: [
+    'Your bags are full, dear. I am not putting a blade on my tablecloth.',
+    'The cards will keep. Your carrying capacity, apparently, will not.',
+  ],
 
   featured: [
     'THAT is the card. That is the one on the sign outside.',
