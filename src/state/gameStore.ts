@@ -134,7 +134,7 @@ import {
   resetClockForTests,
   restoreClock,
 } from './clock';
-import { readSave, writeSave } from './persistence';
+import { archiveSave, exportRaw, readSave, writeSave } from './persistence';
 
 /**
  * A fresh world seed. Not gameplay randomness (which must be seeded and replayable) but
@@ -168,6 +168,10 @@ export interface GameStoreState {
   saveError: string | null;
 
   hydrate: (slot?: SaveSlot) => Promise<void>;
+  /** Triage: hand back whatever is on disk, valid or not, so the player can keep a copy. */
+  exportRawSave: () => Promise<string | null>;
+  /** Triage: set the unreadable save aside — never delete it — and begin again. */
+  archiveAndStartOver: () => Promise<void>;
   startOver: () => Promise<void>;
 
   /** Creation. Writes through immediately — nobody should lose a new hero to a debounce. */
@@ -613,6 +617,35 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
     grantGold(amount) {
       updateHero((hero) => ({ ...hero, gold: Math.max(0, hero.gold + amount) }));
+    },
+
+    async exportRawSave() {
+      return exportRaw(get().slot, gameNow());
+    },
+
+    async archiveAndStartOver() {
+      const { slot } = get();
+      /*
+       * Archive, then create — in that order, and never `deleteSave`.
+       *
+       * A player reaching this button has a save the game cannot read, which is not the same as a
+       * save that is worthless: a bad byte in one slice leaves the other seventeen intact, and a
+       * later version may well open what this one cannot. The stamp comes from the game clock
+       * because `Date.now` is lint-banned outside it, and it makes the archived keys sort.
+       */
+      await archiveSave(slot, String(gameNow()));
+
+      const fresh = createNewSave({ slot, worldSeed: newWorldSeed(), now: gameNow() });
+      restoreClock(fresh.clock);
+      set({
+        status: 'ready',
+        save: fresh,
+        error: null,
+        notice: 'Your old save was kept, set aside under a dated key. This one starts clean.',
+        isSaving: true,
+      });
+      await writeSave(fresh);
+      set({ lastSavedAt: fresh.savedAt, isSaving: false, saveError: null });
     },
 
     async startOver() {

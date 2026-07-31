@@ -18,6 +18,7 @@ import { ToastStack } from '@/components/ui/Toast';
 import { HeroCreation } from '@/components/hero/HeroCreation';
 import { TutorialLayer } from '@/components/tutorial/TutorialLayer';
 import { UnlockWatcher } from './UnlockWatcher';
+import { SaveTriage } from './SaveTriage';
 import { useGameStore } from '@/state/gameStore';
 import { useShellStore } from '@/state/shellStore';
 import { configureSfx } from '@/state/sfx';
@@ -85,10 +86,23 @@ export function AppShell({ children }: { children: ReactNode }) {
    */
   const needsHero = status === 'ready' && save?.hero == null;
 
+  /**
+   * A save that would not open takes the whole screen, like creation does.
+   *
+   * The rail and the HUD describe a hero this player does not currently have, and every room
+   * behind them would render empty. Until Phase 18 that is exactly what happened — `status:
+   * 'failed'` reached the store and nothing read it.
+   */
+  const brokenSave = status === 'failed';
+
   return (
     <MotionConfig reducedMotion={reducedMotion}>
       <div className="bg-wood-900 flex h-screen w-screen overflow-hidden">
-        {needsHero ? (
+        {brokenSave ? (
+          <main className="relative min-h-0 flex-1">
+            <SaveTriage />
+          </main>
+        ) : needsHero ? (
           <main className="relative min-h-0 flex-1" data-testid="hero-creation">
             <HeroCreation />
           </main>
@@ -106,15 +120,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Marla's tour rides above the town and below the ceremonies: the spotlight sits at
             z-30, so a battle scene or a chest opening covers it rather than competing with it
             (tutorial spec §1). */}
-        {!needsHero && <TutorialLayer />}
+        {!needsHero && !brokenSave && <TutorialLayer />}
 
         {/* Announces a room the moment a level opens it — the rail's lock coming off is easy
             to miss when you were not looking at that row (tutorial spec §3). */}
-        {!needsHero && <UnlockWatcher />}
+        {!needsHero && !brokenSave && <UnlockWatcher />}
 
         {/* The clock strikes over everything, but never over a fight — the battle scene raises
             its own layer and the moment queues behind it (daily-loop spec §4). */}
-        {!needsHero && <ResetMoment />}
+        {!needsHero && !brokenSave && <ResetMoment />}
         <ToastStack />
       </div>
     </MotionConfig>

@@ -9,6 +9,9 @@ import {
   importSave,
   listSlots,
   readSave,
+  archiveSave,
+  exportRaw,
+  listArchives,
   resetPersistenceForTests,
   writeSave,
 } from './persistence';
@@ -165,5 +168,92 @@ describe('persistence — slots, export and import', () => {
   it('rejects a well-formed file that is not a save', async () => {
     const result = await importSave(JSON.stringify({ hello: 'world' }), 1);
     expect(result.ok).toBe(false);
+  });
+});
+
+/**
+ * The triage path — what happens after `readSave` says "failed".
+ *
+ * Everything above proves the *detection* is right. These prove the recovery is, and the property
+ * they are really guarding is that **nothing on this path destroys anything**. A player whose save
+ * will not open is the one player who cannot afford a mistake here.
+ */
+describe('persistence — triage', () => {
+  it('hands back the bytes of a save that will not open', async () => {
+    await corruptMainSlot({ schemaVersion: 3, garbage: true });
+    expect((await readSave(1)).status).toBe('failed');
+
+    const raw = await exportRaw(1, 1_700_000_000_000);
+    expect(raw, 'a damaged save must still be exportable').not.toBeNull();
+
+    const parsed = JSON.parse(raw!) as { exportedAt: number; main: Record<string, unknown> };
+    expect(parsed.exportedAt).toBe(1_700_000_000_000);
+    // Unrepaired and unmigrated: whatever went wrong has to reach the copy.
+    expect(parsed.main.garbage).toBe(true);
+    expect(parsed.main.schemaVersion).toBe(3);
+  });
+
+  it('exports the backup alongside the main copy', async () => {
+    await writeSave(freshSave({ hero: heroNamed('Brenna') }));
+    await writeSave(freshSave({ hero: heroNamed('Kargath') }));
+
+    const parsed = JSON.parse((await exportRaw(1, 1))!) as {
+      main: { hero: { name: string } };
+      backup: { hero: { name: string } };
+    };
+    expect(parsed.main.hero.name).toBe('Kargath');
+    expect(parsed.backup.hero.name).toBe('Brenna');
+  });
+
+  it('returns nothing for a slot that was never written', async () => {
+    expect(await exportRaw(2, 1)).toBeNull();
+  });
+
+  it('sets a save aside instead of deleting it', async () => {
+    await writeSave(freshSave({ hero: heroNamed('Sigrun') }));
+    await archiveSave(1, '1700000000000');
+
+    // The slot reads empty, so the game can start clean...
+    expect((await readSave(1)).status).toBe('empty');
+    // ...but the hero is still on disk under a dated key.
+    const archives = await listArchives(1);
+    expect(archives).toHaveLength(1);
+    expect(archives[0]).toContain('1700000000000');
+  });
+
+  it('archives a damaged save just as readily as a good one', async () => {
+    // The only case that actually happens. An archive that only works on valid data is an
+    // archive that never runs.
+    await corruptMainSlot({ schemaVersion: 3, garbage: true });
+    await archiveSave(1, '42');
+
+    expect((await readSave(1)).status).toBe('empty');
+    expect(await listArchives(1)).toHaveLength(1);
+  });
+
+  it('keeps every archive rather than overwriting the last one', async () => {
+    await writeSave(freshSave({ hero: heroNamed('First') }));
+    await archiveSave(1, '1000');
+    await writeSave(freshSave({ hero: heroNamed('Second') }));
+    await archiveSave(1, '2000');
+
+    // Newest first, so a triage screen can name the most recent without sorting again.
+    expect(await listArchives(1)).toEqual([
+      'slot-1:archived-2000-main',
+      'slot-1:archived-1000-main',
+    ]);
+  });
+
+  it('leaves other slots alone', async () => {
+    await writeSave(freshSave({ hero: heroNamed('Keep me') }));
+    await writeSave({ ...freshSave({ hero: heroNamed('Also me') }), slot: 2 });
+
+    await archiveSave(1, '1');
+
+    const other = await readSave(2);
+    expect(other.status).toBe('loaded');
+    if (other.status !== 'loaded') return;
+    expect(other.save.hero?.name).toBe('Also me');
+    expect(await listArchives(2)).toEqual([]);
   });
 });

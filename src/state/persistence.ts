@@ -133,6 +133,61 @@ export async function listSlots(): Promise<SlotSummary[]> {
 }
 
 /**
+ * Export whatever is on disk, valid or not.
+ *
+ * `exportSave` below returns null for a save that will not open — which is precisely the save a
+ * player most wants a copy of. A corrupted file is often recoverable by hand, and it is *always*
+ * irreplaceable, so the triage screen offers these bytes before it offers anything destructive.
+ * Unparsed and unmigrated on purpose: whatever went wrong should reach the copy intact.
+ */
+export async function exportRaw(slot: SaveSlot, exportedAt: number): Promise<string | null> {
+  const db = await getDb();
+  const main: unknown = await db.get(STORE, mainKey(slot));
+  const backup: unknown = await db.get(STORE, backupKey(slot));
+  if (main === undefined && backup === undefined) return null;
+
+  // The stamp is passed in rather than read: wall time comes through GameClock, and a support
+  // file should carry the same clock the save was written against.
+  return JSON.stringify({ exportedAt, slot, main: main ?? null, backup: backup ?? null }, null, 2);
+}
+
+/**
+ * Move a slot aside instead of deleting it.
+ *
+ * "Start fresh" has to be available to a player whose save will not open, and it must not be the
+ * same button as "destroy the only copy of my hero". The broken data moves to a dated key where
+ * a future version — or a hand-edit through devtools — can still reach it. Storage is cheap; a
+ * level-fifty hero is not.
+ */
+export async function archiveSave(slot: SaveSlot, stamp: string): Promise<void> {
+  const db = await getDb();
+  const tx = db.transaction(STORE, 'readwrite');
+  const store = tx.objectStore(STORE);
+
+  for (const [key, suffix] of [
+    [mainKey(slot), 'main'],
+    [backupKey(slot), 'backup'],
+  ] as const) {
+    const value: unknown = await store.get(key);
+    if (value === undefined) continue;
+    await store.put(value, `${key}:archived-${stamp}-${suffix}`);
+    await store.delete(key);
+  }
+  await tx.done;
+}
+
+/** Archived slots, newest first — so a triage screen can say what it kept. */
+export async function listArchives(slot: SaveSlot): Promise<string[]> {
+  const db = await getDb();
+  const keys = await db.getAllKeys(STORE);
+  return keys
+    .map(String)
+    .filter((key) => key.startsWith(`${mainKey(slot)}:archived-`))
+    .sort()
+    .reverse();
+}
+
+/**
  * Export a slot as text the player can keep (USER_QUESTIONS Q1).
  * Phase 18 wraps this in the `.tavernsave` compressed file UX; the payload shape is final.
  */
