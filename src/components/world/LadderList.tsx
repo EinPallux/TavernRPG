@@ -116,15 +116,24 @@ function LadderRow({
       onClick={onSelect ? () => onSelect(entry) : undefined}
       style={{ top, height: ROW_HEIGHT }}
       className={`chamfer-sm absolute inset-x-0 flex w-full items-center gap-3 border px-3 text-left text-sm transition-colors ${
+        /*
+         * Your own row is marked with a bright border on the dark fill, not an amber *fill*.
+         *
+         * Filling it amber made the one light surface in a list of 1,501 dark ones, and every
+         * column inside it then needed the ink half of the pair. Three of them got it and the
+         * rank column still measured 1.37:1 — which is the tell that the surface was wrong
+         * rather than the text: a highlight that forces every child to flip is a highlight
+         * fighting the palette (§10.2).
+         */
         entry.isPlayer
-          ? 'text-parchment-300 border-amber-500/60 bg-amber-500/12'
+          ? 'text-parchment-300 border-amber-400 bg-amber-500/18 font-semibold'
           : selected
             ? 'bg-wood-700/70 text-parchment-300 border-amber-500/35'
             : 'border-parchment-500/8 bg-wood-900/40 text-parchment-500/72 hover:bg-wood-800/60 hover:border-amber-500/30'
       } ${entry.dormant ? 'opacity-55' : ''}`}
       data-testid={entry.isPlayer ? 'ladder-entry-player' : `ladder-entry-${entry.id}`}
     >
-      <span className="font-display w-14 shrink-0 text-right text-xs font-bold tabular-nums opacity-70">
+      <span className="font-display w-14 shrink-0 text-right text-xs font-bold tabular-nums">
         #{entry.rank.toLocaleString()}
       </span>
 
@@ -148,10 +157,10 @@ function LadderRow({
         )}
       </span>
 
-      <span className="hidden w-44 shrink-0 truncate text-xs opacity-50 lg:block">
+      <span className="hidden w-44 shrink-0 truncate text-xs opacity-75 lg:block">
         {hall ? hall.name : '—'}
       </span>
-      <span className="w-14 shrink-0 text-right text-xs tabular-nums opacity-60">
+      <span className="w-14 shrink-0 text-right text-xs tabular-nums opacity-80">
         L{entry.level}
       </span>
       {/* No `opacity` here: the row's own highlight turns light, and a dimmed foreground on it

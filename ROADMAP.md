@@ -418,13 +418,46 @@ Four things the phase forced:
   authored, for an LCP of 21.5 seconds on a first paint of 0.3. The sync step transcodes now.
   No code changed.
 
-## Phase 18 — Release Hardening & 1.0 (M) 🔲
+## Phase 18 — Release Hardening & 1.0 (M) ✅
 Save migration framework proven (beta-save fixtures), export/import UX, multi-tab guard, error
 boundary flows, corrupted-save triage, credits screen (game-icons attribution — license gate),
 settings completeness, Vercel production config (headers/caching for assets), full regression
 matrix (Playwright suite over the core loops), CHANGELOG 1.0.0, tag & deploy.
 **Accept:** GDD §7 release definition satisfied line-by-line; upgrade-from-oldest-beta save works;
 production deploy plays clean in a fresh browser profile end-to-end.
+
+**Delivered.** Every scope item built; 1,311 unit + 256 e2e green; `npm run release` runs the
+release definition rather than restating it. **Two acceptance criteria are met, and the third is
+the user's to take:** the deploy itself, and the fresh-profile playthrough on it.
+
+- **GDD §7 line by line — met, and now executable.** `engine/release/checklist.ts` gives each of
+  the seventeen §4 features its spec, engine, screens, tests and *named animated moment*, and
+  `release.test.ts` parses the GDD's own table so the two cannot drift. The line that had no
+  harness at all — "carries a new player to level 10 unaided" — has one, and it failed on the
+  first run. The fps clause is restated as what is actually measured, with the reading on real
+  hardware named as a human step rather than dropped.
+- **Upgrade-from-oldest-beta — met.** v1 → v16, a captured fixture per version, and a census that
+  fails when a version ships without one. Phase 16 had already skipped its fixture.
+- **A fresh-profile production playthrough — not met here.** It needs a deploy, and the deploy is
+  the user's call. `docs/tech/deployment.md` §6 is the checklist.
+
+Five things the phase forced, and four of them were bugs the hardening itself created or exposed:
+
+- **A guard that delays a load has to gate the render too.** The tab-lock election put 350ms in
+  front of `hydrate()` and the shell kept drawing the town over an empty store — so Settings
+  offered "Export this save" against `save === null`. A theoretical race became a dependable bug
+  the moment something slowed the load down. Cost: a point of Lighthouse, paid without hesitating.
+- **An audit is worth what it inspected — again.** The header work found three pre-existing
+  failures in the e2e suite that a full run had not been done to catch, including a tutorial chip
+  that looked live and did nothing for a few hundred milliseconds after every arrival.
+- **`immutable` is a promise about the URL, not the bytes.** 505 art files at authored paths that
+  the sync step rewrites in place; marking them immutable would pin a superseded painting in a
+  returning player's browser for a year.
+- **A CSP that forbids `eval` took a code change, not a config one.** Zod's JIT probe reported a
+  violation on every load — caught, harmless, and permanent console noise that trains you to
+  ignore console noise.
+- **Object key order is not a data model.** Item stat lines agreed with schema order by accident
+  until the parser went interpreted, and the Armory's shelf started re-ordering itself on reload.
 
 ---
 

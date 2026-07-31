@@ -133,10 +133,35 @@ test.describe('navigation', () => {
     await levelHeroToTen(page);
 
     await page.goto('/settings');
+    // Phase 18 built the export/import this line used to promise, so the promise shrank to the
+    // one thing still outstanding. When the glossary index lands, this whole strip goes.
     await expect(page.getByTestId('settings-later')).toContainText('Phase 18');
-    await expect(page.getByTestId('settings-later')).toContainText('export and import');
+    await expect(page.getByTestId('settings-later')).toContainText('glossary');
+    await expect(page.getByTestId('settings-later')).not.toContainText('export');
     // No keeper, so no bubble — the room speaks for itself instead of inventing a proprietor.
     await expect(page.getByTestId('bark-settings')).toHaveCount(0);
+  });
+
+  test('Settings carries the credits, and says what is not in the game', async ({ page }) => {
+    /*
+     * A licence gate rather than a nicety: the fonts are self-hosted by `next/font/google`, so
+     * the build redistributes them and the OFL notice has to travel with them. It also has to be
+     * *accurate* — this section used to claim a CC BY obligation for game-icons.net artwork that
+     * was never vendored, which is why the absences are on screen next to the credits.
+     */
+    await ensureHero(page);
+    await page.goto('/settings');
+    await expect(page.getByTestId('credits')).toBeVisible();
+
+    await expect(page.getByTestId('credits-art')).toContainText('Kenney');
+    await expect(page.getByTestId('credits-fonts')).toContainText('Alegreya Sans SC');
+    await expect(page.getByTestId('credits-fonts')).toContainText('Inter');
+    // The two mandatory attributions are marked as such, and nothing else is.
+    await expect(page.getByTestId('credits-fonts')).toContainText('required');
+    await expect(page.getByTestId('credits-art')).not.toContainText('required');
+
+    await expect(page.getByTestId('credits-absences')).toContainText('No sampled audio');
+    await expect(page.getByTestId('credits-absences')).toContainText('game-icons.net');
   });
 
   test('Settings turns the things it offers', async ({ page }) => {

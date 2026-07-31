@@ -2,7 +2,7 @@
 
 > Stack, project structure, state/persistence, time & determinism, performance and quality
 > gates. Companion: `data-models.md` (types), `ui-ux-style-guide.md` (presentation),
-> `asset-pipeline.md` (assets).
+> `asset-pipeline.md` (assets), `deployment.md` (what Vercel actually serves).
 
 ## 1. Stack (chosen, with rationale)
 
@@ -105,6 +105,15 @@ walking-skeleton screen that Phase 1 replaces with the real app shell.
   reports version/corruption in human language. Tampering is the player's right (Q15) — import
   never crashes, worst case rejects politely.
 - **Multi-tab guard:** BroadcastChannel leader election; secondary tabs get a friendly takeover screen.
+- **Nothing renders over an unloaded save** (as built, Phase 18). The shell used to draw the town
+  the instant it mounted, over a store still at `status: 'idle'`; the window was a couple of
+  milliseconds while `hydrate()` was the first thing a page load did, and nobody ever saw it. The
+  tab-lock election put 350 ms in front of the load and turned that into a dependable bug —
+  Settings offered "Export this save" against `save === null` and produced a file named
+  `tavernrpg-hero-slot1.json` holding the *previous* session. **A guard that delays a load has to
+  gate the render too.** `AppShell` paints nothing while electing or loading, and
+  `e2e/resilience.spec.ts` samples every frame for "a room exists and the store is not ready".
+  Priced at a point or two of Lighthouse (98 → 97, LCP 1.1s → 1.2s) and paid without hesitating.
 
 ## 4. Time, offline progress & determinism
 
@@ -130,6 +139,12 @@ balance harness incl. economy 90-day sim) → build → Playwright smoke (create
 1–5 → save/reload integrity). `main` deploys preview; tagged releases deploy production. Zero
 `any`, zero ESLint disables without linked issue. Feature flags via `meta.flags` for
 staged rollout of phases into a playable main branch at all times.
+
+**As built (Phase 18):** the e2e suite runs against `npm run build && npx next start`, not the dev
+server, which is what makes the production-only Content-Security-Policy a tested thing rather than
+a declared one — `e2e/headers.spec.ts` plays five rooms and a full battle with a
+`securitypolicyviolation` listener attached and fails on one report. It also reads the build's own
+route manifests and fails if the deploy stops being fully static. See `deployment.md`.
 
 ## 7. Error handling & resilience
 

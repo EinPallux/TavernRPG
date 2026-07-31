@@ -263,7 +263,10 @@ export function generateWorld(seed: number, createdAt: number): WorldState {
     // Guild Hall's browse list duly opened on five halls advertising "78/25 members". A full
     // hall simply turns the applicant away and they try the next one, which is also what a real
     // server looks like.
-    let pick = Math.min(GUILD_COUNT - 1, Math.floor(Math.abs(rng.float(0, 1) ** 1.6) * GUILD_COUNT));
+    let pick = Math.min(
+      GUILD_COUNT - 1,
+      Math.floor(Math.abs(rng.float(0, 1) ** 1.6) * GUILD_COUNT),
+    );
     for (let tries = 0; tries < 6 && memberIds[pick]!.length >= GUILD_CAPACITY; tries += 1) {
       pick = Math.min(GUILD_COUNT - 1, Math.floor(Math.abs(rng.float(0, 1) ** 1.6) * GUILD_COUNT));
     }

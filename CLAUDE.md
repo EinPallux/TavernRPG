@@ -6,7 +6,7 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 ## Current state
 
-**Design locked; Phases 0–16 complete.** All 20 questions in `USER_QUESTIONS.md` were answered on
+**Design locked; Phases 0–18 complete — the game is at 1.0.** All 20 questions in `USER_QUESTIONS.md` were answered on
 2026-07-29 and the specs reflect the answers.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
@@ -113,7 +113,72 @@ feedback, edge cases and tests. Deployed on Vercel.
   **Save schema unchanged at v16** — the only phase since Phase 1 with no migration, which is what
   a tuning phase should look like.
 
-1,243 unit tests + 211 e2e green. Next work: `ROADMAP.md` **Phase 18 (Release Hardening & 1.0)**.
+- **Phase 18:** release hardening and **1.0** — the v16 fixture and a census that makes a missing
+  one impossible, corrupted-save triage, export/import (`state/persistence.ts` + `SavePanel`), the
+  tab lock (`state/tabLock.ts`) and `RoomBoundary`, the credits screen and its licence audit,
+  production headers and a CSP with no third-party origin and no `eval`, `engine/release/`
+  (the §4 census, the onboarding harness) behind `npm run release`, and
+  `e2e/regression.spec.ts` — thirteen steps over one save from the door to the day after.
+  **Save schema unchanged at v16.**
+
+1,311 unit tests + 256 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
+the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
+
+**A guard that delays a load has to gate the render too.** The tab-lock election put 350ms in
+front of `hydrate()`, and `AppShell` kept drawing the town over a store still at `status: 'idle'` —
+so Settings offered "Export this save" against `save === null` and a fast click produced a file
+holding the *previous* session. The window had existed since Phase 1 and was two milliseconds
+wide, so nobody ever saw it; adding a deliberate delay in front of the load turned an invisible
+race into a dependable bug. The shell paints nothing until the save is real, and
+`e2e/resilience.spec.ts` samples every frame for "a room exists and the store is not ready" —
+an invariant, not an ordering, because polling cannot tell you which of two things happened first
+when both flip in one tick.
+
+**An element on its way out is still an element.** `AnimatePresence mode="wait"` keeps the
+outgoing child mounted, and mounted means clickable. Keying the tutorial chip on
+`${beat.id}:${folded ? 'folded' : 'away'}` made a label change an exit plus a re-entrance, and for
+a couple of hundred milliseconds the chip a player saw was the old one, running a closure that had
+nothing to do. Two rules, for every presence-animated control: **key on identity, not on state**,
+and **read the store in the handler, not the closure**.
+
+**`immutable` is a promise about the URL, not about the bytes.** `/_next/static/*` earns it —
+content hash in the filename. `/assets/*` does not: 505 files at authored paths that
+`sync-assets.mjs` rewrites in place, so a year of `immutable` would pin a superseded painting in a
+returning player's browser with no URL that could reach past it. Also: never restate a header
+Next already sets. `e2e/headers.spec.ts` asserts Next's value instead of mirroring it.
+
+**A CSP that forbids `eval` took a code change, not a config one.** Zod 4 feature-detects its JIT
+with `Function("")` in a try/catch — caught, degraded correctly, and *still reported* as a
+violation on every load. `schema.ts` declares `jitless`, which costs 0.96 ms on a 175 KB save and
+is the difference between a policy that forbids eval and one that watches it fail. The general
+form: a permanent, harmless violation is worse than none, because it teaches you to ignore the
+report.
+
+**Object key order is not a data model.** Item stat lines rendered in `Object.entries` order —
+insertion order for a freshly generated item, schema order for one read back through Zod. Those
+agreed by accident until the parser went interpreted, and the Armory's shelf started re-ordering
+"Luck / Intelligence" across a reload, failing a test about *restocking*. `statLines()` uses
+`ATTRIBUTE_IDS`, the order the rest of the game already shows.
+
+**`fromLevel` must never go backwards down `BEATS`.** `activeBeat` *stops* at a beat gated above
+the hero rather than skipping it — deliberately, so the curriculum cannot jump ahead — which makes
+a level-4 beat placed before two level-3 ones a total silence, not a reordering. A level-3 player
+who finished the Notice Board beat got no guidance at all until they hit four, with two rooms open
+and unmentioned. Asserted now in `engine/release/onboarding.test.ts`.
+
+**Run the gate, not the files you touched.** `npm run format:check` — a CI step since Phase 0 —
+had been failing since **Phase 8**, on 31 files, because every phase ran `prettier --check` over
+its own diff and called it green. Nobody saw it, because nobody ran the command CI runs. Before
+claiming a gate passes, run *the gate*: `npm run verify` and `npm run format:check`, whole-tree,
+not the subset you happen to have open. (And `src/engine/save/fixtures/` is Prettier-ignored now:
+a captured save is evidence, not source, and reformatting it is a change the next capture undoes.)
+
+**A release definition is executable or it is a mood.** `npm run release` runs GDD §7 line by
+line: `engine/release/checklist.ts` gives each §4 feature its spec, engine, screens, tests and its
+**named animated moment**, and `release.test.ts` parses the GDD's own table so the two cannot
+drift in either direction. The gate that cannot be automated — fps on real hardware — prints as
+*yours* rather than being quietly dropped, because a checklist that lists only the checkable parts
+is how a requirement stops being one without anybody deciding.
 
 **An audit that inspects one element is worse than no audit.** `axe-core` reported zero contrast
 violations on the tavern — out of **one** node it could resolve, because it gives up (honestly, as
@@ -358,7 +423,8 @@ conjures any combination of gear, levels and gold on demand.
 - Commands: `npm run dev` / `build` / `test` / `test:e2e` / `lint` / `typecheck` / `format` /
   `verify` (typecheck → lint → test → build) / `balance` (combat harness) / `economy` (economy
   sim) / `pacing` (the §0 ladder) / `tuning` (the `[TUNE]` inventory + 90-day ledger) /
-  `perf` (Lighthouse + bundle + main-thread cost, needs a server on :3100) / `assets:sync`
+  `perf` (Lighthouse + bundle + main-thread cost, needs a server on :3100) /
+  `release` (the GDD §7 definition, line by line) / `assets:sync`
   — keep this list current as scripts appear.
 
 ## Canon quick-reference (avoid re-deciding)

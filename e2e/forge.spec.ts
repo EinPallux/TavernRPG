@@ -363,6 +363,15 @@ test.describe('set collections', () => {
   });
 
   test('wearing the set lights the bonus, the paperdoll and the Verse picker', async ({ page }) => {
+    /*
+     * The longest test in the suite: five recipe crafts, each with its own anvil ceremony, then
+     * five equips and three screens of assertions. It lands around 27s alone and tipped over the
+     * 30s default the first time the run was busy enough to slow it — a flake with a real cause,
+     * not a mystery. Budgeted rather than trimmed, because every one of those crafts is load
+     * this test exists to carry.
+     */
+    test.setTimeout(90_000);
+
     // Five recipe crafts is 100 Essence and 10 Starmetal — a fortnight of real play, handed
     // over here so the assertion is about the *set*, not about the grind that pays for it.
     await readyHero(page, {

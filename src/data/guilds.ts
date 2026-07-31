@@ -484,12 +484,17 @@ export type GuildNameRefusal =
  * find themselves sharing a name with a guild the simulation invented — and every chat line,
  * Crier headline and Hall row that names a guild would become ambiguous. Cheaper to refuse once.
  */
-export function validateGuildName(raw: string): { ok: true } | { ok: false; refusal: GuildNameRefusal } {
+export function validateGuildName(
+  raw: string,
+): { ok: true } | { ok: false; refusal: GuildNameRefusal } {
   const name = raw.trim();
-  if (name.length < GUILD_NAME_MIN) return { ok: false, refusal: { kind: 'too-short', min: GUILD_NAME_MIN } };
-  if (name.length > GUILD_NAME_MAX) return { ok: false, refusal: { kind: 'too-long', max: GUILD_NAME_MAX } };
+  if (name.length < GUILD_NAME_MIN)
+    return { ok: false, refusal: { kind: 'too-short', min: GUILD_NAME_MIN } };
+  if (name.length > GUILD_NAME_MAX)
+    return { ok: false, refusal: { kind: 'too-long', max: GUILD_NAME_MAX } };
   // Letters, digits, spaces and the punctuation the authored names already use.
-  if (!/^[\p{L}\p{N} '’.\-]+$/u.test(name)) return { ok: false, refusal: { kind: 'bad-characters' } };
+  if (!/^[\p{L}\p{N} '’.\-]+$/u.test(name))
+    return { ok: false, refusal: { kind: 'bad-characters' } };
 
   const folded = foldName(name);
   const clash = GUILDS.find((hall) => foldName(hall.name) === folded);

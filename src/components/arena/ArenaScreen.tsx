@@ -317,6 +317,13 @@ export function ArenaScreen() {
         {...(PLACE.tint ? { tint: PLACE.tint } : {})}
         {...(PLACE.effects ? { effects: PLACE.effects } : {})}
       >
+        {/* Both these rooms are lit blue — a guard post at dusk and an arena under open sky —
+            where every other place in Emberhollow is dark timber. The eyebrow label measured
+            3.4–3.7:1 against the water and the sky. Same scrim the Hall of Fame got (§10.3). */}
+        <div
+          aria-hidden
+          className="from-wood-900/92 via-wood-900/70 pointer-events-none absolute inset-0 bg-gradient-to-b to-transparent"
+        />
         <div className="relative flex h-full flex-col overflow-y-auto px-8 py-6">
           <header className="mb-5 flex items-end justify-between gap-6">
             <div>

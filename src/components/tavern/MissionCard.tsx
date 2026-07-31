@@ -78,6 +78,13 @@ export function MissionCard({
           }}
         />
         <div aria-hidden className={`absolute inset-0 bg-gradient-to-t ${zone?.tint ?? ''}`} />
+        {/* A scrim under the caption, because the tint is a mood and this is a label. Miller's
+            Fields is a bright wheat field; the zone name measured 4.4:1 against it (style guide
+            §10.3). Bottom-anchored so the painting stays a painting above the type. */}
+        <div
+          aria-hidden
+          className="from-wood-900/95 pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t to-transparent"
+        />
         <div className="absolute right-0 bottom-0 left-0 px-3 pb-2">
           <p className="font-display text-parchment-300 text-lg leading-tight font-bold">
             {zone?.name ?? offer.zoneId}

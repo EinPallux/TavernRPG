@@ -204,7 +204,11 @@ const MAESTRO: GearSetDef = {
     { slot: 'belt', name: "Maestro's Sash", weights: { int: 0.6, con: 0.25, lck: 0.15 } },
   ],
   bonuses: [
-    { pieces: 2, text: 'Verses last a round longer.', effects: [{ kind: 'verse-length', rounds: 1 }] },
+    {
+      pieces: 2,
+      text: 'Verses last a round longer.',
+      effects: [{ kind: 'verse-length', rounds: 1 }],
+    },
     {
       pieces: 4,
       text: '+12% damage while any Verse is playing.',

@@ -105,7 +105,8 @@ describe('set progress', () => {
   });
 
   it('unlocks bonuses at two, four and five and not before', () => {
-    const at = (pieces: number) => modifiersFor(wearing('warrior', 'oathsworn-bulwark', pieces).equipment);
+    const at = (pieces: number) =>
+      modifiersFor(wearing('warrior', 'oathsworn-bulwark', pieces).equipment);
 
     expect(at(1).armour).toBe(0);
     expect(at(2).armour).toBeCloseTo(0.1, 5);
@@ -161,7 +162,9 @@ describe('the five-piece capstones — ROADMAP acceptance', () => {
     // Once a battle, never twice — the bound is the point (spec §3).
     for (let i = 0; i < 8; i += 1) {
       const { log } = fight(hero, dummy({ maxHealth: 6_000 }), i * 31);
-      expect(log.filter((e) => e.t === 'set_proc' && e.effect === 'execute').length).toBeLessThanOrEqual(1);
+      expect(
+        log.filter((e) => e.t === 'set_proc' && e.effect === 'execute').length,
+      ).toBeLessThanOrEqual(1);
     }
   });
 
@@ -181,9 +184,12 @@ describe('the five-piece capstones — ROADMAP acceptance', () => {
 
     // Same fight length, fewer changes: the Verse is running longer.
     const changes = (subject: Combatant) =>
-      count(fight(subject, dummy({ maxHealth: 200_000, weapon: { min: 1, max: 1 } }), 9, {
-        maxRounds: 24,
-      }).log, 'verse_change');
+      count(
+        fight(subject, dummy({ maxHealth: 200_000, weapon: { min: 1, max: 1 } }), 9, {
+          maxRounds: 24,
+        }).log,
+        'verse_change',
+      );
 
     expect(changes(four)).toBeLessThan(changes(one));
   });
@@ -193,7 +199,9 @@ describe('the five-piece capstones — ROADMAP acceptance', () => {
     // A long fight against something that hurts, so there is room to heal into.
     let healed = 0;
     for (let i = 0; i < 8; i += 1) {
-      const { log } = fight(hero, dummy({ weapon: { min: 300, max: 300 } }), i * 17, { maxRounds: 30 });
+      const { log } = fight(hero, dummy({ weapon: { min: 300, max: 300 } }), i * 17, {
+        maxRounds: 30,
+      });
       healed += log.filter((e) => e.t === 'set_proc' && e.effect === 'verse-heal').length;
     }
     expect(healed).toBeGreaterThan(0);
@@ -208,7 +216,8 @@ describe('the five-piece capstones — ROADMAP acceptance', () => {
     const swings = (subject: Combatant) => {
       const values: number[] = [];
       for (let i = 0; i < 40; i += 1) {
-        for (const event of fight(subject, dummy({ maxHealth: 400_000 }), i * 13, { maxRounds: 30 }).log) {
+        for (const event of fight(subject, dummy({ maxHealth: 400_000 }), i * 13, { maxRounds: 30 })
+          .log) {
           if (event.t === 'attack' && event.source === 'a' && !event.crit) values.push(event.raw);
         }
       }
@@ -225,8 +234,12 @@ describe('the five-piece capstones — ROADMAP acceptance', () => {
   it('Tidecaller shields once, on the way under a third', () => {
     const hero = buildHeroCombatant(wearing('mage', 'tidecallers-regalia', 5), 'hero');
     for (let i = 0; i < 10; i += 1) {
-      const { log } = fight(hero, dummy({ weapon: { min: 900, max: 900 } }), i * 23, { maxRounds: 40 });
-      expect(log.filter((e) => e.t === 'set_proc' && e.effect === 'absorb').length).toBeLessThanOrEqual(1);
+      const { log } = fight(hero, dummy({ weapon: { min: 900, max: 900 } }), i * 23, {
+        maxRounds: 40,
+      });
+      expect(
+        log.filter((e) => e.t === 'set_proc' && e.effect === 'absorb').length,
+      ).toBeLessThanOrEqual(1);
     }
     expect(
       procsAcross(hero, () => dummy({ weapon: { min: 900, max: 900 } }), 10, 'absorb'),
@@ -251,15 +264,13 @@ describe('the five-piece capstones — ROADMAP acceptance', () => {
 
   it('Galewind peels armour on a crit, to its cap', () => {
     const lucky = wearing('hunter', 'galewind-harness', 5);
-    const hero = buildHeroCombatant(
-      { ...lucky, trained: { ...lucky.trained, lck: 400 } },
-      'hero',
-    );
+    const hero = buildHeroCombatant({ ...lucky, trained: { ...lucky.trained, lck: 400 } }, 'hero');
     let highest = 0;
     for (let i = 0; i < 12; i += 1) {
       const { log } = fight(hero, dummy({ maxHealth: 200_000 }), i * 53, { maxRounds: 30 });
       for (const event of log) {
-        if (event.t === 'set_proc' && event.effect === 'shred') highest = Math.max(highest, event.amount);
+        if (event.t === 'set_proc' && event.effect === 'shred')
+          highest = Math.max(highest, event.amount);
       }
     }
     expect(highest).toBeGreaterThan(0);
@@ -269,7 +280,9 @@ describe('the five-piece capstones — ROADMAP acceptance', () => {
 
   it('Corsair carries a flurry into a third strike', () => {
     const hero = buildHeroCombatant(wearing('swashbuckler', 'corsair-kings-finery', 5), 'hero');
-    expect(procsAcross(hero, () => dummy({ maxHealth: 200_000 }), 10, 'third-strike')).toBeGreaterThan(0);
+    expect(
+      procsAcross(hero, () => dummy({ maxHealth: 200_000 }), 10, 'third-strike'),
+    ).toBeGreaterThan(0);
   });
 
   it('Nighttide makes the first blow of the battle a certainty', () => {
@@ -444,7 +457,10 @@ describe('materials', () => {
     });
     hero = addItem(hero, item).hero;
 
-    const scrapped = disposeItem(hero, item.uid, 'scrap', { scrapsToday: 0, scrapLimit: SCRAPS_PER_DAY });
+    const scrapped = disposeItem(hero, item.uid, 'scrap', {
+      scrapsToday: 0,
+      scrapLimit: SCRAPS_PER_DAY,
+    });
     expect(scrapped.ok).toBe(true);
     if (!scrapped.ok) return;
 

@@ -9,22 +9,25 @@ Every third-party asset added to the project must be recorded here **in the same
 | Source | What | License | Attribution requirement |
 |---|---|---|---|
 | **Kenney** ([kenney.nl](https://kenney.nl)) | Fantasy UI pack (panels, borders, dividers), VFX particle pack — `game_assets/UI/Kenney_FantasyUIAssets`, `game_assets/VFX/Kenney_VFXParticles` | CC0 1.0 (public domain) | None required; credited by choice |
-| **game-icons.net** ([game-icons.net](https://game-icons.net)) | Item, weapon, armour, monster and pet icons (from Phase 2) | **CC BY 3.0** | **Required** — per-icon author credit |
 | **Project-owned art** | Scene backgrounds (23) and class portraits (5) in `game_assets/UI/` | Owned by the project author | — |
-| **Project-drawn UI icons** | Navigation, currency and status glyphs — `src/components/icons/` | Owned by the project | — |
+| **Project-drawn icons** | All 71 navigation, currency, status, item and pet glyphs — `src/components/icons/` | Owned by the project | — |
 
-The interface chrome (rail, HUD, status glyphs) is drawn in-house as one single-weight family so
-the UI reads as a designed whole rather than an icon-pack collage; game-icons.net supplies the far
-larger set of *content* icons — items, weapons, monsters, pets — where variety is the point.
+Every icon in the game is drawn in-house as one single-weight family, so the interface reads as a
+designed whole rather than an icon-pack collage.
 
-### game-icons.net attribution (CC BY 3.0)
+### game-icons.net — planned, never used
 
-Icons are vendored per `docs/tech/asset-pipeline.md` §2, and each entry in the generated icon
-manifest carries its original author. Icons land with Phase 2, at which point the per-icon author
-list is generated into this section and the in-game credits screen. Contributors whose work is
-commonly used from that site include (non-exhaustive, filled in as icons are vendored):
-Lorc, Delapouite, John Colburn, Felbrigg, Skoll, Sbed, Willdabeast, Carl Olsen — all licensed
-under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+**Nothing from game-icons.net ships, and no CC BY 3.0 attribution is owed.** This section used to
+claim the opposite: it listed a *required* per-icon author credit and promised a generated author
+list "as icons are vendored". None ever were. The plan called for game-icons content because
+variety is the point for items and monsters; what actually happened is that the hand-drawn family
+grew to cover them, and two module headers in `src/components/icons/` still describe the plan
+rather than the build.
+
+Recording the absence rather than deleting the row, because an attribution list that credits work
+you are not using is not generous — it is unreliable, and an unreliable list is the kind nobody
+checks on the day it matters. Should game-icons artwork ever be vendored, the CC BY 3.0 obligation
+is real and per-icon, and this is where it goes.
 
 ### Sound effects
 
@@ -42,10 +45,21 @@ whoever supplies the file is responsible for its rights.
 
 ## Fonts
 
-| Font | Use | License |
-|---|---|---|
-| **Alegreya Sans SC** (Juan Pablo del Peral, Huerta Tipográfica) | Display / headings | SIL Open Font License 1.1 |
-| **Inter** (Rasmus Andersson) | Body / UI | SIL Open Font License 1.1 |
+| Font | Use | License | Attribution requirement |
+|---|---|---|---|
+| **Alegreya Sans SC** (Juan Pablo del Peral, Huerta Tipográfica) | Display / headings | SIL Open Font License 1.1 | **Required** |
+| **Inter** (Rasmus Andersson) | Body / UI | SIL Open Font License 1.1 | **Required** |
+
+**These are the build's only mandatory attributions, and they were the ones not listed as such.**
+`next/font/google` does not link out to Google — it downloads both families at build time and
+serves the `.woff2` from this origin, so the game *redistributes* them. The OFL travels with a
+redistributed font: the copyright notice and the licence must accompany it. Naming the designers
+here and on the in-game credits screen is the notice; the licence itself is linked from both.
+
+→ Open question for release: whether to vendor the full OFL 1.1 text next to the served fonts
+rather than link it. Linking is common practice and the licence is unambiguous about the notice;
+whether it satisfies "shall be included in all copies" for a webfont is a judgement call that
+should be made deliberately rather than by default. Logged in `USER_QUESTIONS.md` (Q24).
 
 ## Software
 

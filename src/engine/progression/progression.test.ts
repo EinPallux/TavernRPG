@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyXp, levelProgress, totalXpToLevel, xpNeeded, xpPerVigor } from './xp';
-import { maxAffordable, statCost, statCostFor } from './stats';
+import { ATTRIBUTE_IDS, maxAffordable, statCost, statCostFor, statLines } from './stats';
 
 describe('xp curve', () => {
   it('matches the balancing doc at its checkpoints', () => {
@@ -124,5 +124,33 @@ describe('maxAffordable', () => {
     const early = maxAffordable(0, 10_000).points;
     const late = maxAffordable(400, 10_000).points;
     expect(late).toBeLessThan(early);
+  });
+});
+
+describe('statLines', () => {
+  /*
+   * The order a stat block is read in cannot depend on how its object was built.
+   *
+   * `generateItem` inserts attributes in whatever order it rolled them; the same item read back
+   * through Zod comes out in schema order. Those two agreed by accident until Phase 18 put the
+   * parser on its interpreted path for the CSP, and the Armory's shelf started re-ordering itself
+   * across a reload. These tests are about *stability*, not about which order is prettiest.
+   */
+  it('lists attributes in the game’s order whatever order they were written in', () => {
+    const rolledFirst = statLines({ lck: 7, str: 9, int: 4 });
+    const parsedFirst = statLines({ str: 9, int: 4, lck: 7 });
+    expect(rolledFirst).toEqual(parsedFirst);
+    expect(rolledFirst.map(([id]) => id)).toEqual(['str', 'int', 'lck']);
+  });
+
+  it('follows ATTRIBUTE_IDS, so the character sheet and an item card cannot disagree', () => {
+    const every = statLines({ lck: 1, con: 2, int: 3, dex: 4, str: 5 });
+    expect(every.map(([id]) => id)).toEqual([...ATTRIBUTE_IDS]);
+  });
+
+  it('omits absent attributes rather than showing them as zero', () => {
+    expect(statLines({})).toEqual([]);
+    // A rolled zero is a real line — only `undefined` means "this item has no such bonus".
+    expect(statLines({ dex: 0 })).toEqual([['dex', 0]]);
   });
 });

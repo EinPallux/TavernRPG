@@ -166,3 +166,28 @@ way; `pacing.test.ts` asserts today's number so the change is visible when it ha
 > what option 2 asked for. Recorded in balancing §16.1.
 
 ---
+
+---
+
+## 2026-07-31 — Phase 18 (Release hardening)
+
+**Q24. Should the full OFL 1.1 text ship next to the fonts, or is a link enough?**
+`next/font/google` self-hosts: both typefaces are downloaded at build and served as `.woff2` from
+this origin, so the build *redistributes* them. The SIL Open Font License requires that "the above
+copyright notice and this license notice shall be included in all copies" of the font software.
+
+Named designers and a link to the licence now appear in `CREDITS.md` and on the in-game credits
+screen, which is what almost every site serving Google Fonts does. Whether a link satisfies
+"included in all copies" for a webfont is a genuine judgement call, and it is the kind that should
+be made on purpose rather than by inheriting the default.
+
+1. **Link only** (as now). Standard practice; the notice is present and the licence is one click
+   away.
+2. **Vendor the licence text** into `public/licenses/OFL-1.1.txt` and link to the local copy. A
+   few kilobytes, removes the question entirely, and survives the linked page moving.
+3. **Both** — vendor the text *and* keep the upstream link.
+
+**Default while unanswered: option 1**, because it is what the ecosystem does and the attribution
+itself is unambiguous and present. Nothing is blocked; option 2 is a ten-minute change whenever
+you want it. Worth a deliberate answer before 1.0 rather than a shrug.
+→ `CREDITS.md`, `src/data/credits.ts`

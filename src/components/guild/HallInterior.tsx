@@ -17,7 +17,14 @@ import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { botIdentity } from '@/engine/world/identity';
 import { classDef } from '@/data/classes';
-import { bonusFor, stepCost, MAX_STEPS, TRACKS, TRACK_LABEL, type TrackId } from '@/engine/guilds/buffs';
+import {
+  bonusFor,
+  stepCost,
+  MAX_STEPS,
+  TRACKS,
+  TRACK_LABEL,
+  type TrackId,
+} from '@/engine/guilds/buffs';
 import { GUILD_CAPACITY, resumeFor } from '@/engine/guilds/membership';
 import { bountyView, hallOf, type Hall } from '@/state/guildActions';
 import type { GuildRefusal } from '@/state/guildActions';
@@ -256,8 +263,8 @@ function TracksPanel({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefu
 
       {!hall.isOwn && (
         <p className="text-parchment-500/72 mt-3 text-xs leading-relaxed">
-          This hall has been filling its pot since long before you arrived. Anything you add goes
-          in with the rest.
+          This hall has been filling its pot since long before you arrived. Anything you add goes in
+          with the rest.
         </p>
       )}
 
@@ -275,7 +282,10 @@ function WeeklyContributions() {
       .filter(([, value]) => value > 0)
       .map(([key, value]) => ({
         key,
-        name: key === 'player' ? (save.hero?.name ?? 'You') : botIdentity(save.world!.seed, Number(key)).name,
+        name:
+          key === 'player'
+            ? (save.hero?.name ?? 'You')
+            : botIdentity(save.world!.seed, Number(key)).name,
         value,
         isPlayer: key === 'player',
       }))
@@ -648,7 +658,9 @@ function GuildChat({ hall, onRefusal }: { hall: Hall; onRefusal: (r: GuildRefusa
                 <>
                   <span
                     className={`w-32 shrink-0 truncate text-right text-xs ${
-                      message.author.kind === 'player' ? 'font-bold text-amber-500' : 'text-parchment-500/72'
+                      message.author.kind === 'player'
+                        ? 'font-bold text-amber-500'
+                        : 'text-parchment-500/72'
                     }`}
                   >
                     {message.author.name}

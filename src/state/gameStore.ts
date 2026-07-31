@@ -134,7 +134,7 @@ import {
   resetClockForTests,
   restoreClock,
 } from './clock';
-import { readSave, writeSave } from './persistence';
+import { archiveSave, exportRaw, exportSave, importSave, readSave, writeSave } from './persistence';
 
 /**
  * A fresh world seed. Not gameplay randomness (which must be seeded and replayable) but
@@ -168,6 +168,14 @@ export interface GameStoreState {
   saveError: string | null;
 
   hydrate: (slot?: SaveSlot) => Promise<void>;
+  /** Triage: hand back whatever is on disk, valid or not, so the player can keep a copy. */
+  exportRawSave: () => Promise<string | null>;
+  /** Triage: set the unreadable save aside — never delete it — and begin again. */
+  archiveAndStartOver: () => Promise<void>;
+  /** The current save, as text a player can keep. Null if the slot will not open. */
+  exportCurrentSave: () => Promise<string | null>;
+  /** Replace this slot from exported text, then reload the game around it. */
+  importIntoSlot: (text: string) => Promise<{ ok: boolean; message: string }>;
   startOver: () => Promise<void>;
 
   /** Creation. Writes through immediately — nobody should lose a new hero to a debounce. */
@@ -613,6 +621,59 @@ export const useGameStore = create<GameStoreState>((set, get) => {
 
     grantGold(amount) {
       updateHero((hero) => ({ ...hero, gold: Math.max(0, hero.gold + amount) }));
+    },
+
+    async exportRawSave() {
+      return exportRaw(get().slot, gameNow());
+    },
+
+    async archiveAndStartOver() {
+      const { slot } = get();
+      /*
+       * Archive, then create — in that order, and never `deleteSave`.
+       *
+       * A player reaching this button has a save the game cannot read, which is not the same as a
+       * save that is worthless: a bad byte in one slice leaves the other seventeen intact, and a
+       * later version may well open what this one cannot. The stamp comes from the game clock
+       * because `Date.now` is lint-banned outside it, and it makes the archived keys sort.
+       */
+      await archiveSave(slot, String(gameNow()));
+
+      const fresh = createNewSave({ slot, worldSeed: newWorldSeed(), now: gameNow() });
+      restoreClock(fresh.clock);
+      set({
+        status: 'ready',
+        save: fresh,
+        error: null,
+        notice: 'Your old save was kept, set aside under a dated key. This one starts clean.',
+        isSaving: true,
+      });
+      await writeSave(fresh);
+      set({ lastSavedAt: fresh.savedAt, isSaving: false, saveError: null });
+    },
+
+    async exportCurrentSave() {
+      // Flush first. Exporting a save that is three actions behind the screen is the kind of
+      // bug a player only discovers on the day they need the file.
+      await persistNow();
+      return exportSave(get().slot);
+    },
+
+    async importIntoSlot(text) {
+      const { slot } = get();
+      const result = await importSave(text, slot);
+      if (!result.ok) return { ok: false, message: result.message };
+
+      /*
+       * Re-hydrate rather than dropping the save straight into state.
+       *
+       * An import is a *load*, and the load path does things this action must not skip: it
+       * restores the clock from the file (so a save from a rewound device cannot rewind
+       * progress), it runs the day boundary, and it raises the world. Setting `save` directly
+       * would produce a session that looks right and drifts within a minute.
+       */
+      await get().hydrate(slot);
+      return { ok: true, message: 'Save loaded.' };
     },
 
     async startOver() {

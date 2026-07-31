@@ -113,6 +113,25 @@ ceremonies (all skippable).**
 - Reduced-motion: `prefers-reduced-motion` collapses ceremonies to fades, disables shakes —
   without breaking information delivery.
 
+### 7.1 An element on its way out is still an element (Phase 18)
+
+**`AnimatePresence mode="wait"` keeps the outgoing child mounted, and mounted means clickable.**
+The tutorial chip was keyed on `${beat.id}:${folded ? 'folded' : 'away'}`, so a label change was
+an exit plus a re-entrance rather than a re-render. Walking to the beat's room unmounted the "go
+here" chip; folding the card a moment later asked for the "show me again" one; and in the couple
+of hundred milliseconds between, the chip a player saw was the *old* one, still animating out,
+still taking clicks, and running a handler whose closure said there was nothing to do. It looked
+live and did nothing — reproducible at zero settle and gone at 600ms, which is the signature of
+an animation deciding behaviour.
+
+Two rules fall out, and they apply to every presence-animated control:
+
+1. **Key on identity, not on state.** The key answers "is this a different thing?", not "does it
+   look different?". A changed label is a re-render; a changed beat is a new chip.
+2. **A click handler reads the store, not its closure.** An element that outlives the render that
+   drew it will answer for the state it was born in. `useShellStore.getState()` in the handler
+   costs nothing and cannot be stale.
+
 ## 8. Components (the kit — built ours, Kenney-assisted)
 
 `<TavernPanel>` (chamfer+brackets, 3 elevations) · `<ActionButton>` (primary amber / secondary
@@ -179,18 +198,32 @@ Two related findings worth keeping: keeper names were `text-amber-700/80` for si
 noticed. And the rarity colours were lifted a step; the *fills* are unchanged, but epic at
 `#9b5fd0` read 3.7:1 as a label.
 
-### 10.3 The debt, and who owns it
+### 10.3 The debt — closed in Phase 18, bar two readings
 
-Eleven failures remain, in two groups, budgeted per room in `e2e/a11y.spec.ts` so the count can
-only come down:
+Eleven remained at the end of Phase 17. **Two remain now, and neither has a surface behind it.**
 
-1. **Type directly on backdrop art** (Hall of Fame header over bright water; a zone card's name
-   over a painted field; the forge's selected bench under its own amber wash). No token fixes
-   these — the type needs a scrim, which is a visual-design change. **Phase 18.**
-2. **Cross-fade artifacts** (a keeper's bark, the level badge). Motion keeps opacity animations
-   under reduced motion by design, so the audit still catches these part-way in. Both are 5:1 and
-   7.9:1 at rest. **Harness limitation, not a surface defect** — the fix is for the audit to wait
-   on an animation-settled signal rather than a timeout.
+**Type on backdrop art is done.** Five places had it and all five now carry a scrim: the Hall of
+Fame header over bright water, a zone card's name over a wheat field, the forge's bench tabs on
+cold metal, and the patrol and arena eyebrow labels on blue. The rule that came out of it: *a tint
+is a mood, a scrim is for type* — `AmbientStage`'s per-room tint sets the atmosphere and does not
+make a surface, so anything with words on it needs its own.
+
+**A highlight that forces every child to flip is the wrong highlight.** The Hall's own row was
+filled amber, making the single light surface in a list of 1,501 dark ones; three of its four
+columns were given the ink half of the pair and the fourth still failed. That is the tell — the
+surface was wrong, not the text. It is a bright border on a dark fill now, like every other row.
+
+**The keeper-bark and level-badge readings were the tutorial spotlight**, not a cross-fade. Its
+`0 0 0 100vmax rgb(6 5 4 / 0.68)` shadow dims the whole page except its target, so every audited
+element outside the hole came back at 32% of its real colour — the level badge reported a stable
+**1.52:1** across a dozen runs while genuinely being amber-on-ink at 7.9:1. *A wrong number that
+repeats exactly looks like a defect;* three harness fixes went past it before the cause turned out
+to be a modal overlay the audit had walked into. The audit opts the tour out now.
+
+The two survivors are budgeted in `e2e/a11y.spec.ts` with the evidence written down: in both, the
+reported text colour belongs to the *other variant of the same component* from the one whose
+background was sampled — a pairing the DOM cannot emit, which points at the rect and the pixel
+being read at different scroll positions rather than at a colour being wrong.
 
 ### 10.4 Measuring it
 
@@ -206,18 +239,35 @@ audit; that is why this harness exists rather than a call to `axe.run`.
 `npm run perf` — Lighthouse on the stage screens, a bundle budget, and the battle scene's
 main-thread cost. Needs a production server on :3100.
 
-| measure | budget | measured |
+| measure | budget | measured (P17 → P18) |
 |---|---|---|
-| Lighthouse performance, `/tavern` `/character` `/arena` `/hall` | ≥ 90 | **98 · 98 · 98 · 99** |
-| LCP | — | 1.0–1.1s (was **21.5s**) |
-| Total blocking time | — | 10–30ms (was 530ms) |
+| Lighthouse performance, `/tavern` `/character` `/arena` `/hall` | ≥ 90 | 98 · 98 · 98 · 99 → **97 · 97 · 98 · 97** |
+| LCP | — | 1.0–1.1s → 1.0–1.2s (was **21.5s**) |
+| Total blocking time | — | 10–30ms → 20–40ms (was 530ms) |
 | Cumulative layout shift | — | 0 |
-| First-load JS per room | 600 KB | 225–326 KB |
+| First-load JS per room | 600 KB | 225–326 KB → 258–324 KB |
 | Largest single chunk | 400 KB | 312 KB |
-| Battle scene, main thread | 8ms/frame | **0.7ms** |
+| Battle scene, main thread | 8ms/frame | 0.7ms → **0.8ms** |
 
 **The whole score was one asset decision.** See asset-pipeline §5b: 56 MB of backdrop PNGs served
 as authored. Nothing about the code changed to take Lighthouse from 49 to 98.
+
+**Lighthouse measures the machine as much as the build, and near a boundary that matters.** Idle,
+the four rooms sit at 97–98 against a gate of 90. With anything else resident, one of them drops
+under it — a *different* one each attempt, which is contention rather than a slow screen. The
+sharpest version: the identical check sequence passed when driven straight from `node` and failed
+through `npm run`, on nothing but the npm wrapper still being alive.
+
+So `npm run release` gates the deterministic half (bundle, per-route JS, main-thread cost — same
+numbers every run) and hands Lighthouse to `npm run perf` with "on an idle machine" attached. The
+gate is not weakened: `npm run perf` still fails under 90 and is step 2 of the deploy checklist.
+A release command that cries wolf teaches you to re-run it until it agrees with you.
+
+**The point or two Phase 18 gave back is the tab-lock election, and it was bought deliberately.**
+The shell now paints nothing until the save has loaded (architecture §3), so the largest element
+arrives after a 350ms election rather than during it. Every room stays comfortably over the ≥ 90
+gate. The alternative was a room drawn over an empty store, which is not a faster game — it is a
+wrong one that renders sooner.
 
 ### 11.1 Frame rate is not a gate here, and that is deliberate
 

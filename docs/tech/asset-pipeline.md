@@ -80,6 +80,24 @@ proper" is now discharged. Lighthouse went 49 → **98**.
 Kenney's UI and VFX sheets are still copied verbatim: they are small, already optimised, and the
 particle sprites are read pixel-for-pixel by the canvas layer.
 
+### 5c. …and how long a browser may keep it (Phase 18)
+
+**The art is not content-addressed, so it cannot be cached as if it were.** Every path this
+pipeline emits is the authored one — `/assets/backgrounds/tavern_background.webp` is written as a
+literal in `data/places.ts`, `data/zones.ts`, `data/dungeons.ts`, `data/classes.ts` and a dozen
+components — and re-running the sync rewrites the bytes *at that same path*. Serving it
+`immutable` would pin a superseded painting in a returning player's browser for a year with no URL
+that could reach past it.
+
+`/assets/*` is therefore `public, max-age=86400, stale-while-revalidate=604800`: a day fresh, a
+week where the cached copy paints instantly and refreshes behind the player. Contrast
+`/_next/static/*`, where the filename carries a content hash and a year of `immutable` cannot ever
+be wrong. Full reasoning and the tests in `deployment.md` §2.
+
+If the art ever churns often enough for a day of staleness to matter, the change is here: put a
+generated fingerprint in the emitted path and route every literal through one resolver. That is
+the prerequisite for `immutable`, not a nicety alongside it.
+
 ## 6. Sound (Q13 answered: approved)
 
 - **SFX (1.0, Phase 17 — built, synthesized):** 24 cues (UI ticks, coin, forge strike,

@@ -15,7 +15,7 @@
 import { motion } from 'motion/react';
 import type { Item } from '@/engine/items/types';
 import type { ComparisonDelta } from '@/engine/hero/derived';
-import { ATTRIBUTE_LABELS, type AttributeId } from '@/engine/progression/stats';
+import { ATTRIBUTE_LABELS, statLines } from '@/engine/progression/stats';
 import { RARITY_LABELS, SLOT_LABELS } from '@/engine/items/types';
 import { rarityStyles } from '@/components/items/ItemCard';
 import { ActionButton } from '@/components/ui/ActionButton';
@@ -151,7 +151,7 @@ export function StockCard({
 
         {/* Attribute lines. A common ring has nothing *but* these — without them the card
             described the item by what it lacked. */}
-        {(Object.entries(item.attrs) as [AttributeId, number][]).map(([id, value]) => (
+        {statLines(item.attrs).map(([id, value]) => (
           <div key={id} className="flex justify-between">
             <dt className="text-parchment-500/72">{ATTRIBUTE_LABELS[id]}</dt>
             <dd className="text-parchment-300 tabular-nums">+{value}</dd>

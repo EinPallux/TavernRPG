@@ -641,7 +641,12 @@ describe('the weekly bounty', () => {
     expect(settleBounty({ state, today: '2026-08-07', memberCount: 10, heroLevel: 40 })).toBeNull();
     expect(settleBounty({ state, today: sunday, memberCount: 10, heroLevel: 40 })).not.toBeNull();
     expect(
-      settleBounty({ state: { ...state, settled: true }, today: sunday, memberCount: 10, heroLevel: 40 }),
+      settleBounty({
+        state: { ...state, settled: true },
+        today: sunday,
+        memberCount: 10,
+        heroLevel: 40,
+      }),
     ).toBeNull();
   });
 
@@ -663,7 +668,11 @@ describe('guild chat', () => {
   const guildName = 'The Amber Blades';
 
   /** A real tick, so the events under the chat are ones the simulation actually produced. */
-  const ticked = simTick(world, T0 + 2 * DAY, { playerRank: 400, rivalIds: [], guildmateIds: [...members] });
+  const ticked = simTick(world, T0 + 2 * DAY, {
+    playerRank: 400,
+    rivalIds: [],
+    guildmateIds: [...members],
+  });
 
   it('says between six and twenty things a day, by how chatty the hall is', () => {
     const rate = messagesPerDay(world, members);

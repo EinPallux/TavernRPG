@@ -150,26 +150,6 @@ async function textRuns(page: Page): Promise<TextRun[]> {
         const control = element.closest('button, [role="button"], input, select, textarea');
         if (control?.matches(':disabled, [aria-disabled="true"]')) continue;
 
-        /*
-         * Skip anything still fading in.
-         *
-         * Motion's reduced-motion mode disables transforms and layout animations but keeps
-         * *opacity* — by design, since a cross-fade is not what makes people motion-sick. So a
-         * keeper's bark caught at 0.6 opacity has a genuinely poor ratio for about 200ms, on a
-         * surface nobody is reading yet. An element at rest is at opacity 1; anything else is a
-         * frame, not a screen. Walking ancestors because opacity composites down the tree.
-         */
-        let node: HTMLElement | null = element;
-        let settled = true;
-        while (node) {
-          if (Number.parseFloat(getComputedStyle(node).opacity) < 0.999) {
-            settled = false;
-            break;
-          }
-          node = node.parentElement;
-        }
-        if (!settled) continue;
-
         const box = element.getBoundingClientRect();
         if (box.width < minBox || box.height < minBox) continue;
         if (box.bottom <= 0 || box.right <= 0) continue;
@@ -204,7 +184,47 @@ async function textRuns(page: Page): Promise<TextRun[]> {
  * it. `!important` on both `color` and `text-shadow`: a shadow left behind would be sampled as
  * background and quietly flatter every result.
  */
+/**
+ * Wait until nothing on the page is still animating.
+ *
+ * `document.getAnimations()` knows what is running, including the CSS transitions and Web
+ * Animations that Motion drives. Infinite loops — the ambient flicker in every room, a low-health
+ * pulse — never finish, so they are filtered out rather than waited on, and the whole thing is
+ * bounded: a page that never settles should still be audited rather than hang the suite.
+ */
+async function settle(page: Page, budgetMs = 3_000): Promise<void> {
+  await page.evaluate(async (budget) => {
+    const finite = document
+      .getAnimations()
+      .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+      .map((animation) => animation.finished.catch(() => undefined));
+
+    await Promise.race([Promise.all(finite), new Promise((done) => setTimeout(done, budget))]);
+  }, budgetMs);
+}
+
 export async function contrastFailures(page: Page): Promise<ContrastFailure[]> {
+  await settle(page);
+
+  /*
+   * Pin every element at full opacity, for the measurement *and* the screenshot.
+   *
+   * This was the last artifact and it took three attempts to find. Skipping elements whose
+   * computed opacity was below 1 caught most of it; `animations: 'disabled'` on the screenshot
+   * caught the CSS half. Neither touched Motion, which drives opacity from JS — so the level
+   * badge (genuine amber-on-ink at 7.9:1) reported **1.52:1 on every run, identically**, because
+   * deterministic page-load timing put it at the same point in its fade every time. A stable
+   * wrong number reads exactly like a real defect, which is what made it expensive to find.
+   *
+   * Forcing `opacity: 1` sidesteps the race rather than trying to win it, and it is the more
+   * correct reading anyway: the resting state *is* full opacity, and "what does the player sit
+   * and read" is the question. Background alphas are untouched — `bg-wood-900/70` is a colour,
+   * not the opacity property — so panels keep their real translucency over the art.
+   */
+  const opaque = await page.addStyleTag({
+    content: '*, *::before, *::after { opacity: 1 !important }',
+  });
+
   const runs = await textRuns(page);
   if (runs.length === 0) throw new Error('no text found on the page — the audit did not run');
 
@@ -212,8 +232,19 @@ export async function contrastFailures(page: Page): Promise<ContrastFailure[]> {
     content:
       '*, *::before, *::after { color: transparent !important; text-shadow: none !important }',
   });
-  const shot = await page.screenshot({ type: 'png' });
+  /*
+   * `animations: 'disabled'` finishes every CSS animation and transition and holds them at their
+   * end state for the shot. Without it a keeper's bark reported 1.3:1 *after* the page had been
+   * waited out — because barks rotate on a timer, so a new one starts fading in between measuring
+   * the text runs and taking the picture. Settling once cannot fix a thing that starts again.
+   */
+  // Settle a second time. The first wait happens before the style tags go in, and injecting a
+  // stylesheet can itself start a transition — plus anything on a timer (a rotating bark, a
+  // toggle whose state just changed) may have begun in between.
+  await settle(page, 1_500);
+  const shot = await page.screenshot({ type: 'png', animations: 'disabled' });
   await hide.evaluate((node: HTMLElement) => node.remove());
+  await opaque.evaluate((node: HTMLElement) => node.remove());
 
   const { data, info } = await sharp(shot).raw().toBuffer({ resolveWithObject: true });
   const { width, height, channels } = info;
@@ -236,13 +267,24 @@ export async function contrastFailures(page: Page): Promise<ContrastFailure[]> {
      * the inner 90% of columns keeps gradients in scope and puts borders, chamfers and the
      * element's own padding out of it.
      */
+    /*
+     * The inset scales with how much of the box a chamfer can eat.
+     *
+     * `chamfer-sm` clips a fixed number of pixels off every corner, so on a wide panel that is
+     * noise and on an 18×14 level badge it is most of the sample. A flat 25%/10% inset let the
+     * portrait *behind* the badge decide its verdict — genuine amber-on-ink at 7.9:1, reported at
+     * 1.5:1. Anything narrow in a dimension is read from its middle instead.
+     */
+    const boxW = x1 - x0;
+    const boxH = y1 - y0;
+    const fraction = (size: number, wide: number) => (size < 40 ? 0.32 : wide);
     const insetY = Math.min(
-      Math.floor((y1 - y0) * 0.25),
-      Math.max(0, Math.floor((y1 - y0 - 2) / 2)),
+      Math.floor(boxH * fraction(boxH, 0.25)),
+      Math.max(0, Math.floor((boxH - 2) / 2)),
     );
     const insetX = Math.min(
-      Math.floor((x1 - x0) * 0.1),
-      Math.max(0, Math.floor((x1 - x0 - 2) / 2)),
+      Math.floor(boxW * fraction(boxW, 0.1)),
+      Math.max(0, Math.floor((boxW - 2) / 2)),
     );
 
     const pixels: { lum: number; rgb: [number, number, number] }[] = [];

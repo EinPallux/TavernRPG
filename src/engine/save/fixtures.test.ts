@@ -12,6 +12,8 @@
  * way. The compact form at least makes it obvious it is machine output.
  */
 
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import v1Phase0 from './fixtures/v1-phase0.json';
 import v2Phase1 from './fixtures/v2-phase1.json';
@@ -28,6 +30,7 @@ import v12Phase12 from './fixtures/v12-phase12.json';
 import v13Phase13 from './fixtures/v13-phase13.json';
 import v14Phase14 from './fixtures/v14-phase14.json';
 import v15Phase15 from './fixtures/v15-phase15.json';
+import v16Phase16 from './fixtures/v16-phase16.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { ownedPets } from '@/engine/pets/ownership';
@@ -614,5 +617,136 @@ describe('save fixtures — every shipped version still loads', () => {
 
     expect(twice.save).toEqual(once.save);
     expect(twice.migratedFrom).toBeNull();
+  });
+});
+
+describe('the fixture set itself', () => {
+  /**
+   * Every shipped version, oldest to newest. The list is written out rather than globbed so that
+   * adding a file is not enough — a new version has to be *named* here too.
+   */
+  const SHIPPED: readonly { readonly version: number; readonly save: unknown }[] = [
+    { version: 1, save: v1Phase0 },
+    { version: 2, save: v2Phase1 },
+    { version: 3, save: v3Phase3 },
+    { version: 4, save: v4Phase4 },
+    { version: 5, save: v5Phase5 },
+    { version: 6, save: v6Phase6 },
+    { version: 7, save: v7Phase7 },
+    { version: 8, save: v8Phase8 },
+    { version: 9, save: v9Phase9 },
+    { version: 10, save: v10Phase10 },
+    { version: 11, save: v11Phase11 },
+    { version: 12, save: v12Phase12 },
+    { version: 13, save: v13Phase13 },
+    { version: 14, save: v14Phase14 },
+    { version: 15, save: v15Phase15 },
+    { version: 16, save: v16Phase16 },
+  ];
+
+  it('has one fixture per shipped schema version, with no gaps', () => {
+    /*
+     * **The test Phase 16 needed and did not have.**
+     *
+     * The header above says "when bumping the schema: add a fixture for the previous version" —
+     * and Phase 16 bumped to v16 without one, which nothing noticed, because a fixture you failed
+     * to add cannot fail a test. Behaviour cannot catch an omission; only a census can. This is
+     * the same shape as `reset/audit.test.ts`, which reads the source to prove every daily
+     * boundary goes through one walk.
+     */
+    expect(SHIPPED.map((entry) => entry.version)).toEqual(
+      Array.from({ length: CURRENT_SCHEMA_VERSION }, (_, index) => index + 1),
+    );
+
+    // And the files are really there, named for the version they hold.
+    const onDisk = readdirSync(join(import.meta.dirname, 'fixtures'))
+      .filter((name) => name.endsWith('.json'))
+      .map((name) => Number.parseInt(name.slice(1), 10))
+      .sort((a, b) => a - b);
+    expect(onDisk).toEqual(SHIPPED.map((entry) => entry.version));
+  });
+
+  it('declares the version it claims to be', () => {
+    for (const { version, save } of SHIPPED) {
+      expect((save as { schemaVersion: number }).schemaVersion, `v${version}`).toBe(version);
+    }
+  });
+
+  /**
+   * The ROADMAP's Phase 18 criterion — "upgrade-from-oldest-beta save works" — as one assertion
+   * over the whole set rather than a claim about the oldest one.
+   *
+   * The per-version cases above check what each migration *did*. This checks the property that
+   * matters to a player at any age of save: it opens, it lands on the current version, and what
+   * it is holding survives the trip.
+   */
+  it('opens every shipped version and lands it on the current one, playable', () => {
+    for (const { version, save } of SHIPPED) {
+      const result = migrateSave(structuredClone(save) as Record<string, unknown>);
+      expect(result.ok, `v${version} failed to open`).toBe(true);
+      if (!result.ok) continue;
+
+      expect(result.save.schemaVersion, `v${version}`).toBe(CURRENT_SCHEMA_VERSION);
+      expect(result.migratedFrom, `v${version}`).toBe(
+        version === CURRENT_SCHEMA_VERSION ? null : version,
+      );
+
+      // A hero who existed before the trip still exists after it, with their name and level.
+      const before = (save as { hero?: { name?: string; level?: number } | null }).hero;
+      if (before) {
+        expect(result.save.hero, `v${version} lost its hero`).not.toBeNull();
+        expect(result.save.hero?.name, `v${version}`).toBe(before.name);
+        expect(result.save.hero?.level, `v${version}`).toBe(before.level);
+      }
+
+      // The world is expensive and irreplaceable — a reroll would renumber the whole ladder.
+      const world = (save as { world?: { bots?: unknown[] } | null }).world;
+      if (world?.bots) {
+        expect(result.save.world?.bots.length, `v${version} lost the world`).toBe(
+          world.bots.length,
+        );
+      }
+
+      // And the seed, which everything derived is derived from.
+      expect(result.save.worldSeed, `v${version}`).toBe((save as { worldSeed: number }).worldSeed);
+    }
+  });
+
+  it('is idempotent for every version, not just the oldest', () => {
+    for (const { version, save } of SHIPPED) {
+      const once = migrateSave(structuredClone(save) as Record<string, unknown>);
+      if (!once.ok) throw new Error(`v${version} did not open`);
+      const twice = migrateSave(structuredClone(once.save) as unknown as Record<string, unknown>);
+      expect(twice.ok, `v${version}`).toBe(true);
+      if (!twice.ok) continue;
+      expect(twice.save, `v${version} changed on a second pass`).toEqual(once.save);
+    }
+  });
+});
+
+describe('a real v16 save', () => {
+  it('opens with nothing to migrate', () => {
+    const result = migrateSave(structuredClone(v16Phase16));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBeNull();
+    expect(result.save.schemaVersion).toBe(16);
+  });
+
+  it('is a played save rather than a hand-written one', () => {
+    /*
+     * A synthesised fixture only proves the schema accepts what its author expected. This one was
+     * captured out of a browser after creating a hero, levelling to ten, conjuring gear and
+     * walking the town, so it carries the shapes a real save carries — including the 1,500-hero
+     * world, which is the part most likely to break a future migration.
+     */
+    const result = migrateSave(structuredClone(v16Phase16));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.save.hero?.level).toBeGreaterThanOrEqual(10);
+    expect(result.save.world?.bots.length).toBe(BOT_COUNT);
+    expect(Object.values(result.save.hero!.equipment).filter(Boolean).length).toBeGreaterThan(0);
   });
 });
