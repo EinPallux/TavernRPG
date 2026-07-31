@@ -36,7 +36,16 @@ async function makeHero(page: Page, name: string) {
 }
 
 async function exported(page: Page): Promise<string> {
-  await page.goto('/settings');
+  /*
+   * Walk to Settings through the rail, not `page.goto`.
+   *
+   * A player changes rooms with a client-side route change and the store goes with them. A hard
+   * navigation throws the store away and restarts it from disk — which is a different scenario,
+   * and specifically the *wrong* one for "the export flushes what is on screen": there is no
+   * screen left to flush. `dev-level-10` fires nine `grantXp` calls whose writes coalesce over
+   * the next few milliseconds, so a `goto` here races them and reads the save from before.
+   */
+  await page.getByTestId('nav-settings').click();
   await expect(page.getByTestId('place-settings')).toBeVisible({ timeout: SETUP_TIMEOUT });
 
   const download = page.waitForEvent('download');

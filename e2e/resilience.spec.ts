@@ -121,6 +121,57 @@ test.describe('two tabs on one save', () => {
     await expect(page.getByTestId('place-tavern')).toBeVisible({ timeout: SETUP_TIMEOUT });
     await expect(page.getByTestId('tab-conflict')).toHaveCount(0);
   });
+
+  test('and the town is never drawn over an unloaded save', async () => {
+    /*
+     * The cost of the election, and the bug it caused.
+     *
+     * `claimTabLock` waits 350ms before a tab may claim the save, and the shell used to render
+     * the town straight through that window — a room with no hero in it, every screen reading
+     * defaults. Settings offered "Export this save" against `save === null`, and a click landing
+     * in the gap produced a file named `tavernrpg-hero-slot1.json` holding the save from before
+     * the session. Three tests found it by being faster than a person.
+     *
+     * So: while the tab is electing or the save is still loading, the shell paints nothing. The
+     * claim is an *invariant*, not an ordering — "the room exists and the store is not ready" is
+     * a state that must never be observable, so sample every frame and count the frames that
+     * contradict it. Polling for which of two things happened first cannot answer this when both
+     * flip inside one tick; asking "was this ever true?" can.
+     */
+    const page = await context.newPage();
+    await makeHero(page);
+
+    await page.addInitScript(() => {
+      const box = globalThis as { __gap?: number; __frames?: number };
+      box.__gap = 0;
+      box.__frames = 0;
+      const sample = () => {
+        box.__frames = (box.__frames ?? 0) + 1;
+        const store = (globalThis as { __tavernStore?: { getState: () => { status: string } } })
+          .__tavernStore;
+        const room = document.querySelector('[data-testid^="place-"]');
+        if (room && store?.getState().status !== 'ready') box.__gap = (box.__gap ?? 0) + 1;
+        requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+
+    await page.goto('/settings');
+    await expect(page.getByTestId('place-settings')).toBeVisible({ timeout: SETUP_TIMEOUT });
+
+    const seen = await page.evaluate(() => ({
+      gap: (globalThis as { __gap?: number }).__gap ?? -1,
+      frames: (globalThis as { __frames?: number }).__frames ?? 0,
+    }));
+    // A sampler that never ran would report a clean zero, which is the shape of a false pass.
+    expect(seen.frames).toBeGreaterThan(5);
+    expect(seen.gap, 'the town was drawn over an unloaded save').toBe(0);
+
+    // And the thing the gap actually broke: the export knows whose save it is.
+    const download = page.waitForEvent('download');
+    await page.getByTestId('export-save').click();
+    expect((await download).suggestedFilename()).toContain('kargath');
+  });
 });
 
 test.describe('a room that throws', () => {

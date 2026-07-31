@@ -50,7 +50,7 @@ gives it its own volume control. No file, no music, no errors.
 | [`docs/design/game-design-document.md`](docs/design/game-design-document.md) | Master GDD: vision, pillars, loops |
 | [`docs/design/systems/`](docs/design/systems/) | 16 full system specifications |
 | [`docs/design/balancing-formulas.md`](docs/design/balancing-formulas.md) | Every curve and number |
-| [`docs/tech/`](docs/tech/) | Architecture, data models, UI/UX style guide, asset pipeline |
+| [`docs/tech/`](docs/tech/) | Architecture, data models, UI/UX style guide, asset pipeline, deployment |
 | [`ROADMAP.md`](ROADMAP.md) | 19 development phases with acceptance criteria |
 | [`USER_QUESTIONS.md`](USER_QUESTIONS.md) | **Open decisions awaiting your answers** (defaults set) |
 | [`CLAUDE.md`](CLAUDE.md) / [`AGENTS.md`](AGENTS.md) | Working rules for AI developers |

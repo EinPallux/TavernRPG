@@ -113,6 +113,25 @@ ceremonies (all skippable).**
 - Reduced-motion: `prefers-reduced-motion` collapses ceremonies to fades, disables shakes —
   without breaking information delivery.
 
+### 7.1 An element on its way out is still an element (Phase 18)
+
+**`AnimatePresence mode="wait"` keeps the outgoing child mounted, and mounted means clickable.**
+The tutorial chip was keyed on `${beat.id}:${folded ? 'folded' : 'away'}`, so a label change was
+an exit plus a re-entrance rather than a re-render. Walking to the beat's room unmounted the "go
+here" chip; folding the card a moment later asked for the "show me again" one; and in the couple
+of hundred milliseconds between, the chip a player saw was the *old* one, still animating out,
+still taking clicks, and running a handler whose closure said there was nothing to do. It looked
+live and did nothing — reproducible at zero settle and gone at 600ms, which is the signature of
+an animation deciding behaviour.
+
+Two rules fall out, and they apply to every presence-animated control:
+
+1. **Key on identity, not on state.** The key answers "is this a different thing?", not "does it
+   look different?". A changed label is a re-render; a changed beat is a new chip.
+2. **A click handler reads the store, not its closure.** An element that outlives the render that
+   drew it will answer for the state it was born in. `useShellStore.getState()` in the handler
+   costs nothing and cannot be stale.
+
 ## 8. Components (the kit — built ours, Kenney-assisted)
 
 `<TavernPanel>` (chamfer+brackets, 3 elevations) · `<ActionButton>` (primary amber / secondary
@@ -220,18 +239,24 @@ audit; that is why this harness exists rather than a call to `axe.run`.
 `npm run perf` — Lighthouse on the stage screens, a bundle budget, and the battle scene's
 main-thread cost. Needs a production server on :3100.
 
-| measure | budget | measured |
+| measure | budget | measured (P17 → P18) |
 |---|---|---|
-| Lighthouse performance, `/tavern` `/character` `/arena` `/hall` | ≥ 90 | **98 · 98 · 98 · 99** |
-| LCP | — | 1.0–1.1s (was **21.5s**) |
-| Total blocking time | — | 10–30ms (was 530ms) |
+| Lighthouse performance, `/tavern` `/character` `/arena` `/hall` | ≥ 90 | 98 · 98 · 98 · 99 → **97 · 97 · 98 · 97** |
+| LCP | — | 1.0–1.1s → 1.0–1.2s (was **21.5s**) |
+| Total blocking time | — | 10–30ms → 20–40ms (was 530ms) |
 | Cumulative layout shift | — | 0 |
-| First-load JS per room | 600 KB | 225–326 KB |
+| First-load JS per room | 600 KB | 225–326 KB → 258–324 KB |
 | Largest single chunk | 400 KB | 312 KB |
-| Battle scene, main thread | 8ms/frame | **0.7ms** |
+| Battle scene, main thread | 8ms/frame | 0.7ms → **0.8ms** |
 
 **The whole score was one asset decision.** See asset-pipeline §5b: 56 MB of backdrop PNGs served
 as authored. Nothing about the code changed to take Lighthouse from 49 to 98.
+
+**The point or two Phase 18 gave back is the tab-lock election, and it was bought deliberately.**
+The shell now paints nothing until the save has loaded (architecture §3), so the largest element
+arrives after a 350ms election rather than during it. Every room stays comfortably over the ≥ 90
+gate. The alternative was a room drawn over an empty store, which is not a faster game — it is a
+wrong one that renders sooner.
 
 ### 11.1 Frame rate is not a gate here, and that is deliberate
 

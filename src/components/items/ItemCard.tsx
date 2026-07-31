@@ -10,7 +10,7 @@
 
 import { motion } from 'motion/react';
 import { Icon } from '@/components/icons';
-import { ATTRIBUTE_LABELS, type AttributeId } from '@/engine/progression/stats';
+import { ATTRIBUTE_LABELS, statLines } from '@/engine/progression/stats';
 import { RARITY_LABELS, SLOT_LABELS, type Item, type Rarity } from '@/engine/items/types';
 import type { ComparisonDelta } from '@/engine/hero/derived';
 import { classDef } from '@/data/classes';
@@ -117,7 +117,7 @@ export interface ItemCardProps {
 
 export function ItemCard({ item, comparison, setWorn, className = '', ...rest }: ItemCardProps) {
   const styles = RARITY_STYLES[item.rarity];
-  const attributeLines = Object.entries(item.attrs) as [AttributeId, number][];
+  const attributeLines = statLines(item.attrs);
 
   return (
     <motion.div

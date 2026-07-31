@@ -65,7 +65,18 @@ export function TutorialChip() {
     <AnimatePresence mode="wait">
       {showing && beat && destination && (
         <motion.button
-          key={`${beat.id}:${folded ? 'folded' : 'away'}`}
+          /*
+           * Keyed on the beat alone — **not** on folded-vs-away.
+           *
+           * Keying on the state too made every label change an exit and a re-entrance, and with
+           * `mode="wait"` the outgoing chip stays mounted, and clickable, until its exit finishes.
+           * Walking to the beat's room unmounts the "go here" chip; folding the card a moment
+           * later asks for the "show me again" one; and in the couple of hundred milliseconds
+           * between, a click landed on the old element and ran the old element's handler, which
+           * had nothing to do. The chip looked live and did nothing — measured at settle=0 and
+           * gone at settle=600ms, which is the signature of an animation deciding behaviour.
+           */
+          key={beat.id}
           type="button"
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -74,7 +85,9 @@ export function TutorialChip() {
           whileHover={{ y: -1 }}
           whileTap={{ y: 1 }}
           onClick={() => {
-            if (folded) showSpotlight();
+            // Read the fold now rather than trusting the render that drew this button: a chip on
+            // its way out still receives clicks, and it would answer for the state it was born in.
+            if (useShellStore.getState().spotlightHidden === beat.id) showSpotlight();
             if (!onSite && reachable) router.push(destination.route);
           }}
           title={folded ? 'Show me again' : `Go to ${destination.name}`}

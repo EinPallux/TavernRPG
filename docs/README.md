@@ -33,6 +33,7 @@ ROADMAP (root).
 - [`tech/data-models.md`](tech/data-models.md) — canonical TypeScript type sketch
 - [`tech/ui-ux-style-guide.md`](tech/ui-ux-style-guide.md) — design language, tokens, motion system, component kit, UX rules
 - [`tech/asset-pipeline.md`](tech/asset-pipeline.md) — icons, backgrounds, **art-override system**, credits obligations
+- [`tech/deployment.md`](tech/deployment.md) — what Vercel serves: caching, security headers, the CSP, deploy checklist
 
 ## Research
 - [`research/shakes-and-fidget-reference.md`](research/shakes-and-fidget-reference.md) — how S&F actually works + our deliberate departures

@@ -20,6 +20,20 @@ import { PROGRESS_METRICS } from '@/data/progress';
 import { BEAT_ID_LIST, EXPLAINER_ID_LIST } from '@/data/tutorial';
 import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 
+/**
+ * Validate without `eval`, so the production CSP can forbid it (next.config.ts).
+ *
+ * Zod 4 compiles a fast validator with `new Function` and feature-detects that by calling
+ * `Function("")` inside a try/catch. The throw is caught and the library degrades correctly — but
+ * the browser still reports a `script-src` violation, on every load, for a capability we had
+ * already decided not to grant. Declaring `jitless` skips the probe, which is the difference
+ * between a policy that forbids eval and one that merely watches it fail.
+ *
+ * Measured cost on the real 175 KB v16 fixture: 3.20 ms → 4.16 ms, once, at load. This is the
+ * only module in the app that imports Zod, so setting it here covers every parse.
+ */
+z.config({ jitless: true });
+
 /** Bump whenever a persisted shape changes, and add the matching migration. */
 export const CURRENT_SCHEMA_VERSION = 16;
 

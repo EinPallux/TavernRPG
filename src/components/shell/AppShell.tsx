@@ -126,12 +126,44 @@ export function AppShell({ children }: { children: ReactNode }) {
   const brokenSave = status === 'failed';
   const shadowed = tabRole === 'follower';
 
+  /**
+   * **Nothing is drawn until the save is real.**
+   *
+   * The town used to render the moment the shell mounted, over a store that was still `idle` —
+   * a room with no hero in it, every screen reading defaults. That window was a couple of
+   * milliseconds while `hydrate()` was the first thing a page load did, so nobody ever saw it.
+   * The tab-lock election put 350ms in front of the load and turned an invisible race into a
+   * reliable one: Settings offered "Export this save" against `save === null`, and a player
+   * quick enough to click it got a file named `tavernrpg-hero-slot1.json` containing the save
+   * from *before* their session. Three e2e tests found it by being faster than a human.
+   *
+   * A guard that delays a load has to gate the render too, or it converts a theoretical bug
+   * into a dependable one. `electing` is the state that must not paint a room.
+   */
+  const settling = tabRole === 'electing' || status === 'idle' || status === 'loading';
+
+  /** The four states that are *not* the town, in one name — the overlays all want the same test. */
+  const inTown = !settling && !shadowed && !brokenSave && !needsHero;
+
   return (
     <MotionConfig reducedMotion={reducedMotion}>
       <div className="bg-wood-900 flex h-screen w-screen overflow-hidden">
         {shadowed ? (
           <main className="relative min-h-0 flex-1">
             <TabConflict onTakeOver={takeOver} />
+          </main>
+        ) : settling ? (
+          /*
+           * Half a second of the empty tavern, and deliberately no spinner: at this length a
+           * spinner is a flash rather than reassurance. Announced for screen readers, which get
+           * nothing at all from an empty region.
+           */
+          <main className="relative min-h-0 flex-1" data-testid="shell-settling" aria-busy="true">
+            {/* The announcement goes *inside* the landmark: `role="status"` on the `<main>`
+                itself would trade the main landmark away for a live region. */}
+            <p role="status" className="sr-only">
+              Opening Emberhollow…
+            </p>
           </main>
         ) : brokenSave ? (
           <main className="relative min-h-0 flex-1">
@@ -157,15 +189,15 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Marla's tour rides above the town and below the ceremonies: the spotlight sits at
             z-30, so a battle scene or a chest opening covers it rather than competing with it
             (tutorial spec §1). */}
-        {!needsHero && !brokenSave && !shadowed && <TutorialLayer />}
+        {inTown && <TutorialLayer />}
 
         {/* Announces a room the moment a level opens it — the rail's lock coming off is easy
             to miss when you were not looking at that row (tutorial spec §3). */}
-        {!needsHero && !brokenSave && !shadowed && <UnlockWatcher />}
+        {inTown && <UnlockWatcher />}
 
         {/* The clock strikes over everything, but never over a fight — the battle scene raises
             its own layer and the moment queues behind it (daily-loop spec §4). */}
-        {!needsHero && !brokenSave && !shadowed && <ResetMoment />}
+        {inTown && <ResetMoment />}
         <ToastStack />
       </div>
     </MotionConfig>
