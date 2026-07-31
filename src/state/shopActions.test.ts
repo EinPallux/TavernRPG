@@ -393,13 +393,24 @@ describe('the stables', () => {
 });
 
 describe('the mount shortens the mission timer and nothing else', () => {
+  /**
+   * A board to sign from, on a save past its first contract.
+   *
+   * The opt-out matters: the *very first* contract of a save comes home in twenty seconds
+   * (tutorial spec §2), which would swamp the multiplier these cases are measuring. A player
+   * renting a warhorse is not on their first job.
+   */
   function withBoard(base: SaveFile): SaveFile {
     const board = drawBoard({
       worldSeed: base.worldSeed,
       dayKey: TODAY,
       heroLevel: base.hero!.level,
     });
-    return { ...base, activity: { ...base.activity, board: [...board], boardDay: TODAY } };
+    return {
+      ...base,
+      tutorial: { ...base.tutorial, optedOut: true },
+      activity: { ...base.activity, board: [...board], boardDay: TODAY },
+    };
   }
 
   it('cuts the wait by exactly the mount’s tier', () => {

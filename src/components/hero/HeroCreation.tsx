@@ -46,6 +46,7 @@ export function HeroCreation() {
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
+  const [skipTour, setSkipTour] = useState(false);
 
   const validation = validateHeroName(name);
   const chosen = CLASSES.find((definition) => definition.id === classId) ?? null;
@@ -54,7 +55,7 @@ export function HeroCreation() {
   const submit = () => {
     if (!canSubmit || !chosen) return;
     setSubmitting(true);
-    void createHero(name.trim(), chosen.id);
+    void createHero(name.trim(), chosen.id, { skipTutorial: skipTour });
   };
 
   return (
@@ -222,6 +223,29 @@ export function HeroCreation() {
                   {validation.reason}
                 </p>
               )}
+
+              {/*
+                "I have been here before" (tutorial spec §1).
+
+                Offered at creation rather than buried in Settings, because the player who wants
+                it is the one starting their second character and they want it *now*. It only
+                switches off the spotlight overlay — the gates still open by level, the glossary
+                still works, and Settings can turn the tour back on without having undone
+                anything.
+              */}
+              <label
+                className="text-parchment-500/55 hover:text-parchment-500/85 mt-4 flex cursor-pointer items-center gap-2.5 text-xs transition-colors"
+                data-testid="skip-tutorial-row"
+              >
+                <input
+                  type="checkbox"
+                  checked={skipTour}
+                  onChange={(event) => setSkipTour(event.target.checked)}
+                  data-testid="skip-tutorial"
+                  className="chamfer-sm border-parchment-500/35 bg-wood-900/80 h-4 w-4 shrink-0 appearance-none border checked:border-amber-500 checked:bg-amber-500"
+                />
+                I have played before — skip Marla’s tour.
+              </label>
             </TavernPanel>
           </motion.div>
         )}

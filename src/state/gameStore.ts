@@ -171,7 +171,12 @@ export interface GameStoreState {
   startOver: () => Promise<void>;
 
   /** Creation. Writes through immediately — nobody should lose a new hero to a debounce. */
-  createHero: (name: string, classId: ClassId) => Promise<void>;
+  createHero: (
+    name: string,
+    classId: ClassId,
+    /** `skipTutorial` is the creation screen's "I have played before" tick (tutorial spec §1). */
+    options?: { readonly skipTutorial?: boolean },
+  ) => Promise<void>;
   equipItem: (item: Item) => void;
   unequipItem: (slot: SlotId) => void;
   trainAttribute: (attribute: AttributeId, count: number) => void;
@@ -527,7 +532,7 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       }
     },
 
-    async createHero(name, classId) {
+    async createHero(name, classId, options = {}) {
       const { save } = get();
       if (!save) return;
 
@@ -540,9 +545,13 @@ export const useGameStore = create<GameStoreState>((set, get) => {
         rng: createRng(deriveSeed(save.worldSeed, 'starter-kit', classId), 'starter-kit'),
       });
 
+      // "I have been here before", ticked at creation. One flag, applied before anything else
+      // reads it, so the first render of the tavern is already tour-free (tutorial spec §1).
+      const started = setOptedOutOn({ ...save, hero }, options.skipTutorial === true);
+
       // Draw the opening board straight away: creation ends at the tavern, and an empty
       // quest table would be the first thing a new player saw.
-      const seeded = refreshDay({ ...save, hero }, currentDayKey(), dayKeysBetween).save;
+      const seeded = refreshDay(started, currentDayKey(), dayKeysBetween).save;
       // Raise the 1,500. The world is generated at creation rather than lazily, so the ladder
       // the player is joining already has ninety days of history behind it — and the warm-up
       // day is simulated straight away so the Crier board has news on arrival rather than

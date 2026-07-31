@@ -57,7 +57,10 @@ function wins(save: SaveFile, count: number): SaveFile {
 }
 
 function acknowledged(save: SaveFile, id: BeatId): SaveFile {
-  return { ...save, tutorial: { ...save.tutorial, acknowledged: [...save.tutorial.acknowledged, id] } };
+  return {
+    ...save,
+    tutorial: { ...save.tutorial, acknowledged: [...save.tutorial.acknowledged, id] },
+  };
 }
 
 /** A piece of loot in the bags — the state that used to send the tour backwards. */

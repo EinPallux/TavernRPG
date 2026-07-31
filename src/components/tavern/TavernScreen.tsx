@@ -418,6 +418,18 @@ function StagedBattle({
 
   const analysis = useMemo(() => analyseBattle(outcome.battle.log, 'a'), [outcome.battle.log]);
 
+  /*
+   * The first fight of a save gets the three callouts (tutorial spec §2 beat 3).
+   *
+   * Answered **once, when the scene mounts**, and then frozen. The question is derived from the
+   * save — no flag to store — but `settle` banks the victory on the closing beat, which flips
+   * the answer while the same scene is still on screen. Left live, that would hand a mounted
+   * `useBattlePlayback` a new speed and a new pacing target at the moment the result slides up.
+   */
+  const [firstFight] = useState(
+    () => save !== null && !save.tutorial.optedOut && save.activity.missionsCompleted === 0,
+  );
+
   const spoils = claim?.spoils ?? outcome.spoils;
   const rewards: BattleRewards | undefined = spoils.victory
     ? {
@@ -439,6 +451,7 @@ function StagedBattle({
       initialSpeed={save?.settings.battleSpeed ?? 1}
       onSpeedChange={setBattleSpeed}
       startFinished={save?.settings.battleSkipDefault ?? false}
+      callouts={firstFight}
       result={
         <BattleResult
           victory={spoils.victory}

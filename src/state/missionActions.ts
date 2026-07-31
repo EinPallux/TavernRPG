@@ -27,6 +27,7 @@ import { refreshGachaDay } from './gachaActions';
 import { creditMissionDrops, payoutBonus, petContribution, refreshPetDay } from './petActions';
 import { ensureTasks, refreshBoardDay } from './boardActions';
 import { refreshTutorialDay } from './tutorialActions';
+import { quickenedEndsAt, shortensNextMission } from '@/engine/tutorial/firstMission';
 import { stampToday, type StampTransition } from './calendarActions';
 import { activeMount } from '@/engine/stables/mounts';
 import { applyXp } from '@/engine/progression/xp';
@@ -196,11 +197,23 @@ export function accept(
   // tutorial reads this one, because a first contract that loses still taught the lesson.
   const signed = credit(save, 'missionsAccepted', 1);
 
+  /*
+   * The very first contract comes home in twenty seconds (tutorial spec §2).
+   *
+   * Only the finish line moves: the Vigor is already spent at the real cost above and
+   * `resolveMission` still prices the reward off `duration`, so the short road is a gift rather
+   * than a discount. Checked against the save *before* the credit, since that is the one that
+   * still says nobody has signed anything.
+   */
+  const mission = shortensNextMission(save)
+    ? { ...result.mission, endsAt: quickenedEndsAt(now) }
+    : result.mission;
+
   return {
     ok: true,
     save: withActivity(signed, {
       vigor: activity.vigor - result.vigorSpent,
-      mission: result.mission,
+      mission,
       // The taken job leaves the board; the other two stay for tomorrow's comparison.
       board: activity.board.filter((entry) => entry.id !== offerId),
     }),
