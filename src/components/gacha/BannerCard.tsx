@@ -15,6 +15,7 @@ import { MONTHLY_TRACK, ROLL_DICE_COST, TEN_ROLL_SIZE } from '@/data/banners';
 import { rungsEarned, rollsToNextRung, TRACK_RUNGS } from '@/engine/gacha/track';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { formatRemaining } from '@/components/ui/TimerChip';
+import { Term } from '@/components/ui/Term';
 import { Icon, HourglassIcon, SparkIcon } from '@/components/icons';
 import { listItemIn, snappy } from '@/styles/motion';
 
@@ -40,7 +41,7 @@ function PityMeter({ count, of }: { count: number; of: number }) {
     <div className="mt-3" data-testid="pity-meter">
       <div className="mb-1 flex items-baseline justify-between text-[10px]">
         <span className="font-display tracking-[0.25em] text-amber-500 uppercase">
-          Guaranteed at {of}
+          <Term name="Pity">Guaranteed at {of}</Term>
         </span>
         <span className="text-parchment-500/60 tabular-nums" data-testid="pity-count">
           {count}/{of}

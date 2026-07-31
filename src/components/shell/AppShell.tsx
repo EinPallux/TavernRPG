@@ -17,6 +17,7 @@ import { PlaceStage } from './PlaceStage';
 import { ToastStack } from '@/components/ui/Toast';
 import { HeroCreation } from '@/components/hero/HeroCreation';
 import { TutorialLayer } from '@/components/tutorial/TutorialLayer';
+import { UnlockWatcher } from './UnlockWatcher';
 import { useGameStore } from '@/state/gameStore';
 import { useShellStore } from '@/state/shellStore';
 
@@ -77,6 +78,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             z-30, so a battle scene or a chest opening covers it rather than competing with it
             (tutorial spec §1). */}
         {!needsHero && <TutorialLayer />}
+
+        {/* Announces a room the moment a level opens it — the rail's lock coming off is easy
+            to miss when you were not looking at that row (tutorial spec §3). */}
+        {!needsHero && <UnlockWatcher />}
 
         {/* The clock strikes over everything, but never over a fight — the battle scene raises
             its own layer and the moment queues behind it (daily-loop spec §4). */}

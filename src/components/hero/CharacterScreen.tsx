@@ -28,6 +28,7 @@ import { TavernPanel } from '@/components/ui/TavernPanel';
 import { Meter } from '@/components/ui/Meter';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { AmbientStage } from '@/components/ui/AmbientStage';
+import { Term } from '@/components/ui/Term';
 import { ItemSlot } from '@/components/items/ItemSlot';
 import { Icon } from '@/components/icons';
 import { AttributePanel } from './AttributePanel';
@@ -41,10 +42,29 @@ const LEFT_COLUMN: SlotId[] = ['helmet', 'chest', 'gloves'];
 const RIGHT_COLUMN: SlotId[] = ['amulet', 'ring', 'trinket'];
 const BOTTOM_ROW: SlotId[] = ['boots', 'belt'];
 
-function StatLine({ label, value, hint }: { label: string; value: string; hint?: string }) {
+/**
+ * One derived number.
+ *
+ * `term` wires the label to the glossary when the game has a definition for it — this panel is
+ * the densest patch of jargon in Emberhollow ("damage reduction cap", "main stat", "crit"), and
+ * it is the screen a confused player opens first (tutorial spec §1).
+ */
+function StatLine({
+  label,
+  value,
+  hint,
+  term,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  term?: string;
+}) {
   return (
     <div className="flex items-baseline justify-between gap-3 text-sm" title={hint}>
-      <span className="text-parchment-500/65">{label}</span>
+      <span className="text-parchment-500/65">
+        {term ? <Term name={term}>{label}</Term> : label}
+      </span>
       <span className="text-parchment-300">{value}</span>
     </div>
   );
@@ -325,17 +345,20 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
                       />
                       <StatLine
                         label="Critical chance"
+                        term="Crit"
                         value={`${(derived.critChance * 100).toFixed(1)}%`}
                         hint="Luck × 5 ÷ (2 × opponent level), capped at 50%"
                       />
                       <StatLine label="Critical damage" value={`×${derived.critMultiplier}`} />
                       <StatLine
                         label="Armour"
+                        term="Armour"
                         value={derived.armour.toLocaleString()}
                         hint="Total armour from equipped pieces"
                       />
                       <StatLine
                         label="Damage reduction"
+                        term="Damage reduction cap"
                         value={`${(derived.damageReduction * 100).toFixed(1)}% of ${(derived.damageReductionCap * 100).toFixed(0)}% cap`}
                         hint="Against an opponent of your own level"
                       />

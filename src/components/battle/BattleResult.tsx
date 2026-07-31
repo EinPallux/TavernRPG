@@ -14,6 +14,7 @@ import type { BattleAnalysis, LossHint } from '@/engine/combat/analysis';
 import type { Item } from '@/engine/items/types';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { ItemCard } from '@/components/items/ItemCard';
+import { Explainer } from '@/components/tutorial/Explainer';
 import { CoinIcon, DiceIcon } from '@/components/icons';
 import { dramatic, duration } from '@/styles/motion';
 
@@ -221,6 +222,20 @@ export function BattleResult({
           </ul>
         </motion.div>
       )}
+
+      {/*
+        The three one-time lines this screen owns (tutorial spec §4).
+
+        Here rather than in each caller because every fight in the game — mission, duel, dungeon
+        floor — ends on this component, so "the first Epic you ever see" means the same thing
+        whichever room produced it. Each fires once per save and then never again; `Explainer`
+        decides for itself.
+      */}
+      <div className="mb-4 empty:mb-0">
+        <Explainer id="first-epic" when={rewards?.item?.rarity === 'epic'} />
+        <Explainer id="first-set-piece" when={rewards?.item?.setId !== undefined} />
+        <Explainer id="first-loss" when={!victory} />
+      </div>
 
       {/* Closest moment — the stat that turns a number into a story. */}
       <motion.p

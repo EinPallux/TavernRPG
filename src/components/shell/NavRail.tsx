@@ -31,6 +31,7 @@ function RailItem({
   collapsed,
   badge = 0,
   dot = false,
+  revealed = false,
 }: {
   place: PlaceDef;
   level: number;
@@ -40,6 +41,8 @@ function RailItem({
   badge?: number;
   /** Something is claimable in here, but counting it would not tell you more than "yes". */
   dot?: boolean;
+  /** This room opened seconds ago: the lock coming off deserves to be seen (tutorial spec §3). */
+  revealed?: boolean;
 }) {
   const gate = gateFor(place.id, level);
   const flagged = gate.unlocked && badge > 0;
@@ -120,6 +123,26 @@ function RailItem({
   const shared =
     'group relative flex items-center gap-3 py-2.5 pr-3 pl-4 transition-colors duration-150';
 
+  /* The lock coming off, drawn: a wash sweeping the row and an amber edge that fades out. */
+  const flourish = revealed ? (
+    <>
+      <motion.span
+        aria-hidden
+        initial={{ opacity: 0.85 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 2.2, repeat: 2, ease: 'easeOut' }}
+        className="pointer-events-none absolute inset-0 bg-amber-500/25"
+      />
+      <motion.span
+        aria-hidden
+        initial={{ scaleY: 1 }}
+        animate={{ scaleY: 0 }}
+        transition={{ duration: 6, ease: 'linear' }}
+        className="pointer-events-none absolute top-0 bottom-0 left-0 w-[3px] origin-top bg-amber-400"
+      />
+    </>
+  ) : null;
+
   if (!gate.unlocked) {
     return (
       <li>
@@ -144,8 +167,10 @@ function RailItem({
         aria-current={active ? 'page' : undefined}
         data-testid={`nav-${place.id}`}
         data-locked="false"
+        data-revealed={revealed ? 'true' : undefined}
         className={`${shared} hover:bg-wood-700/45 ${active ? 'bg-wood-700/60' : ''}`}
       >
+        {flourish}
         {body}
       </Link>
     </li>
@@ -157,6 +182,7 @@ export function NavRail() {
   const collapsed = useShellStore((state) => state.settings.navCollapsed);
   const toggleNav = useShellStore((state) => state.toggleNav);
   const previewLevel = useShellStore((state) => state.preview.level);
+  const justUnlocked = useShellStore((state) => state.justUnlocked);
   const heroLevel = useGameStore((state) => state.save?.hero?.level);
   // The hero's real level drives the gates; the preview value only stands in before creation.
   const level = heroLevel ?? previewLevel;
@@ -227,6 +253,7 @@ export function NavRail() {
                     active={pathname === place.route}
                     collapsed={collapsed}
                     badge={place.id === 'menagerie' ? arrivals : 0}
+                    revealed={justUnlocked.includes(place.id)}
                     {...(place.id === 'board' && chestWaiting ? { dot: true } : {})}
                   />
                 ))}
