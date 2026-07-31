@@ -179,18 +179,32 @@ Two related findings worth keeping: keeper names were `text-amber-700/80` for si
 noticed. And the rarity colours were lifted a step; the *fills* are unchanged, but epic at
 `#9b5fd0` read 3.7:1 as a label.
 
-### 10.3 The debt, and who owns it
+### 10.3 The debt — closed in Phase 18, bar two readings
 
-Eleven failures remain, in two groups, budgeted per room in `e2e/a11y.spec.ts` so the count can
-only come down:
+Eleven remained at the end of Phase 17. **Two remain now, and neither has a surface behind it.**
 
-1. **Type directly on backdrop art** (Hall of Fame header over bright water; a zone card's name
-   over a painted field; the forge's selected bench under its own amber wash). No token fixes
-   these — the type needs a scrim, which is a visual-design change. **Phase 18.**
-2. **Cross-fade artifacts** (a keeper's bark, the level badge). Motion keeps opacity animations
-   under reduced motion by design, so the audit still catches these part-way in. Both are 5:1 and
-   7.9:1 at rest. **Harness limitation, not a surface defect** — the fix is for the audit to wait
-   on an animation-settled signal rather than a timeout.
+**Type on backdrop art is done.** Five places had it and all five now carry a scrim: the Hall of
+Fame header over bright water, a zone card's name over a wheat field, the forge's bench tabs on
+cold metal, and the patrol and arena eyebrow labels on blue. The rule that came out of it: *a tint
+is a mood, a scrim is for type* — `AmbientStage`'s per-room tint sets the atmosphere and does not
+make a surface, so anything with words on it needs its own.
+
+**A highlight that forces every child to flip is the wrong highlight.** The Hall's own row was
+filled amber, making the single light surface in a list of 1,501 dark ones; three of its four
+columns were given the ink half of the pair and the fourth still failed. That is the tell — the
+surface was wrong, not the text. It is a bright border on a dark fill now, like every other row.
+
+**The keeper-bark and level-badge readings were the tutorial spotlight**, not a cross-fade. Its
+`0 0 0 100vmax rgb(6 5 4 / 0.68)` shadow dims the whole page except its target, so every audited
+element outside the hole came back at 32% of its real colour — the level badge reported a stable
+**1.52:1** across a dozen runs while genuinely being amber-on-ink at 7.9:1. *A wrong number that
+repeats exactly looks like a defect;* three harness fixes went past it before the cause turned out
+to be a modal overlay the audit had walked into. The audit opts the tour out now.
+
+The two survivors are budgeted in `e2e/a11y.spec.ts` with the evidence written down: in both, the
+reported text colour belongs to the *other variant of the same component* from the one whose
+background was sampled — a pairing the DOM cannot emit, which points at the rect and the pixel
+being read at different scroll positions rather than at a colour being wrong.
 
 ### 10.4 Measuring it
 

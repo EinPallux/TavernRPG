@@ -157,7 +157,7 @@ export function ForgeBench({
                   aria-pressed={active}
                   className={`chamfer-sm flex flex-col items-center gap-1 border px-1 py-2.5 text-[10px] transition-colors ${
                     active
-                      ? 'border-amber-500/70 bg-amber-500/12 text-amber-300'
+                      ? 'bg-wood-900/80 border-amber-500/70 text-amber-300'
                       : 'border-parchment-500/12 bg-wood-900/55 text-parchment-500/72 hover:text-parchment-300 hover:border-amber-500/40'
                   }`}
                   data-testid={`forge-slot-${id}`}

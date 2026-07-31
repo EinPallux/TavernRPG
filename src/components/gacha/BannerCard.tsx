@@ -192,7 +192,7 @@ export function BannerCard({
         className="text-parchment-500/72 mt-3 text-[10px] leading-relaxed"
         data-testid="next-tease"
       >
-        Being shuffled: <span className="text-parchment-500/72">{active.next.featuring}</span>
+        Being shuffled: <span className="text-parchment-300">{active.next.featuring}</span>
       </p>
 
       <div className="mt-auto flex gap-2 pt-3">

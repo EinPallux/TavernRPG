@@ -303,8 +303,13 @@ export function ForgeScreen() {
                   role="tab"
                   aria-selected={active}
                   onClick={() => setBench(entry.id)}
-                  className={`font-display relative px-4 py-2 text-sm tracking-wide transition-colors ${
-                    active ? 'text-amber-300' : 'text-parchment-500/72 hover:text-parchment-300'
+                  // Unlike every other tab strip in the game these sit straight on the
+                  // backdrop, and the forge's is pale cold metal — the labels measured 1.6:1
+                  // against it. A chamfered fill gives them a surface of their own (§10.3).
+                  className={`font-display chamfer-sm relative px-4 py-2 text-sm tracking-wide transition-colors ${
+                    active
+                      ? 'bg-wood-900/85 text-amber-300'
+                      : 'bg-wood-900/70 text-parchment-500/72 hover:text-parchment-300'
                   }`}
                   data-testid={`bench-${entry.id}`}
                 >

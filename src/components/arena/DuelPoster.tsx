@@ -197,7 +197,7 @@ export function DuelPoster({
             </span>
           )}
           {rival && (
-            <span className="chamfer-sm border-ink-900/25 bg-ink-900/10 text-ink-900/70 border px-1.5 py-0.5 text-[0.6rem] font-bold tracking-wider uppercase">
+            <span className="chamfer-sm border-ink-900/35 bg-ink-900/10 text-ink-900 border px-1.5 py-0.5 text-[0.6rem] font-bold tracking-wider uppercase">
               Rival
             </span>
           )}

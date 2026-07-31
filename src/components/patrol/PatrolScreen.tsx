@@ -119,6 +119,13 @@ export function PatrolScreen() {
         tint="from-wood-900 via-wood-900/78 to-wood-900/50"
         effects={['lantern', 'motes']}
       >
+        {/* Both these rooms are lit blue — a guard post at dusk and an arena under open sky —
+            where every other place in Emberhollow is dark timber. The eyebrow label measured
+            3.4–3.7:1 against the water and the sky. Same scrim the Hall of Fame got (§10.3). */}
+        <div
+          aria-hidden
+          className="from-wood-900/92 via-wood-900/70 pointer-events-none absolute inset-0 bg-gradient-to-b to-transparent"
+        />
         <div className="relative h-full overflow-y-auto px-8 py-6">
           <header className="mb-5">
             <p className="font-display text-xs tracking-[0.35em] text-amber-500 uppercase">
