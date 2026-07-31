@@ -121,8 +121,37 @@ feedback, edge cases and tests. Deployed on Vercel.
   `e2e/regression.spec.ts` — thirteen steps over one save from the door to the day after.
   **Save schema unchanged at v16.**
 
-1,311 unit tests + 256 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
+**Shipped since 1.0** (no phase number; each is a self-contained slice on top of the release):
+
+- **Three save slots** — Settings → Characters, plus a remembered active slot beside the saves.
+- **The Town Map** — `data/townMap.ts` (fourteen hotspots as percentages of the painting, with a
+  census test), the `map` place, `components/map/TownMapScreen.tsx`, and `/` redirecting to it.
+  The rail keeps its job; both now read badges from `state/townSignals.ts`.
+
+1,334 unit tests + 274 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
 the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
+
+**Two ways to do the same thing means two places for a signal to go missing.** The nav rail and
+the town map are the same list of places drawn as a list and as a picture, and a player who
+navigates by one never sees a badge that only appears on the other. `state/townSignals.ts` is the
+single answer both read, and `e2e/map.spec.ts` asserts they agree rather than asserting each. This
+is the guild-bounty and forge-tile lesson for the third time: **never let a second surface hold its
+own copy of a number.** The corollary is a design constraint, not just a code one — if a feature
+puts a mark on the rail, it puts the same mark on the map, or the map is a worse way to play.
+
+**A `clip-path` clips its descendants, and no test framework will tell you.** The map's hover
+plaques were nested inside their hotspot buttons, which carry `chamfer-sm` — so every plaque was
+cut off at the edge of its own building and never rendered a visible pixel. The e2e test asserting
+one was visible **passed the entire time**: `toBeVisible` knows `display`, `visibility`, `opacity`
+and box size, and nothing about clipping; `boundingBox()` is no better. A screenshot found it.
+Anything that deliberately overhangs its parent — a tooltip, a plaque, a badge pinned outside a
+box — belongs in a *layer*, not inside the thing it describes. And when the invariant is one the
+framework cannot see, assert it directly: the spec now walks the plaque's ancestors and fails on a
+`clip-path`.
+
+**Look at the screen.** Both of the above were found by taking a screenshot and reading it, after
+the whole suite was green. A visual feature is not done when its tests pass; it is done when
+somebody has looked at it.
 
 **A guard that delays a load has to gate the render too.** The tab-lock election put 350ms in
 front of `hydrate()`, and `AppShell` kept drawing the town over a store still at `status: 'idle'` —
@@ -142,7 +171,7 @@ nothing to do. Two rules, for every presence-animated control: **key on identity
 and **read the store in the handler, not the closure**.
 
 **`immutable` is a promise about the URL, not about the bytes.** `/_next/static/*` earns it —
-content hash in the filename. `/assets/*` does not: 505 files at authored paths that
+content hash in the filename. `/assets/*` does not: 506 files at authored paths that
 `sync-assets.mjs` rewrites in place, so a year of `immutable` would pin a superseded painting in a
 returning player's browser with no URL that could reach past it. Also: never restate a header
 Next already sets. `e2e/headers.spec.ts` asserts Next's value instead of mirroring it.
@@ -366,14 +395,16 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 `gacha/` (schedule, roll, track), `pets/` (ownership, feeding, boost, eggs),
 `board/` (tasks, chest), `calendar/`, `tutorial/` (beats, hints, firstMission), `economy/`,
 `pacing/` (the §0 ladder), `reset/` (resetEngine + the one-owner audit) ·
-`src/data/` content — places, classes, itemBases, icons, zones, monsters, blurbs, barks,
+`src/data/` content — places, townMap, classes, itemBases, icons, zones, monsters, blurbs, barks,
 patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, vesnaBarks, names, guilds, guildChat,
 bounties, dungeons, gearSets, banners, pets, progress, dailyTasks, calendar, legends,
 crierTemplates, tutorial, glossary, sfx ·
 `src/state/` stores + persistence (three save slots + the remembered active one) + the shared
-clock + the audio singletons (`sfx`, `bgm`) ·
-`src/components/{ui,shell,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board,tutorial,settings}/` ·
-`src/app/(game)/<place>/` one route per place · `src/styles/motion.ts` springs.
+clock + the audio singletons (`sfx`, `bgm`) + `townSignals` (the badges the rail and the map
+both read) ·
+`src/components/{ui,shell,map,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board,tutorial,settings}/` ·
+`src/app/(game)/<place>/` one route per place, `/` redirecting to `/map` · `src/styles/motion.ts`
+springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`
 (the scene), `/dev/economy` (the faucet/sink ledger the CI sim asserts), `/dev/world` (the ladder,
 the level histogram and the Crier's output from any seed). The character screen's dev drawer

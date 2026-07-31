@@ -11,6 +11,7 @@
 import type { IconId } from './icons';
 
 export type PlaceId =
+  | 'map'
   | 'tavern'
   | 'character'
   | 'board'
@@ -27,7 +28,14 @@ export type PlaceId =
   | 'fortune'
   | 'settings';
 
-/** Rail grouping — the town has a shape, and the rail should show it. */
+/**
+ * Rail grouping — the town has a shape, and the rail should show it.
+ *
+ * `system` is the odd one out and deliberately so: those are not rooms in the fiction but
+ * interface furniture (the town map, Settings). They get a route, a gate and an icon like
+ * everywhere else, and they are excluded wherever the game asks a question about *rooms* — the
+ * rail's groups, the map's buildings, the onboarding census.
+ */
 export type PlaceGroup = 'tavern' | 'town' | 'beyond' | 'system';
 
 export interface PlaceDef {
@@ -61,6 +69,25 @@ export interface PlaceDef {
 const BG = '/assets/backgrounds';
 
 export const PLACES: readonly PlaceDef[] = [
+  {
+    /*
+     * First in the list because it is first in the town: standing outside is where you are when
+     * you are not inside anything, so `/` lands here and every other place is somewhere you went.
+     * `PlaceStage` reads this order for its walk direction, which makes leaving the map always
+     * drift the same way — inwards.
+     */
+    id: 'map',
+    name: 'Emberhollow',
+    railName: 'Town Map',
+    route: '/map',
+    icon: 'map',
+    group: 'system',
+    gateLevel: 1,
+    blurb: 'The town from above. Every door is one click away.',
+    backdrop: `${BG}/town_map_background.webp`,
+    buildPhase: 'Phase 19',
+    constructionBark: 'The cartographer has the sketch and half a bottle. Give her the morning.',
+  },
   {
     id: 'tavern',
     name: 'The Gilded Tankard',

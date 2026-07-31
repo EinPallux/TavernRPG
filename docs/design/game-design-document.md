@@ -114,6 +114,13 @@ Notice Board · Patrol post · Armory · Gilded Facet · Emberforge · Stables �
 Grounds (arena) · Hall of Fame · Guild Hall · Undertavern (dungeons) · Town Crier feed (home panel) ·
 Settings/Save.
 
+**Outside is a screen too (post-1.0).** The **Town Map** is Emberhollow painted from above with
+every building on it, and it is where the game opens — `/` lands there, because "not inside
+anything" is a place. Clicking a building walks in; the rail does the same thing as a list. Neither
+is the real one: the map is how a player learns where things are, the rail is faster once they
+know, and both draw the same badges from `state/townSignals.ts`. Locked buildings stay painted and
+carry their level, exactly as the rail keeps locked rooms visible.
+
 ## 7. Release definition
 
 **1.0 ships when:** every feature in §4 is complete *with* animation/feedback polish, the tutorial

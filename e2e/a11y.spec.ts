@@ -36,6 +36,7 @@ const SETUP_TIMEOUT = 20_000;
 
 /** Every room in Emberhollow, plus the two screens that are not rooms. */
 const PLACES = [
+  'map',
   'tavern',
   'character',
   'board',

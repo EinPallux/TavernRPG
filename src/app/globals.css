@@ -145,6 +145,25 @@
   clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
 
+/**
+ * The town map's frame: the largest 16:9 box that fits the stage, painting and doors inside it.
+ *
+ * The hotspots in `data/townMap.ts` are percentages *of the painting*, so the element holding them
+ * has to be exactly the element holding the image — which means the aspect ratio has to be honoured
+ * by shrinking the other axis, not by cropping or letterboxing inside a bigger box. That is a
+ * comparison between the stage's width and its height, and container-query units are the only way
+ * to make it in CSS. The parent sets `container-type: size`.
+ *
+ * The plain `width: 100%` above it is the fallback: a browser without container queries gets a
+ * map fitted to the width, which overflows on a short window but is still an entirely usable map.
+ * Never a zero-width frame.
+ */
+.town-map-frame {
+  width: 100%;
+  width: min(100cqw, calc(100cqh * 16 / 9));
+  aspect-ratio: 16 / 9;
+}
+
 html,
 body {
   height: 100%;

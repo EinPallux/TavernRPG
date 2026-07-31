@@ -28,11 +28,14 @@ import { simulatePacing, withinBand, TARGET_DAYS } from '@/engine/pacing/pacing'
 const ONBOARDING_LEVEL = 10;
 
 /**
- * Rooms a player has by level 10 — which, at 1.0, is nearly the town. `settings` is chrome rather
- * than a game system: it lives in the HUD, not the rail, and it is where the tour is turned off.
+ * Rooms a player has by level 10 — which, at 1.0, is nearly the town.
+ *
+ * The `system` group is chrome rather than game systems: Settings, and the town map itself. The
+ * map needs no introduction because it *is* the introduction — it is the screen the game opens
+ * on, and every room below is a building on it.
  */
 const ROOMS_BY_TEN = PLACES.filter(
-  (place) => place.gateLevel <= ONBOARDING_LEVEL && place.id !== 'settings',
+  (place) => place.gateLevel <= ONBOARDING_LEVEL && place.group !== 'system',
 );
 
 describe('every room a level-10 player has, the game introduced', () => {

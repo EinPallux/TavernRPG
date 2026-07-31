@@ -7,6 +7,35 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — the town, as a place you can stand in
+
+- **The Town Map.** Emberhollow painted from above, with all fourteen buildings clickable, and it
+  is where the game now opens — `/` lands outside rather than in the tavern, because "not inside
+  anything" is a state the game should be able to be in. Hovering a building opens a plaque naming
+  the room, what you do there and who keeps it; clicking walks in. The nav rail does exactly the
+  same job as a list, and neither is the real one: the map is how you learn the town, the rail is
+  faster once you know it.
+- **Locked buildings stay painted**, carrying a level plate — twelve of the fourteen at level 1 —
+  so the shape of the next ten levels is visible from the front door. The dimming is a feathered
+  halo rather than a grey box on each rectangle.
+- **The tour can point at a building.** A new hero lands on the map, and the beat's building wears
+  a slow amber ring, so "Marla is waiting at The Gilded Tankard" has a Gilded Tankard to point at.
+- **One source for the badges** (`state/townSignals.ts`). The rail and the map are the same list
+  drawn two ways, and a signal that appears on one and not the other is a player missing a
+  companion for a fortnight because they navigate by picture.
+- A broken room's way out now leads to the map rather than the tavern — the one screen whose job
+  is to contain every other one.
+
+### Fixed — while building it
+
+- **A `clip-path` clips its descendants.** The plaques began life inside their hotspot buttons,
+  which carry `chamfer-sm`; every one was cut off at the edge of its own building and never
+  appeared. The e2e test asserting them visible passed throughout — `toBeVisible` knows nothing
+  about clipping. Plaques are a layer now, and the test walks the ancestor chain instead
+  (style guide §7.2).
+- **Two plaques at once**, from keying the plaque on which building it described. Style guide
+  §7.1, third occasion.
+
 ### Added — three characters, reachable
 
 - **Settings → Characters.** Three save slots, which the engine has had since Phase 0 and nothing

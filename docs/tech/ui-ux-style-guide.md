@@ -34,6 +34,27 @@ never neon-gradient dashboard.
 - Nav rail = town list with icon + name + state badges (timer chips, unclaimed dots, lock
   silhouettes with level tags). Active place gets an ember-glow edge.
 
+### 2.1 Two ways to walk the town (post-1.0)
+
+The **Town Map** is the same list as the rail, drawn as the painting it describes — Emberhollow
+from above, fourteen buildings, each a door. It is the game's front door (`/` redirects to it),
+because standing outside is a state the game should be able to be in.
+
+- **Neither one is the real navigation.** The map teaches where things are; the rail is faster
+  once you know. Whichever a player prefers has to be complete on its own, which means **every
+  signal appears on both** — badges come from `state/townSignals.ts` and nothing else may hold a
+  second copy. A dot on the rail and not on the map is a player missing a companion for a
+  fortnight because they navigate by picture.
+- **Locked buildings stay painted**, carrying their level plate, for the same reason the rail
+  keeps locked rooms visible: ambition you can see beats mystery meat. The dimming is a feathered
+  radial, not a scrim on the rectangle — at level 1 twelve of the fourteen are shut, and hard-edged
+  boxes turn a painting into a spreadsheet.
+- **The hotspots are percentages of the art, so the box holding them must be the box holding the
+  art.** `.town-map-frame` sizes the largest 16:9 that fits the stage using container-query units
+  (`min(100cqw, 100cqh × 16/9)`), and the image and the buttons are both inside it. A frame that
+  letterboxes inside a larger box still renders fourteen buttons — on the grass.
+  `e2e/map.spec.ts` measures the real boxes at three window sizes rather than trusting the CSS.
+
 ## 3. Shape language (the anti-rounded-slop rules)
 
 - **Chamfers, not radii:** panels/buttons/cards use 45° corner cuts (`clip-path` token, 3 sizes:
@@ -131,6 +152,27 @@ Two rules fall out, and they apply to every presence-animated control:
 2. **A click handler reads the store, not its closure.** An element that outlives the render that
    drew it will answer for the state it was born in. `useShellStore.getState()` in the handler
    costs nothing and cannot be stale.
+
+Both have since been re-learned twice, which is why they are rules rather than anecdotes: the
+save-slot delete confirm keyed on *which slot*, and the town map's plaque keyed on *which
+building*. Same shape every time — one element that changes what it is about, keyed as though it
+were several. The map's version put two plaques on screen at once and tripped a strict-mode
+locator; the slot picker's put two "Delete for good" buttons in the DOM, the stale one first.
+
+### 7.2 A `clip-path` clips its descendants, and no test framework will tell you
+
+The town map's plaque started life inside its hotspot button, which carries `chamfer-sm` — and a
+chamfer is a `clip-path`. Every plaque was therefore cut off at the edge of the building it
+belonged to, and never appeared on screen at all. **The e2e test asserting it was visible passed
+throughout**, because `toBeVisible` knows about `display`, `visibility`, `opacity` and box size,
+and nothing whatsoever about clipping; `boundingBox()` is no better. A screenshot found it.
+
+So, for anything that deliberately overhangs its parent — tooltips, plaques, badges pinned outside
+a box: **it goes in a layer, not in the thing it describes.** The map draws one plaque as a sibling
+of all fourteen buildings, which also settles the paint order (fourteen absolutely-positioned
+siblings paint in DOM order, so an early building's plaque would have gone under a later one).
+When the invariant matters, assert it directly — `e2e/map.spec.ts` walks the plaque's ancestors and
+fails if any of them has a `clip-path`.
 
 ## 8. Components (the kit — built ours, Kenney-assisted)
 
