@@ -358,7 +358,8 @@ conjures any combination of gear, levels and gold on demand.
 - Commands: `npm run dev` / `build` / `test` / `test:e2e` / `lint` / `typecheck` / `format` /
   `verify` (typecheck → lint → test → build) / `balance` (combat harness) / `economy` (economy
   sim) / `pacing` (the §0 ladder) / `tuning` (the `[TUNE]` inventory + 90-day ledger) /
-  `perf` (Lighthouse + bundle + main-thread cost, needs a server on :3100) / `assets:sync`
+  `perf` (Lighthouse + bundle + main-thread cost, needs a server on :3100) /
+  `release` (the GDD §7 definition, line by line) / `assets:sync`
   — keep this list current as scripts appear.
 
 ## Canon quick-reference (avoid re-deciding)

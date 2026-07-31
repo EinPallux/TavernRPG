@@ -34,9 +34,9 @@ export const BEAT_IDS = [
   'real-mission',
   'the-armory',
   'notice-board',
-  'proving-grounds',
   'patrol',
   'overnight',
+  'proving-grounds',
   'ladder-alive',
 ] as const;
 
@@ -88,6 +88,14 @@ export interface BeatDef {
  *
  * Ordered as the curriculum, not as the rail. Each teaches exactly one thing and each one's
  * predicate (in `engine/tutorial/beats.ts`) is the fact that proves it was taught.
+ *
+ * **`fromLevel` must never go backwards down this list.** `activeBeat` *stops* at a beat gated
+ * above the hero — deliberately, so the curriculum cannot jump ahead — which means a level-4 beat
+ * placed in front of two level-3 ones silences the whole tour until the player levels. The arena
+ * used to sit here, ahead of Patrol and the Crier, and a level-3 player got no guidance at all
+ * between finishing the Notice Board and reaching four, with two rooms open and unmentioned.
+ * `release/onboarding.test.ts` asserts the ordering now. The teaching order is better for it
+ * anyway: work the streets, sleep, read what happened, *then* go and take somebody's rank.
  */
 export const BEATS: readonly BeatDef[] = [
   {
@@ -163,15 +171,6 @@ export const BEATS: readonly BeatDef[] = [
     fromLevel: 3,
   },
   {
-    id: 'proving-grounds',
-    kind: 'do',
-    place: 'arena',
-    spotlight: 'duel-board',
-    speaker: 'Hildy',
-    copy: 'Fifteen hundred of them out there and every one has a rank. Take one off somebody.',
-    fromLevel: 4,
-  },
-  {
     id: 'patrol',
     kind: 'do',
     place: 'patrol',
@@ -188,6 +187,15 @@ export const BEATS: readonly BeatDef[] = [
     speaker: 'Marla',
     copy: 'The town does not stop when you do. That board is what happened while you were away.',
     fromLevel: 3,
+  },
+  {
+    id: 'proving-grounds',
+    kind: 'do',
+    place: 'arena',
+    spotlight: 'duel-board',
+    speaker: 'Hildy',
+    copy: 'Fifteen hundred of them out there and every one has a rank. Take one off somebody.',
+    fromLevel: 4,
   },
   {
     id: 'ladder-alive',

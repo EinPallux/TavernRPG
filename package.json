@@ -22,7 +22,8 @@
     "economy": "vitest run src/engine/economy/economy.test.ts",
     "pacing": "vitest run src/engine/pacing/pacing.test.ts",
     "tuning": "npx tsx scripts/tuning-pass.ts",
-    "perf": "node scripts/perf-pass.mjs"
+    "perf": "node scripts/perf-pass.mjs",
+    "release": "node scripts/release-check.mjs"
   },
   "engines": {
     "node": ">=20.11"
