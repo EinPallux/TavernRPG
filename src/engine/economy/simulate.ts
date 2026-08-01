@@ -21,6 +21,7 @@ import {
   goldPerVigor,
   missionPayout,
   xpPatrolPerHour,
+  xpPerVigor,
   type MissionDuration,
 } from '@/engine/progression/rewards';
 import { applyXp, xpNeeded } from '@/engine/progression/xp';
@@ -34,17 +35,19 @@ import { guildMultipliers } from '@/engine/guilds/buffs';
 import { GOLD_CACHE_VIGOR, banner, outcomeOdds, type RollOutcome } from '@/data/banners';
 import { FEEDS_PER_DAY, SCRAPS_PER_DROP, SCRAPS_PER_FEED, SCRAP_DROP_CHANCE } from '@/data/pets';
 import { PET_MAX_LEVEL, feedGoldCost } from '@/engine/pets/feeding';
+import { TOTAL_STAGES, stageLevel } from '@/data/campaign';
+import { STAGE_VIGOR_COST, stagePayout } from '@/engine/campaign/stages';
 import { RARITIES, type Rarity } from '@/engine/items/types';
 
 /**
  * Faucets and sinks the model currently understands. Grows as systems ship.
  *
  * `sales` and `shops`/`mounts` joined in Phase 7 when the Armory, the Facet and the Stables
- * opened; `gacha` in Phase 13 with Fortune's Table; `pets` in Phase 14 with the Menagerie. Still
- * absent: guild donations and dungeon gold — each lands with its system, because a sim that
- * invents numbers for unbuilt features asserts a fiction.
+ * opened; `gacha` in Phase 13 with Fortune's Table; `pets` in Phase 14 with the Menagerie;
+ * `campaign` with the Long Road. Still absent: guild donations and dungeon gold — each lands with
+ * its system, because a sim that invents numbers for unbuilt features asserts a fiction.
  */
-export const MODELLED_FAUCETS = ['missions', 'patrol', 'sales', 'gacha'] as const;
+export const MODELLED_FAUCETS = ['missions', 'patrol', 'sales', 'gacha', 'campaign'] as const;
 export const MODELLED_SINKS = ['training', 'shops', 'mounts', 'pets'] as const;
 
 export type Faucet = (typeof MODELLED_FAUCETS)[number];
@@ -76,6 +79,8 @@ export interface DayLedger {
   readonly itemsBought: number;
   /** The focused companion's level at end of day (Phase 14). */
   readonly petLevel: number;
+  /** How far down the Long Road they have got. Monotone, and capped at `TOTAL_STAGES`. */
+  readonly stagesCleared: number;
 }
 
 /**
@@ -154,6 +159,14 @@ export interface PlayStyle {
    * *drop rate* is what the band is really measuring.
    */
   readonly feedsPets?: boolean;
+  /**
+   * Whether this player walks the Long Road as far as it will let them each day. Default true.
+   *
+   * Not a rate, for the same reason `feedsPets` is not: the pace is not the player's to choose.
+   * A stage costs one Vigor and the wall decides when the day out there is over, so what the
+   * model varies is *whether* they go, and the road's own level curve does the rest.
+   */
+  readonly walksTheRoad?: boolean;
 }
 
 export const ACTIVE_PLAYER: PlayStyle = {
@@ -204,6 +217,8 @@ export interface SimResult {
   readonly totalPointsBought: number;
   /** Where one focused companion got to (Phase 14). */
   readonly finalPetLevel: number;
+  /** How far down the Long Road they walked. */
+  readonly finalStagesCleared: number;
 }
 
 /**
@@ -244,9 +259,11 @@ export function simulateEconomy({
   let scraps = 0;
   let petLevel = 1;
 
+  // The road, which is a hundred and twenty one-time payouts and then nothing forever.
+  let stagesCleared = 0;
+
   for (let day = 1; day <= days; day += 1) {
     const vigorBudget = Math.floor(VIGOR_PER_DAY * style.vigorUsed);
-    const missionsRun = Math.floor(vigorBudget / style.duration);
 
     // A guilded player is paid more for the same day's work, everywhere it applies.
     const bonus = guildMultipliers({
@@ -255,10 +272,87 @@ export function simulateEconomy({
       drillmasterStep: style.drillmasterStep ?? 0,
     });
 
+    /*
+     * ── The Long Road, taken off the top of the day's Vigor. ──────────────────────────
+     *
+     * First, because while the road is at your level a first clear is six Vigor-equivalents for
+     * one Vigor, and a player who has noticed that walks it before they take a contract.
+     * Modelling it the other way round would flatter the mission board with Vigor the road would
+     * really have had.
+     *
+     * **Two conditions end the day out there, and both are needed.**
+     *
+     * The first is the wall: the player pushes while the next stage is levelled at or below them,
+     * and pays one more Vigor for the attempt that finds it. That is right for an ordinary stage
+     * (×0.92–1.12 budget against an on-curve hero) and optimistic at a chapter boss, which is
+     * ×1.5 and measures a wall of up to six levels in `campaign.test.ts` — the correct direction
+     * to be wrong in, since the question this faucet answers is whether the road can *out-earn*
+     * the board.
+     *
+     * The second is interest, and the first version of this model did not have it. A stage pays
+     * XP at the lower of the hero's level and the stage's, so once a player outruns the road it
+     * stops being income and becomes content — and a model that kept walking anyway spent a
+     * level-200 player's entire day on level-one stages and reported zero missions. The rule is
+     * therefore the comparison the player actually makes: **walk while a stage's XP beats what
+     * the same Vigor buys at the board.** No new number — both sides come from the shipped
+     * formulas, and the hall's buff cancels because it applies to both.
+     */
+    let roadGold = 0;
+    let roadXp = 0;
+    let roadVigor = 0;
+    if (style.walksTheRoad !== false) {
+      for (;;) {
+        const next = stagesCleared + 1;
+        if (next > TOTAL_STAGES) break;
+        if (roadVigor + STAGE_VIGOR_COST > vigorBudget) break;
+        if (stageLevel(next) > level) {
+          // The wall. The attempt that found it costs its Vigor and buys nothing.
+          roadVigor += STAGE_VIGOR_COST;
+          break;
+        }
+
+        const payout = stagePayout(next, level, bonus);
+        const atTheBoard = xpPerVigor(level, xpNeeded(level)) * bonus.xp * STAGE_VIGOR_COST;
+        if (payout.xp < atTheBoard) break;
+
+        roadGold += payout.gold;
+        roadXp += payout.xp;
+        roadVigor += STAGE_VIGOR_COST;
+        stagesCleared += 1;
+      }
+
+      if (roadXp > 0) {
+        xpTotal += roadXp;
+        const levelled = applyXp(level, xp, roadXp);
+        level = levelled.level;
+        xp = levelled.xp;
+      }
+    }
+
+    /*
+     * What the board gets is the rest of the day, and the *rest* is the operative word.
+     *
+     * Fractional, because a whole number here would manufacture waste that no player suffers: a
+     * road that costs two Vigor would drop a hundred-Vigor day from five twenty-minute contracts
+     * to four and quietly bin the other eighteen, and the sim would report that as the road
+     * costing a fifth of the mission board. A real player takes a short contract instead — the
+     * board offers ten, twenty and thirty — so the Vigor is spent either way. Payout is linear in
+     * duration (`missionPayout`), so a part contract is exactly a part payout, and this is the
+     * same convention `itemsBought` has used for shop buys since Phase 7: the ledger is a rate,
+     * not a shopping list.
+     *
+     * All three shipped styles divide exactly, so this is a no-op for every band tuned before the
+     * road existed.
+     */
+    const missionsRun = (vigorBudget - roadVigor) / style.duration;
+
     let missionGold = 0;
-    let xpEarned = 0;
-    for (let i = 0; i < missionsRun; i += 1) {
-      const payout = missionPayout(level, style.duration, xpNeeded(level), bonus);
+    let xpEarned = roadXp;
+    for (let run = 0; run < missionsRun; run += 1) {
+      // The last contract of the day may be a short one; it pays its share.
+      const share = Math.min(1, missionsRun - run);
+      const full = missionPayout(level, style.duration, xpNeeded(level), bonus);
+      const payout = { gold: Math.round(full.gold * share), xp: Math.round(full.xp * share) };
       missionGold += payout.gold;
       xpEarned += payout.xp;
       xpTotal += payout.xp;
@@ -302,7 +396,7 @@ export function simulateEconomy({
     // ── Fortune's Table. Cards that are gear get sold at the same resolution as loot. ──
     const gachaGold = Math.floor((style.gachaRollsPerDay ?? 0) * goldPerRoll(level));
 
-    purse += missionGold + patrolGold + salesGold + gachaGold;
+    purse += missionGold + patrolGold + salesGold + gachaGold + roadGold;
 
     // ── Upkeep first: the mount is a standing arrangement, not a splurge. ──
     const mount = style.mountId ? MOUNTS_BY_ID[style.mountId] : null;
@@ -359,7 +453,13 @@ export function simulateEconomy({
     ledger.push({
       day,
       level,
-      earned: { missions: missionGold, patrol: patrolGold, sales: salesGold, gacha: gachaGold },
+      earned: {
+        missions: missionGold,
+        patrol: patrolGold,
+        sales: salesGold,
+        gacha: gachaGold,
+        campaign: roadGold,
+      },
       spent: {
         training: spentOnTraining,
         shops: shopSpend,
@@ -372,6 +472,7 @@ export function simulateEconomy({
       purse,
       missionsRun,
       vigorUnspent: VIGOR_PER_DAY - vigorBudget,
+      stagesCleared,
       itemsBought: affordableBuys,
       petLevel,
     });
@@ -383,6 +484,7 @@ export function simulateEconomy({
     finalPurse: purse,
     totalPointsBought,
     finalPetLevel: petLevel,
+    finalStagesCleared: stagesCleared,
   };
 }
 

@@ -20,12 +20,15 @@
 
 | Milestone | Kind | Target | Measured | Drift |
 |---|---|---|---|---|
-| Level 10 | schedule | day 3 | **3.5** | +17% |
-| Level 25 | schedule | day 14 | **11.3** | −19% |
-| Level 55 | schedule | day 30 | **34.5** | +15% |
-| First set piece | deadline | day 30 | **7.3** | −76% (22.7d early) |
-| Full 5-piece set | deadline | day 52 | **51.5** | −1% |
-| Hall of Fame top 100 | deadline | day 75 | **44.0** | −41% (31.0d early) |
+| Level 10 | schedule | day 2–3 | **3.3** | +9% |
+| Level 25 | schedule | day 8–14 | **10.0** | in the window |
+| Level 55 | schedule | day 30 | **31.7** | +6% |
+| First set piece | deadline | by day 30 | **7.3** | 22.7d early |
+| Full 5-piece set | deadline | by day 52 | **51.5** | −1% |
+| Hall of Fame top 100 | deadline | by day 75 | **44.0** | 31.0d early |
+
+Re-measured after the Long Road landed (§17.5), which both moved the level rows and forced the
+schedule rows to be measured against §0's *window* rather than one end of it.
 
 **All six rows are inside the ±20% the ROADMAP asks for**, and `pacing.test.ts` enforces each by
 kind. Two things got them there, both recorded in §16: the full-set row was +140% until the sim
@@ -35,8 +38,9 @@ game that is generous. §0 words those as deadlines ("1–2 set pieces **by** da
 month 2–3"), so they are measured as deadlines; the days-early figure is still reported and
 asserted, because generosity is a design fact worth seeing.
 
-One row remains a known compromise rather than a fit: level 25 by day 14 cannot be hit alongside
-10-by-3 and 55-by-30 by any monotone curve (Q22). It is inside tolerance, so nothing is blocked.
+Level 25 was the row that made this necessary. It cannot be hit *at day 14* alongside 10-by-3 and
+55-by-30 by any monotone curve (Q22) — but §0 never asked for day 14. It asked for week two, and
+the game delivers on day 10, which is in it. See §17.5.
 
 Milestones are reported in **fractional days**. A day-indexed ledger rounds every milestone up to
 the end of the day it landed on, which at a three-day target is a third of the budget — enough on
@@ -531,6 +535,10 @@ ROADMAP Phase 17 asks that *all* `[TUNE]` values carry a post-tuning entry here.
 across 34 files; `npm run tuning` prints the live inventory alongside a 90-day economy run and the
 §0 ladder, so this table can be regenerated rather than trusted.
 
+> This section is the **Phase 17 pass**, and its counts are that pass's snapshot. Work shipped
+> after 1.0 records its own markers in its own section — the Long Road's eleven are §17 — so the
+> live total `npm run tuning` prints will be higher than 68. Read the sections, not the header.
+
 The verdicts are deliberately three, not two:
 
 - **changed** — the pass moved it, and says to what and why.
@@ -649,6 +657,118 @@ Every remaining marker was measured and left. Grouped by what proves them:
 2. **`TOP_100_HONOR_PER_LEVEL` is a static bar in a moving field.** Modelling the hundredth hero
    as a fixed multiple of the *player's* level is right in shape and optimistic in detail. A pass
    that wants the ladder promise measured properly should read the bar off a simulated world.
-3. **Q22's middle row.** Level 25 by day 14 cannot be hit alongside 10-by-3 and 55-by-30 with any
-   monotone curve. Nothing is out of tolerance, so nothing is blocked — but the table names a
-   target the curve can only approach, and a table like that eventually gets tuned toward.
+3. ~~**Q22's middle row.**~~ Closed by §17.5, and not by tuning: §0 promises level 25 in *week
+   two* and the row was being measured against day 14 alone. `TARGET_EARLIEST` measures a schedule
+   row against the window §0 actually wrote, and day 10 is in it. The general form is worth
+   keeping in mind — three of §0's six rows are ranges, and a range asserted against one end is a
+   band nobody wrote.
+
+## 17. The Long Road (campaign)
+
+Spec: `systems/campaign.md`. Code: `src/data/campaign.ts` (the shape of the road),
+`src/engine/campaign/stages.ts` (what a stage costs and pays), `src/engine/campaign/push.ts`
+(the loop). Measured by `campaign.test.ts` (the wall) and `economy.test.ts` (the faucet).
+
+### 17.1 The road
+
+| `[TUNE]` | Value | Held by |
+|---|---|---|
+| `STAGES_PER_CHAPTER` | 12 | Long enough to feel like a road, short enough to see the end of. Twelve stones is also one legible row at 1366×768. |
+| `CHAPTER_COUNT` | 10 (= `ZONES.length`) | One chapter per zone, in the order the road leaves town. Not a free number: it is the zone list. |
+| `CHAPTER_LEVELS` | `[1,8] [9,14] [15,20] [21,28] [29,36] [37,46] [47,58] [59,72] [73,88] [89,100]` | Written out per chapter rather than interpolated inside overlapping zone bands, which dipped at three chapter boundaries. Monotone by construction and asserted as such. |
+| `STAGE_BUDGET_FIRST` / `STAGE_BUDGET_LAST` | 0.92 → 1.12 | The second axis. The shorter chapters repeat a level across three or four steps, so budget is what makes those steps climb; below par at a chapter's opening so the stage after a boss reads as a breather. |
+| `BOSS_BUDGET` | 1.5 | The Undertavern's mid-boss weight. A wall, not a brick. |
+
+### 17.2 What a stage costs and pays
+
+| `[TUNE]` | Value | Held by |
+|---|---|---|
+| `STAGE_VIGOR_COST` | 1 | The user's brief. Everything else here is priced against it. |
+| `STAGE_VIGOR_EQUIVALENT` | 6 | Six times what one Vigor buys on the mission board — bounded by paying **once** across only 120 stages. The whole road is ~900 Vigor-equivalents, nine days of a full board, spread over the months it takes to walk. |
+| `BOSS_REWARD_MULTIPLIER` | 2 | It is the wall; it pays like one. Same shape as the dungeon's. |
+| `CHAPTER_DICE` | 1 | Earned, never bought (F2P rule 6). Ten across the whole road. |
+| `STAGE_FIGHT_DURATION` / `BOSS_FIGHT_DURATION` | 4,000 / 7,500 ms | A stage is a beat against the tavern's eight seconds, because a chain of them is the unit the player experiences. A boss gets the full length. |
+| `CHAIN_PAUSE_MS` | 420 | Breath between two auto-chained stages, so a run reads as steps rather than a blur. |
+
+**Gold is priced at the stage's level and XP at `min(hero, stage)`** — the dungeon's rule, for the
+dungeon's two reasons. Gold at the stage's level means a level-90 hero sweeping chapter I is paid
+chapter-I money, so nothing has to forbid back-filling. Capping XP means one lucky win against a
+level-40 wall at level 12 moves the bar by a share of *level 12*, not three whole levels.
+
+### 17.3 The wall, measured
+
+`campaign.test.ts` fights each chapter boss across all five classes, a hundred fights a reading,
+and reports the extra hero levels needed for an even fight:
+
+| ch | boss level | archetype | signature | wall |
+|---|---|---|---|---|
+| I | 8 | tank | swarm 0.40 | +0 |
+| II | 14 | tank | hardening 0.09 | +0 |
+| III | 20 | tank | siphon 0.05 | +0 |
+| IV | 28 | tank | swarm 0.62 | +2 |
+| V | 36 | tank | hardening 0.14 | +3 |
+| VI | 46 | tank | siphon 0.07 | +3 |
+| VII | 58 | bruiser | swarm 0.80 | +4 |
+| VIII | 72 | bruiser | hardening 0.17 | +4 |
+| IX | 88 | bruiser | swarm 0.45 | +5 |
+| X | 100 | bruiser | swarm 0.55 | +6 |
+
+**Archetype is the coarse lever and it is worth more than it looks.** At the ×1.5 boss budget the
+five archetypes spread twelve levels of difficulty — swarm 27, caster 32, skirmisher 34, bruiser
+38, tank 39 against a level-40 monster — which is more than the level curve gains across six
+floors. The signature proc is worth 2–3 levels on top. So the ten pairs above were *solved* for a
+rising wall, not chosen for flavour; picking a new chapter's archetype on vibes will put a dip in
+the middle of the road.
+
+Two bands hold it, and they measure different things on purpose. A **threshold search** gives the
+headline (`wallOf`) and is the noisiest possible reading — a rate moving five points a level turns
+a two-point sampling wobble into a whole level, which is exactly how chapters VII/VIII read +4/+4
+in the tuning pass and +5/+3 in a later run. So the *ordering* claim uses a **fixed offset**
+instead: the same hero four levels over each boss, forty fights, compared in thirds.
+
+### 17.4 The faucet
+
+`economy.test.ts`, 90 days, `ACTIVE_PLAYER`:
+
+| Reading | Value | Band |
+|---|---|---|
+| Share of income, week one | 11.1% | 5–20% — front-loaded on purpose; on day one it is the only thing a new hero can push into |
+| Share of income, days 61–90 | 2.1% | > 0 and < 5% |
+| Road gold vs mission gold, worst day | 0.06–0.40× | strictly less than the mission board, **every day** |
+| Missions still run per day | ≥ 4.9 | the road must not eat the day |
+| Stages walked by day 90 | 120 (finished day 86, level 101) | day > 60 and level > 90 — as long as the level curve, not ending in the middle of it |
+| Levels ahead of a player who never leaves town | +2 | > 0 and < +8 |
+
+**The road competes with the mission board for Vigor, and the sim models the comparison rather
+than assuming it.** A player walks a stage while its XP beats what the same Vigor buys at the
+board, and stops at the first stage above their level. Both halves are needed: the level check
+alone had a level-200 player spending a hundred Vigor on level-one stages and running *zero*
+missions, and the value check alone never stops, because XP capped at `min(hero, stage)` makes any
+too-high stage look like a 6× deal.
+
+### 17.5 What the road changed elsewhere
+
+**`§0`'s level-25 row is now measured against a window.** §0 promises level 25 in *week two*, and
+`TARGET_DAYS` collapses every range to its slow end — correct for a deadline, wrong for the early
+side of a schedule. The row had been reading −19% against day 14 and the road took it to −29%, for
+a game that delivers on day 10, which is *inside week two*. `TARGET_EARLIEST` is §0's fast end and
+`withinBand` is two-sided about the window rather than about one end of it. Not a loosening: level
+25 on day 5 still fails, which is the failure two-sidedness exists to catch.
+
+Re-measured after the road, all six rows in band:
+
+| Milestone | Kind | §0 window | Measured | Outside it |
+|---|---|---|---|---|
+| Level 10 | schedule | day 2–3 | **3.3** | +9% |
+| Level 25 | schedule | day 8–14 | **10.0** | 0% |
+| Level 55 | schedule | day 30 | **31.7** | +6% |
+| First set piece | deadline | by day 30 | **7.3** | 0% (22.7d early) |
+| Full 5-piece set | deadline | by day 52 | **51.5** | 0% |
+| Hall of Fame top 100 | deadline | by day 75 | **44.0** | 0% (31.0d early) |
+
+**The mission board's last contract of the day is now fractional in the model.** Taking Vigor off
+the top for the road dropped a hundred-Vigor day from five twenty-minute contracts to four and
+binned the other eighteen — reporting the road as costing a fifth of the mission board, which no
+player suffers because the board offers ten, twenty and thirty. Payout is linear in duration, so a
+part contract is a part payout. All three shipped styles divide exactly, so this is a no-op for
+every band tuned before the road existed.

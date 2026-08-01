@@ -31,6 +31,7 @@ import v13Phase13 from './fixtures/v13-phase13.json';
 import v14Phase14 from './fixtures/v14-phase14.json';
 import v15Phase15 from './fixtures/v15-phase15.json';
 import v16Phase16 from './fixtures/v16-phase16.json';
+import v17Campaign from './fixtures/v17-campaign.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { ownedPets } from '@/engine/pets/ownership';
@@ -45,6 +46,7 @@ import {
   DEFAULT_GACHA,
   DEFAULT_GUILD,
   DEFAULT_CALENDAR,
+  DEFAULT_CAMPAIGN,
   DEFAULT_PETS,
   DEFAULT_TASKS,
   DEFAULT_TUTORIAL,
@@ -595,6 +597,46 @@ describe('save fixtures — every shipped version still loads', () => {
     expect(tutorialComplete(result.save)).toBe(true);
   });
 
+  it('opens a Phase 16 (v16) save with its onboarding still running', () => {
+    const result = migrateSave(structuredClone(v16Phase16));
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBe(16);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    // A real Phase 16 player, mid-tour: a hero at ten who has not opted out and has not yet
+    // accepted a contract. The opt-out flag is the one thing v16→v17 must not touch, because
+    // flipping it would end somebody's tutorial as a side effect of a schema bump.
+    expect(result.save.tutorial.optedOut).toBe(false);
+    expect(result.save.hero?.name).toBe('Sigrun Emberhand');
+    expect(result.save.hero?.level).toBe(10);
+    expect(result.save.activity.missionsCompleted).toBe(0);
+    expect(result.save.tasks.drawnFor).toBe('2026-07-31');
+  });
+
+  it('gives a Phase 16 player an empty road rather than the stages their level implies', () => {
+    const result = migrateSave(structuredClone(v16Phase16));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    /*
+     * Empty, and this is the migration where "empty rather than generous" has real teeth. This
+     * hero is level 10; the first two chapters are levelled 1 to 14, so handing them the stages
+     * their level clears would be the *kind* thing to do. It would also pay out a dozen
+     * first-clear rewards for fights nobody had, and spend a dozen of the hundred and twenty
+     * one-time payouts a hero ever gets. They walk it themselves, quickly.
+     */
+    expect(result.save.campaign).toEqual(DEFAULT_CAMPAIGN);
+    expect(result.save.campaign.stagesCleared).toBe(0);
+    expect(result.save.campaign.finishedAt).toBeNull();
+    // And nothing else moved.
+    expect(result.save.hero?.classId).toBe('warrior');
+    expect(result.save.world?.bots.length).toBe(BOT_COUNT);
+    expect(result.save.activity.vigor).toBe(100);
+  });
+
   it('gives a save with no hero the real tutorial', () => {
     // A v1 walking-skeleton save has never had a hero, so it has not started — and the whole
     // point of the opt-out is that it is for people who *have*.
@@ -642,6 +684,7 @@ describe('the fixture set itself', () => {
     { version: 14, save: v14Phase14 },
     { version: 15, save: v15Phase15 },
     { version: 16, save: v16Phase16 },
+    { version: 17, save: v17Campaign },
   ];
 
   it('has one fixture per shipped schema version, with no gaps', () => {
@@ -724,29 +767,53 @@ describe('the fixture set itself', () => {
   });
 });
 
-describe('a real v16 save', () => {
+describe('a real v17 save', () => {
   it('opens with nothing to migrate', () => {
-    const result = migrateSave(structuredClone(v16Phase16));
+    const result = migrateSave(structuredClone(v17Campaign));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
     expect(result.migratedFrom).toBeNull();
-    expect(result.save.schemaVersion).toBe(16);
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
   });
 
   it('is a played save rather than a hand-written one', () => {
     /*
      * A synthesised fixture only proves the schema accepts what its author expected. This one was
-     * captured out of a browser after creating a hero, levelling to ten, conjuring gear and
-     * walking the town, so it carries the shapes a real save carries — including the 1,500-hero
-     * world, which is the part most likely to break a future migration.
+     * captured out of a browser after creating a hero, levelling to ten, conjuring and wearing
+     * gear, walking the town and then walking the Long Road until the wall stopped it — so it
+     * carries the shapes a real save carries, including the 1,500-hero world, which is the part
+     * most likely to break a future migration.
      */
-    const result = migrateSave(structuredClone(v16Phase16));
+    const result = migrateSave(structuredClone(v17Campaign));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
     expect(result.save.hero?.level).toBeGreaterThanOrEqual(10);
     expect(result.save.world?.bots.length).toBe(BOT_COUNT);
     expect(Object.values(result.save.hero!.equipment).filter(Boolean).length).toBeGreaterThan(0);
+  });
+
+  it('was stopped by a wall, not by a script', () => {
+    /*
+     * The part of this fixture that no earlier one could carry. The capture pressed "Push on"
+     * once and let the chain run: it cleared seven stages, lost the eighth at 85% of the
+     * monster's health, and paid one Vigor for each of the eight. A hand-written campaign slice
+     * would almost certainly have had `attempts === stagesCleared`, which is the one shape the
+     * road can never actually be in once somebody has hit their wall.
+     */
+    const result = migrateSave(structuredClone(v17Campaign));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const road = result.save.campaign;
+    expect(road.stagesCleared).toBe(7);
+    expect(road.attempts).toBe(road.stagesCleared + 1);
+    expect(road.bestAttempt).toBeGreaterThan(0.5);
+    expect(road.finishedAt).toBeNull();
+    // One Vigor a stage, win or lose — eight attempts out of a full day.
+    expect(result.save.activity.vigor).toBe(100 - road.attempts);
+    // And the credit went through the one path, in the units the road counts in: new ground.
+    expect(result.save.tasks.lifetime['campaignStages']).toBe(road.stagesCleared);
   });
 });

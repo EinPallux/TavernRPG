@@ -223,13 +223,27 @@ test.describe('after the tour', () => {
   test('announces a room the moment a level opens it', async ({ page }) => {
     await createHero(page, { skip: true });
 
-    // Level 1 → 4 opens six rooms; every one of them gets a toast and a lit rail row.
+    /*
+     * Every room the climb opens gets a toast and a lit rail row — asserted as that property
+     * rather than as a count.
+     *
+     * It read `toHaveCount(6)` until the Long Road shipped a seventh room gated inside 1→4, and
+     * a number in a test is a number somebody has to remember to change. The set of rooms a climb
+     * opens is on the page already (`data-locked` before and after), so the test can work it out.
+     */
+    const unlocked = () =>
+      page.$$eval('[data-locked="false"][data-testid^="nav-"]', (nodes) =>
+        nodes.map((node) => node.getAttribute('data-testid')!),
+      );
+
     await page.evaluate(async () => {
       const handle = (window as unknown as { __tavernStore: StoreHandle }).__tavernStore;
       const { save } = handle.getState();
       handle.setState({ save: { ...save!, hero: { ...save!.hero!, level: 1 } } });
     });
     await page.waitForTimeout(300);
+    const before = await unlocked();
+
     await page.evaluate(() => {
       const handle = (window as unknown as { __tavernStore: StoreHandle }).__tavernStore;
       const { save } = handle.getState();
@@ -239,7 +253,14 @@ test.describe('after the tour', () => {
     // The stack shows the three most recent, so the *last* room the climb opened is the one on
     // screen — the Armory's toast is real but has already been pushed under three others.
     await expect(page.getByText('Now open: Hall of Fame')).toBeVisible({ timeout: SETUP_TIMEOUT });
-    await expect(page.locator('[data-revealed="true"]')).toHaveCount(6);
+
+    const opened = (await unlocked()).filter((id) => !before.includes(id));
+    expect(opened.length, 'the 1→4 climb should open several rooms').toBeGreaterThan(3);
+    for (const id of opened) {
+      await expect(page.getByTestId(id!), id!).toHaveAttribute('data-revealed', 'true');
+    }
+    // ...and nothing the player already had is lit as new.
+    await expect(page.locator('[data-revealed="true"]')).toHaveCount(opened.length);
   });
 });
 

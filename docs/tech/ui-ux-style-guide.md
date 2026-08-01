@@ -37,7 +37,8 @@ never neon-gradient dashboard.
 ### 2.1 Two ways to walk the town (post-1.0)
 
 The **Town Map** is the same list as the rail, drawn as the painting it describes — Emberhollow
-from above, fourteen buildings, each a door. It is the game's front door (`/` redirects to it),
+from above: fourteen buildings, each a door, and the road out through the gate. It is the game's
+front door (`/` redirects to it),
 because standing outside is a state the game should be able to be in.
 
 - **Neither one is the real navigation.** The map teaches where things are; the rail is faster
@@ -169,8 +170,8 @@ and nothing whatsoever about clipping; `boundingBox()` is no better. A screensho
 
 So, for anything that deliberately overhangs its parent — tooltips, plaques, badges pinned outside
 a box: **it goes in a layer, not in the thing it describes.** The map draws one plaque as a sibling
-of all fourteen buildings, which also settles the paint order (fourteen absolutely-positioned
-siblings paint in DOM order, so an early building's plaque would have gone under a later one).
+of every hotspot, which also settles the paint order (absolutely-positioned siblings paint in DOM
+order, so an early building's plaque would have gone under a later one).
 When the invariant matters, assert it directly — `e2e/map.spec.ts` walks the plaque's ancestors and
 fails if any of them has a `clip-path`.
 

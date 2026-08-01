@@ -35,7 +35,7 @@ import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 z.config({ jitless: true });
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 16;
+export const CURRENT_SCHEMA_VERSION = 17;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -869,6 +869,36 @@ export const DEFAULT_TUTORIAL: Tutorial = {
   dismissedHints: [],
 };
 
+/* ── The Long Road (schema v17) ───────────────────────────────────────────────────── */
+
+export const campaignSchema = z.object({
+  /**
+   * How far down the road they have got. One number, not a set of cleared stages: you cannot
+   * clear stage 5 without clearing 4, so a set could only ever hold `1..n` — a number in a
+   * costume. The chapter, the step and what is next are all derived from this.
+   */
+  stagesCleared: z.number().int().min(0),
+  /**
+   * Best share of the wall stage's health taken off, 0–1, reset the moment the wall falls.
+   *
+   * The only thing a loss leaves behind. Between two gear upgrades it is the only progress a
+   * stuck player has to look at, and it belongs to the wall alone — a bar that counted practice
+   * wins on old stages would be a lie in the shape of encouragement.
+   */
+  bestAttempt: z.number().min(0).max(1),
+  /** Monotonic. What makes the next attempt at a wall a genuinely different fight. */
+  attempts: z.number().int().min(0),
+  /** When the last stage fell. Null until it does. */
+  finishedAt: timestampSchema.nullable(),
+});
+
+export const DEFAULT_CAMPAIGN: Campaign = {
+  stagesCleared: 0,
+  bestAttempt: 0,
+  attempts: 0,
+  finishedAt: null,
+};
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -903,6 +933,8 @@ export const saveFileSchema = z.object({
   calendar: calendarSchema,
   /** Onboarding (schema v16). */
   tutorial: tutorialSchema,
+  /** The Long Road (schema v17). */
+  campaign: campaignSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -913,6 +945,7 @@ export type Forge = z.infer<typeof forgeSchema>;
 export type Gacha = z.infer<typeof gachaSchema>;
 export type Pets = z.infer<typeof petsSchema>;
 export type Tasks = z.infer<typeof tasksSchema>;
+export type Campaign = z.infer<typeof campaignSchema>;
 export type Calendar = z.infer<typeof calendarSchema>;
 export type Tutorial = z.infer<typeof tutorialSchema>;
 export type StoredProgressTally = z.infer<typeof progressTallySchema>;
@@ -970,6 +1003,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     tasks: { ...DEFAULT_TASKS },
     calendar: { ...DEFAULT_CALENDAR },
     tutorial: { ...DEFAULT_TUTORIAL },
+    campaign: { ...DEFAULT_CAMPAIGN },
   };
 }
 

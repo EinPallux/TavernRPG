@@ -2,7 +2,8 @@
  * Emberhollow from above — where every building sits on the painted map.
  *
  * The town map is a single painting with fourteen buildings on it, each carrying a nameplate the
- * artist put there. This module is the only place that says *where* those buildings are, as
+ * artist put there — plus the road out through the gate, which is the fifteenth hotspot and the
+ * only one that is not a roof. This module is the only place that says *where* they are, as
  * percentages of the painting rather than pixels, so the map can be drawn at any size and the
  * doors stay on the doors.
  *
@@ -67,6 +68,12 @@ export const TOWN_HOTSPOTS: readonly MapHotspot[] = [
   { place: 'board', rect: [32.5, 64, 39.5, 73], plaque: 'above' },
   { place: 'undertavern', rect: [73.5, 65, 86, 79], signpost: 'Dungeon Entrance', plaque: 'above' },
   { place: 'patrol', rect: [43, 69, 58, 88], plaque: 'above' },
+  /*
+   * The one hotspot that is not a building: the road running out through the gate, at the very
+   * bottom of the painting. The Long Road is the only place in the game that is *not in the town*,
+   * so it gets the strip of road leading out of it rather than a roof.
+   */
+  { place: 'campaign', rect: [42, 88.5, 59, 99], signpost: 'The road out', plaque: 'above' },
 ] as const;
 
 /** Places that are rooms on the map rather than interface furniture (the map itself, Settings). */

@@ -472,12 +472,19 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
 - *Tooltips of our own.* `components/ui/Tooltip.tsx` + `state/tooltipStore.ts` — one element at
   shell level, opening on hover *and* focus, and every native `title` in the game converted to it.
   `tooltips.test.ts` reads the source so a twenty-seventh cannot arrive quietly. Style guide §8.1.
-- *The Town Map.* Emberhollow painted from above with all fourteen buildings clickable, and the
+- *The Town Map.* Emberhollow painted from above with every building clickable, and the
   screen the game opens on — `/` redirects to `/map`, because standing outside is a place. The rail
   stays, does the same job as a list, and reads its badges from the same `state/townSignals.ts`;
   neither way of getting around is the real one. Hotspots are data (`data/townMap.ts`) with a
   census test, and `e2e/map.spec.ts` measures the real boxes at three window sizes because the fit
   is CSS, not arithmetic. Style guide §2.1, §7.2.
+- *The Long Road.* A campaign: 120 fixed stages in ten chapters out of the gate, 1 Vigor a stage,
+  auto-chained from one press until a loss, an empty tankard, the end of the road or Stop. A first
+  clear pays once; everything after it is practice. `systems/campaign.md`, balancing §17, save
+  schema **v17**. Its two acceptance measurements were the wall curve (`campaign.test.ts` fights
+  every chapter boss across all five classes and fails on a dip) and the faucet share
+  (`economy.test.ts`: never more than the mission board on any day). It also closed Q22 — a §0
+  schedule row stated as a range is now measured against the range, not against one end of it.
 
 1. **The Collector's Album** — S&F-scrapbook-style collection of items/monsters with % XP bonus.
 2. **Guild Wars & Raid Bosses** — scheduled guild-vs-guild battles + co-op PvE chains (sim ready).

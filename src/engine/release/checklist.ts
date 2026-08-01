@@ -199,6 +199,20 @@ export const RELEASE_CHECKLIST: readonly FeatureEvidence[] = [
     ceremony: 'The torch-lit descent between floors, and the floor-10 ceremony at the bottom.',
   },
   {
+    feature: 'The Long Road',
+    spec: 'docs/design/systems/campaign.md',
+    engine: [
+      'src/engine/campaign/push.ts',
+      'src/engine/campaign/stages.ts',
+      'src/data/campaign.ts',
+    ],
+    screens: ['src/components/campaign/CampaignScreen.tsx'],
+    unit: ['src/engine/campaign/campaign.test.ts', 'src/state/campaignActions.test.ts'],
+    e2e: ['e2e/campaign.spec.ts'],
+    ceremony:
+      'One press and the road runs itself: stage after stage, each a full battle scene, until the wall stops the chain and says so.',
+  },
+  {
     feature: 'World simulation',
     spec: 'docs/design/systems/world-simulation.md',
     engine: [

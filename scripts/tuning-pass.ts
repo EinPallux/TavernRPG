@@ -31,9 +31,11 @@ import {
   MILESTONES,
   MILESTONE_KIND,
   TARGET_DAYS,
+  TARGET_EARLIEST,
   drift,
   earlyBy,
   simulatePacing,
+  windowDrift,
   withinBand,
 } from '../src/engine/pacing/pacing';
 import { CLASSES } from '../src/data/classes';
@@ -133,18 +135,28 @@ function main(): void {
   const pacing = simulatePacing();
   for (const milestone of MILESTONES) {
     const day = pacing.reached[milestone];
-    const target = TARGET_DAYS[milestone];
+    const earliest = TARGET_EARLIEST[milestone];
+    const latest = TARGET_DAYS[milestone];
+    /*
+     * Two numbers, because §0 states half its rows as ranges and they mean different things.
+     * `drift` is distance from the *promise* — the fact worth reporting either way. `windowDrift`
+     * is distance from the **window**, which is what the band actually judges, and is zero for a
+     * row that landed inside it. Printing only the first read "−28.5%" for level 25 on a game
+     * delivering it four days into the week §0 promised.
+     */
     const off = drift(pacing, milestone);
+    const outside = windowDrift(pacing, milestone);
     const early = earlyBy(pacing, milestone);
-    // ±20% is the ROADMAP's acceptance band, applied one-sided to the deadline rows. An early
-    // arrival is still printed — generosity is a design fact, it is just not a regression.
     const note = day === null ? ' ✖ never' : withinBand(pacing, milestone) ? '' : ' ⚠ outside band';
     const ahead = early === null ? '' : `  (${early.toFixed(1)}d early)`;
+    const window = earliest === latest ? `${latest}` : `${earliest}–${latest}`;
     console.log(
       `    ${milestone.padEnd(16)} ${MILESTONE_KIND[milestone].padEnd(8)}` +
         ` day ${day === null ? '  —  ' : day.toFixed(1).padStart(5)}` +
-        `  target ${String(target).padStart(3)}` +
-        `  drift ${off === null ? '   —  ' : `${(off * 100).toFixed(1).padStart(6)}%`}${note}${ahead}`,
+        `  §0 ${window.padStart(6)}` +
+        `  drift ${off === null ? '   —  ' : `${(off * 100).toFixed(1).padStart(6)}%`}` +
+        `  outside ${outside === null ? '   —  ' : `${(outside * 100).toFixed(1).padStart(6)}%`}` +
+        `${note}${ahead}`,
     );
   }
 

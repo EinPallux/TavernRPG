@@ -28,6 +28,7 @@ import {
   totalSpent,
 } from './simulate';
 import { PET_MAX_LEVEL } from '@/data/pets';
+import { TOTAL_STAGES } from '@/data/campaign';
 import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
 import { mount as mountDef } from '@/data/mounts';
 import { goldPerVigor } from '@/engine/progression/rewards';
@@ -399,6 +400,93 @@ describe('the Menagerie is a habit, not a bill — Phase 14', () => {
     // Not feeding leaves you slightly richer, and therefore slightly better trained. Slightly.
     expect(skipped.totalPointsBought).toBeGreaterThanOrEqual(run.totalPointsBought);
     expect(skipped.finalLevel).toBe(run.finalLevel);
+  });
+});
+
+describe('the Long Road is a head start, not an income', () => {
+  const run = simulateEconomy({ days: 90 });
+  const roadless = simulateEconomy({ days: 90, style: { ...ACTIVE_PLAYER, walksTheRoad: false } });
+  const roadGold = (days: typeof run.ledger) =>
+    days.reduce((sum, day) => sum + day.earned.campaign, 0);
+
+  it('never out-earns the mission board, on any day of the run', () => {
+    /*
+     * The band the whole faucet exists for. One Vigor a stage against ten to thirty for a
+     * contract makes a first clear six times the rate — and if that were the *whole* story the
+     * mission board would be a worse version of the road and the Gilded Tankard would be
+     * decoration. What stops it is that the road pays once and is only a hundred and twenty
+     * stages long, so its income is bounded no matter how well it is played.
+     */
+    for (const day of run.ledger) {
+      expect(day.earned.campaign, `day ${day.day}`).toBeLessThan(day.earned.missions);
+    }
+  });
+
+  it('is a tenth of the first week and a twentieth of the third month', () => {
+    const share = (days: typeof run.ledger) => roadGold(days) / totalEarned(days);
+
+    // Front-loaded on purpose: on day one it is the only thing a new hero can push into.
+    expect(share(run.ledger.slice(0, 7))).toBeGreaterThan(0.05);
+    expect(share(run.ledger.slice(0, 7))).toBeLessThan(0.2);
+    // Still there at three months, and still small. It never becomes the game.
+    expect(share(run.ledger.slice(60))).toBeGreaterThan(0);
+    expect(share(run.ledger.slice(60))).toBeLessThan(0.05);
+  });
+
+  it('never eats the day — the mission board keeps its Vigor', () => {
+    /*
+     * A stage pays XP at the lower of the hero's level and the stage's, so a hero far up the
+     * curve gets nothing from chapter one. The first version of this model did not know that and
+     * spent a high-level player's entire hundred Vigor on level-one stages, reporting zero
+     * missions — which is not a balance finding, it is a model that had never been asked what a
+     * player would actually do.
+     */
+    for (const day of run.ledger) {
+      expect(day.missionsRun, `day ${day.day}`).toBeGreaterThan(4);
+    }
+  });
+
+  it('runs out — a hundred and twenty stages and not one more', () => {
+    expect(run.finalStagesCleared).toBe(TOTAL_STAGES);
+    // Monotone: a cleared stage is cleared forever.
+    for (let index = 1; index < run.ledger.length; index += 1) {
+      expect(run.ledger[index]!.stagesCleared).toBeGreaterThanOrEqual(
+        run.ledger[index - 1]!.stagesCleared,
+      );
+    }
+    // And once it is walked it is over: no further income, ever.
+    const finished = run.ledger.findIndex((day) => day.stagesCleared === TOTAL_STAGES);
+    expect(finished).toBeGreaterThan(0);
+    for (const day of run.ledger.slice(finished + 1)) {
+      expect(day.earned.campaign, `day ${day.day}`).toBe(0);
+    }
+  });
+
+  it('is as long as the level curve, rather than ending in the middle of it', () => {
+    /*
+     * A content length check, and the one number that would be embarrassing to get wrong in
+     * either direction. The last chapter is levelled 89–100; a player who finishes the road at
+     * level 40 was given a road too short to matter, and one who is level 100 with thirty stages
+     * left has a road that outlived its own rewards.
+     *
+     * Three months of daily play, ending within a few levels of the cap, is the shape §0 asks
+     * for — and it falls out of the chapter table rather than being arranged.
+     */
+    const finished = run.ledger.find((day) => day.stagesCleared === TOTAL_STAGES)!;
+    expect(finished.day).toBeGreaterThan(60);
+    expect(finished.level).toBeGreaterThan(90);
+  });
+
+  it('is worth walking — a level or two ahead, not a different game', () => {
+    expect(run.finalLevel).toBeGreaterThan(roadless.finalLevel);
+    expect(run.finalLevel).toBeLessThan(roadless.finalLevel + 8);
+  });
+
+  it('leaves a player who never leaves town exactly where they were', () => {
+    // The same guard the guild lever and the Menagerie carry: every band tuned before the road
+    // existed was tuned against this player, and the gate has to stay optional.
+    expect(roadless.finalStagesCleared).toBe(0);
+    expect(roadless.ledger.every((day) => day.earned.campaign === 0)).toBe(true);
   });
 });
 

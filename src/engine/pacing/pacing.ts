@@ -58,6 +58,33 @@ export const TARGET_DAYS: Readonly<Record<Milestone, number>> = {
 };
 
 /**
+ * `[TUNE]` The **fast** end of each §0 row, for the rows §0 states as a range.
+ *
+ * `TARGET_DAYS` is the promise, and a promise is a latest date — which is the only end a deadline
+ * has. A *schedule* row is two-sided, though, and half of §0's rows are written as ranges: "Day
+ * 2–3", "~Week 2", "Day 45–60". Measuring the early side of a range against its slow end asserts
+ * something §0 does not say. Level 25 is the row where that bites: §0 promises it in **week two**,
+ * the game delivers it on day 10, and against a collapsed day-14 target that read as a 29% miss
+ * for arriving four days into the week it was promised in.
+ *
+ * This is not a widened band — it is the band §0 actually wrote. Level 25 on day 5 still fails
+ * (8 × 0.8 = day 6.4 is the floor), which is the failure the two-sidedness exists to catch: a
+ * content gate opening before the player has any reason to want it.
+ *
+ * Rows §0 gives as a single day repeat it here, so every row has both ends and none of them is a
+ * special case. This is the same lesson as `MILESTONE_KIND`, one step further in: a semantic that
+ * lives only in a comment gets rewritten by whoever is in a hurry.
+ */
+export const TARGET_EARLIEST: Readonly<Record<Milestone, number>> = {
+  'level-10': 2, // §0: "Day 2–3"
+  'level-25': 8, // §0: "~Week 2" — the week starts on day 8
+  'level-55': 30, // §0: "~Day 30"
+  'first-set-piece': 30, // deadline; the early side is never checked
+  'full-set': 45, // §0: "Day 45–60"
+  'top-100': 75, // deadline
+};
+
+/**
  * What kind of promise each row is — and the distinction is not a technicality.
  *
  * A **schedule** row is a content gate: level 55 arriving on day 5 is as much a failure as it
@@ -293,12 +320,35 @@ export function drift(result: PacingResult, milestone: Milestone): number | null
  * Is this row inside the ±20% the ROADMAP asks for?
  *
  * A milestone never reached fails whatever kind it is — that is the one answer no promise
- * survives. Otherwise a schedule is two-sided and a deadline only penalises lateness.
+ * survives. Otherwise a deadline only penalises lateness, and a schedule is two-sided about §0's
+ * **window**: late of `TARGET_DAYS` or early of `TARGET_EARLIEST`, each by more than the band.
  */
 export function withinBand(result: PacingResult, milestone: Milestone, band = 0.2): boolean {
-  const off = drift(result, milestone);
-  if (off === null) return false;
-  return MILESTONE_KIND[milestone] === 'deadline' ? off <= band : Math.abs(off) <= band;
+  const reached = result.reached[milestone];
+  if (reached === null) return false;
+
+  if (reached > TARGET_DAYS[milestone] * (1 + band)) return false;
+  if (MILESTONE_KIND[milestone] === 'deadline') return true;
+  return reached >= TARGET_EARLIEST[milestone] * (1 - band);
+}
+
+/**
+ * How far outside §0's window a row landed, as a share. Zero when it is inside it.
+ *
+ * Positive is later than the promise, negative is earlier than the range starts. `drift` answers
+ * "how far off the promised date", which is the right question for a report; this answers "is
+ * this a miss, and by how much", which is the right question for a band.
+ */
+export function windowDrift(result: PacingResult, milestone: Milestone): number | null {
+  const reached = result.reached[milestone];
+  if (reached === null) return null;
+
+  const latest = TARGET_DAYS[milestone];
+  if (reached > latest) return (reached - latest) / latest;
+  if (MILESTONE_KIND[milestone] === 'deadline') return 0;
+
+  const earliest = TARGET_EARLIEST[milestone];
+  return reached < earliest ? (reached - earliest) / earliest : 0;
 }
 
 /** Days ahead of the promise, for a row that beat it. Null when it did not, or never landed. */
