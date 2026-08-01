@@ -15,6 +15,8 @@ import { CLASSES } from '@/data/classes';
 import { ARCHETYPES, type ArchetypeId } from '@/data/monsterArchetypes';
 import { buildMonsterCombatant, buildReferenceCombatant } from '@/engine/combat/combatant';
 import { fight } from '@/engine/combat/fight';
+import type { Combatant } from '@/engine/combat/types';
+import { NO_MODIFIERS } from '@/engine/items/sets';
 import { analyseBattle } from '@/engine/combat/analysis';
 import { generateItem } from '@/engine/items/generate';
 import { createRng } from '@/engine/rng';
@@ -48,6 +50,8 @@ export default function BattleDevPage() {
   const [backdrop, setBackdrop] = useState<string>(BACKDROPS[0]);
   /** Forces a fresh mount so entrances replay from the top. */
   const [take, setTake] = useState(0);
+  /** Boss signature + hardening on the foe, set bonuses on the hero. */
+  const [dressed, setDressed] = useState(false);
 
   /**
    * Local, not persisted. This page sits outside the game shell so it has no save to write
@@ -56,9 +60,9 @@ export default function BattleDevPage() {
   const [speed, setSpeed] = useState<PlaybackSpeed>(1);
 
   const { result, analysis, lootDrop, opponentName } = useMemo(() => {
-    const hero = buildReferenceCombatant(heroClass, level, heroClass);
+    const plainHero = buildReferenceCombatant(heroClass, level, heroClass);
     const archetype = ARCHETYPES.find((a) => a.id === opponent.id);
-    const foe =
+    const plainFoe =
       opponent.kind === 'class'
         ? buildReferenceCombatant(opponent.id, level, `${opponent.id}-foe`)
         : buildMonsterCombatant({
@@ -67,6 +71,29 @@ export default function BattleDevPage() {
             archetypeId: opponent.id,
             level,
           });
+
+    /*
+     * The dressed-up fight: a boss opposite, a five-piece hero.
+     *
+     * Off by default because the ordinary case is what needs judging most often — but three
+     * things the scene draws have no other way of appearing on this page, and two of them were
+     * *invisible in the shipped game* until the VFX pass because nothing ever rendered them:
+     * `harden` (Vulkarr's plating, in the log since Phase 11) and `set_proc` (eight effects, in
+     * the log since Phase 12). A harness that cannot show a feature is how a feature stays broken.
+     */
+    const hero: Combatant = dressed
+      ? { ...plainHero, modifiers: { ...NO_MODIFIERS, lifesteal: 0.12, counter: 0.35 } }
+      : plainHero;
+    const foe: Combatant = dressed
+      ? {
+          ...plainFoe,
+          signature: {
+            label: 'Slag Hide',
+            explainer: 'Vulkarr cools into his own armour — every round he is harder to hurt.',
+          },
+          procs: [...plainFoe.procs, { kind: 'hardening', perRound: 0.04, cap: 0.45 }],
+        }
+      : plainFoe;
 
     const battle = fight(hero, foe, seed);
     return {
@@ -81,7 +108,7 @@ export default function BattleDevPage() {
       }),
       opponentName: foe.name,
     };
-  }, [heroClass, opponent, level, seed]);
+  }, [heroClass, opponent, level, seed, dressed]);
 
   const runtime = useMemo(() => {
     const timeline = buildTimeline(result.log, DEFAULT_CHOREO);
@@ -213,6 +240,17 @@ export default function BattleDevPage() {
                   data-testid="scene-restage"
                 >
                   Re-stage
+                </ActionButton>
+                <ActionButton
+                  size="sm"
+                  variant={dressed ? 'primary' : 'secondary'}
+                  onClick={() => {
+                    setDressed((value) => !value);
+                    setTake((value) => value + 1);
+                  }}
+                  data-testid="scene-dressed"
+                >
+                  Boss + sets
                 </ActionButton>
               </div>
             </div>

@@ -84,8 +84,63 @@ total overruns:
   become unreadable. Measured across every class × archetype × level band: median 4.8s, p99 8.0s,
   worst case 8.7s (a 22-round, 101-event outlier — 0.2% of fights).
 
-The timeline is a pure function of `(log, choreo)`, so all of this is unit-tested without
+The timeline is a pure function of `(log, choreo, ranged)`, so all of this is unit-tested without
 rendering anything (`src/components/battle/timeline.test.ts`).
+
+### 4.1 Schools of arms (the VFX pass)
+
+Step 2 above has asked for "slash arc / **magic flare per class**" since Phase 4, and what shipped
+was two sprite lists: one for a hit, one for a crit. A Mage's bolt and a Tank's shoulder-charge
+were the same twelve orange specks.
+
+A **school** is the whole visual grammar of one fighter's offence — what gathers before the blow,
+what crosses the gap, what happens where it lands, and in what colour. There are ten in
+`src/data/combatVfx.ts`, keyed on `CombatantCard.kind`, which is every value that field can hold:
+the five class names and the five archetype names. `combatVfx.test.ts` derives both lists from
+their own modules, so a sixth class cannot ship unpainted.
+
+| | Melee | Ranged |
+|---|---|---|
+| **Classes** | Warrior · steel · Bard · song · Swashbuckler · blades | Mage · arcane (teal) · Hunter · arrow (moss) |
+| **Monsters** | Bruiser · beast · Skirmisher · venom · Tank · stone · Swarm · chitin | Caster · hex (blood) |
+
+- **Melee lunges, ranged throws.** A school that does not close the distance braces, gathers its
+  cast, and sends something across the gap that arrives exactly as the beat ends — the frame the
+  `damage` event fires on. A cast gets `castWindUp` rather than `attackWindUp` (300ms against 100),
+  because at the melee wind-up the bolt existed for about six frames.
+- **The player's magic is teal; the monsters' is red.** A Mage's bolt and a Caster's hex are the
+  same shape crossing the same gap, and at ×4 the colour is the only thing telling you which way
+  the damage is going. Asserted in `combatVfx.test.ts`.
+- **A school is a look, never a number.** `fight()` does not import `combatVfx.ts` and cannot. No
+  amount of re-painting can change who wins.
+
+Everything else the pass added is a reaction the log already described and nothing ever drew:
+
+| Moment | What the player sees now |
+|---|---|
+| A blow lands | White flash on the struck fighter, and a shove away from it scaled by the damage |
+| Block | Sparks off the shield, plus the plate |
+| Dodge | A sidestep with an afterimage left behind (spec §4 step 2's "ghost-trail sidestep") |
+| Crit | A warm bloom from the stage edges, rising and falling with the swing that `critHold` holds for |
+| `set_proc` | The set's name, in that effect's colour, beside the fighter (gear-sets §3) |
+| `harden` | Plating on the boss's portrait, thickening every round (dungeons §2) |
+
+The last two had been in the log since Phase 12 and Phase 11 and had **beats on the timeline the
+whole time** — `beatDuration` gave them a moment and `frameAt` had no case for them, so a
+five-piece capstone firing was a pause and Vulkarr's armour grew invisibly.
+
+**Reduced motion keeps the meaning and drops the violence.** The particle layer drops out whole —
+no bursts, no bolt, no trail (Phase 4 behaviour, asserted in `e2e/battle.spec.ts`) — and with it go
+the flash, the knockback and the shake. What survives is everything that *carries information*: a
+set bonus keeps its full label life, because reading it is the entire point, and a caster keeps
+their **stance**, bracing and releasing on `castLead` where a melee school lunges. That stance is
+the last thing distinguishing a Mage's attack from a Warrior's once the sparks are gone.
+
+**A canvas is invisible to `toBeVisible`.** `e2e/battle.spec.ts` reads the pixels instead: a strip
+down the middle of the gap, where nothing belongs but a projectile. The Mage measures 436 lit
+pixels in teal, the Caster 459 in red, the Hunter's thinner arrow ~100 in moss — and **two melee
+schools measure zero**, which is the control that makes the other three a claim rather than a
+coincidence.
 
 ## 5. Where fights trigger
 

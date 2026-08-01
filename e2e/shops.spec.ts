@@ -118,6 +118,9 @@ test.describe('the shelf', () => {
     await gotoShop(page, 'armory');
     const before = await page.getByTestId('shop-shelf').innerText();
 
+    // Opening a shop *stores* the day's shelf — that is what makes a refresh not a free reroll —
+    // so this reload is reading back a write like the two below it.
+    await flush(page);
     await page.reload();
     await expect(page.getByTestId('place-armory')).toBeVisible({ timeout: SETUP_TIMEOUT });
 
@@ -174,6 +177,10 @@ test.describe('buying', () => {
     await page.getByTestId('buy-2').click();
     await expect(page.getByTestId('stock-sold-2')).toBeVisible();
 
+    // Flushed, and this one is not theoretical: it failed once in a full-suite run and passed on
+    // its own, which is the exact signature of "the test reloaded before the autosave landed".
+    // `stock-sold-2` being visible proves the *store* took the purchase, never that the disk did.
+    await flush(page);
     await page.reload();
     await expect(page.getByTestId('place-armory')).toBeVisible({ timeout: SETUP_TIMEOUT });
     await expect(page.getByTestId('stock-sold-2')).toBeVisible();
@@ -385,6 +392,7 @@ test.describe('the stables', () => {
     await page.getByTestId('rent-courser').click();
     await expect(page.getByTestId('stall-courser')).toHaveAttribute('data-active', 'true');
 
+    await flush(page);
     await page.reload();
     await expect(page.getByTestId('place-stables')).toBeVisible({ timeout: SETUP_TIMEOUT });
     await expect(page.getByTestId('stall-courser')).toHaveAttribute('data-active', 'true');

@@ -48,6 +48,45 @@ export interface BattleChoreo {
   /** Screen shake magnitude, px, for a hit worth ≥15% of max health. */
   readonly shakeMagnitude: number;
   readonly shakeDuration: number;
+
+  /* ── The VFX pass ─────────────────────────────────────────────────────────────
+   *
+   * Five windows, all measured in timeline milliseconds rather than as shares of a beat — which
+   * is the important choice. A beat compresses when the fight is long (`PACE_FLOOR`), and a flash
+   * that compressed with it would vanish in exactly the twenty-round fight where the player most
+   * needs to see which blows landed. Playback speed still scales them, because it scales the
+   * clock itself, and that is the one place they *should* move.
+   */
+
+  /**
+   * Anticipation for a fighter who throws rather than swings.
+   *
+   * Longer than `attackWindUp` and it has to be. A sword swing is one motion; a cast is gather,
+   * release, *travel*, land — and the travel has to be long enough to see. At the melee wind-up
+   * the bolt existed for about a hundred milliseconds, which is six frames of a thing crossing
+   * eight hundred pixels: technically drawn, and a smear in practice.
+   *
+   * This is the one place the choreography knows a fighter's *stance*, and it stops there: the
+   * timeline takes a boolean per side, never a school. Which fighters throw is content
+   * (`data/combatVfx.ts`); how long a throw takes is choreography, and this is the file for it.
+   */
+  readonly castWindUp: number;
+  /**
+   * How much of a ranged attack beat is spent gathering before the bolt leaves.
+   *
+   * A share rather than a duration, because this one genuinely belongs to its beat: the cast and
+   * the flight are two halves of one swing and have to add up to it, or the bolt lands after the
+   * damage number.
+   */
+  readonly castLead: number;
+  /** White impact flash on the struck fighter. */
+  readonly impactFlash: number;
+  /** Knockback: how long the shove takes to settle. */
+  readonly recoilBeat: number;
+  /** Knockback distance in px for a hit worth the whole `SHAKE_THRESHOLD`. */
+  readonly recoilDistance: number;
+  /** How long a set bonus keeps its name on screen (gear-sets spec §3). */
+  readonly procLabelLife: number;
 }
 
 export const DEFAULT_CHOREO: BattleChoreo = {
@@ -69,6 +108,12 @@ export const DEFAULT_CHOREO: BattleChoreo = {
   finishBeat: 420,
   shakeMagnitude: 4,
   shakeDuration: 140,
+  castWindUp: 300,
+  castLead: 0.42,
+  impactFlash: 150,
+  recoilBeat: 260,
+  recoilDistance: 16,
+  procLabelLife: 700,
 };
 
 /**
@@ -128,6 +173,23 @@ export const REDUCED_CHOREO: BattleChoreo = {
   finishBeat: 250,
   shakeMagnitude: 0,
   shakeDuration: 0,
+  /*
+   * The cast keeps its *shape* under reduced motion, even though nothing flies.
+   *
+   * `ParticleLayer` drops out whole here — that has been the behaviour since Phase 4 and
+   * `e2e/battle.spec.ts` asserts it — so there is no bolt, no trail and no burst. What survives is
+   * the **stance**: `BattleFighter` reads `castLead` to brace a caster back while the power
+   * gathers and snap them forward on the release, where a melee school lunges. Shortened, but
+   * kept, because it is the only thing left that distinguishes a Mage's attack from a Warrior's,
+   * and reduced motion is a request for less movement rather than for less information.
+   */
+  castWindUp: 220,
+  castLead: 0.42,
+  impactFlash: 0,
+  recoilBeat: 0,
+  recoilDistance: 0,
+  // Kept in full: a set bonus firing is a *label*, and reading it is the entire point.
+  procLabelLife: 700,
 };
 
 export const SPEED_OPTIONS = [1, 2, 4] as const;

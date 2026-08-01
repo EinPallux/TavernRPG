@@ -43,6 +43,11 @@ export const SFX_IDS = [
   'block',
   'dodge',
   'miss',
+  // Two the VFX pass needed. A ranged school gathers and releases where a melee one simply
+  // swings, and a set bonus firing is a *moment* — both were previously silent, and reusing a
+  // near-enough cue is how `useBattleSfx` earned its "two vocabularies, one checked bridge" note.
+  'cast',
+  'proc',
   'ko',
   'victory',
   'defeat',
@@ -244,6 +249,37 @@ const SFX_LIST = [
     layers: [
       { wave: 'noise', from: 0, to: 0, duration: 0.05, attack: 0.001, gain: 0.6, filter: 3400 },
       { wave: 'sine', from: 1500, to: 1300, duration: 0.3, attack: 0.002, gain: 0.45 },
+    ],
+  },
+  {
+    // A spell leaving the hand: a filtered swell that rises and thins, so it reads as *release*
+    // rather than as another impact. Quieter than a hit — the hit is still coming.
+    id: 'cast',
+    category: 'combat',
+    gain: 0.2,
+    layers: [
+      { wave: 'sine', from: 220, to: 880, duration: 0.26, attack: 0.06, gain: 0.5 },
+      { wave: 'triangle', from: 660, to: 1760, duration: 0.22, attack: 0.04, gain: 0.28 },
+      { wave: 'noise', from: 0, to: 0, duration: 0.18, attack: 0.05, gain: 0.22, filter: 2600 },
+    ],
+  },
+  {
+    // A set bonus firing: a two-note chime, bright and short. Distinct from `crit` on purpose —
+    // one is your weapon connecting, the other is your *gear* doing something on its own.
+    id: 'proc',
+    category: 'combat',
+    gain: 0.22,
+    layers: [
+      { wave: 'triangle', from: 1320, to: 1320, duration: 0.16, attack: 0.004, gain: 0.5 },
+      {
+        wave: 'triangle',
+        from: 1980,
+        to: 1980,
+        duration: 0.26,
+        attack: 0.004,
+        delay: 0.07,
+        gain: 0.4,
+      },
     ],
   },
   {

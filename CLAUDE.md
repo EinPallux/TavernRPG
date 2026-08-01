@@ -161,6 +161,15 @@ feedback, edge cases and tests. Deployed on Vercel.
   the live multiplier while it lasts. It also closed a Phase-5 bug: `MissionCard` had been quoting
   `missionPayout` *without* the bonus it was going to be paid with. Balancing §19.
 
+- **Schools of arms** — the combat VFX pass. `data/combatVfx.ts` gives each of the ten
+  `CombatantCard.kind` values a school (palette, cast, travel, impact, crit); ranged schools brace
+  and throw something that crosses the stage and lands on the damage frame, melee schools lunge.
+  `ParticleLayer` knows nothing and is handed everything, tinting each (sprite, colour) pair once
+  into a cached offscreen canvas. Fighters flash and recoil, dodges sidestep with an afterimage,
+  crits bloom. It also lit up two features that had been **invisible in the shipped game**:
+  `set_proc` (eight effects, Phase 12) and `harden` (Phase 11) both had beats on the timeline and
+  no case in `frameAt`. Combat spec §4.1, style guide §7.3.
+
 1,473 unit tests + 298 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
 the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
 
@@ -172,6 +181,44 @@ it did not stop the second occasion, because the second occasion was *older code
 So: when a lesson lands, grep for the shape rather than only fixing the instance. Anything that
 overhangs its parent goes in a layer — `useHoverCard` now, beside `useTooltip`, sharing one owner
 so a tooltip and a card can never both be open.
+
+**A beat on the timeline is not a picture on the screen.** `set_proc` and `harden` were both
+emitted by the resolver, both given a duration by `beatDuration`, and both absent from `frameAt`'s
+switch — so eight gear-set effects and a boss's growing armour occupied *time* in every fight and
+drew nothing at all for a phase and two phases respectively. Nothing failed: the fight ran the
+right length, the log was correct, the tests passed. When you add an event, the checklist is three
+boxes and the third is the one that rots — the resolver emits it, the timeline times it, **and the
+frame says what it looks like.** A pause where a feature should be is the quietest bug this
+codebase produces.
+
+**A canvas is invisible to every assertion in the suite.** `toBeVisible` on a `<canvas>` is true
+whether it is painting a fireball or nothing; this is the `clip-path` lesson wearing a different
+hat. `e2e/battle.spec.ts` reads pixels — a strip down the middle of the gap where nothing belongs
+but a projectile — and the assertion that makes it mean anything is the **melee control**, which
+must measure zero. A test that only checks the interesting case cannot tell a bolt from a backdrop.
+
+**One number, written down twice, is wrong at every value but one.** The particle layer put the
+fighters at 0.3/0.7 and the damage numbers at 0.28/0.72; the fighter row is `max-w-5xl` centred in
+a full-bleed stage, so the real answer is 0.26/0.74 at 1440px and 0.36/0.64 at 2560px. Two guesses,
+disagreeing with each other and with the layout. Measure the thing (`useStageAnchors`, on mount and
+resize) and let everyone read the measurement — the town-map badge lesson again, from the geometry
+side.
+
+**A flake that passes alone is a race, and the race is usually the autosave.** One shop test
+failed in a full run and passed on its own; it clicked Buy and reloaded without flushing, in a file
+that already had the `flush` helper and already used it twice elsewhere. The tell is that the
+assertion before the reload proves the *store* took the change and says nothing about the disk. Two
+notes for next time: re-run the failing spec alone before believing anything about it, and when it
+turns out to be this, **grep for the shape** — `page.reload()` with no `flush` above it — rather
+than fixing the one that happened to lose the race today. (28 reloads currently have no flush
+nearby; most are legitimate, because they write IndexedDB directly or mutate nothing. The three in
+`shops.spec.ts` were not.)
+
+**Screenshot anything you float over the stage, twice.** The set-proc label took three attempts:
+across the fighter's face, then across their name, then finally outboard in clear backdrop. The
+column above a portrait is the busiest strip in the game and every collision in it is invisible to
+the whole test suite. This is the third slice running where a screenshot found something green
+tests could not.
 
 **One hover, two tooltips — because `pointerenter` fires on ancestors.** A glossary `Term` is a
 word inside a sentence, and that sentence often sits on something with a tooltip of its own. Enter

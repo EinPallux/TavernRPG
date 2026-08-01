@@ -7,6 +7,53 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — schools of arms
+
+- **Every fighter's blows look like their own now.** `data/combatVfx.ts` gives each of the ten
+  `kind` values — five classes, five archetypes — a **school**: what gathers before the blow, what
+  crosses the gap, what happens where it lands, and in what colour. Combat spec §4 has asked for
+  "magic flare per class" since Phase 4 and what shipped was two sprite lists, so a Mage's bolt and
+  a Tank's shoulder-charge were the same twelve orange specks.
+- **Spells and arrows cross the stage.** A school that does not close the distance braces, gathers
+  its cast, and sends something over the gap that lands on the exact frame the damage does. A cast
+  gets its own wind-up (300ms against a swing's 100) because at the melee timing the bolt existed
+  for six frames.
+- **The player's magic is teal and the monsters' is red** — deliberate, and asserted. Two bolts of
+  the same shape crossing the same gap, and at ×4 the colour is the only thing that says which way
+  the damage is going.
+- **A blow now moves the fighter it lands on**: a white flash and a shove away from the impact,
+  scaled by how much it took off them and capped so an execute cannot throw a portrait out of its
+  column. Before this, twenty rounds could pass with nothing moving but the numbers.
+- **The dodge sidesteps and leaves an afterimage**, and the block flashes the shield — both written
+  into spec §4 in Phase 4, both previously just a word on a plate.
+- **A crit blooms.** `critHold` has paused the fight on a critical hit since Phase 4 with nothing
+  on screen marking the pause, so the extra 140ms read as a dropped frame rather than as emphasis.
+- Two new sound cues, `cast` and `proc`, for two moments that were silent. Reusing a near-enough
+  cue is the mistake `useBattleSfx` already carries a note about.
+- `/dev/battle` gained a **Boss + sets** toggle, because two of the features below had no way of
+  appearing on the harness — and a harness that cannot show a feature is how a feature stays
+  broken.
+
+### Fixed — two features that were invisible in the shipped game
+
+- **Set bonuses drew nothing.** `set_proc` has been in the battle log since Phase 12 and has had a
+  *beat on the timeline* since Phase 12 — `beatDuration` gave it a moment and `frameAt` had no case
+  for it. All eight effects occupied time and rendered nothing, so a five-piece capstone firing was
+  a 220ms pause. They are named flourishes in the effect's own colour now, beside the fighter they
+  fired for, exactly as gear-sets §3 has always described.
+- **Hardening drew nothing.** Same shape, one phase older: `harden` reached the frame in Phase 11
+  and no component ever read it, so Vulkarr cooling into his own armour was a fight that silently
+  got harder. It is plating on the portrait now, and it thickens.
+- **The damage numbers and the particles disagreed about where the fighters were standing** — 28%
+  and 72% in one file, 30% and 70% in another, both hard-coded and both wrong at any width where
+  the fighter row's `max-w-5xl` cap bites. Every burst on a wide monitor bloomed in open air beside
+  the fighter it belonged to. Both read measured anchors now.
+- **Three shop e2e tests reloaded before their write reached disk.** One of them flaked in a
+  full-suite run and passed alone, which is the signature exactly: `stock-sold-2` being visible
+  proves the *store* took the purchase, never that IndexedDB did. The file already had the `flush`
+  helper and already used it twice — "anything that mutates then navigates must flush" is a
+  CLAUDE.md rule, and these three were the ones that had not been told.
+
 ### Added — the greenhorn's due
 
 - **Emberhollow pays a new hero over the odds.** ×1.6 on contract gold and XP at level 1, sliding

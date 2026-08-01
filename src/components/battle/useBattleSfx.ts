@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useRef } from 'react';
+import type { Side } from '@/engine/combat/types';
 import type { BattleFrame } from './timeline';
 import type { SfxId } from '@/data/sfx';
 import { play } from '@/state/sfx';
@@ -37,8 +38,22 @@ const REACTION_CUES = {
   missed: 'miss',
 } as const satisfies Record<ReactionKind, SfxId>;
 
-export function useBattleSfx(frame: BattleFrame, finished: boolean): void {
+export function useBattleSfx(
+  frame: BattleFrame,
+  finished: boolean,
+  /**
+   * Which sides throw rather than swing.
+   *
+   * The hook needs this and nothing else about the schools: `cast` is a magical swell and playing
+   * it on a Warrior's shoulder-charge would be the "two vocabularies" bug again, from the audio
+   * side. Defaults to nobody, so a caller that has not thought about it stays quiet rather than
+   * wrong.
+   */
+  ranged: Readonly<Record<Side, boolean>> = { a: false, b: false },
+): void {
   const heardImpacts = useRef(new Set<string>());
+  const heardProcs = useRef(new Set<string>());
+  const lastCast = useRef<string | null>(null);
   const lastReaction = useRef<string | null>(null);
   const lastKo = useRef<string | null>(null);
   const announced = useRef(false);
@@ -60,10 +75,40 @@ export function useBattleSfx(frame: BattleFrame, finished: boolean): void {
       return;
     }
 
+    /*
+     * Only `hit` bursts are a hit.
+     *
+     * The VFX pass gave blocks, dodges, mends and set procs their own bursts on the same list,
+     * and firing the impact cue for all of them would have played a sword-on-flesh thud for a
+     * shield turning a blow aside — while the *reaction* cue below played the correct one, half a
+     * frame apart. A single `kind` check keeps one occasion to one sound.
+     */
     for (const impact of frame.impacts) {
+      if (impact.kind !== 'hit') continue;
       if (heardImpacts.current.has(impact.id)) continue;
       heardImpacts.current.add(impact.id);
       play(impact.crit ? 'crit' : 'hit');
+    }
+
+    // Gear doing something on its own — distinct from your weapon connecting.
+    for (const proc of frame.procs) {
+      if (heardProcs.current.has(proc.id)) continue;
+      heardProcs.current.add(proc.id);
+      play('proc');
+    }
+
+    /*
+     * A spell leaving the hand, once per swing.
+     *
+     * Keyed on the *beat* rather than on the side, because two consecutive casts by the same
+     * fighter are two casts — and `lunging` is present on every frame of a swing, so anything
+     * less exact fires sixty times. `beatIndex` changes when the swing does.
+     */
+    const casting = frame.lunging && ranged[frame.lunging.side] ? frame.lunging : null;
+    const cast = casting ? `${frame.beatIndex}:${casting.side}` : null;
+    if (cast !== lastCast.current) {
+      lastCast.current = cast;
+      if (casting) play('cast');
     }
 
     const reaction = frame.reaction ? `${frame.reaction.side}:${frame.reaction.kind}` : null;
@@ -76,5 +121,5 @@ export function useBattleSfx(frame: BattleFrame, finished: boolean): void {
       lastKo.current = frame.knockedOut;
       if (frame.knockedOut) play('ko');
     }
-  }, [frame, finished]);
+  }, [frame, finished, ranged]);
 }

@@ -14,12 +14,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
 import type { BattleEvent } from '@/engine/combat/types';
-import { choreoFor, type PlaybackSpeed } from './battleChoreo';
-import { buildTimeline, frameAt, type BattleFrame, type Timeline } from './timeline';
+import { choreoFor, type BattleChoreo, type PlaybackSpeed } from './battleChoreo';
+import {
+  buildTimeline,
+  frameAt,
+  type BattleFrame,
+  type RangedSides,
+  type Timeline,
+} from './timeline';
 
 export interface BattlePlayback {
   readonly frame: BattleFrame;
   readonly timeline: Timeline;
+  /**
+   * The timings this playback is running on — already resolved against reduced motion.
+   *
+   * Exposed so the scene and the particle layer read `castLead` from the same place the timeline
+   * did. A cast whose gather ended at one number while its bolt left on another would show the
+   * fighter snapping forward before the projectile existed, and nothing but an eye would catch it.
+   */
+  readonly choreo: BattleChoreo;
   readonly speed: PlaybackSpeed;
   readonly isPlaying: boolean;
   readonly isFinished: boolean;
@@ -46,6 +60,13 @@ export interface UseBattlePlaybackOptions {
    * eighteen rounds into eight seconds does not make a fast fight, it makes an unreadable one.
    */
   readonly targetDuration?: number;
+  /**
+   * Which sides throw rather than swing.
+   *
+   * Reaches the timeline so a cast gets `castWindUp` instead of `attackWindUp` — the bolt has to
+   * be in the air long enough to be a bolt. Resolved by the scene from each fighter's school.
+   */
+  readonly ranged?: RangedSides;
 }
 
 interface PlaybackState {
@@ -75,12 +96,17 @@ export function useBattlePlayback({
   startFinished = false,
   onFinished,
   targetDuration,
+  ranged,
 }: UseBattlePlaybackOptions): BattlePlayback {
   const reducedMotion = useReducedMotion();
   const choreo = useMemo(() => choreoFor(Boolean(reducedMotion)), [reducedMotion]);
   const timeline = useMemo(
-    () => buildTimeline(log, choreo, targetDuration === undefined ? {} : { targetDuration }),
-    [log, choreo, targetDuration],
+    () =>
+      buildTimeline(log, choreo, {
+        ...(targetDuration === undefined ? {} : { targetDuration }),
+        ...(ranged === undefined ? {} : { ranged }),
+      }),
+    [log, choreo, targetDuration, ranged],
   );
 
   const [state, setState] = useState<PlaybackState>(() =>
@@ -157,6 +183,7 @@ export function useBattlePlayback({
   return {
     frame,
     timeline,
+    choreo,
     speed,
     isPlaying,
     isFinished,
