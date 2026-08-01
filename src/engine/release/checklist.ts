@@ -213,6 +213,20 @@ export const RELEASE_CHECKLIST: readonly FeatureEvidence[] = [
       'One press and the road runs itself: stage after stage, each a full battle scene, until the wall stops the chain and says so.',
   },
   {
+    feature: "The Collector's Album",
+    spec: 'docs/design/systems/album.md',
+    engine: ['src/engine/album/album.ts', 'src/data/album.ts', 'src/state/albumActions.ts'],
+    screens: ['src/components/album/AlbumScreen.tsx'],
+    unit: [
+      'src/engine/album/album.test.ts',
+      'src/data/album.test.ts',
+      'src/state/albumActions.test.ts',
+    ],
+    e2e: ['e2e/album.spec.ts'],
+    ceremony:
+      'The page-completion seal on the result screen: a laurel stamping down over the foe that finished the page, and the permanent 1% it just bought.',
+  },
+  {
     feature: 'World simulation',
     spec: 'docs/design/systems/world-simulation.md',
     engine: [

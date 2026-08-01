@@ -324,6 +324,30 @@ export const MIGRATIONS: readonly Migration[] = [
       return { ...data, activity: { ...activity, vigorSpentToday: 0 } };
     },
   },
+  {
+    from: 18,
+    to: 19,
+    describe: 'The Album: a bestiary of every foe beaten',
+    migrate: (data) => {
+      /*
+       * Empty, and the empty is the decision — for the third time, and by now it is a house rule.
+       *
+       * A returning level-60 player has demonstrably beaten most of Whispering Woods, and the
+       * save half-knows it: `activity.zoneMissions` says they have won 200 contracts in five
+       * zones. It is tempting to back-fill from that, and every version of the temptation is
+       * wrong. The counter says *how many* fights in a zone, never *which* monsters — so any
+       * reconstruction is a guess, and a guess would hand out page bonuses for entries the player
+       * never met and, worse, mark those entries as seen so they can never be found.
+       *
+       * The Long Road refused to grant stages nobody fought and the day's work refused to pay for
+       * Vigor it never counted; this refuses to fill a book nobody wrote. What a returning player
+       * gets instead is the best version of arriving at a collection system with a strong
+       * character: every zone below their level is now a fast, cheap, satisfying sweep, and the
+       * first evening of it fills half the book.
+       */
+      return { ...data, album: { foes: [] } };
+    },
+  },
 ];
 
 export type MigrationFailure =

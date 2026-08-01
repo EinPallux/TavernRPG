@@ -32,6 +32,7 @@ import { AmbientStage } from '@/components/ui/AmbientStage';
 import { Term } from '@/components/ui/Term';
 import { ItemSlot } from '@/components/items/ItemSlot';
 import { Icon } from '@/components/icons';
+import { AlbumScreen } from '@/components/album/AlbumScreen';
 import { AttributePanel } from './AttributePanel';
 import { DevItemDrawer } from './DevItemDrawer';
 import { SetCollections } from './SetCollections';
@@ -72,11 +73,12 @@ function StatLine({
   );
 }
 
-type Tab = 'gear' | 'sets';
+type Tab = 'gear' | 'sets' | 'album';
 
 const TABS: readonly { readonly id: Tab; readonly label: string }[] = [
   { id: 'gear', label: 'Gear & training' },
   { id: 'sets', label: 'Set collections' },
+  { id: 'album', label: "Collector's Album" },
 ];
 
 export function CharacterScreen({ hero }: { hero: Hero }) {
@@ -157,6 +159,10 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
         <div
           className="border-parchment-500/12 mx-auto mb-4 flex max-w-[2000px] gap-1 border-b"
           role="tablist"
+          // Named because the Album tab renders a tablist of its own inside this one's panel, and
+          // two unlabelled tablists on a page are indistinguishable to a screen reader — and to
+          // any test that asks for one by role (CLAUDE.md).
+          aria-label="Character sections"
           data-testid="character-tabs"
         >
           {TABS.map((entry) => {
@@ -187,7 +193,18 @@ export function CharacterScreen({ hero }: { hero: Hero }) {
         </div>
 
         <AnimatePresence mode="wait">
-          {tab === 'sets' ? (
+          {tab === 'album' ? (
+            <motion.div
+              key="album"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={standard}
+              className="mx-auto max-w-[2000px]"
+            >
+              <AlbumScreen foes={save?.album.foes ?? []} />
+            </motion.div>
+          ) : tab === 'sets' ? (
             <motion.div
               key="sets"
               initial={{ opacity: 0, y: 8 }}

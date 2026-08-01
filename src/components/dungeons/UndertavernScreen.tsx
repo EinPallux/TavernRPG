@@ -281,7 +281,7 @@ function FloorFight({
   onSpeedChange: (speed: PlaybackSpeed) => void;
   onDone: () => void;
 }) {
-  const { outcome, items, leveledTo } = result;
+  const { outcome, items, leveledTo, album } = result;
   const analysis = useMemo(() => analyseBattle(outcome.battle.log, 'a'), [outcome.battle.log]);
 
   const opponent = outcome.battle.log.find((event) => event.t === 'battle_start');
@@ -317,6 +317,7 @@ function FloorFight({
             heroName={heroName}
             opponentName={opponentName}
             {...(rewards ? { rewards } : {})}
+            album={album}
             onContinue={onDone}
             continueLabel={outcome.won ? 'Back to the stair' : 'Back up'}
           />

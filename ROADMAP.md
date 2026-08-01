@@ -520,17 +520,30 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
   pixels of teal, a Caster 459 of red, and two melee schools read **zero**. It also found and fixed
   two features that had been invisible in the shipped game since Phase 11 and Phase 12: `harden`
   and all eight `set_proc` effects had beats on the timeline and no case in `frameAt`.
+- _The Collector's Album._ The scrapbook, and the first post-1.0 item off this very list. Thirteen
+  pages over 126 foes — a zone's mission roster or a dungeon's ten floors — filled by **beating**
+  things rather than seeing them, because a bestiary of what you ran away from is a list rather
+  than a record. A finished page pays a permanent +1% on gold *and* experience and the full book
+  +18%, folded once in `payoutBonus` so it reaches every payout together. `systems/album.md`,
+  balancing §20, save schema **v19** — the rare deliberate exception to "don't store what the save
+  can already answer", because `zoneMissions` counts attempts per zone and nothing anywhere carries
+  monster identity. What it buys the game is a third axis on a contract: until now a zone was
+  scenery, and ten level-banded zones' worth of monsters were discarded the week you outlevelled
+  them. Its acceptance measurements were the **fill pace**, modelled rather than assumed — exactly
+  for the road, and by coupon collector (`n·H(n)` ≈ 29 wins, not 10) for the board — and an **A/B**
+  against a player whose book stays shut, banded at 1.02–1.20× over ninety days. Modelling it
+  surfaced a latch in the sim's road model that had a guilded player abandoning the Long Road at
+  stage 2 and never returning.
 
-1. **The Collector's Album** — S&F-scrapbook-style collection of items/monsters with % XP bonus.
-2. **Guild Wars & Raid Bosses** — scheduled guild-vs-guild battles + co-op PvE chains (sim ready).
-3. **Seasonal Events** — 2-week themed events (new banners, event currency shop, decorated tavern).
-4. **The Witch's Hut** — potions (attribute %, S&F-style), gear enchanting, respec service.
-5. **Legendary tier + Legendary Dungeon** — above-Set chase for veterans.
-6. **Pet Habitats & Pet Duels** — expand Menagerie toward S&F's metagame, right-sized.
-7. **3rd gear set per class** (named in `gear-sets.md`), new dungeons (4–6), zone expansion.
-8. **6th class** (community-teased via Town Crier lore first).
-9. **Cloud saves/accounts** (revisits Q1), mobile layout, i18n (German first — Q12).
-10. **Achievements v2, Patrol events, arena scouting, buyback tab, hero appearance/gender
+1. **Guild Wars & Raid Bosses** — scheduled guild-vs-guild battles + co-op PvE chains (sim ready).
+2. **Seasonal Events** — 2-week themed events (new banners, event currency shop, decorated tavern).
+3. **The Witch's Hut** — potions (attribute %, S&F-style), gear enchanting, respec service.
+4. **Legendary tier + Legendary Dungeon** — above-Set chase for veterans.
+5. **Pet Habitats & Pet Duels** — expand Menagerie toward S&F's metagame, right-sized.
+6. **3rd gear set per class** (named in `gear-sets.md`), new dungeons (4–6), zone expansion.
+7. **6th class** (community-teased via Town Crier lore first).
+8. **Cloud saves/accounts** (revisits Q1), mobile layout, i18n (German first — Q12).
+9. **Achievements v2, Patrol events, arena scouting, buyback tab, hero appearance/gender
     variants (Q20)** — QoL wave.
 
 ## Working agreements

@@ -7,6 +7,45 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — the Collector's Album
+
+- **A bestiary you fill by beating things.** Thirteen pages, 126 entries: one page per zone (its
+  mission roster) and one per dungeon (its ten floors). A finished page pays a permanent **+1% on
+  gold and experience**, and finishing all thirteen pays another 5% — **+18%** for a complete book.
+  Spec: `docs/design/systems/album.md`; numbers: balancing §20.
+- **It gives the zone on a contract a reason to matter.** Until now a contract was picked on
+  duration and payout and the zone was scenery — which meant a game with 96 monsters across ten
+  level-banded zones threw almost all of them away the week you outlevelled them. Eight of ten
+  Woods entries is a reason to take a level-3 contract at level 40.
+- **Recorded from all three places a monster can be beaten** — a contract, a dungeon floor, a stage
+  of the Long Road — through the single `state/albumActions.ts#recordVictory`, with an audit that
+  reads the source and fails if a fourth writer appears or one of the three stops calling.
+- **A new page on the character screen**, beside Gear & training and Set collections: thirteen
+  pages down the left, one page's foes on the right, each tinted by the school its archetype fights
+  in. It opens on the first *unfinished* page rather than page one.
+- **The moment.** A new entry gets a quiet line on the result screen; the entry that *finishes a
+  page* gets an amber band and a laurel seal stamping down, naming the permanent 1% it just bought.
+  A feature that pays a permanent raise quietly is a feature nobody knows they have.
+- **Save schema v19** — `album: { foes: string[] }`, with a migration that back-fills nothing.
+  `zoneMissions` knows how many fights happened in a zone and never which monsters were in them, so
+  there is nothing honest to reconstruct from. Fixture `v19-album.json` captured out of a browser:
+  eight finished pages, one part-filled, four untouched.
+- Modelled in the economy sim rather than assumed: exactly for the road (a stage's monster is
+  known) and by **coupon collector** for the mission board (`n·H(n)` ≈ 29 wins for a ten-monster
+  zone, not ten). The A/B against a player whose book stays shut is a 1.02–1.20× band over 90 days.
+
+### Fixed — the economy sim abandoned the Long Road on a knife edge
+
+- The road model walked while the *next* stage beat the mission board and stopped the moment it
+  lost — but the road is **contiguous**, so stopping is permanent: the wall never moves and the
+  hero's board rate only climbs. A guilded player, one level ahead on day two, failed the test at
+  stage 2 by three XP and never walked another step in ninety days, while the unguilded one walked
+  all hundred and twenty. It compared against the average over the rest of the chapter now, which
+  is the comparison a player makes when they can see the whole chapter's levels on screen.
+- The gear-share economy floor came down from 2% to 1.5% — a property of the band, not the Armory:
+  `shopBuysPerWeek` is a fixed count while training takes a share of what survives, so any feature
+  that adds income raises the denominator and leaves the numerator alone.
+
 ### Added — schools of arms
 
 - **Every fighter's blows look like their own now.** `data/combatVfx.ts` gives each of the ten

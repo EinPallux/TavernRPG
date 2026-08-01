@@ -28,6 +28,7 @@ import {
   totalSpent,
 } from './simulate';
 import { PET_MAX_LEVEL } from '@/data/pets';
+import { ALBUM_PAGES, ALBUM_PAGE_BONUS } from '@/data/album';
 import { TOTAL_STAGES } from '@/data/campaign';
 import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
 import { mount as mountDef } from '@/data/mounts';
@@ -166,7 +167,21 @@ describe('shops and stables — Phase 7 sinks', () => {
     const onUpkeep = shopper.ledger.reduce((sum, day) => sum + day.spent.mounts, 0);
     const total = totalSpent(shopper.ledger);
 
-    expect(onGear / total).toBeGreaterThan(0.02);
+    /*
+     * The gear floor came down from 2% to 1.5% with the Collector's Album (balancing §20), and
+     * the reason is a property of this band rather than of the shop.
+     *
+     * `shopBuysPerWeek` is a **fixed count**, and training takes a *share* of whatever survives —
+     * so any feature that adds income raises the denominator and leaves the numerator where it
+     * was. Sixty days of a book filling to nine pages is +9% on every coin, which moved the
+     * measured share from just over the floor to 1.87% without a single thing about the Armory
+     * changing. A player with more gold buys more gear; the model does not, and re-fitting the
+     * floor is the honest response to a ratio the model cannot hold.
+     *
+     * What the band is still for is unchanged: at zero the shop is a museum and training is the
+     * only sink again, and 1.5% is nowhere near zero.
+     */
+    expect(onGear / total).toBeGreaterThan(0.015);
     expect(onUpkeep / total).toBeGreaterThan(0.02);
   });
 
@@ -627,5 +642,59 @@ describe('the 90-day horizon', () => {
     expect(long.ledger.map((day) => day.day)).toEqual(
       Array.from({ length: 90 }, (_, index) => index + 1),
     );
+  });
+});
+
+describe('the Collector’s Album is a slow, permanent raise', () => {
+  const collector = simulateEconomy({ days: 90 });
+  const blind = simulateEconomy({ days: 90, style: { ...ACTIVE_PLAYER, collectsTheAlbum: false } });
+  const at = (run: typeof collector, day: number) => run.ledger[day - 1]!;
+
+  it('fills at the pace the design claims — pages in months, not days', () => {
+    /*
+     * The two-sided band. Too fast and a completion bonus is a first-week freebie; too slow and
+     * the ceiling is a lie on the screen (CLAUDE.md: a cap the game cannot supply). The model
+     * fills from the road exactly and from the board by coupon collector, and it does not model
+     * delves at all — so these are *zone* pages, and the ten of them are the sim's ceiling.
+     */
+    expect(at(collector, 1).albumPages).toBe(0);
+    expect(at(collector, 7).albumPages).toBeGreaterThanOrEqual(1);
+    expect(at(collector, 7).albumPages).toBeLessThanOrEqual(6);
+    expect(at(collector, 30).albumPages).toBeGreaterThanOrEqual(6);
+    expect(at(collector, 90).albumPages).toBeLessThanOrEqual(ALBUM_PAGES.length);
+  });
+
+  it('never takes a page away', () => {
+    // A page is finished forever. If this ever falls, something is *recomputing* the book from
+    // present state rather than reading a set that only grows.
+    let highest = 0;
+    for (const day of collector.ledger) {
+      expect(day.albumPages).toBeGreaterThanOrEqual(highest);
+      highest = day.albumPages;
+    }
+  });
+
+  it('pays exactly what the pages it has finished are worth', () => {
+    // The ledger's bonus is the fold's, not a second copy of the rate.
+    for (const day of collector.ledger) {
+      expect(day.albumBonus).toBeCloseTo(1 + day.albumPages * ALBUM_PAGE_BONUS, 10);
+    }
+    expect(blind.ledger.every((day) => day.albumBonus === 1)).toBe(true);
+  });
+
+  it('is a nudge over three months rather than a second economy', () => {
+    /*
+     * The A/B. Everything else about these two players is identical, so the whole difference is
+     * the book — and it compounds, because the bonus buys levels and the gold curve pays by
+     * level. A single-digit multiplier over ninety days should land as a single-digit lead.
+     */
+    const ratio = totalEarned(collector.ledger) / totalEarned(blind.ledger);
+    expect(ratio).toBeGreaterThan(1.02);
+    expect(ratio).toBeLessThan(1.2);
+
+    // And it must not turn into a different level curve — §0 is the gate the pacing sim guards,
+    // and this is the cheap check that the album is nowhere near moving it.
+    expect(collector.finalLevel).toBeGreaterThanOrEqual(blind.finalLevel);
+    expect(collector.finalLevel).toBeLessThan(blind.finalLevel * 1.15);
   });
 });

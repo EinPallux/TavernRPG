@@ -35,7 +35,7 @@ import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 z.config({ jitless: true });
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 18;
+export const CURRENT_SCHEMA_VERSION = 19;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -910,6 +910,29 @@ export const DEFAULT_CAMPAIGN: Campaign = {
   finishedAt: null,
 };
 
+/* ── The Album (schema v19) ───────────────────────────────────────────────────────── */
+
+export const albumSchema = z.object({
+  /**
+   * Every foe this hero has beaten, by id. A set, spelled as an array because JSON has no other.
+   *
+   * **The one thing in this save that is genuinely not derivable**, and worth saying why given
+   * how much of the rest is. `PROGRESS_METRICS` counts *actions* — contracts won, items scrapped,
+   * levels gained — and `activity.zoneMissions` counts attempts per *zone*. "Has this hero ever
+   * beaten a Sootback Boar" is an identity, and no arrangement of counters contains it. The pets
+   * doc makes the same call for `pets.eggs` and `gacha.pets`: when a fact is implied by nothing
+   * else, the fact is the thing to write down.
+   *
+   * Unvalidated against the roster on purpose. An id for a monster that no longer exists is
+   * harmless — `albumProgress` counts against the *pages*, never against this array's length — and
+   * dropping unknown ids on load would silently erase a returning player's book the first time a
+   * zone was renamed.
+   */
+  foes: z.array(z.string()),
+});
+
+export const DEFAULT_ALBUM: Album = { foes: [] };
+
 export const saveFileSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   savedAt: timestampSchema,
@@ -946,6 +969,8 @@ export const saveFileSchema = z.object({
   tutorial: tutorialSchema,
   /** The Long Road (schema v17). */
   campaign: campaignSchema,
+  /** The Album (schema v19). */
+  album: albumSchema,
 });
 
 export type ClockState = z.infer<typeof clockStateSchema>;
@@ -957,6 +982,7 @@ export type Gacha = z.infer<typeof gachaSchema>;
 export type Pets = z.infer<typeof petsSchema>;
 export type Tasks = z.infer<typeof tasksSchema>;
 export type Campaign = z.infer<typeof campaignSchema>;
+export type Album = z.infer<typeof albumSchema>;
 export type Calendar = z.infer<typeof calendarSchema>;
 export type Tutorial = z.infer<typeof tutorialSchema>;
 export type StoredProgressTally = z.infer<typeof progressTallySchema>;
@@ -1015,6 +1041,7 @@ export function createNewSave({ slot, worldSeed, now }: NewSaveOptions): SaveFil
     calendar: { ...DEFAULT_CALENDAR },
     tutorial: { ...DEFAULT_TUTORIAL },
     campaign: { ...DEFAULT_CAMPAIGN },
+    album: { ...DEFAULT_ALBUM },
   };
 }
 

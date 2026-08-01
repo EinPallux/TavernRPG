@@ -137,7 +137,7 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
 
 // ————— Save envelope —————
 interface SaveFile {
-  schemaVersion: 17; savedAt: Timestamp; slot: 1|2|3;
+  schemaVersion: 19; savedAt: Timestamp; slot: 1|2|3;
   worldSeed: Seed;                  // committed once; seeds the entire simulated world
   clock: { lastSeen: Timestamp; clampCount: number };
   settings: Settings;               // nav, motion, audio, battle playback (v4)
@@ -157,6 +157,23 @@ interface SaveFile {
   calendar: Calendar;               // v15
   tutorial: TutorialState;          // v16
   campaign: CampaignProgress;       // v17
+  album: Album;                     // v19
+}
+
+// ————— The Collector's Album (v19) —————
+interface Album {
+  /**
+   * Every foe ever beaten, as monster and dungeon-floor ids.
+   *
+   * A set, not a tally: the album asks one thing of each foe, so it stores one bit spelled as
+   * membership. The deliberate exception to "don't store what the save can already answer" —
+   * `PROGRESS_METRICS` counts actions and `activity.zoneMissions` counts attempts per zone, and
+   * neither carries monster identity, so no arrangement of counters can answer this.
+   *
+   * Pages, progress and the payout multiplier are all derived from it (`engine/album/album.ts`).
+   * The v18→v19 migration back-fills nothing, because there is nothing honest to reconstruct.
+   */
+  foes: string[];
 }
 
 // ————— The Long Road (v17) —————

@@ -477,6 +477,7 @@ function StagedBattle({
           heroName={heroName}
           opponentName={monster?.name ?? 'the foe'}
           {...(rewards ? { rewards } : {})}
+          album={claim?.album ?? null}
           onContinue={onDone}
           continueLabel="Back to the tavern"
         />

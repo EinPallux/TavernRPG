@@ -35,6 +35,9 @@ import { diceFor } from '@/engine/progression/dayWork';
 import { DAY_WORK_RUNGS, VIGOR_PER_DAY } from '@/engine/progression/rewards';
 import v17Campaign from './fixtures/v17-campaign.json';
 import v18DayWork from './fixtures/v18-day-work.json';
+import v19Album from './fixtures/v19-album.json';
+import { albumBonus, albumProgress } from '@/engine/album/album';
+import { ALBUM_PAGE_BONUS, albumEntry } from '@/data/album';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { ownedPets } from '@/engine/pets/ownership';
@@ -689,6 +692,7 @@ describe('the fixture set itself', () => {
     { version: 16, save: v16Phase16 },
     { version: 17, save: v17Campaign },
     { version: 18, save: v18DayWork },
+    { version: 19, save: v19Album },
   ];
 
   it('has one fixture per shipped schema version, with no gaps', () => {
@@ -835,13 +839,21 @@ describe('a real v17 save', () => {
 });
 
 describe('a real v18 save', () => {
-  it('opens with nothing to migrate', () => {
+  it('migrates to the current version and arrives with an empty book', () => {
+    /*
+     * v18 was the newest fixture until the Album landed. What it proves now is the thing every
+     * superseded fixture proves: a save written before a feature existed still opens, and arrives
+     * in the state the migration promised — here an empty `album`, because `zoneMissions` knows
+     * how many fights happened in a zone and never which monsters were in them, so there is
+     * nothing honest to back-fill from.
+     */
     const result = migrateSave(structuredClone(v18DayWork));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.migratedFrom).toBeNull();
+    expect(result.migratedFrom).toBe(18);
     expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+    expect(result.save.album.foes).toEqual([]);
   });
 
   it('carries a day\u2019s work that was actually done', () => {
@@ -864,6 +876,79 @@ describe('a real v18 save', () => {
     // Every point spent came off the day, and the day started at a hundred.
     expect(activity.vigorSpentToday + activity.vigor).toBe(VIGOR_PER_DAY);
     // A real world came along for the ride \u2014 the part most likely to break a future migration.
+    expect(result.save.world?.bots.length).toBe(BOT_COUNT);
+  });
+});
+
+describe('a real v19 save', () => {
+  it('is already current, and says so', () => {
+    const result = migrateSave(structuredClone(v19Album));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+    expect(result.migratedFrom).toBeNull();
+  });
+
+  it('carries a book somebody actually filled', () => {
+    /*
+     * Captured out of a browser: a level-60 hunter in epic gear who trained their Dexterity and
+     * then spent a whole day's Vigor on the Long Road, clearing a hundred stages without losing
+     * one. Every id in `album.foes` was written by `recordVictory` on the way past.
+     *
+     * The shape that matters is that it is **mixed** \u2014 eight pages finished, one part-filled, four
+     * untouched. A hand-written album slice would be all-or-nothing, and the partial page is the
+     * one that proves a half-finished page survives the round trip through Zod and IndexedDB.
+     */
+    const result = migrateSave(structuredClone(v19Album));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const progress = albumProgress(result.save.album.foes);
+    expect(progress.pagesComplete).toBe(8);
+    expect(progress.recorded).toBe(80);
+    expect(progress.complete).toBe(false);
+
+    const partial = progress.pages.filter((page) => page.recorded > 0 && !page.complete);
+    expect(partial).toHaveLength(1);
+    expect(partial[0]?.page.id).toBe('zone:sunken-chapel');
+    expect(partial[0]?.recorded).toBe(4);
+
+    // No id in the file the album cannot place \u2014 a stored set can rot, and this is the check.
+    const unplaceable = result.save.album.foes.filter((id) => albumEntry(id) === undefined);
+    expect(unplaceable).toEqual([]);
+    expect(new Set(result.save.album.foes).size).toBe(result.save.album.foes.length);
+  });
+
+  it('is paying the bonus those pages are worth', () => {
+    /*
+     * The fixture's real job. `payoutBonus` reads the album, so a save with eight finished pages
+     * must quote 8% \u2014 and if a future change to `ALBUM_PAGE_BONUS` moves it, this recomputes
+     * rather than failing, because the number under test is the *fold*, not the constant.
+     */
+    const result = migrateSave(structuredClone(v19Album));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const expected = 1 + 8 * ALBUM_PAGE_BONUS;
+    expect(albumBonus(result.save.album.foes)).toEqual({ gold: expected, xp: expected });
+  });
+
+  it('spent the day it says it spent', () => {
+    const result = migrateSave(structuredClone(v19Album));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const { activity, campaign, tasks } = result.save;
+    // A hundred stages, a hundred Vigor, and not a single one lost: `attempts` never ran ahead of
+    // `stagesCleared`, which is the one campaign shape the v17 fixture could not carry.
+    expect(campaign.stagesCleared).toBe(100);
+    expect(campaign.attempts).toBe(campaign.stagesCleared);
+    expect(campaign.bestAttempt).toBe(0);
+    expect(activity.vigor).toBe(0);
+    expect(activity.vigorSpentToday + activity.vigor).toBe(VIGOR_PER_DAY);
+    expect(tasks.lifetime['campaignStages']).toBe(campaign.stagesCleared);
+    // And the world came with it.
     expect(result.save.world?.bots.length).toBe(BOT_COUNT);
   });
 });

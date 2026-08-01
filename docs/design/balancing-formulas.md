@@ -936,3 +936,92 @@ player with a fed companion was told one number at the table and handed a larger
 against the explicit note on `missionPayout` that the bonus belongs at quote time because "a buff
 applied only on collection is a buff nobody believes in". Invisible while the only sources were
 opt-in mid-game buffs; impossible to miss at ×1.6 from level one. The card takes the bonus now.
+
+---
+
+## 20. The Collector's Album (completion bonus)
+
+`[TUNE] ALBUM_PAGE_BONUS = 0.01`, `ALBUM_CAPSTONE_BONUS = 0.05` — `src/data/album.ts`.
+Thirteen pages at 1% plus 5% for finishing every one: **+18% at full completion**, on gold *and*
+experience. Folded at `state/petActions.ts#payoutBonus` beside the greenhorn's due, the guild
+tracks and the pet's boost, so it reaches contracts, the Long Road and the Undertavern from one
+place. Spec: `docs/design/systems/album.md`.
+
+### The shape of the reward
+
+A **flat per-page** value rather than one scaled by page size. The pages are all eight to ten
+entries deep, and a player working out which page pays best is doing arithmetic instead of playing.
+Nothing is paid per *entry*: the reward is for finishing, and a bonus that crept up per monster
+would make the last one on a page worth no more than the first — which is exactly the one that
+takes the effort.
+
+The capstone is deliberately larger than a page. Finishing the last page means having beaten
+something in every zone *and* cleared all thirty dungeon floors, which is a different kind of
+achievement from finishing the tenth.
+
+| Pages finished | Bonus | Roughly when |
+|---|---|---|
+| 0 | ×1.00 | day 1 |
+| 1 | ×1.01 | first week |
+| 6 | ×1.06 | ~day 30 |
+| 9–10 | ×1.09–1.10 | ~day 90 (the ten zone pages) |
+| 13 + capstone | **×1.18** | months — needs all thirty dungeon floors |
+
+### Gold and experience by the same factor
+
+The rule §19 wrote down, and the reason the album is safe. Gold per *level* is
+`goldPerVigor(L) × vigorPerLevel(L)`; scale both sides by B and it is unchanged, so a completionist
+reaches every level with the attributes they always would have had and only the clock moves. On XP
+alone the album would level its most engaged players into monsters they could not afford to fight.
+`album.test.ts` walks the whole fill and asserts `bonus.gold === bonus.xp` at every step rather
+than trusting the comment.
+
+### How fast it actually fills — modelled, not assumed
+
+The economy sim models both routes, differently, because they are different:
+
+- **The road is exact.** Stage N stands on `stageMonster(N)`, so walking records a known list of
+  ids. Chapter one covers the whole Whispering Woods roster by stage ten.
+- **The board is a coupon-collector problem.** `board.ts` picks a monster uniformly from the zone's
+  roster, so the expected wins to see all *n* is `n·H(n)` — about **29** for a ten-monster zone,
+  against the ten a "one of each" intuition suggests. A page completes at that many wins in the
+  zone, spread across the zones the board would offer at that level.
+
+Dungeon pages are **not** modelled, because the sim does not run delves, and inventing a floor
+rate to fill three pages with would be asserting a fiction. The consequence is stated rather than
+hidden: the sim's album tops out at +10%, not +18%.
+
+Measured over 90 days of `ACTIVE_PLAYER`: 4 pages by day 7, 8 by day 30, 9–10 by day 90. The A/B
+against the same player with `collectsTheAlbum: false` earns **1.02–1.20×** over three months —
+the band `economy.test.ts` now asserts, two-sided, because a completion bonus that is a rounding
+error is not a reward and one that doubles the economy is a second game.
+
+### What moved
+
+| Gate | Before | After | Why |
+|---|---|---|---|
+| §0 milestone rows | — | unchanged | `npm run pacing` green at every row |
+| Guild compounding floor | 1.08 | 1.08 | held, once the sim's road model was fixed (below) |
+| Gear share of spend | > 2% | **> 1.5%** | re-fitted |
+
+The gear floor is the one re-fit, and the reason is a property of the band rather than of the
+Armory: `shopBuysPerWeek` is a **fixed count** while training takes a *share* of what survives, so
+any feature that adds income raises the denominator and leaves the numerator where it was. Sixty
+days of a book filling to nine pages moved the measured share from just over 2% to 1.87% without a
+single thing about the shop changing. A player with more gold buys more gear; the model does not.
+
+### The sim bug it surfaced
+
+Modelling the album made the sim's road behaviour load-bearing, and the road model turned out to
+have a **latch**. It walked while the *next* stage's XP beat the mission board and stopped the
+moment it lost — but the road is contiguous, so stopping is permanent: the wall never moves, its
+level stays put, and the hero's board rate only climbs. A guilded player, one level ahead on day
+two, failed the test at stage 2 by three XP and never walked another step in ninety days; the
+unguilded one, a level behind, passed and walked all hundred and twenty.
+
+That is the road's own shape misread. You cannot skip stage 2 to reach stage 5 — you eat the cheap
+ones to get to the good ones, and the screen shows you the whole chapter's levels while you decide.
+`chapterBeatsTheBoard` now compares the **average over the rest of the chapter** at or below the
+hero's level, which is the natural unit because a chapter ends in a boss and a Golden Die. With it
+the guilded player walks 98 stages by day 30 instead of 1, and the guild band holds at its
+published floor without being touched.
