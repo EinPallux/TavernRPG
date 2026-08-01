@@ -12,18 +12,83 @@
  * chrome (round chip, controls) → result.
  */
 
-import { useCallback, useMemo, type ReactNode } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { BattleEvent, CombatantCard, Side } from '@/engine/combat/types';
+import { PROC_PALETTE, schoolFor } from '@/data/combatVfx';
 import { useTooltip } from '@/components/ui/Tooltip';
 import { dramatic, snappy } from '@/styles/motion';
 import { BattleCallouts, CALLOUT_DURATION } from './BattleCallouts';
 import { BattleFighter } from './BattleFighter';
 import { DamageNumbers } from './DamageNumbers';
-import { ParticleLayer } from './ParticleLayer';
+import { ParticleLayer, type StageAnchor } from './ParticleLayer';
 import { SPEED_OPTIONS, type PlaybackSpeed } from './battleChoreo';
+import type { BattleFrame } from './timeline';
 import { useBattlePlayback } from './useBattlePlayback';
 import { useBattleSfx } from './useBattleSfx';
+
+/**
+ * Where the fighters stand, before anybody has measured them.
+ *
+ * These were the *only* values the particle layer ever had, and they are right at roughly one
+ * window width. They survive as the pre-measurement fallback and as the value used in tests,
+ * where there is no layout to read.
+ */
+const FALLBACK_ANCHORS: Record<Side, StageAnchor> = {
+  a: { x: 0.3, y: 0.52 },
+  b: { x: 0.7, y: 0.52 },
+};
+
+/**
+ * Measure both portraits against the stage, as fractions.
+ *
+ * On mount and on resize only — never per frame. The refs are on static wrappers so what comes
+ * back is where the fighter *stands*, not where they happen to be mid-lunge.
+ */
+function useStageAnchors(
+  stage: React.RefObject<HTMLElement | null>,
+  spots: Record<Side, React.RefObject<HTMLDivElement | null>>,
+): Record<Side, StageAnchor> {
+  const [anchors, setAnchors] = useState(FALLBACK_ANCHORS);
+
+  useLayoutEffect(() => {
+    const host = stage.current;
+    if (!host) return;
+
+    const measure = () => {
+      const frame = host.getBoundingClientRect();
+      if (frame.width === 0 || frame.height === 0) return;
+
+      const read = (side: Side): StageAnchor => {
+        const node = spots[side].current;
+        if (!node) return FALLBACK_ANCHORS[side];
+        const box = node.getBoundingClientRect();
+        return {
+          x: (box.left + box.width / 2 - frame.left) / frame.width,
+          y: (box.top + box.height / 2 - frame.top) / frame.height,
+        };
+      };
+
+      const next = { a: read('a'), b: read('b') };
+      setAnchors((current) =>
+        current.a.x === next.a.x &&
+        current.a.y === next.a.y &&
+        current.b.x === next.b.x &&
+        current.b.y === next.b.y
+          ? current
+          : next,
+      );
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [stage, spots]);
+
+  return anchors;
+}
 
 export interface BattleSceneProps {
   readonly log: readonly BattleEvent[];
@@ -130,6 +195,72 @@ function SwarmCry({ label, side }: { label: string; side: Side }) {
   );
 }
 
+/**
+ * Gear sets, doing something (gear-sets spec §3).
+ *
+ * The spec's words are "a named flourish over the fighter it fired for", and until the VFX pass
+ * there was no flourish and no name: `set_proc` had a beat on the timeline and no case in the
+ * frame, so a five-piece capstone firing was two hundred milliseconds of nothing. Eight effects,
+ * invisible since Phase 12.
+ *
+ * Positioned off the same measured anchors the particles use, so the label lands on the fighter
+ * rather than near them, and driven off `progress` rather than a spring — at ×4 three of these
+ * can be alive at once and a spring would still be easing the first.
+ */
+function SetProcFlourishes({
+  procs,
+  anchors,
+}: {
+  procs: BattleFrame['procs'];
+  anchors: Record<Side, StageAnchor>;
+}) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0" data-testid="set-procs">
+      {procs.map((proc) => {
+        const at = anchors[proc.side];
+        /*
+         * Outward, beside the fighter — not stacked above them.
+         *
+         * The column over a portrait is the busiest strip on the stage: damage numbers own
+         * 62–136px of it and the nameplate and health bar own everything above that. Two
+         * screenshots went into learning this — the first version wrote the label across the
+         * fighter's face, the second wrote it across their name.
+         *
+         * The clear space is *outboard*: away from the middle of the stage, at eye level, where
+         * there is nothing but backdrop. As a share of the stage rather than a pixel offset, so
+         * it stays beside the fighter at every window width instead of drifting onto them.
+         */
+        const outward = (proc.side === 'a' ? -1 : 1) * 0.075;
+        const rise = 8 + (1 - (1 - proc.progress) ** 2) * 30;
+        const opacity = proc.progress > 0.65 ? (1 - proc.progress) / 0.35 : 1;
+        const palette = PROC_PALETTE[proc.effect];
+
+        return (
+          <span
+            key={proc.id}
+            data-testid={`set-proc-${proc.effect}`}
+            className="chamfer-sm font-display bg-wood-900/92 absolute block border px-2 py-1 text-[10px] font-bold tracking-[0.18em] whitespace-nowrap uppercase"
+            style={{
+              left: `${(at.x + outward) * 100}%`,
+              top: `${at.y * 100}%`,
+              transform: `translate(-50%, calc(-50% - ${rise}px)) scale(${0.85 + proc.progress * 0.15})`,
+              opacity,
+              color: palette.glow,
+              borderColor: palette.core,
+              boxShadow: `0 0 18px -4px ${palette.core}`,
+            }}
+          >
+            {proc.label}
+            {proc.amount > 0 && (
+              <span className="ml-1.5 tabular-nums opacity-80">{proc.amount.toLocaleString()}</span>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 export function BattleScene({
   log,
   backdrop = '/assets/backgrounds/mission_background_3.webp',
@@ -143,6 +274,25 @@ export function BattleScene({
   className = '',
 }: BattleSceneProps) {
   const reducedMotion = useReducedMotion();
+
+  // `battle_start` carries both nameplates; without it there is nothing to draw.
+  const opening = useMemo(() => log.find((event) => event.t === 'battle_start'), [log]);
+
+  /**
+   * Each fighter's school, from the only identity the scene has: the nameplate's `kind`.
+   *
+   * Resolved before playback because the timeline needs one bit of it — a fighter who throws gets
+   * a longer wind-up, or the bolt is in the air for six frames.
+   */
+  const schools = useMemo(() => {
+    if (!opening || opening.t !== 'battle_start') {
+      return { a: schoolFor(''), b: schoolFor('') };
+    }
+    return { a: schoolFor(opening.a.kind), b: schoolFor(opening.b.kind) };
+  }, [opening]);
+
+  const ranged = useMemo(() => ({ a: !schools.a.melee, b: !schools.b.melee }), [schools]);
+
   // The tutorial fight ignores both the remembered speed and the remembered skip preference:
   // there is nothing to skip past yet, and the notes have to be legible (spec §2 beat 3).
   const pace = callouts ? CALLOUT_DURATION : targetDuration;
@@ -151,16 +301,24 @@ export function BattleScene({
     initialSpeed: callouts ? 1 : initialSpeed,
     startFinished: callouts ? false : startFinished,
     onFinished,
+    ranged,
     ...(pace === undefined ? {} : { targetDuration: pace }),
   });
-  const { frame, isFinished, progress } = playback;
+  const { frame, isFinished, progress, choreo } = playback;
 
   // The scene draws the frame; this hears it. Edge-triggered inside the hook, so the component
   // stays a renderer (combat spec §4).
-  useBattleSfx(frame, isFinished);
+  useBattleSfx(frame, isFinished, ranged);
 
-  // `battle_start` carries both nameplates; without it there is nothing to draw.
-  const opening = useMemo(() => log.find((event) => event.t === 'battle_start'), [log]);
+  /*
+   * Where the sparks go. Refs must be created unconditionally — the early return below is after
+   * every hook, which is why this sits here rather than beside the JSX it serves.
+   */
+  const stageRef = useRef<HTMLElement>(null);
+  const spotA = useRef<HTMLDivElement>(null);
+  const spotB = useRef<HTMLDivElement>(null);
+  const spots = useMemo(() => ({ a: spotA, b: spotB }), []);
+  const anchors = useStageAnchors(stageRef, spots);
 
   // Speed changes are announced on the click, not from an effect — the preference should be
   // written when the player chooses it, never re-written just because the scene remounted.
@@ -177,9 +335,13 @@ export function BattleScene({
   const cards: Record<Side, CombatantCard> = { a: opening.a, b: opening.b };
   const showVersus = frame.beatIndex <= 0 && !isFinished;
   const shake = reducedMotion ? 0 : frame.shake;
+  /** Rises and falls with the crit's own swing — a bloom, not a flash. */
+  const critGlow =
+    reducedMotion || !frame.lunging?.crit ? 0 : Math.sin(frame.lunging.progress * Math.PI) * 0.9;
 
   return (
     <section
+      ref={stageRef}
       className={`relative h-full w-full overflow-hidden ${className}`}
       data-testid="battle-scene"
       data-finished={isFinished ? 'true' : 'false'}
@@ -219,9 +381,15 @@ export function BattleScene({
             ghostHealth={frame.ghostHealth.a}
             verse={frame.verse.a}
             lunging={frame.lunging?.side === 'a' ? frame.lunging : null}
-            reaction={frame.reaction?.side === 'a' ? frame.reaction.kind : null}
+            reaction={frame.reaction?.side === 'a' ? frame.reaction : null}
             knockedOut={frame.knockedOut === 'a'}
             entering={!startFinished}
+            school={schools.a}
+            castLead={choreo.castLead}
+            flash={frame.flash.a}
+            recoil={frame.recoil.a}
+            hardened={frame.hardened.a}
+            portraitRef={spotA}
           />
           <BattleFighter
             card={cards.b}
@@ -230,15 +398,49 @@ export function BattleScene({
             ghostHealth={frame.ghostHealth.b}
             verse={frame.verse.b}
             lunging={frame.lunging?.side === 'b' ? frame.lunging : null}
-            reaction={frame.reaction?.side === 'b' ? frame.reaction.kind : null}
+            reaction={frame.reaction?.side === 'b' ? frame.reaction : null}
             knockedOut={frame.knockedOut === 'b'}
             entering={!startFinished}
+            school={schools.b}
+            castLead={choreo.castLead}
+            flash={frame.flash.b}
+            recoil={frame.recoil.b}
+            hardened={frame.hardened.b}
+            portraitRef={spotB}
           />
         </div>
 
-        <ParticleLayer impacts={frame.impacts} />
-        <DamageNumbers numbers={frame.floatingDamage} />
+        <ParticleLayer
+          impacts={frame.impacts}
+          schools={schools}
+          anchors={anchors}
+          flight={frame.lunging}
+          castLead={choreo.castLead}
+        />
+        <DamageNumbers numbers={frame.floatingDamage} anchors={anchors} />
+        <SetProcFlourishes procs={frame.procs} anchors={anchors} />
       </motion.div>
+
+      {/*
+        The crit's moment.
+
+        `critHold` has extended the attack beat since Phase 4 — the fight genuinely pauses on a
+        critical hit — but nothing on screen marked the pause, so the extra 140ms read as a
+        dropped frame rather than as emphasis. A warm bloom from the edges, driven off the swing's
+        own progress so it rises and falls with the blow rather than on a timer of its own.
+      */}
+      {critGlow > 0 && (
+        <div
+          aria-hidden
+          data-testid="crit-bloom"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse at center, transparent 32%, rgb(240 184 98 / 0.30) 100%)',
+            opacity: critGlow,
+          }}
+        />
+      )}
 
       <AnimatePresence>{showVersus && <VersusFlash a={cards.a} b={cards.b} />}</AnimatePresence>
 

@@ -18,6 +18,18 @@ import {
   type BattleChoreo,
 } from './battleChoreo';
 
+/** The eight things a gear set can do, named by the event rather than re-declared here. */
+export type SetProcEffect = Extract<BattleEvent, { t: 'set_proc' }>['effect'];
+
+/**
+ * What a burst of particles is *for*.
+ *
+ * The old frame had one kind of impact — "a hit landed" — so the layer could only ever draw one
+ * kind of burst. Naming the occasion is what lets a block throw sparks off a shield, a dodge puff
+ * displaced air and a mend send motes upward, all from the same pool and the same draw loop.
+ */
+export type ImpactKind = 'hit' | 'block' | 'dodge' | 'heal' | 'proc';
+
 /** A single event, placed on the clock. */
 export interface TimedBeat {
   readonly index: number;
@@ -34,8 +46,25 @@ export interface Timeline {
   readonly duration: number;
 }
 
+/**
+ * Which fighters throw rather than swing.
+ *
+ * A boolean per side and nothing more. Which schools are ranged is *content*
+ * (`data/combatVfx.ts`); how long a throw takes is *choreography* — and this module, which is
+ * neither, needs only the one bit that connects them. Passing the school itself would have made
+ * the timeline import the VFX data, and the next feature would have found a reason to read the
+ * palette from here too.
+ */
+export type RangedSides = Readonly<Record<Side, boolean>>;
+
+const ALL_MELEE: RangedSides = { a: false, b: false };
+
 /** How long a single event's moment lasts. */
-export function beatDuration(event: BattleEvent, choreo: BattleChoreo): number {
+export function beatDuration(
+  event: BattleEvent,
+  choreo: BattleChoreo,
+  ranged: RangedSides = ALL_MELEE,
+): number {
   switch (event.t) {
     case 'battle_start':
       return choreo.entryDuration;
@@ -44,7 +73,9 @@ export function beatDuration(event: BattleEvent, choreo: BattleChoreo): number {
     case 'verse_change':
       return choreo.verseBeat;
     case 'attack': {
-      const base = choreo.attackWindUp + choreo.attackImpact + (event.crit ? choreo.critHold : 0);
+      // A cast is gather → release → travel → land, and the travel has to be long enough to see.
+      const windUp = ranged[event.source] ? choreo.castWindUp : choreo.attackWindUp;
+      const base = windUp + choreo.attackImpact + (event.crit ? choreo.critHold : 0);
       return event.followUp ? base * choreo.followUpScale : base;
     }
     case 'damage':
@@ -105,6 +136,8 @@ export interface TimelineOptions {
   readonly targetDuration?: number | null;
   /** Floor on that compression, as a share of the authored timings. */
   readonly minScale?: number;
+  /** Which sides throw rather than swing, so their swings get the longer wind-up. */
+  readonly ranged?: RangedSides;
 }
 
 /**
@@ -119,9 +152,13 @@ export interface TimelineOptions {
 export function buildTimeline(
   log: readonly BattleEvent[],
   choreo: BattleChoreo = DEFAULT_CHOREO,
-  { targetDuration = TARGET_FIGHT_DURATION, minScale = PACE_FLOOR }: TimelineOptions = {},
+  {
+    targetDuration = TARGET_FIGHT_DURATION,
+    minScale = PACE_FLOOR,
+    ranged = ALL_MELEE,
+  }: TimelineOptions = {},
 ): Timeline {
-  const natural = log.map((event) => beatDuration(event, choreo));
+  const natural = log.map((event) => beatDuration(event, choreo, ranged));
   const floors = log.map((event, index) => beatFloor(event, choreo, natural[index]!));
 
   let scale = 1;
@@ -159,10 +196,21 @@ export interface BattleFrame {
   readonly ghostHealth: Readonly<Record<Side, number>>;
   readonly round: number;
   readonly verse: Readonly<Record<Side, string | null>>;
-  /** Which side is mid-swing, and how far through it (0–1). */
+  /**
+   * Which side is mid-swing, and how far through it (0–1).
+   *
+   * "Swing" covers a cast too. The frame deliberately does not know whether this fighter charges
+   * or throws — that is a property of their *school*, which is content the scene resolves from
+   * the nameplate. Keeping it out here is what lets a new class be painted without the timeline
+   * learning anything.
+   */
   readonly lunging: { side: Side; progress: number; crit: boolean; followUp: boolean } | null;
-  /** Momentary reactions to draw on a fighter. */
-  readonly reaction: { side: Side; kind: 'blocked' | 'dodged' | 'missed' } | null;
+  /** Momentary reactions to draw on a fighter, and how far through the beat they are. */
+  readonly reaction: {
+    side: Side;
+    kind: 'blocked' | 'dodged' | 'missed';
+    progress: number;
+  } | null;
   /** The boss's signature, announced. Non-null only while its beat is playing. */
   readonly trait: { side: Side; label: string; explainer: string } | null;
   /** The swarm's telegraph, the beat before its hit lands. */
@@ -180,7 +228,47 @@ export interface BattleFrame {
     readonly progress: number;
   }[];
   /** Impact bursts to hand the particle layer this frame. */
-  readonly impacts: readonly { readonly id: string; readonly side: Side; readonly crit: boolean }[];
+  readonly impacts: readonly {
+    readonly id: string;
+    /** Where the burst blooms — the fighter it happened *to*. */
+    readonly side: Side;
+    /**
+     * Whose school paints it, and which way it sprays.
+     *
+     * Null for the occasions that belong to nobody's offence: a block is a property of the
+     * shield, a mend of the mender. Those draw in the shared palette instead.
+     */
+    readonly source: Side | null;
+    readonly kind: ImpactKind;
+    readonly crit: boolean;
+    /** Present only on a `proc` burst, for its colour. */
+    readonly effect?: SetProcEffect;
+  }[];
+  /**
+   * Gear sets doing something, named (gear-sets spec §3).
+   *
+   * These have been in the log since Phase 12 and on the *clock* since Phase 12 — `beatDuration`
+   * gave `set_proc` a beat — but `frameAt` had no case for them, so eight effects occupied time
+   * and drew nothing. A five-piece capstone firing was a pause.
+   */
+  readonly procs: readonly {
+    readonly id: string;
+    readonly side: Side;
+    readonly effect: SetProcEffect;
+    readonly label: string;
+    readonly amount: number;
+    /** 0–1 through its life. */
+    readonly progress: number;
+  }[];
+  /** White flash on a struck fighter, 0–1, decaying. */
+  readonly flash: Readonly<Record<Side, number>>;
+  /**
+   * Knockback, in px, signed so that a fighter is always shoved *away* from the blow.
+   *
+   * Scaled by how big the hit was, so a graze nudges and a haymaker throws — the cheapest way to
+   * make the health bar and the picture agree about what just happened.
+   */
+  readonly recoil: Readonly<Record<Side, number>>;
   /** Signed screen-shake offset in px, already oscillating and decaying. 0 when still. */
   readonly shake: number;
   readonly knockedOut: Side | null;
@@ -213,6 +301,8 @@ export function frameAt(
   let knockedOut: Side | null = null;
   let finished = false;
   let shake = 0;
+  const flash: Record<Side, number> = { a: 0, b: 0 };
+  const recoil: Record<Side, number> = { a: 0, b: 0 };
   const floatingDamage: {
     id: string;
     side: Side;
@@ -221,10 +311,19 @@ export function frameAt(
     heal?: boolean;
     progress: number;
   }[] = [];
-  const impacts: { id: string; side: Side; crit: boolean }[] = [];
+  const impacts: BattleFrame['impacts'][number][] = [];
+  const procs: BattleFrame['procs'][number][] = [];
 
   /** The attack that produced the damage event currently being processed. */
   let lastAttackWasCrit = false;
+  /**
+   * Who swung last, so the blow's particles can be painted in *their* school and thrown away from
+   * them. `damage` names only its target — the log has never needed to say who caused it, because
+   * until now nothing downstream cared.
+   */
+  let lastAttacker: Side | null = null;
+
+  const other = (side: Side): Side => (side === 'a' ? 'b' : 'a');
 
   for (const beat of timeline.beats) {
     if (beat.at > elapsed) break;
@@ -254,6 +353,7 @@ export function frameAt(
 
       case 'attack':
         lastAttackWasCrit = event.crit;
+        lastAttacker = event.source;
         if (active) {
           lunging = {
             side: event.source,
@@ -266,11 +366,28 @@ export function frameAt(
 
       case 'blocked':
       case 'dodged':
-        if (active) reaction = { side: event.target, kind: event.t };
+        if (active) {
+          const progress = Math.min(1, sinceStart / Math.max(1, beat.duration));
+          reaction = { side: event.target, kind: event.t, progress };
+          impacts.push({
+            id: `${event.t}-${beat.index}`,
+            side: event.target,
+            // A shield and a sidestep belong to the defender, not to the school that missed.
+            source: null,
+            kind: event.t === 'blocked' ? 'block' : 'dodge',
+            crit: false,
+          });
+        }
         break;
 
       case 'missed':
-        if (active) reaction = { side: event.source, kind: 'missed' };
+        if (active) {
+          reaction = {
+            side: event.source,
+            kind: 'missed',
+            progress: Math.min(1, sinceStart / Math.max(1, beat.duration)),
+          };
+        }
         break;
 
       case 'boss_trait':
@@ -302,6 +419,40 @@ export function frameAt(
             progress: sinceStart / life,
           });
         }
+        if (active) {
+          impacts.push({
+            id: `heal-${beat.index}`,
+            side: event.target,
+            source: null,
+            kind: 'heal',
+            crit: false,
+          });
+        }
+        break;
+      }
+
+      case 'set_proc': {
+        const life = choreo.procLabelLife;
+        if (sinceStart < life) {
+          procs.push({
+            id: `proc-${beat.index}`,
+            side: event.side,
+            effect: event.effect,
+            label: event.label,
+            amount: event.amount,
+            progress: sinceStart / life,
+          });
+        }
+        if (active) {
+          impacts.push({
+            id: `proc-${beat.index}`,
+            side: event.side,
+            source: null,
+            kind: 'proc',
+            crit: false,
+            effect: event.effect,
+          });
+        }
         break;
       }
 
@@ -325,11 +476,20 @@ export function frameAt(
           });
         }
 
+        const share = event.amount / Math.max(1, maxHealth[event.target]);
+
         // Impacts fire once, at the moment of connection.
         if (active) {
-          impacts.push({ id: `hit-${beat.index}`, side: event.target, crit: lastAttackWasCrit });
+          impacts.push({
+            id: `hit-${beat.index}`,
+            side: event.target,
+            // Named so the burst wears the *attacker's* school and sprays away from them. The
+            // log does not say who dealt the damage, so this is carried forward from the swing.
+            source: lastAttacker ?? other(event.target),
+            kind: 'hit',
+            crit: lastAttackWasCrit,
+          });
 
-          const share = event.amount / Math.max(1, maxHealth[event.target]);
           if (share >= SHAKE_THRESHOLD && sinceStart < choreo.shakeDuration) {
             const phase = sinceStart / Math.max(1, choreo.shakeDuration);
             const decay = 1 - phase;
@@ -338,6 +498,26 @@ export function frameAt(
             // rather than a shove. The scene applies it straight to a transform.
             shake = amplitude * Math.sin(phase * Math.PI * 6);
           }
+        }
+
+        /*
+         * Flash and knockback outlive the connecting frame, on their own clocks.
+         *
+         * Both are deliberately *not* tied to `active`: the beat they belong to is
+         * `attackRecover`, which compresses to a third of itself in a long fight, and a flash
+         * that vanishes in twenty-round fights is missing from exactly the fights that need the
+         * most help being read. Fixed windows from the choreo, decaying linearly.
+         */
+        if (choreo.impactFlash > 0 && sinceStart < choreo.impactFlash) {
+          flash[event.target] = Math.max(flash[event.target], 1 - sinceStart / choreo.impactFlash);
+        }
+        if (choreo.recoilBeat > 0 && sinceStart < choreo.recoilBeat) {
+          // Out fast, back slow — a shove, not a bounce. Scaled by the size of the hit against
+          // the same threshold the screen shake uses, so the two agree about what "big" means.
+          const phase = sinceStart / choreo.recoilBeat;
+          const weight = Math.min(1.6, share / SHAKE_THRESHOLD);
+          const away = event.target === 'a' ? -1 : 1;
+          recoil[event.target] += away * choreo.recoilDistance * weight * (1 - phase) ** 2;
         }
         break;
       }
@@ -372,6 +552,9 @@ export function frameAt(
     hardened,
     floatingDamage,
     impacts,
+    procs,
+    flash,
+    recoil,
     shake,
     knockedOut,
     finished,

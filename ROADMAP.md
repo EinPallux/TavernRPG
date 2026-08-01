@@ -510,6 +510,16 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
   `payoutBonus`, so it reaches contracts, the Long Road and the Undertavern together. Q26 records
   the sweep and the two shapes not taken. It closed a Phase-5 bug on the way: the mission card had
   been quoting a payout without the bonus it was about to be paid with.
+- _Schools of arms._ The combat VFX pass — spells, projectiles and reactions. Ten schools in
+  `data/combatVfx.ts`, one per `CombatantCard.kind`, each with its own palette, cast, impact and
+  crit; ranged schools throw something that crosses the stage and lands on the damage frame while
+  melee schools lunge, and the player's magic is teal against the monsters' red so a fast exchange
+  stays readable. Fighters flash and recoil when hit, dodges sidestep with an afterimage, crits
+  bloom. `combat.md` §4.1, style guide §7.3. Its acceptance measurement is a **pixel probe** —
+  `e2e/battle.spec.ts` samples the canvas down the middle of the gap, where a Mage reads 436 lit
+  pixels of teal, a Caster 459 of red, and two melee schools read **zero**. It also found and fixed
+  two features that had been invisible in the shipped game since Phase 11 and Phase 12: `harden`
+  and all eight `set_proc` effects had beats on the timeline and no case in `frameAt`.
 
 1. **The Collector's Album** — S&F-scrapbook-style collection of items/monsters with % XP bonus.
 2. **Guild Wars & Raid Bosses** — scheduled guild-vs-guild battles + co-op PvE chains (sim ready).

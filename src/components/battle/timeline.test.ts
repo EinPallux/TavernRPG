@@ -190,7 +190,12 @@ describe('frameAt', () => {
   it('shows a block on the fighter who blocked, and only while it is happening', () => {
     const blockAt = beatStart(4);
 
-    expect(frameAt(timeline, blockAt).reaction).toEqual({ side: 'a', kind: 'blocked' });
+    expect(frameAt(timeline, blockAt).reaction).toEqual({
+      side: 'a',
+      kind: 'blocked',
+      // The VFX pass added the beat's own progress, which is what drives the dodge's sidestep.
+      progress: 0,
+    });
     expect(frameAt(timeline, blockAt + DEFAULT_CHOREO.defenceBeat + 1).reaction).toBeNull();
   });
 
@@ -426,5 +431,196 @@ describe('pacing — ROADMAP Phase 4 acceptance', () => {
     expect(end.health.a).toBe(result.remainingHealth.a);
     expect(end.health.b).toBe(result.remainingHealth.b);
     expect(end.knockedOut).toBe(result.winner === 'a' ? 'b' : 'a');
+  });
+});
+
+/**
+ * The VFX pass — what the frame learned to say.
+ *
+ * Every one of these is a *picture* the scene could not previously draw, so they are worth
+ * testing here rather than in a render: `frameAt` is pure, and "did the block throw a burst?" is
+ * a question about arithmetic over events, not about the DOM.
+ */
+describe('frameAt — the VFX frame', () => {
+  const timeline = buildTimeline(SCRIPT, DEFAULT_CHOREO, { targetDuration: null });
+  const at = (index: number) => timeline.beats[index]!.at;
+
+  it('names the attacker on a hit, so the burst wears their school', () => {
+    /*
+     * The log's `damage` event says only who was hit. Everything about how the blow *looks* comes
+     * from who threw it, so the frame carries the swing forward — without this the particle layer
+     * would have to guess, and it would guess "the other one", which is wrong for a swarm's
+     * unavoidable hit and for anything else the engine adds that damages its own side.
+     */
+    const hit = frameAt(timeline, at(3)).impacts.find((impact) => impact.kind === 'hit');
+    expect(hit).toBeDefined();
+    expect(hit!.side).toBe('b');
+    expect(hit!.source).toBe('a');
+    expect(hit!.crit).toBe(false);
+  });
+
+  it('marks the crit, because the crit is a different burst entirely', () => {
+    const hit = frameAt(timeline, at(7)).impacts.find((impact) => impact.kind === 'hit');
+    expect(hit?.crit).toBe(true);
+  });
+
+  it('throws a burst for a block, and does not call it a hit', () => {
+    // The distinction matters twice: the layer draws shield sparks rather than the attacker's
+    // school, and `useBattleSfx` plays one sound for the occasion instead of a thud *and* a clang.
+    const impacts = frameAt(timeline, at(4)).impacts;
+    expect(impacts).toHaveLength(1);
+    expect(impacts[0]!.kind).toBe('block');
+    expect(impacts[0]!.source).toBeNull();
+  });
+
+  it('flashes and shoves the fighter who was hit, and only them', () => {
+    const frame = frameAt(timeline, at(3) + 10);
+
+    expect(frame.flash.b).toBeGreaterThan(0);
+    expect(frame.flash.a).toBe(0);
+    // Side 'b' stands on the right, so a blow from 'a' pushes them further right.
+    expect(frame.recoil.b).toBeGreaterThan(0);
+    expect(frame.recoil.a).toBe(0);
+  });
+
+  it('pushes a bigger hit harder, up to a point', () => {
+    /*
+     * The shove is scaled by the hit's share of max health, against the same `SHAKE_THRESHOLD`
+     * the screen shake uses — so the two always agree about what "big" means — and then clamped.
+     * The clamp is the interesting half: an execute for 90% of a health bar would otherwise throw
+     * a portrait clean out of its column, and the *cap* is what keeps a big hit dramatic rather
+     * than broken. Both halves are asserted, because a scaling that never caps and a cap that
+     * eats all the scaling look identical from one sample.
+     */
+    const shove = (hit: number) => {
+      const script: BattleEvent[] = [
+        { t: 'battle_start', a: CARD_A, b: CARD_B, first: 'a' },
+        { t: 'attack', source: 'a', raw: hit, final: hit, crit: false },
+        { t: 'damage', target: 'b', amount: hit, hpAfter: 200 - hit },
+      ];
+      const line = buildTimeline(script, DEFAULT_CHOREO, { targetDuration: null });
+      return Math.abs(frameAt(line, line.beats[2]!.at + 10).recoil.b);
+    };
+
+    // 5% and 20% of a 200-health bar: both under the cap, so the scaling shows.
+    expect(shove(40)).toBeGreaterThan(shove(10));
+    // 20% and 90%: the second is four and a half times the first and is *not* four and a half
+    // times the shove.
+    expect(shove(180)).toBeLessThan(shove(40) * 3);
+  });
+
+  it('lets the flash and the shove decay to nothing', () => {
+    const late = frameAt(timeline, at(3) + DEFAULT_CHOREO.recoilBeat + 50);
+    expect(late.flash.b).toBe(0);
+    expect(late.recoil.b).toBe(0);
+  });
+
+  it('keeps the flash alive when the beat around it is compressed to nothing', () => {
+    /*
+     * The reason `impactFlash` is an absolute window rather than a share of its beat. `damage`
+     * runs on `attackRecover`, which compresses to a third in a long fight — a flash tied to it
+     * would be faintest in exactly the twenty-round fights that most need help being read.
+     */
+    const squeezed = buildTimeline(SCRIPT, DEFAULT_CHOREO, { targetDuration: 1 });
+    const damage = squeezed.beats.find((beat) => beat.event.t === 'damage')!;
+    expect(damage.duration).toBeLessThan(DEFAULT_CHOREO.impactFlash);
+
+    expect(frameAt(squeezed, damage.at + damage.duration + 5).flash.b).toBeGreaterThan(0);
+  });
+
+  it('reports how far through a reaction is, so a dodge can be animated', () => {
+    const early = frameAt(timeline, at(4) + 5).reaction;
+    const late = frameAt(timeline, at(4) + DEFAULT_CHOREO.defenceBeat * 0.9).reaction;
+
+    expect(early?.progress).toBeLessThan(0.2);
+    expect(late?.progress).toBeGreaterThan(0.8);
+  });
+});
+
+describe('frameAt — set bonuses, finally visible', () => {
+  /*
+   * The bug this closes. `set_proc` has been in the log since Phase 12 and has had a *beat* since
+   * Phase 12 — `beatDuration` gives it `bossTickBeat` — but `frameAt` had no case for it, so all
+   * eight effects occupied time on the clock and drew nothing at all. A five-piece capstone
+   * firing was a pause.
+   */
+  const WITH_PROC: BattleEvent[] = [
+    { t: 'battle_start', a: CARD_A, b: CARD_B, first: 'a' },
+    { t: 'round_start', n: 1 },
+    { t: 'attack', source: 'a', raw: 90, final: 80, crit: false },
+    { t: 'damage', target: 'b', amount: 80, hpAfter: 120 },
+    { t: 'set_proc', side: 'a', effect: 'lifesteal', label: 'Bloodbound', amount: 24 },
+    { t: 'battle_end', winner: 'a', rounds: 1, reason: 'round_limit' },
+  ];
+  const timeline = buildTimeline(WITH_PROC, DEFAULT_CHOREO, { targetDuration: null });
+  const procAt = timeline.beats[4]!.at;
+
+  it('shows the set that fired, on the fighter it fired for', () => {
+    const proc = frameAt(timeline, procAt + 5).procs[0];
+    expect(proc).toBeDefined();
+    expect(proc!.side).toBe('a');
+    expect(proc!.effect).toBe('lifesteal');
+    expect(proc!.label).toBe('Bloodbound');
+    expect(proc!.amount).toBe(24);
+  });
+
+  it('throws a burst in that effect’s colour', () => {
+    const burst = frameAt(timeline, procAt).impacts.find((impact) => impact.kind === 'proc');
+    expect(burst?.effect).toBe('lifesteal');
+  });
+
+  it('keeps the label up past its own beat, then drops it', () => {
+    // The beat is 220ms and the label lives 700 — a name you cannot read is not a name.
+    expect(timeline.beats[4]!.duration).toBeLessThan(DEFAULT_CHOREO.procLabelLife);
+    expect(frameAt(timeline, procAt + 400).procs).toHaveLength(1);
+    expect(frameAt(timeline, procAt + DEFAULT_CHOREO.procLabelLife + 5).procs).toHaveLength(0);
+  });
+});
+
+describe('frameAt — a mend is not a hit', () => {
+  const WITH_HEAL: BattleEvent[] = [
+    { t: 'battle_start', a: CARD_A, b: CARD_B, first: 'a' },
+    { t: 'round_start', n: 1 },
+    { t: 'missed', source: 'a' },
+    { t: 'heal', target: 'b', amount: 30, hpAfter: 200 },
+    { t: 'battle_end', winner: 'b', rounds: 1, reason: 'round_limit' },
+  ];
+  const timeline = buildTimeline(WITH_HEAL, DEFAULT_CHOREO, { targetDuration: null });
+
+  it('bursts upward on the fighter who was mended, owned by nobody', () => {
+    const burst = frameAt(timeline, timeline.beats[3]!.at).impacts[0];
+    expect(burst?.kind).toBe('heal');
+    expect(burst?.side).toBe('b');
+    expect(burst?.source).toBeNull();
+  });
+});
+
+describe('reduced motion keeps the meaning and drops the violence', () => {
+  const timeline = buildTimeline(SCRIPT, REDUCED_CHOREO, { targetDuration: null });
+
+  it('stops flashing and shoving people', () => {
+    const frame = frameAt(timeline, timeline.beats[3]!.at + 5, REDUCED_CHOREO);
+    expect(frame.flash.b).toBe(0);
+    expect(frame.recoil.b).toBe(0);
+    expect(frame.shake).toBe(0);
+  });
+
+  it('still says which set fired, and still casts differently from a swing', () => {
+    /*
+     * The line this codebase keeps having to redraw: reduced motion is a request for less
+     * movement, not for less information.
+     *
+     * A set bonus is a *label*, so it keeps its full life — reading it is the entire point. The
+     * particle layer does drop out whole (that is Phase 4 behaviour and `e2e/battle.spec.ts`
+     * asserts it), so no bolt flies; what survives is the **stance**, because `castLead` still
+     * splits a caster's beat into brace and release where a melee school simply lunges. That is
+     * the last thing distinguishing a Mage's attack from a Warrior's, and it is worth keeping.
+     */
+    expect(REDUCED_CHOREO.procLabelLife).toBe(DEFAULT_CHOREO.procLabelLife);
+    expect(REDUCED_CHOREO.castLead).toBe(DEFAULT_CHOREO.castLead);
+    // Shortened like every other anticipation here, but never to zero — a cast with no gather is
+    // a cast with no stance, and then the two schools look identical again.
+    expect(REDUCED_CHOREO.castWindUp).toBeLessThan(DEFAULT_CHOREO.castWindUp);
+    expect(REDUCED_CHOREO.castWindUp).toBeGreaterThan(0);
   });
 });

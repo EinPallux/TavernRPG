@@ -197,6 +197,35 @@ order, so an early building's plaque would have gone under a later one).
 When the invariant matters, assert it directly — `e2e/map.spec.ts` walks the plaque's ancestors and
 fails if any of them has a `clip-path`.
 
+### 7.3 The battle VFX layer, and what it is allowed to do
+
+The fight is the one screen that draws to a canvas, and it plays by three rules the rest of the
+game does not need.
+
+**Anchors are measured, never assumed.** Bursts, damage numbers and set-proc labels all position
+off the same measured portrait centres (`useStageAnchors` in `BattleScene`), read on mount and on
+resize only. Before the VFX pass three different files each hard-coded their own guess — the
+particles at 0.3/0.7, the damage numbers at 0.28/0.72 — which is one number written down twice and
+wrong at every width but one: the fighter row is `max-w-5xl` centred in a full-bleed stage, so the
+portraits sit near 0.26/0.74 at 1440px and 0.36/0.64 at 2560px.
+
+**The busy column is the one above a portrait.** Damage numbers own 62–136px of it, and the
+nameplate and health bar own everything above that. Anything *else* that wants to appear near a
+fighter goes outboard — the set-proc label sits 7.5% of the stage to the fighter's outside, at eye
+level, in clear backdrop. Two screenshots went into learning this: the first version wrote the
+label across the fighter's face and the second across their name. **When you add a new floating
+element to the stage, screenshot it — the collision is invisible to every test in the suite.**
+
+**Tint once, not per frame.** Kenney's particle sprites are white. Each (sprite, colour) pair is
+pre-multiplied into a small offscreen canvas and cached; tinting at draw time would be a composite
+operation per spark per frame, which is the entire budget. The scene measures 0.8ms of main thread
+per frame against `perf-pass`'s 8ms ceiling with ten schools live.
+
+And the rule from §7 that the fight taught in the first place still holds hardest here: **a value
+the timeline already computed goes in `style`, never `animate`.** Every lunge, recoil, flash and
+sidestep in `BattleFighter` is a `style` write. `animate` keeps the entrance and the knockout,
+which are the only two genuine state changes in a fight.
+
 ## 8. Components (the kit — built ours, Kenney-assisted)
 
 `<TavernPanel>` (chamfer+brackets, 3 elevations) · `<ActionButton>` (primary amber / secondary
