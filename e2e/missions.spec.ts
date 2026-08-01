@@ -103,7 +103,12 @@ interface SaveShape {
     pendingMission: unknown;
     vigor: number;
   };
-  hero: { dice: number } | null;
+  hero: { dice: number; level: number } | null;
+}
+
+/** The number a card is quoting, as a number. */
+async function quoted(page: Page, testid: string): Promise<number> {
+  return Number((await page.getByTestId(testid).innerText()).replace(/\D/g, ''));
 }
 
 test.describe('the mission board', () => {
@@ -281,6 +286,84 @@ test.describe('the core loop', () => {
     // The 5-minute option is still affordable, so the card stays usable.
     await page.getByTestId(`duration-${id}-5`).click();
     await expect(accept).toBeEnabled();
+  });
+});
+
+test.describe("the greenhorn's due", () => {
+  test.beforeEach(async ({ page }) => {
+    await ensureHero(page);
+  });
+
+  test('a level-1 hero is told the town is overpaying, and by how much', async ({ page }) => {
+    // The bonus is worth nothing the player cannot see (balancing §19), so the card prints it.
+    const note = page.getByTestId('greenhorn-note').first();
+    await expect(note).toBeVisible();
+    await expect(note).toHaveAttribute('data-bonus', '1.60');
+    await expect(note).toContainText('×1.60');
+
+    // The sentence is in the tooltip rather than on three cards at once — including when it ends.
+    await note.hover();
+    const tip = page.getByTestId('tooltip');
+    await expect(tip).toBeVisible();
+    await expect(tip).toContainText('gone at 25');
+  });
+
+  test('the quote is the bonused number, not the bare one', async ({ page }) => {
+    /*
+     * The Phase 5 bug this feature exposed: the card called `missionPayout` without the bonus
+     * while the door paid with it. At level 1 that understated a contract by more than a third
+     * of what it pays, so a ratio is enough to catch a card quoting bare again.
+     */
+    const id = await firstOffer(page);
+    await page.getByTestId(`duration-${id}-10`).click();
+
+    const gold = await quoted(page, `payout-gold-${id}`);
+    const xp = await quoted(page, `payout-xp-${id}`);
+
+    // Bare, a 10-minute contract at level 1 pays 120 gold and 69 XP; ×1.6 is what is printed.
+    expect(gold).toBe(192);
+    expect(xp).toBe(110);
+  });
+
+  test('what the card quotes is what the door pays', async ({ page }) => {
+    const id = await firstOffer(page);
+    await page.getByTestId(`duration-${id}-10`).click();
+
+    const gold = await quoted(page, `payout-gold-${id}`);
+    const xp = await quoted(page, `payout-xp-${id}`);
+
+    await page.getByTestId(`accept-${id}`).click();
+    await fastForward(page);
+    await page.getByTestId('watch-fight').click();
+    await page.getByTestId('battle-skip').click();
+
+    const result = page.getByTestId('battle-result');
+    await expect(result).toBeVisible();
+
+    // A loss still pays half the gold and no XP (tavern spec §3), so which claim to make
+    // depends on the outcome — but both are claims about the *quoted* numbers.
+    if ((await result.getAttribute('data-outcome')) === 'victory') {
+      await expect(page.getByTestId('reward-gold')).toContainText(gold.toLocaleString());
+      await expect(page.getByTestId('reward-xp')).toContainText(xp.toLocaleString());
+    } else {
+      await expect(page.getByTestId('reward-lines')).toHaveCount(0);
+      await expect
+        .poll(async () =>
+          Number((await page.getByTestId('hud-gold').innerText()).replace(/\D/g, '')),
+        )
+        .toBeGreaterThan(0);
+    }
+  });
+
+  test('it is gone by level 25, and the card stops mentioning it', async ({ page }) => {
+    await page.evaluate(() => {
+      const store = (window as unknown as { __tavernStore?: TavernStoreHandle }).__tavernStore!;
+      const { save } = store.getState();
+      store.setState({ save: { ...save!, hero: { ...save!.hero!, level: 25 } } });
+    });
+
+    await expect(page.getByTestId('greenhorn-note')).toHaveCount(0);
+    await expect(page.locator('[data-testid^="mission-card-"]').first()).toBeVisible();
   });
 });
 

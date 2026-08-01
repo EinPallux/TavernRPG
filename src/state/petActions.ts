@@ -31,7 +31,7 @@ import {
   rewardBonus,
 } from '@/engine/pets/boost';
 import type { PetContribution } from '@/engine/combat/combatant';
-import type { PayoutBonus } from '@/engine/progression/rewards';
+import { greenhornPayoutBonus, type PayoutBonus } from '@/engine/progression/rewards';
 import { deriveStats, type Equipment } from '@/engine/hero/derived';
 import { pet, type PetId } from '@/data/pets';
 import { guildBonus } from './guildActions';
@@ -92,7 +92,17 @@ export function payoutBonus(save: SaveFile): PayoutBonus {
     equipment: hero.equipment as Equipment,
   });
 
+  /*
+   * The greenhorn's due composes here rather than at each payout site, which is what makes it
+   * reach contracts, the Long Road and the Undertavern from one edit. Every payout the game
+   * bonuses at all, in other words — it is the town being generous to a new name, not a rebate on
+   * Vigor, so restricting it to the Vigor spends would have meant a second fold and a second
+   * place for it to go missing. Materials are outside `PayoutBonus` and stay outside it, which is
+   * why a delve's Starmetal is untouched and set pacing does not move. It multiplies with the
+   * guild tracks and the pet's boost rather than adding, as every source does (balancing §19).
+   */
   return combineBonus(
+    greenhornPayoutBonus(hero.level),
     guildBonus(save),
     rewardBonus(currentBoost(save), { goldFind: derived.goldFind, xpBonus: derived.xpBonus }),
   );

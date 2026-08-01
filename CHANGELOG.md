@@ -7,6 +7,62 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — the greenhorn's due
+
+- **Emberhollow pays a new hero over the odds.** ×1.6 on contract gold and XP at level 1, sliding
+  to ×1 by level 25. A 20-minute contract used to hand a level-1 hero 46% of a level after twenty
+  real minutes of waiting; it hands them 74% now, and 48% at level 10 where it used to be 35%.
+- **The first fortnight has a shape it did not have.** `vigorPerLevel` already curved, but only
+  from 2.3 levels per hundred Vigor to 1.55 across the whole of onboarding — two contracts a level
+  at level one and a shade over two at fifteen, which reads as no curve at all. It now runs 3.68
+  down to 1.94 over the same span, and a player can feel that without being told.
+- **Gold and XP move by the same factor, which is the whole safety argument.** Gold per *level* is
+  unchanged, so a hero arrives at level 20 with the attributes they always would have had and the
+  power curve is untouched — only the clock moved. Boosting XP alone would have levelled new
+  players into monsters they could not afford to fight.
+- Concentrated to level 25 rather than spread to 40: the sweep showed the short shape gives a
+  stronger early kick *and* disturbs level 55 less, because the help lands where the player is
+  deciding whether to stay. Balancing §19 has the table and the alternatives.
+- The card prints it while it lasts — `Greenhorn's due ×1.60`, a row beside Gold and XP, with the
+  explanation on hover. A bonus the player cannot see is one that only exists in a spreadsheet,
+  and this one shrinks every level, so the multiplier is the part worth showing. (It was a
+  sentence first. Three contracts are on the board at once, so a sentence is drawn three times and
+  reads as a banner — which only a screenshot can tell you, since every test passes on one card.)
+
+### Fixed
+
+- **The mission card quoted a payout it was not going to pay.** `MissionCard` called
+  `missionPayout(...)` with no bonus, so a guilded player with a fed companion was told one number
+  at the table and handed a larger one at the door — against the explicit note on `missionPayout`
+  that the bonus belongs at quote time, because "a buff applied only on collection is a buff
+  nobody believes in". Invisible while every source was an opt-in mid-game buff; impossible to
+  miss at ×1.6 from level one.
+- **Two tooltips at once, wherever a glossary term sat inside a tooltip trigger.** The character
+  screen's "Damage reduction" row carries the hint "Against an opponent of your own level" and its
+  label is the term _Damage reduction cap_; `pointerenter` fires on an ancestor when the pointer
+  enters any part of its subtree, so hovering the word opened both and the general explanation
+  covered the specific one. Opening a term now shuts the shell tooltip and cancels anything it had
+  queued — the innermost explanation wins. Found by running the full e2e suite, which had not been
+  run since before the day's work landed; the assertion that caught it was itself asking for
+  `getByRole('tooltip')` unqualified, so it could only ever have passed by luck.
+
+### Changed
+
+- **§0's level-10 row is day 1–2**, which is the point of the feature rather than a side effect.
+  Level 55 (20.1) did not move at all, because the bonus is spent by level 25 — which is what
+  concentrating it there was for.
+- **§0's level-25 row reads day 5–9**, its early edge widened by one day. The row has always
+  promised "the first week"; the reference player now lands on 5.3, inside the week but 11.5%
+  early of the parenthesised range, which was a reading of the promise rather than a second
+  constraint. It would have passed the ±20% band either way — that tolerance is for model noise,
+  not for absorbing a change made on purpose, so the range was edited instead of leaned on. Every
+  §0 row now sits inside its window with nothing riding on the band.
+- The guild-compounding floor came down from 1.15× to 1.08×: the greenhorn's due is a partial
+  equaliser, since a guilded player levels faster and therefore spends fewer days being paid
+  extra. The advantage returns in full past level 25, where the isolated check still measures it.
+- `combineBonus` is variadic. Three sources nested as `combine(a, combine(b, c))` read like an
+  accident of arity rather than the design, which is that every source multiplies.
+
 ### Added — the day's work
 
 - **Vigor spent earns Golden Dice.** A die at 50, 100 and 150 Vigor spent in a day, up to three.

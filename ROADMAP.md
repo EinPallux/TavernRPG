@@ -493,6 +493,23 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
   18's licence gate had recorded its absence — so all five artists are named in `CREDITS.md` and
   on the credits screen, and `components/icons/icons.test.ts` derives that table from the files on
   disk rather than trusting it. Style guide §6, asset-pipeline §2.
+- *The day's work.* Vigor spent pays a Golden Die at 50, 100 and 150 — the first earn-only faucet
+  a player can farm daily, and the answer to "the Long Road needs Vigor and Ale costs a Die".
+  Bounded by construction rather than by a written cap: three Ale is the day's ceiling, so 160
+  Vigor is, so three dice is. Buying the Ale to reach the third rung costs exactly what the rung
+  pays, which makes the loop time-for-time and stops it printing currency. `systems/economy.md`,
+  balancing §18, save schema **v18**. `state/vigorActions.ts#spendVigor` is the one path both
+  spenders go through, and the payout is a difference of two totals rather than a high-water mark,
+  so replaying a day cannot double-pay. It forced a §0 re-fit (Q25) — more Vigor is faster
+  levelling and there is no mechanism that avoids it.
+- *The greenhorn's due.* Emberhollow overpays a new hero — ×1.6 on gold and XP at level 1, sliding
+  to ×1 at level 25 — because `vigorPerLevel` curved far too gently to be felt and the first
+  fortnight was two contracts a level, over and over. Balancing §19, no save change. Gold and XP
+  move by the same factor so gold *per level* is invariant: the player reaches every level with the
+  attributes they always would have had, and only the clock moves. Folded once, in
+  `payoutBonus`, so it reaches contracts, the Long Road and the Undertavern together. Q26 records
+  the sweep and the two shapes not taken. It closed a Phase-5 bug on the way: the mission card had
+  been quoting a payout without the bonus it was about to be paid with.
 
 1. **The Collector's Album** — S&F-scrapbook-style collection of items/monsters with % XP bonus.
 2. **Guild Wars & Raid Bosses** — scheduled guild-vs-guild battles + co-op PvE chains (sim ready).

@@ -17,6 +17,9 @@ import { missionDropTable, rarityOdds } from '@/engine/items/drops';
 import {
   MISSION_DURATIONS,
   missionPayout,
+  greenhornBonus,
+  GREENHORN_UNTIL,
+  type PayoutBonus,
   type MissionDuration,
 } from '@/engine/progression/rewards';
 import { xpNeeded } from '@/engine/progression/xp';
@@ -33,6 +36,8 @@ export interface MissionCardProps {
   readonly offer: StoredMissionOffer;
   readonly heroLevel: number;
   readonly vigor: number;
+  /** Everything multiplying the payout — the greenhorn's due, the hall, the companion. */
+  readonly bonus: PayoutBonus;
   readonly disabled?: boolean;
   readonly disabledReason?: string;
   readonly onAccept: (duration: MissionDuration) => void;
@@ -43,12 +48,20 @@ export function MissionCard({
   offer,
   heroLevel,
   vigor,
+  bonus,
   disabled = false,
   disabledReason,
   onAccept,
   index = 0,
 }: MissionCardProps) {
   const [duration, setDuration] = useState<MissionDuration>(10);
+  const greenTip = useTooltip({
+    title: 'The greenhorn’s due',
+    detail:
+      'Gold and experience both, on contracts, the Long Road and the Undertavern. It shrinks a ' +
+      `little every level and is gone at ${GREENHORN_UNTIL} — by then a contract pays what it ` +
+      'always did.',
+  });
   const oddsTip = useTooltip({
     title: 'Published odds',
     detail: 'The same numbers the game rolls against — never rounded in the house’s favour.',
@@ -58,7 +71,18 @@ export function MissionCard({
   const monster = monsterById(offer.monsterId);
   const template = blurbById(offer.blurbId);
 
-  const payout = missionPayout(heroLevel, duration, xpNeeded(heroLevel));
+  /*
+   * Quoted **with** the bonus, because the payout is paid with it.
+   *
+   * This card had been showing `missionPayout(...)` bare since Phase 5, so a guilded player with
+   * a fed companion was told one number at the table and handed a larger one at the door. The
+   * module comment on `missionPayout` says the bonus belongs at quote time for exactly this
+   * reason — "a buff applied only on collection is a buff nobody believes in" — and the one
+   * screen that quotes was the one place not passing it. The greenhorn's due made it impossible
+   * to ignore: at level 1 the card would have understated the reward by more than half.
+   */
+  const payout = missionPayout(heroLevel, duration, xpNeeded(heroLevel), bonus);
+  const greenhorn = greenhornBonus(heroLevel);
   const table = missionDropTable(duration);
   const affordable = vigor >= duration;
 
@@ -159,16 +183,41 @@ export function MissionCard({
               <CoinIcon size={13} />
               Gold
             </dt>
-            <dd className="text-parchment-300 tabular-nums">{payout.gold.toLocaleString()}</dd>
+            <dd className="text-parchment-300 tabular-nums" data-testid={`payout-gold-${offer.id}`}>
+              {payout.gold.toLocaleString()}
+            </dd>
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-parchment-500/72 flex items-center gap-1.5">
               <SparkIcon size={13} />
               XP
             </dt>
-            <dd className="text-parchment-300 tabular-nums">{payout.xp.toLocaleString()}</dd>
+            <dd className="text-parchment-300 tabular-nums" data-testid={`payout-xp-${offer.id}`}>
+              {payout.xp.toLocaleString()}
+            </dd>
           </div>
         </motion.dl>
+
+        {/* The greenhorn's due, said out loud while it lasts (balancing §19) — a bonus the player
+            cannot see is one that only exists in a spreadsheet.
+
+            A label and a number rather than a sentence, and that is a decision made at the
+            screenshot: three cards are on the board at once, so any prose here is printed three
+            times and reads as a banner rather than as part of the card. The multiplier is the
+            interesting part — it shrinks every level — and it belongs in the payout block whose
+            figures it inflates. The sentence lives in the tooltip, where it is read once. */}
+        {greenhorn > 1 && (
+          <p
+            className="border-parchment-500/10 flex items-baseline justify-between border-t pt-2 text-[11px] text-amber-400"
+            data-testid="greenhorn-note"
+            data-bonus={greenhorn.toFixed(2)}
+            {...greenTip}
+            tabIndex={0}
+          >
+            <span>Greenhorn’s due</span>
+            <span className="font-bold tabular-nums">×{greenhorn.toFixed(2)}</span>
+          </p>
+        )}
 
         {/* Published odds — the same table the roll obeys. */}
         <div

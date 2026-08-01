@@ -22,6 +22,7 @@ import {
   ALE_DICE_COST,
   goldPatrolPerHour,
   goldPerVigor,
+  greenhornBonus,
   missionPayout,
   xpPatrolPerHour,
   xpPerVigor,
@@ -328,12 +329,19 @@ export function simulateEconomy({
     const ales = alesADay(style);
     const vigorBudget = Math.floor((VIGOR_PER_DAY + ales * ALE_VIGOR) * style.vigorUsed);
 
-    // A guilded player is paid more for the same day's work, everywhere it applies.
-    const bonus = guildMultipliers({
+    /*
+     * A guilded player is paid more for the same day's work, everywhere it applies — and so is a
+     * green one, until level `GREENHORN_UNTIL` (balancing §19). Multiplied together the way the
+     * game folds them in `payoutBonus`, rather than modelled separately, because a sim that
+     * composed them differently from the game would be measuring a third thing.
+     */
+    const hall = guildMultipliers({
       isMember: (style.treasuryStep ?? 0) > 0 || (style.drillmasterStep ?? 0) > 0,
       treasuryStep: style.treasuryStep ?? 0,
       drillmasterStep: style.drillmasterStep ?? 0,
     });
+    const green = greenhornBonus(level);
+    const bonus = { gold: hall.gold * green, xp: hall.xp * green };
 
     /*
      * ── The Long Road, taken off the top of the day's Vigor. ──────────────────────────

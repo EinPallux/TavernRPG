@@ -273,8 +273,31 @@ test.describe('the glossary', () => {
     await term.scrollIntoViewIfNeeded();
     await term.hover();
 
-    const tip = page.getByRole('tooltip');
+    const tip = page.locator('[role="tooltip"]', { hasText: 'Damage reduction cap' });
     await expect(tip).toBeVisible();
     await expect(tip).toContainText('The most armour can ever take off a hit');
+  });
+
+  test('is the only explanation showing, even inside a row that has its own', async ({ page }) => {
+    /*
+     * This term sits inside the character screen's "Damage reduction" stat row, which carries the
+     * hint "Against an opponent of your own level". `pointerenter` fires on an ancestor when the
+     * pointer enters any part of its subtree, so both used to open at once and the general one
+     * covered the specific one. The innermost explanation wins.
+     *
+     * The old version of the test above asked for `getByRole('tooltip')` unqualified, which was
+     * ambiguous by construction — the shell layer uses that role too — and only ever passed
+     * because the second one happened not to be open.
+     */
+    await createHero(page, { skip: true });
+
+    const term = page.getByTestId('term-damage-reduction-cap');
+    await term.scrollIntoViewIfNeeded();
+    await term.hover();
+    // Longer than the 340 ms hover delay: the ancestor's timer must be cancelled, not just beaten.
+    await page.waitForTimeout(700);
+
+    await expect(page.getByTestId('tooltip')).toHaveCount(0);
+    await expect(page.locator('[role="tooltip"]')).toHaveCount(1);
   });
 });

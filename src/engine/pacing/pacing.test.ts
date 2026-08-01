@@ -103,24 +103,39 @@ describe('every §0 row is inside the band the ROADMAP asks for', () => {
 
   it('measures a schedule row against §0’s window, not against one end of it', () => {
     /*
-     * The rule the Long Road forced into the open. §0 promises level 25 in *week two*, and the
-     * row had been measured against day 14 alone — so the game delivering on day 10 read as a
-     * 29% miss for arriving four days into the week it promised.
+     * The rule the Long Road forced into the open. §0 used to promise level 25 in *week two*, and
+     * the row was measured against day 14 alone — so the game delivering on day 10 read as a 29%
+     * miss for arriving four days into the week it had promised.
      *
-     * The band is not looser for it. Day 10 is inside week two and passes; day 5 is not and
-     * still fails, which is the failure two-sidedness exists to catch.
+     * The band is not looser for it. Somewhere inside the window passes; somewhere clearly short
+     * of it still fails, which is the failure two-sidedness exists to catch. Both claims are made
+     * against `TARGET_EARLIEST` below rather than against literal days, because the window itself
+     * has moved twice since and the *property* is what this test is about.
+     *
+     * The literal is pinned so that widening the early edge is a visible edit rather than a quiet
+     * one — the whole value of the pin, and it has now caught two deliberate moves. The day's work
+     * (§18) took the row from week two to the first week; the greenhorn's due (§19) took the early
+     * edge from 6 to 5, because the row's promise is "the first week" and the reference player
+     * lands on 5.3. Both are recorded in §0.
      */
-    // The row moved when the day's work shipped — §0 now promises level 25 inside the first
-    // week — but the property under test is the *window*, not the days in it.
-    expect(TARGET_EARLIEST['level-25']).toBe(6);
-    const inTheWindow = { ...run, reached: { ...run.reached, 'level-25': 7 } };
+    expect(TARGET_EARLIEST['level-25']).toBe(5);
+
+    const earliest = TARGET_EARLIEST['level-25'];
+    const latest = TARGET_DAYS['level-25'];
+
+    const inTheWindow = {
+      ...run,
+      reached: { ...run.reached, 'level-25': (earliest + latest) / 2 },
+    };
     expect(withinBand(inTheWindow, 'level-25')).toBe(true);
     expect(windowDrift(inTheWindow, 'level-25')).toBe(0);
     // ...and the drift off the promise is still reported, because it is still a fact.
     expect(drift(inTheWindow, 'level-25')).toBeLessThan(0);
 
-    const wayEarly = { ...run, reached: { ...run.reached, 'level-25': 3 } };
+    // Half the early edge is short of it by more than any tolerance should forgive.
+    const wayEarly = { ...run, reached: { ...run.reached, 'level-25': earliest / 2 } };
     expect(withinBand(wayEarly, 'level-25')).toBe(false);
+    expect(windowDrift(wayEarly, 'level-25')).toBeLessThan(0);
   });
 
   it('never counts a milestone that did not happen as passing', () => {

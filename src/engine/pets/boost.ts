@@ -96,9 +96,18 @@ export function rewardBonus(
   };
 }
 
-/** Two bonuses, composed. Multiplicative, per `rewards.ts`. */
-export function combineBonus(a: PayoutBonus, b: PayoutBonus): PayoutBonus {
-  return { gold: a.gold * b.gold, xp: a.xp * b.xp };
+/**
+ * Fold any number of bonuses together. Multiplicative, per `rewards.ts`.
+ *
+ * Variadic since the greenhorn's due joined the guild tracks and the pet boost (balancing §19) —
+ * three sources nested as `combine(a, combine(b, c))` reads like an accident of arity rather than
+ * the design, which is that every source multiplies and none of them is special.
+ */
+export function combineBonus(...bonuses: readonly PayoutBonus[]): PayoutBonus {
+  return bonuses.reduce((all, one) => ({ gold: all.gold * one.gold, xp: all.xp * one.xp }), {
+    gold: 1,
+    xp: 1,
+  });
 }
 
 export { pet };

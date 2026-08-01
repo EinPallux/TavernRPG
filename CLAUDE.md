@@ -154,7 +154,14 @@ feedback, edge cases and tests. Deployed on Vercel.
   two totals inside the update that spends the Vigor, which is `monthlyPaidThrough`'s shape one
   step further in. Balancing §18.
 
-1,464 unit tests + 289 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
+- **The greenhorn's due** — Emberhollow overpays a new hero: ×1.6 on gold *and* XP at level 1,
+  sliding to ×1 at level 25. `greenhornBonus`/`greenhornPayoutBonus` in
+  `engine/progression/rewards.ts`, folded first in `state/petActions.ts#payoutBonus` so it reaches
+  contracts, the Long Road and the Undertavern from one edit. No save change. The Tankard prints
+  the live multiplier while it lasts. It also closed a Phase-5 bug: `MissionCard` had been quoting
+  `missionPayout` *without* the bonus it was going to be paid with. Balancing §19.
+
+1,473 unit tests + 298 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
 the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
 
 **A `clip-path` clips its descendants — and this codebase has now shipped that bug twice.** Item
@@ -165,6 +172,33 @@ it did not stop the second occasion, because the second occasion was *older code
 So: when a lesson lands, grep for the shape rather than only fixing the instance. Anything that
 overhangs its parent goes in a layer — `useHoverCard` now, beside `useTooltip`, sharing one owner
 so a tooltip and a card can never both be open.
+
+**One hover, two tooltips — because `pointerenter` fires on ancestors.** A glossary `Term` is a
+word inside a sentence, and that sentence often sits on something with a tooltip of its own. Enter
+the word and the ancestor's `onPointerEnter` fires too, so the character screen showed the row's
+general hint stacked over the specific definition the player had actually pointed at. Opening a
+term now calls `dismissTooltips()` — not `hideAll()`, because the ancestor's 340 ms timer may still
+be counting and clearing only what is *showing* lets it fire a moment later. The rule for any
+nested affordance: **the innermost explanation wins, and suppressing the outer one means cancelling
+its pending work, not just its visible output.**
+
+**An unqualified role query is an assertion waiting to pass by luck.** The test that found the bug
+above asked for `getByRole('tooltip')` on a page whose shell layer uses that role — it could match
+two elements from the day it was written, and passed for months only because the second one
+happened to be closed. When a role, label or text is shared by a global layer, scope the query or
+you are asserting on whichever one the DOM happened to hand you.
+
+**A gate you have not run since two features ago is not a gate.** This bug shipped in one slice and
+was found in the next, because "run the affected specs" had stood in for the full suite twice
+running. It is the `format:check` lesson again — *run the gate, not the files you touched* — and
+the corollary is that the full e2e run belongs at the end of every slice, not every other one.
+
+**A bonus on XP alone is a faster ride into a wall.** The greenhorn's due multiplies mission gold
+*and* XP by the same factor, and that is not symmetry for its own sake: gold per level is
+`goldPerVigor × vigorPerLevel`, so scaling both leaves it invariant and the player reaches each
+level with the attributes they always would have had. Scale XP alone and they arrive early,
+under-trained, against monsters priced for their level. Any future "level faster" lever has to
+answer the same question — what does this do to gold *per level*?
 
 **More Vigor is faster levelling, and there is no design that avoids it.** The day's work makes
 three Ale self-funding, which is +60% Vigor, which pulled level 55 from day 32 to day 22 and
@@ -249,6 +283,13 @@ framework cannot see, assert it directly: the spec now walks the plaque's ancest
 **Look at the screen.** Both of the above were found by taking a screenshot and reading it, after
 the whole suite was green. A visual feature is not done when its tests pass; it is done when
 somebody has looked at it.
+
+**And count how many times the component is on screen.** The greenhorn's due first shipped as a
+sentence under the payout — correct, legible, well-written, and drawn *three times*, because three
+contracts are on the board at once. Three copies of one sentence stop being a note and become a
+banner. It is now a label and a number, matching the Gold/XP/odds rows it sits with, and the
+sentence is in the tooltip where it is read once. Nothing but a screenshot can tell you this:
+every test passes on one card, and the repetition is a property of the *list*.
 
 **A guard that delays a load has to gate the render too.** The tab-lock election put 350ms in
 front of `hydrate()`, and `AppShell` kept drawing the town over a store still at `status: 'idle'` —
