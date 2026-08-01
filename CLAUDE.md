@@ -11,7 +11,8 @@ feedback, edge cases and tests. Deployed on Vercel.
 
 - **Phase 0:** scaffold, seeded RNG, GameClock, save system (Zod + migrations + IndexedDB).
 - **Phase 1:** design tokens + motion system, the component kit (`src/components/ui/`), the
-  hand-drawn icon family, the app shell (nav rail + HUD + place transitions), all 15 places
+  hand-drawn icon family (since replaced — see post-1.0 below), the app shell (nav rail + HUD +
+  place transitions), all 15 places
   routed as dressed placeholders, feature gates, `/dev/kit`, and save schema v2 (settings).
 
 - **Phase 2:** the five classes as data, hero creation, the character screen (paperdoll,
@@ -137,8 +138,25 @@ feedback, edge cases and tests. Deployed on Vercel.
   its map hotspot, an economy faucet, and save schema **v17**. One Vigor a stage; a first clear
   pays once and everything after it is practice.
 
-1,395 unit tests + 289 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
+- **The icons are game-icons.net now** — 67 of 69, vendored under `game_assets/icons/<author>/`,
+  mapped one reviewable line per id in `scripts/icon-map.mjs`, compiled to
+  `src/components/icons/vendored.ts` by `npm run icons:sync`. Call sites did not change: same ids,
+  same `<Icon name>`, same `currentColor`. Only the chevron (a direction, not a thing) and the
+  Vigor tankard (a meter whose clip path is the mug) stay hand-drawn. **The licence is per icon**
+  — CC BY 3.0 names the artist, so the author travels from the directory name into the module and
+  on into CREDITS.md, and `components/icons/icons.test.ts` derives that table from disk rather
+  than trusting it.
+
+1,440 unit tests + 289 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
 the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
+
+**"Every gate passed" is not "the artwork survived".** Rounding SVG coordinates to halve the icon
+payload collapsed all 67 drawings into slivers, and typecheck, lint and the production build were
+green the whole time — because path data is *compact*, and `10.5.75` is two numbers, so a
+`\d+\.\d+` regex eats one and glues the remainder to the next. Nothing in this repo can see that
+except a human looking at a picture. Two rules fell out: never rewrite path data with a regex (the
+tool is a real parser), and any asset that passes through a transform gets an equality assertion
+against its source, because "it compiled" says nothing about what came out.
 
 **A default is a decision, and `useState(1)` is the easiest place to hide one.** The road's chapter
 board held its chapter in state seeded at 1 and corrected it during render when the *reached*
@@ -518,7 +536,7 @@ conjures any combination of gear, levels and gold on demand.
   `verify` (typecheck → lint → test → build) / `balance` (combat harness) / `economy` (economy
   sim) / `pacing` (the §0 ladder) / `tuning` (the `[TUNE]` inventory + 90-day ledger) /
   `perf` (Lighthouse + bundle + main-thread cost, needs a server on :3100) /
-  `release` (the GDD §7 definition, line by line) / `assets:sync`
+  `release` (the GDD §7 definition, line by line) / `assets:sync` / `icons:sync`
   — keep this list current as scripts appear.
 
 ## Canon quick-reference (avoid re-deciding)

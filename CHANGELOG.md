@@ -7,6 +7,53 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Changed — every icon in the game
+
+- **67 of the 69 glyphs are now game-icons.net artwork.** A beer stein that is a beer stein, a
+  watchtower for the City Watch, a cave mouth for the Undertavern, and twelve companions you can
+  tell apart at nav-rail size — a rat, a raven, a scarab, a snail. The set they replaced was
+  hand-drawn line work that had covered the whole vocabulary since Phase 1, and at 19px a lot of
+  it was the same three shapes. Silhouettes survive that size; strokes do not.
+- **Nothing at a call site changed.** Same ids (`src/data/icons.ts`), same `<Icon name>`, same
+  `size` prop, same `currentColor` tinting — the wrapper went from a 24-grid stroke to a 512-grid
+  fill and every existing text-colour class kept working. `items.tsx` and `pets.tsx` are gone;
+  their two hundred hand-plotted paths are one generated table.
+- **The chevron and the Vigor tankard stayed hand-drawn.** A chevron is a direction rather than a
+  thing, and the tankard is a *meter* whose clip path is tied to the mug it draws so the ale level
+  can be a real liquid line. Both would have got worse as artwork.
+- **A vendoring step, not a dependency.** `scripts/icon-map.mjs` holds the decisions as one
+  reviewable line per icon (`tankard: 'beer-stein'`, `stairsDown: 'cave-entrance'`), the SVGs are
+  tracked under `game_assets/icons/<author>/` exactly as the backgrounds are, and
+  `npm run icons:sync` compiles the two into a committed module. No runtime package, no network,
+  no `public/` copy that could 404.
+
+### Added — the licence, discharged per artist
+
+- **CC BY 3.0 credits the artist, not the website**, so CREDITS.md now names all five — Lorc (43
+  icons), Delapouite (20), Skoll (2), Carl Olsen (1), Willdabeast (1) — with the upstream file
+  names beside each, and the upstream notice vendored verbatim at
+  `game_assets/icons/LICENSE.txt`. The in-game Settings → Credits screen shows the same five
+  marked *required*.
+- **`src/components/icons/icons.test.ts` derives that table from the files on disk.** Counts
+  included: a list of names survives any change, a list of *counts* fails the moment one icon is
+  remapped, which is the only version worth reading. It also fails on an orphaned SVG, an unused
+  id, and a sixth artist arriving unlisted.
+- **`credits.test.ts` now runs in both directions.** Phase 18 caught this file claiming an
+  obligation the build did not have; the artwork landing turned the correction itself into the
+  false half, in the same paragraph. A stated absence has to stop being stated the day it stops
+  being true, so both halves are asserted.
+
+### Fixed — while building it
+
+- **Rounding path coordinates destroyed every drawing, and every gate passed.** Integers at 512
+  scale are 0.03px at render size and halved the payload, so the first conversion rounded them.
+  SVG path data is *compact*: in `M10.5.75l3.25.5` the token `10.5.75` is **two** numbers, and a
+  `\d+\.\d+` regex matches `10.5`, rounds it to `11` and leaves `.75` glued on — two coordinates
+  collapse into one and the shape becomes a sliver. Typecheck, lint and the production build were
+  all green. A screenshot found it. The rounding is gone (105 KB of path data against a 400 KB
+  chunk budget), the generated `d` is asserted byte-identical to the vendored file, and the script
+  header records that the tool for this job is a real path parser, never a regex.
+
 ### Added — the Long Road
 
 - **A campaign.** A hundred and twenty fixed stages leaving Emberhollow by the gate, in ten

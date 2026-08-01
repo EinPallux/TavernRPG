@@ -20,7 +20,7 @@ import { TimerChip } from '@/components/ui/TimerChip';
 import { KeeperBark } from '@/components/ui/KeeperBark';
 import { Modal } from '@/components/ui/Modal';
 import { AmbientStage } from '@/components/ui/AmbientStage';
-import { ICONS, Icon, VigorTankard } from '@/components/icons';
+import { ICONS, Icon, VigorTankard, VENDORED_AUTHORS } from '@/components/icons';
 import { ICON_IDS } from '@/data/icons';
 import { useShellStore } from '@/state/shellStore';
 import { gameNow } from '@/state/clock';
@@ -349,7 +349,10 @@ export default function KitPage() {
             </div>
           </Section>
 
-          <Section title={`Icons (${ICON_IDS.length}, hand-authored)`}>
+          {/* The count is ids + the Vigor tankard, which is a meter rather than an id. */}
+          <Section
+            title={`Icons (${ICON_IDS.length + 1} — ${VENDORED_AUTHORS.length} game-icons.net artists, plus the chevron and the tankard)`}
+          >
             <div className="flex flex-wrap gap-2">
               {(Object.keys(ICONS) as (keyof typeof ICONS)[]).map((name) => (
                 <IconCell key={name} name={name} />

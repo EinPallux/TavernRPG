@@ -94,19 +94,41 @@ Contrast: all text pairs ≥ 4.5:1 (checked in CI via token test). Dark theme on
 
 ## 6. Iconography & item presentation
 
-Two distinct icon jobs, deliberately sourced differently:
+**One family: game-icons.net silhouettes, 512-grid, filled, `currentColor`.**
 
-- **UI chrome — drawn in-house** (`src/components/icons/`): navigation, currencies, status. One
-  single-weight "line-carved" family (24×24, `currentColor`, 1.5 stroke, round caps) so the
-  interface reads as one designed system instead of an icon-pack collage. The icon *vocabulary*
-  is declared in `src/data/icons.ts` and implemented in the components layer, so a missing glyph
-  is a type error. The Vigor tankard is not a static glyph — it fills with ale as the meter drains.
-- **Content icons — game-icons.net** (asset doc §2, from Phase 2): items, weapons, armour,
-  monsters, pets, where variety is the whole point. Rendered on rarity backplates: chamfered tile,
-  rarity frame + subtle inner glow, glyph in warm off-white; Set pieces add a sigil watermark corner.
+The icon *vocabulary* is declared in `src/data/icons.ts` — 69 ids the content layer can name while
+staying React-free — and implemented in `src/components/icons/`, so a missing glyph is a type
+error rather than a blank square in the nav rail. Every id but two resolves to a game-icons.net
+drawing, chosen per id in `scripts/icon-map.mjs`, vendored under
+`game_assets/icons/<author>/<name>.svg` and compiled by `npm run icons:sync`.
 
-Icons must be legible at **19px** — the nav rail size. Thin radial detail (a gear's spokes, a
-horse's head) turns to mush; silhouettes survive. Test at size, not zoomed in.
+This replaced a hand-drawn single-weight line family (24×24, 1.5 stroke, round caps) that had
+covered the whole vocabulary since Phase 1. The trade was deliberate and it went one way: a
+uniform line weight is a real virtue, and it is worth less than a beer stein that reads as a beer
+stein and twelve companions a player can tell apart at a glance. **Coherence comes from the
+family being one family** — every icon on the same grid, filled, tinted by `color`, sized by one
+prop — not from every icon having been drawn by the same hand.
+
+- **The two exceptions.** A chevron is a *direction*, not a thing; no themed drawing of "next"
+  beats an arrow. The Vigor tankard is a *meter* — its clip path is tied to the mug it draws so
+  the ale level can be a real liquid line (§7). Both would get worse as artwork, so both stay
+  hand-drawn on the 24 grid.
+- **The licence is per icon.** game-icons.net is CC BY 3.0 and CC BY credits the **artist**, not
+  the site. The author travels with the drawing from the vendored directory name into the
+  generated module and on into the CREDITS.md table; `src/components/icons/icons.test.ts` fails
+  if a shipped artist is missing from it, or if a stated count is wrong.
+- **Never hand-edit `vendored.ts`, and never rewrite path data with a regex.** SVG path data is
+  compact — in `M10.5.75l3.25.5` the token `10.5.75` is *two* numbers — so a `\d+\.\d+` match eats
+  the first and leaves the second glued on. That is not hypothetical: it shipped once, collapsed
+  every drawing into a sliver, and passed typecheck, lint and the production build. A screenshot
+  found it. The census now asserts the generated path is byte-identical to the vendored file.
+- **Item and pet icons** are the same family, rendered on rarity backplates: chamfered tile,
+  rarity frame + subtle inner glow, glyph in warm off-white; Set pieces add a sigil watermark
+  corner.
+
+Icons must be legible at **19px** — the nav rail size. Thin radial detail turns to mush;
+silhouettes survive, which is most of why filled artwork beat the stroke family here. Test at
+size, not zoomed in.
 
 ## 7. Motion system (the "alive" contract)
 

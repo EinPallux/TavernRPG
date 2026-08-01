@@ -485,6 +485,14 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
   every chapter boss across all five classes and fails on a dip) and the faucet share
   (`economy.test.ts`: never more than the mission board on any day). It also closed Q22 — a §0
   schedule row stated as a range is now measured against the range, not against one end of it.
+- *The icons are game-icons.net.* 67 of 69, vendored under `game_assets/icons/<author>/`, mapped
+  one line per id in `scripts/icon-map.mjs`, compiled by `npm run icons:sync`. This is the Phase 2
+  decision reversed (see below, and Q21): the library was unreachable from the sandbox then, and
+  the hand-drawn family that grew instead was coherent and, at 19px, largely three shapes. Only
+  the chevron and the Vigor tankard stay drawn. The **CC BY 3.0 obligation is now real** — Phase
+  18's licence gate had recorded its absence — so all five artists are named in `CREDITS.md` and
+  on the credits screen, and `components/icons/icons.test.ts` derives that table from the files on
+  disk rather than trusting it. Style guide §6, asset-pipeline §2.
 
 1. **The Collector's Album** — S&F-scrapbook-style collection of items/monsters with % XP bonus.
 2. **Guild Wars & Raid Bosses** — scheduled guild-vs-guild battles + co-op PvE chains (sim ready).
