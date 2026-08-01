@@ -108,6 +108,63 @@ test.describe('equipment', () => {
     await expect(card).toBeVisible();
   });
 
+  test('the card is drawn in the layer, where nothing can clip it', async ({ page }) => {
+    /*
+     * The regression this exists for, and the reason it is asserted rather than inferred.
+     *
+     * Item cards were rendered `absolute bottom-full` inside their own cell for eighteen phases.
+     * A cell lives in a `TavernPanel`, which wears `chamfer-md`, which is a `clip-path`, which
+     * clips descendants — so every card was sliced off at the panel's edge, worst at the top row
+     * where there was nothing above the cell to draw into. The test above passed the entire time:
+     * `toBeVisible` knows `display`, `visibility`, `opacity` and box size, and nothing at all
+     * about clipping. Same shape as the town map's plaques, second occasion.
+     */
+    await conjure(page, 'helmet');
+    await page.locator('[data-testid^="bag-item-"]').first().hover();
+
+    const card = page.getByTestId('hover-card');
+    await expect(card).toBeVisible();
+
+    const clipper = await card.evaluate((element) => {
+      for (let node = element.parentElement; node; node = node.parentElement) {
+        if (node === document.body) return null;
+        if (getComputedStyle(node).clipPath !== 'none') return node.className || node.tagName;
+      }
+      return null;
+    });
+    expect(clipper, 'an ancestor clips the item card away').toBeNull();
+
+    // And it is on screen in full — the layer clamps to the viewport rather than hanging off it.
+    const box = await card.boundingBox();
+    const view = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect(view).not.toBeNull();
+    expect(box!.width, 'a clipped card measures nothing').toBeGreaterThan(80);
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(view!.width);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(view!.height);
+  });
+
+  test('the topmost paperdoll slot gets a whole card, not a sliver', async ({ page }) => {
+    // The worst case for the old anchoring: a cell at the top of the panel, with the card
+    // hard-positioned `bottom-full` into the panel's own clipped edge.
+    await conjure(page, 'helmet');
+    await page.locator('[data-testid^="bag-item-"]').first().click();
+    await page.getByTestId('equip-selected').click();
+    await expect(page.getByTestId('equip-helmet')).toHaveAttribute('data-filled', 'true');
+
+    await page.getByTestId('equip-helmet').hover();
+    const card = page.getByTestId('hover-card');
+    await expect(card).toBeVisible();
+
+    const helmet = await page.getByTestId('equip-helmet').boundingBox();
+    const box = await card.boundingBox();
+    expect(box!.height, 'the card should be a card, not a strip').toBeGreaterThan(60);
+    // Below the cell, since there is no room above it — the layer flips rather than overflowing.
+    expect(box!.y).toBeGreaterThan(helmet!.y);
+  });
+
   test('clicking an equipped piece takes it off again', async ({ page }) => {
     await conjure(page, 'boots');
     await page.locator('[data-testid^="bag-item-"]').first().click();

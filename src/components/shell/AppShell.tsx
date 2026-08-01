@@ -20,6 +20,7 @@ import { TooltipLayer } from '@/components/ui/Tooltip';
 import { HeroCreation } from '@/components/hero/HeroCreation';
 import { TutorialLayer } from '@/components/tutorial/TutorialLayer';
 import { UnlockWatcher } from './UnlockWatcher';
+import { DayWorkWatcher } from './DayWorkWatcher';
 import { SaveTriage } from './SaveTriage';
 import { TabConflict } from './TabConflict';
 import { RoomBoundary } from './RoomBoundary';
@@ -205,6 +206,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Announces a room the moment a level opens it — the rail's lock coming off is easy
             to miss when you were not looking at that row (tutorial spec §3). */}
         {inTown && <UnlockWatcher />}
+
+        {/* And a Golden Die the moment the day's work earns one, wherever the player is standing
+            when it lands — the road and the mission board both pay it (balancing §18). */}
+        {inTown && <DayWorkWatcher />}
 
         {/* The clock strikes over everything, but never over a fight — the battle scene raises
             its own layer and the moment queues behind it (daily-loop spec §4). */}

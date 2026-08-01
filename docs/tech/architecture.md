@@ -100,7 +100,8 @@ walking-skeleton screen that Phase 1 replaces with the real app shell.
   preferences · **v5** activity (Vigor, mission) · **v6** patrol shift · **v7** shop shelves and
   the mount stall · **v8** the simulated world · **v9** the arena · **v10** the guild ·
   **v11** dungeons · **v12** materials and the forge · **v13** the gacha · **v14** pets ·
-  **v15** tasks and the calendar · **v16** the tutorial · **v17** the Long Road. Every one ships a
+  **v15** tasks and the calendar · **v16** the tutorial · **v17** the Long Road ·
+  **v18** the day's-work track (`activity.vigorSpentToday`). Every one ships a
   captured fixture of the *previous* version, and a fixture is captured in the least convenient
   state the version can be in rather than at rest — v5's carries a mission mid-timer, because a
   migration that only handles the idle save is a migration that has not been tested, and v17's was

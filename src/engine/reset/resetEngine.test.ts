@@ -35,6 +35,7 @@ function stateOn(day: string | null, overrides: Partial<ResettableState> = {}): 
     vigor: 40,
     alesToday: 2,
     freeAlesToday: 1,
+    vigorSpentToday: 120,
     boardRerollsToday: 1,
     boardDay: day,
     shops: { armory: { day, items: [], sold: [], rerollsToday: 0 } },

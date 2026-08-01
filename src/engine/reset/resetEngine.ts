@@ -35,6 +35,15 @@ export interface ResettableState {
   readonly alesToday: number;
   /** Free Ales received today, capped at one (balancing §7). */
   readonly freeAlesToday: number;
+  /**
+   * Vigor spent today, which the day's-work track turns into dice (balancing §18).
+   *
+   * Cleared here rather than by the track, for the reason `shops` is cleared here: a feature that
+   * notices its own stored day has gone is a second thing deciding it is tomorrow, and
+   * `reset/audit.test.ts` exists because those two drift at midnight, in production, and nowhere
+   * a behavioural test can see.
+   */
+  readonly vigorSpentToday: number;
   /** Board rerolls used today; the first each day is free (tavern spec §3). */
   readonly boardRerollsToday: number;
   /** Day key the current mission board was drawn for. */
@@ -145,6 +154,7 @@ export function processResets<T extends ResettableState>(
       vigor: VIGOR_PER_DAY,
       alesToday: 0,
       freeAlesToday: 0,
+      vigorSpentToday: 0,
       boardRerollsToday: 0,
       // The board is stale the moment the day turns; it redraws on next read.
       boardDay: null,

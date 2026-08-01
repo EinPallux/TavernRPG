@@ -7,6 +7,54 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — the day's work
+
+- **Vigor spent earns Golden Dice.** A die at 50, 100 and 150 Vigor spent in a day, up to three.
+  Contracts and the Long Road are the only things that spend Vigor and both fill it, so the road
+  now pays on a day it clears no chapter — which was the gap: a stage is a Vigor sink that pays
+  nothing once its chapter is behind you.
+- **Ale pays for itself, and cannot do better than that.** Three Ale costs three dice and the
+  finished track pays three, and the third rung is only reachable *with* the Ale — so the trade is
+  time for time, never dice for dice. A player who spends the Vigor gets the Ale back and keeps
+  their chest and calendar dice for Fortune's Table. Dice earned went from ~1.9 a day to ~4.9.
+- **Bounded by the game rather than by a cap.** Vigor is the hard daily budget — 100 plus at most
+  three Ale is 160, and 160 is three rungs. There is no grind that produces a fourth die, no room
+  to sit in, no action to repeat.
+- **The track is on screen before it pays**, not explained afterwards: the rungs and the distance
+  to the next one show at the Gilded Tankard beside the Ale button, on the Notice Board beside the
+  chest, and in a sentence on the HUD's Vigor tooltip. A die that lands is announced wherever the
+  player is standing.
+- Save schema **v18** — one field, `activity.vigorSpentToday`, cleared by the Reset Engine and
+  nothing else. No high-water mark: the payout is a difference of two totals inside the update
+  that spends the Vigor, so replaying it cannot double-pay.
+
+### Changed — what the day's work cost, measured
+
+- **§0's level rows are re-fitted.** Self-funded Ale is +60% Vigor and Vigor is XP, so level 25
+  moved to day 7 and level 55 to day 22. There is no version of "more Vigor" that leaves the
+  ladder where it was; the schedule is the thing that was written down to be revised. Full details
+  and every band that moved are in balancing §18.
+- **The economy sim models the Ale loop as a fixed point** (`alesADay`): the Ale buys the Vigor
+  that pays the dice that buy the Ale. Modelling the new dice as gacha rolls instead would have
+  been modelling the option rather than the choice — Vigor compounds into gold, XP *and* loot, and
+  a card does not. The full set still lands on day 51.5, unchanged, because the dice go to Ale.
+- Three economy bands moved with the supply and say so: the companion reaches its ceiling on day
+  ~20 rather than ~25, the Long Road is walked out by day 59 (still at level 101 — the *level* was
+  always the load-bearing half of that check), and half-Vigor play is 68% of full-Vigor play
+  rather than 70%, which is a track that pays for spending doing exactly that.
+
+### Fixed
+
+- **Item hover cards were being sliced off inside their own panel.** A gear cell rendered its card
+  as a child, positioned `absolute bottom-full` — and a cell lives in a `TavernPanel`, which wears
+  `chamfer-md`, which is a `clip-path`, which clips descendants. The paperdoll's top row showed a
+  strip and the backpack's showed less. Eighteen phases, and the e2e test asserting the card
+  visible passed the whole time: `toBeVisible` knows `display`, `visibility`, `opacity` and box
+  size, and nothing at all about clipping. Same shape as the town map's plaques, second occasion.
+  Cards go through the shell-level layer now (`useHoverCard`), which also gets them viewport
+  clamping and flip-above-when-it-does-not-fit for free — and the spec walks the ancestor chain
+  and fails on a `clip-path` rather than inferring it from visibility.
+
 ### Changed — every icon in the game
 
 - **67 of the 69 glyphs are now game-icons.net artwork.** A beer stein that is a beer stein, a

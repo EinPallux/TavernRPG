@@ -22,7 +22,7 @@ interface StoreHandle {
 }
 interface Save {
   hero: { level: number; gold: number; dice: number } | null;
-  activity: { vigor: number };
+  activity: { vigor: number; vigorSpentToday: number };
   calendar: { day: number; lastStampedDay: string | null; cyclesCompleted: number };
   tasks: {
     taskIds: string[];
@@ -324,5 +324,56 @@ test.describe('the wind-down', () => {
     await page.goto('/tavern');
     await expect(page.getByTestId('place-tavern')).toBeVisible({ timeout: SETUP_TIMEOUT });
     await expect(page.getByTestId('wind-down')).toHaveCount(0);
+  });
+});
+
+test.describe('the day’s work', () => {
+  /*
+   * Golden Dice for Vigor spent (balancing §18). The interesting property from the outside is
+   * that the *schedule* is legible before it pays anything — rule 6 is about odds, and a payout
+   * ladder the player only discovers afterwards is the same failure.
+   */
+  test('shows the rungs before it has paid anything', async ({ page }) => {
+    await readyHero(page);
+    await page.goto('/board');
+
+    const track = page.getByTestId('board-day-work').getByTestId('day-work');
+    await expect(track).toBeVisible();
+    await expect(track).toHaveAttribute('data-earned', '0');
+    // Three pips, none of them lit, and a stated distance to the first.
+    for (const index of [0, 1, 2]) {
+      await expect(track.getByTestId(`day-work-pip-${index}`)).toHaveAttribute(
+        'data-paid',
+        'false',
+      );
+    }
+    await expect(track).toContainText('Vigor');
+  });
+
+  test('fills as Vigor is spent, and the Tankard shows the same numbers', async ({ page }) => {
+    await readyHero(page);
+
+    // Spend some of the day the only way a fresh hero can: sign a contract.
+    await page.goto('/tavern');
+    await page.getByTestId('place-tavern').waitFor();
+    const before = await page.evaluate(() => {
+      const handle = (window as unknown as { __tavernStore: StoreHandle }).__tavernStore;
+      return handle.getState().save?.activity.vigorSpentToday ?? 0;
+    });
+    await page.locator('[data-testid^="accept-"]').first().click();
+
+    const tankard = page.getByTestId('day-work');
+    await expect(tankard).toBeVisible();
+    await expect
+      .poll(async () => Number(await tankard.getAttribute('data-spent')))
+      .toBeGreaterThan(before);
+
+    // The Notice Board is not keeping its own copy of the number.
+    const spent = await tankard.getAttribute('data-spent');
+    await page.goto('/board');
+    await expect(page.getByTestId('board-day-work').getByTestId('day-work')).toHaveAttribute(
+      'data-spent',
+      spent!,
+    );
   });
 });

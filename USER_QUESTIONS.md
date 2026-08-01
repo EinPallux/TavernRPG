@@ -204,3 +204,34 @@ be made on purpose rather than by inheriting the default.
 itself is unambiguous and present. Nothing is blocked; option 2 is a ten-minute change whenever
 you want it. Worth a deliberate answer before 1.0 rather than a shrug.
 → `CREDITS.md`, `src/data/credits.ts`
+
+## 2026-08-01 — the day's work (Golden Dice for Vigor spent)
+
+**Q25. More Vigor is faster levelling, and §0's level rows were re-fitted rather than the feature
+trimmed.** ✅ **Answered 2026-08-01: keep three dice a day, move the rows.**
+
+The ask was "some ways to daily farm Golden Dice, especially now the Campaign needs Vigor". The
+answer shipped is balancing §18: a die at 50, 100 and 150 Vigor spent, up to three a day.
+
+The consequence was measured before shipping and is larger than the obvious one. Three Ale a day
+becomes self-funding, which is **+60% Vigor**, and Vigor is XP:
+
+| Ale/day | Level 10 | Level 25 | Level 55 |
+|---|---|---|---|
+| 0 (before) | 3.3 | 10.0 | 31.7 |
+| 3 (shipped) | **2.2** | **6.9** | **21.8** |
+
+Level rows are two-sided *schedules*, so arriving early failed exactly as arriving late would.
+There is no mechanism that adds Vigor without speeding the ladder, so the choice was between the
+feature and a written-down schedule. §0's level rows now describe the game: level 25 in the first
+week, level 55 on day 20–26. The set rows did **not** move — the extra dice go to Ale, not to
+Fortune's Table — and the deadline rows were already generous.
+
+Alternatives considered and not taken, in case this wants revisiting:
+
+1. **Cap the self-funded Ale at 1** (rungs at 50/100 only). +20% Vigor, §0 untouched, level 55 on
+   day 27. Ale stops being fully self-funding.
+2. **Three dice, but the third cannot buy Ale.** +40% Vigor, level 55 on day 24 — right on the
+   band's edge — at the cost of a rule players have to be told.
+
+→ `docs/design/balancing-formulas.md` §0, §18

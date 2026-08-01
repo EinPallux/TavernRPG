@@ -10,11 +10,20 @@
 | Milestone | Target (active daily player, ~45 min/day) |
 |---|---|
 | Level 10 (all features unlocked) | Day 2–3 |
-| Level 25 (Barrowdeep unlocked) | ~Week 2 |
-| Level 55, 1–2 set pieces equipped | ~Day 30 |
+| Level 25 (Barrowdeep unlocked) | The first week (day 6–9) |
+| Level 55, 1–2 set pieces equipped | Day 20–26 |
 | First full 5-piece set | Day 45–60 |
 | Hall of Fame top 100 | Month 2–3 |
 | Rank 1 (campaign goal) | Month 6+ (bots keep progressing too) |
+
+**The two level rows moved when the day's work shipped (§18), and that is the honest entry.** A
+track that pays Golden Dice for Vigor spent makes three Ale a day self-funding, an active day goes
+from 100 Vigor to 160, and Vigor is XP — so level 25 arrives on day 7 rather than day 10 and level
+55 on day 22 rather than day 32. There is no version of "more Vigor" that leaves the ladder where
+it was. The choice was between the feature and the old schedule, and a schedule is the thing that
+was written down in order to be revised; the *shape* of §0 is unchanged, and every row is still
+two-sided where it should be. (Same call as Q22, which moved a row to match the curve rather than
+leaving it pulling against one.)
 
 **Measured, Phase 17** (`npm run pacing`, reference player = `ACTIVE_PLAYER`):
 
@@ -766,9 +775,85 @@ Re-measured after the road, all six rows in band:
 | Full 5-piece set | deadline | by day 52 | **51.5** | 0% |
 | Hall of Fame top 100 | deadline | by day 75 | **44.0** | 0% (31.0d early) |
 
+**Re-measured after the day's work (§18)**, which is where the level rows above come from:
+
+| Milestone | Kind | §0 window | Measured | Outside it |
+|---|---|---|---|---|
+| Level 10 | schedule | day 2–3 | **2.2** | 0% |
+| Level 25 | schedule | day 6–9 | **6.9** | 0% |
+| Level 55 | schedule | day 20–26 | **21.8** | 0% |
+| First set piece | deadline | by day 30 | **7.3** | 0% (22.7d early) |
+| Full 5-piece set | deadline | by day 52 | **51.5** | 0% |
+| Hall of Fame top 100 | deadline | by day 75 | **43.0** | 0% (32.0d early) |
+
+The set rows did not move, which is worth saying: the extra dice go to Ale, not to Fortune's
+Table, so the chase is paced by the featured card exactly as before.
+
 **The mission board's last contract of the day is now fractional in the model.** Taking Vigor off
 the top for the road dropped a hundred-Vigor day from five twenty-minute contracts to four and
 binned the other eighteen — reporting the road as costing a fifth of the mission board, which no
 player suffers because the board offers ten, twenty and thirty. Payout is linear in duration, so a
 part contract is a part payout. All three shipped styles divide exactly, so this is a no-op for
 every band tuned before the road existed.
+
+
+## 18. The day's work (Vigor spent → Golden Dice)
+
+`[TUNE] DAY_WORK_RUNGS = [50, 100, 150]` — `src/engine/progression/rewards.ts`.
+Engine: `src/engine/progression/dayWork.ts`. Spent through one path,
+`src/state/vigorActions.ts#spendVigor`.
+
+Golden Dice are earn-only (rule 6). Before this the earn rate was about **1.9 a day** — one from
+the Notice Board's chest, three a week from the weekly one, ten across a 28-day calendar, a share
+of the guild bounty. Ale costs a die and the day holds three, so a player who wanted the Vigor
+spent their entire premium income on it and never saw Fortune's Table. The Long Road made it
+worse: a stage is a Vigor sink that pays nothing once its chapter is cleared.
+
+**Every point of Vigor spent fills a track, and it pays a die at each rung.**
+
+| Spent today | Reached by | Dice |
+|---|---|---|
+| 50 | half a base day | 1 |
+| 100 | the whole of it | 2 |
+| 150 | needs all three Ale | 3 |
+
+### Why Vigor spent, and why it cannot run away
+
+Vigor is the game's hard daily budget, so a track denominated in it has a ceiling that is a
+*property of the game* rather than a cap somebody remembered to write down: 100 a day plus at most
+three Ale is 160, and 160 is three rungs. There is no grind that produces a fourth die.
+
+The third rung is deliberately out of reach on the base allowance. Reaching it means buying Ale,
+and three Ale costs exactly what the finished track pays — so the trade is **time for time, never
+dice for dice**. A player who spends the Vigor gets the Ale back and keeps their chest and
+calendar dice for the Table; a player who buys Ale and does not spend it is simply out of pocket.
+
+Missions and the Long Road are the only things that spend Vigor, priced identically at one point
+each, so the road now pays on a day it clears no chapter. Nothing here needed a new opinion about
+what an hour of play is worth — §6 already had one.
+
+### Replay safety
+
+No high-water mark. `dicePaidFor(before, after)` is a *difference of two totals*, computed inside
+the same store update that spends the Vigor, so replaying that update recomputes the same answer
+and a reload reads a total that has already been paid for. This is `gacha.monthlyPaidThrough`'s
+shape one step further in: with the delta available at the call site the mark is unnecessary.
+`activity.vigorSpentToday` is cleared by the Reset Engine and nothing else (`reset/audit.test.ts`).
+
+### What it cost, measured
+
+`npm run economy`, `npm run pacing`. The active player now self-funds three Ale a day, which is
+**+60% Vigor**, and that is a real change with real consequences — all of them recorded rather
+than absorbed:
+
+| Band | Before | After | What moved |
+|---|---|---|---|
+| Level 55 | day 31.7 | **21.8** | §0's level rows re-fitted (above) |
+| Companion to the ceiling | day ~25 | **~20** | Scrap comes off contracts |
+| Long Road walked out | day ~86 | **59**, at level 101 | still ends within a few levels of the cap |
+| Casual vs active final level | 0.70× | **0.68×** | the track pays for spending, so the gap widens on purpose |
+| Full 5-piece set | day 51.5 | **51.5** | unchanged — the dice go to Ale, not to Vesna |
+
+The sim models the loop as a fixed point (`alesADay`): the Ale buys the Vigor that pays the dice
+that buy the Ale. Modelling the new dice as *gacha rolls* instead would have been modelling the
+option rather than the choice — Vigor compounds into gold, XP and loot, and a card does not.

@@ -147,8 +147,32 @@ feedback, edge cases and tests. Deployed on Vercel.
   on into CREDITS.md, and `components/icons/icons.test.ts` derives that table from disk rather
   than trusting it.
 
-1,440 unit tests + 289 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
+- **The day's work** — Vigor spent pays a Golden Die at 50/100/150, up to three.
+  `engine/progression/dayWork.ts` (pure), `state/vigorActions.ts#spendVigor` (the *one* path both
+  spenders go through), `components/ui/DayWorkTrack.tsx`, `shell/DayWorkWatcher.tsx`, and save
+  schema **v18** (`activity.vigorSpentToday`). No high-water mark — the payout is a difference of
+  two totals inside the update that spends the Vigor, which is `monthlyPaidThrough`'s shape one
+  step further in. Balancing §18.
+
+1,464 unit tests + 289 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
 the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
+
+**A `clip-path` clips its descendants — and this codebase has now shipped that bug twice.** Item
+hover cards spent eighteen phases rendered inside their own gear cell, inside a `TavernPanel`,
+which wears `chamfer-md`; every card was sliced off at the panel's edge and the e2e test asserting
+one visible passed throughout. The rule was already written down after the town map's plaques and
+it did not stop the second occasion, because the second occasion was *older code nobody re-read*.
+So: when a lesson lands, grep for the shape rather than only fixing the instance. Anything that
+overhangs its parent goes in a layer — `useHoverCard` now, beside `useTooltip`, sharing one owner
+so a tooltip and a card can never both be open.
+
+**More Vigor is faster levelling, and there is no design that avoids it.** The day's work makes
+three Ale self-funding, which is +60% Vigor, which pulled level 55 from day 32 to day 22 and
+failed §0's schedule. The fix was not a cleverer mechanism — it was choosing, out loud, between
+the feature and a written-down schedule, and re-fitting §0. Before shipping anything that adds
+Vigor, run `npm run pacing` *first*: the level rows are two-sided, so generosity fails them
+exactly like stinginess, and the ripple reaches the pet ceiling, the road's length and the
+casual-vs-active gap as well.
 
 **"Every gate passed" is not "the artwork survived".** Rounding SVG coordinates to halve the icon
 payload collapsed all 67 drawings into slivers, and typecheck, lint and the production build were

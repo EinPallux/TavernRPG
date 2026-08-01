@@ -26,6 +26,7 @@ import { useGameStore } from '@/state/gameStore';
 import { classDef } from '@/data/classes';
 import { xpNeeded } from '@/engine/progression/xp';
 import { vigorCeiling } from '@/engine/reset/resetEngine';
+import { dayWorkLine } from '@/components/ui/DayWorkTrack';
 import { activeMount, needsRenewalSoon } from '@/engine/stables/mounts';
 import { gameNow } from '@/state/clock';
 import { snappy } from '@/styles/motion';
@@ -104,7 +105,11 @@ export function TopHud() {
   const heroTip = useTooltip(heroLabel);
   const vigorTip = useTooltip({
     title: `Vigor ${vigor}/${vigorMax}`,
-    detail: 'Spent on contracts. Refills at midnight.',
+    // The day's work is on the same chip as the Vigor it counts: the player asking "how much have
+    // I got left" is the player who should be told what spending it earns (balancing §18).
+    detail: activity
+      ? `Spent on contracts and the road. Refills at midnight. ${dayWorkLine(activity.vigorSpentToday)}`
+      : 'Spent on contracts and the road. Refills at midnight.',
   });
   const mountTip = useTooltip(
     mount && `${mount.name} — mission timers −${Math.round(mount.speedBonus * 100)}%`,

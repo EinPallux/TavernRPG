@@ -24,6 +24,30 @@ export const ALE_VIGOR = 20;
 export const ALE_PER_DAY = 3;
 export const ALE_DICE_COST = 1;
 
+/**
+ * `[TUNE]` The day's work: Vigor spent today that pays a Golden Die (balancing §18).
+ *
+ * Rungs, not a rate, and stated as a rising list rather than a stride so the spacing is a
+ * decision anybody can read. Three of them, because three Ale is the day's ceiling and the point
+ * of the track is that **a player who actually spends the Vigor gets the Ale back**:
+ *
+ * | spent | source           | dice |
+ * |-------|------------------|------|
+ * | 50    | half a base day  | 1    |
+ * | 100   | the whole of it  | 2    |
+ * | 150   | needs all 3 Ale  | 3    |
+ *
+ * The third rung is deliberately out of reach on 100 Vigor. Buying Ale to reach it costs exactly
+ * what the rung pays, so the trade is *time for time* and never dice for dice — the loop closes
+ * without ever running away, which is the property a premium currency that cannot be bought has
+ * to have. And because Ale is capped at three, the whole track is bounded by construction: there
+ * is no amount of play that turns into a fourth die.
+ *
+ * Missions and the Long Road are the only things that spend Vigor, so this is also the one number
+ * that makes the road *pay* on a day it does not clear a chapter.
+ */
+export const DAY_WORK_RUNGS = [50, 100, 150] as const;
+
 export function isMissionDuration(value: number): value is MissionDuration {
   return (MISSION_DURATIONS as readonly number[]).includes(value);
 }

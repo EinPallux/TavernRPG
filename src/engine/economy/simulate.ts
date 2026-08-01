@@ -17,6 +17,9 @@
 
 import {
   VIGOR_PER_DAY,
+  ALE_VIGOR,
+  ALE_PER_DAY,
+  ALE_DICE_COST,
   goldPatrolPerHour,
   goldPerVigor,
   missionPayout,
@@ -24,6 +27,7 @@ import {
   xpPerVigor,
   type MissionDuration,
 } from '@/engine/progression/rewards';
+import { diceFor } from '@/engine/progression/dayWork';
 import { applyXp, xpNeeded } from '@/engine/progression/xp';
 import { maxAffordable, statCost } from '@/engine/progression/stats';
 import { itemValue } from '@/engine/items/generate';
@@ -167,6 +171,38 @@ export interface PlayStyle {
    * model varies is *whether* they go, and the road's own level curve does the rest.
    */
   readonly walksTheRoad?: boolean;
+  /**
+   * Ales this player drinks a day, or `'earned'` to spend exactly what the day's work pays for.
+   *
+   * `'earned'` is the honest default for anybody who spends their whole day: the track pays a die
+   * at 50, 100 and 150 Vigor spent, three Ale costs three dice, and the third rung is only
+   * reachable *with* the Ale — so a full-Vigor player breaks even on it and ends the day sixty
+   * Vigor better off. That is the whole feature (balancing §18) and it is a real, sustained +60%
+   * on everything Vigor buys, which is exactly the kind of change a band exists to catch.
+   *
+   * A number pins it instead, for the styles that model somebody who does not bother.
+   */
+  readonly ales?: number | 'earned';
+}
+
+/**
+ * How much Ale this style drinks, which is a fixed point: the Ale buys the Vigor that pays the
+ * dice that buy the Ale.
+ *
+ * Solved by walking up rather than algebra, because there are three rungs and the loop is over in
+ * three steps. Each extra Ale is only bought if the *whole* run of Ales is still paid for by the
+ * track — a player does not buy the third Ale on credit.
+ */
+export function alesADay(style: PlayStyle): number {
+  if (typeof style.ales === 'number') return Math.max(0, Math.min(ALE_PER_DAY, style.ales));
+  if (style.ales !== 'earned') return 0;
+
+  let affordable = 0;
+  for (let ale = 1; ale <= ALE_PER_DAY; ale += 1) {
+    const spent = Math.floor((VIGOR_PER_DAY + ale * ALE_VIGOR) * style.vigorUsed);
+    if (diceFor(spent) >= ale * ALE_DICE_COST) affordable = ale;
+  }
+  return affordable;
 }
 
 export const ACTIVE_PLAYER: PlayStyle = {
@@ -178,6 +214,8 @@ export const ACTIVE_PLAYER: PlayStyle = {
   shopBuysPerWeek: 2,
   mountId: 'warhorse',
   gachaRollsPerDay: 1.6,
+  // Spends the whole day, so the track pays for the Ale and the Ale pays the track back.
+  ales: 'earned',
 };
 
 /** Someone who opens the game once, spends half their Vigor and leaves. */
@@ -189,6 +227,8 @@ export const CASUAL_PLAYER: PlayStyle = {
   shopBuysPerWeek: 1,
   mountId: 'mule',
   gachaRollsPerDay: 1,
+  // Half a day's Vigor reaches the first rung and no further: one die, one Ale.
+  ales: 'earned',
 };
 
 /** The control: never shops, never rents. Proves neither is mandatory. */
@@ -201,6 +241,15 @@ export const FRUGAL_PLAYER: PlayStyle = {
   // The free card only. A control that refused a free thing would not be modelling anybody.
   gachaRollsPerDay: 1,
   mountId: null,
+  /*
+   * The control still drinks what the day's work paid for.
+   *
+   * It is a control for *shopping and stabling* — "neither is mandatory" — and Ale is neither:
+   * it is the track handing back what the day already earned. Pinning it to zero would have made
+   * the frugal band measure Ale instead of gear, which is how a control quietly starts answering
+   * a different question than the one it is named after.
+   */
+  ales: 'earned',
 };
 
 export interface SimOptions {
@@ -263,7 +312,21 @@ export function simulateEconomy({
   let stagesCleared = 0;
 
   for (let day = 1; day <= days; day += 1) {
-    const vigorBudget = Math.floor(VIGOR_PER_DAY * style.vigorUsed);
+    /*
+     * ── The day's Vigor, including whatever Ale the day's work paid for ───────────────
+     *
+     * `alesADay(style)` is where the new dice actually land. A player with spare dice and a
+     * Vigor-shaped appetite buys Ale before they roll — Vigor compounds into gold, XP *and*
+     * loot, and a card does not — so modelling the track's dice as extra gacha rolls would be
+     * modelling the option rather than the choice (CLAUDE.md, the road's first sim made exactly
+     * that mistake from the other direction).
+     *
+     * The Ale is only affordable because of the track, and the track only reaches its third rung
+     * *because* of the Ale: the two are one loop and the model has to run both halves or the
+     * number it reports is fiction.
+     */
+    const ales = alesADay(style);
+    const vigorBudget = Math.floor((VIGOR_PER_DAY + ales * ALE_VIGOR) * style.vigorUsed);
 
     // A guilded player is paid more for the same day's work, everywhere it applies.
     const bonus = guildMultipliers({
