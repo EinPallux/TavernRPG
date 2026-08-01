@@ -21,9 +21,9 @@ const DOC = readFileSync(join(process.cwd(), 'CREDITS.md'), 'utf8');
 describe('credits data and CREDITS.md agree', () => {
   it('names every source the screen shows', () => {
     for (const entry of [...ART_CREDITS, ...FONT_CREDITS]) {
-      // Kenney is "Kenney"; a designer entry is "Name, Studio" in the data and split across a
-      // table cell in the doc, so match on the first token rather than the whole string.
-      const who = entry.source.split(',')[0]!.trim();
+      // Kenney is "Kenney"; a designer is "Name, Studio"; an icon artist is "Name (where from)".
+      // The doc splits all three across table cells, so match the name rather than the label.
+      const who = entry.source.split(/[,(]/)[0]!.trim();
       if (who.startsWith('The project')) continue; // project-owned rows are worded differently
       expect(DOC, `${who} is on the credits screen but not in CREDITS.md`).toContain(who);
     }
@@ -38,32 +38,52 @@ describe('credits data and CREDITS.md agree', () => {
   });
 
   it('records the same absences', () => {
-    // The half of an attribution list people forget, and the half this project has had to correct
-    // twice: audio that was planned and synthesized instead, icons that were planned and drawn.
+    // The half of an attribution list people forget: audio that was planned and synthesized
+    // instead, music that never shipped.
     expect(DOC).toMatch(/no audio.*ship|No audio files ship/i);
-    expect(DOC).toMatch(/game-icons\.net/);
-    expect(NOT_INCLUDED.map((absence) => absence.what)).toContain('No game-icons.net artwork');
     expect(NOT_INCLUDED.map((absence) => absence.what)).toContain('No sampled audio');
+    expect(NOT_INCLUDED.map((absence) => absence.what)).toContain('No background music');
   });
 
-  it('has not quietly regained a CC BY obligation', () => {
+  it('claims no absence that has stopped being true', () => {
     /*
-     * The specific regression this file exists for.
+     * The direction this file exists for, now run the other way.
      *
-     * `CREDITS.md` claimed a **required** per-icon CC BY 3.0 credit for game-icons.net artwork the
-     * build has never contained — through sixteen phases, a licence-gate line in the ROADMAP, and
-     * a header in this very file calling itself authoritative. If somebody vendors that artwork
-     * later the obligation becomes real and this test should fail, loudly, so the author list gets
-     * written rather than assumed.
+     * Phase 18 found `CREDITS.md` claiming a **required** per-icon CC BY 3.0 credit for
+     * game-icons.net artwork the build did not contain, and replaced the claim with a stated
+     * absence. The artwork was then vendored — so the *absence* became the false half, in the
+     * same file, for the same reason. Both directions are now asserted, because an attribution
+     * list is only worth reading if it stops asserting a thing the day the thing changes.
      */
-    const claimsRequired = /game-icons[\s\S]{0,400}?\*\*Required\*\*/i.test(DOC);
-    const dataHasIt = [...ART_CREDITS, ...FONT_CREDITS].some((entry) =>
-      entry.source.toLowerCase().includes('game-icons'),
+    const claimedAbsent = NOT_INCLUDED.some((absence) =>
+      /game-icons/i.test(`${absence.what} ${absence.detail}`),
     );
+    const credited = ART_CREDITS.some((entry) => entry.licence === 'cc-by-3');
     expect(
-      claimsRequired,
-      'CREDITS.md marks game-icons attribution required — add the per-icon author list and the data entry',
-    ).toBe(dataHasIt);
+      claimedAbsent && credited,
+      'the screen credits game-icons artwork and lists it as not included',
+    ).toBe(false);
+    expect(DOC, 'CREDITS.md still says nothing from game-icons ships').not.toMatch(
+      /Nothing from game-icons\.net ships/i,
+    );
+  });
+
+  it('credits the artist rather than the collection, and says so in both places', () => {
+    /*
+     * CC BY 3.0 names a person. game-icons.net publishes per author — the upstream licence asks
+     * for "Icons made by {author}" — so one row reading "game-icons.net" would discharge nothing.
+     * `icons.test.ts` proves the list is *complete* against the shipped artwork; this proves the
+     * document and the in-game screen say the same names.
+     */
+    const artists = ART_CREDITS.filter((entry) => entry.licence === 'cc-by-3');
+    expect(artists.length, 'the vendored icons are by five named artists').toBeGreaterThan(1);
+
+    for (const artist of artists) {
+      const name = artist.source.split(' (')[0]!;
+      expect(DOC, `${name} is credited in the game but not in CREDITS.md`).toContain(name);
+    }
+    expect(LICENCES['cc-by-3'].attributionRequired).toBe(true);
+    expect(DOC).toMatch(/game-icons[\s\S]{0,900}?\*\*Required\*\*/i);
   });
 
   it('marks the fonts as the attributions that are actually mandatory', () => {

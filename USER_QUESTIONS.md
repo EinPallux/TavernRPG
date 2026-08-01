@@ -78,7 +78,9 @@ are post-1.0.** → ROADMAP post-1.0 backlog
 
 ### 2026-07-29 — raised during Phase 2
 
-**Q21. Item icons: game-icons.net is unreachable from the build environment.**
+**Q21. Item icons: game-icons.net is unreachable from the build environment.** ✅ **Answered
+2026-08-01: vendor them — and for the whole set, not only items.** (Detail at the end of the
+entry; the original question is left intact because its reasoning is what made the swap cheap.)
 The plan (and your brief) specifies game-icons.net for item/weapon/armour icons. That site is
 blocked from this sandbox, and the mirror repository can't be attached either, so I drew the 25
 item glyphs in the same line-carved family as the UI chrome instead. They read cleanly and are
@@ -98,6 +100,17 @@ data. Options:
 
 **Default while unanswered: option 3** — keep the hand-drawn set in place, and treat vendoring
 game-icons for items as a task for whenever the assets can actually be fetched. Nothing blocks.
+
+**Answered 2026-08-01 — "update ALL icons with better fitting ones from game-icons.net":** option
+2, and further than option 2. Not items only — everything: 67 of the 69 ids, chrome included.
+The premise that made this a question is gone; game-icons.net itself is still blocked from the
+sandbox, but the upstream mirror repository turned out to be reachable over git, which is also
+what makes the licence dischargeable, since that repo encodes the author in the directory path
+and CC BY 3.0 credits the artist rather than the site. The prediction in the question held
+exactly: the swap was one registry file (`src/components/icons/index.tsx`), a mapping
+(`scripts/icon-map.mjs`) and a generator, and **no game data changed** — `iconId` strings did
+their job. The chevron and the Vigor tankard stayed hand-drawn on their merits, not on the
+question's. See ROADMAP §Post-1.0, style guide §6, asset-pipeline §2, CREDITS.md.
 → `docs/tech/asset-pipeline.md` §2, `CREDITS.md`
 
 *New product ambiguities get appended here under a dated heading with a proposed default (per

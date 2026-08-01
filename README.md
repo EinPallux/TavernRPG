@@ -75,5 +75,6 @@ rounded-slop UI**.
 `game_assets/` holds the prepared art: 23 low-poly scene backgrounds (every town screen + 14
 mission theaters), 5 class portraits, Kenney Fantasy UI + VFX particle packs (CC0). Item/monster
 art arrives later — the art-override pipeline (`docs/tech/asset-pipeline.md`) is designed so each
-piece drops in individually with zero code changes. UI icons come from
-[game-icons.net](https://game-icons.net/) (CC BY 3.0, credited).
+piece drops in individually with zero code changes. 67 of the 69 icons come from
+[game-icons.net](https://game-icons.net/) — vendored under `game_assets/icons/<author>/`, compiled
+by `npm run icons:sync`, and credited per artist under CC BY 3.0 (see `CREDITS.md`).

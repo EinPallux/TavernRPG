@@ -149,10 +149,11 @@ test.describe('navigation', () => {
 
   test('Settings carries the credits, and says what is not in the game', async ({ page }) => {
     /*
-     * A licence gate rather than a nicety: the fonts are self-hosted by `next/font/google`, so
-     * the build redistributes them and the OFL notice has to travel with them. It also has to be
-     * *accurate* — this section used to claim a CC BY obligation for game-icons.net artwork that
-     * was never vendored, which is why the absences are on screen next to the credits.
+     * A licence gate rather than a nicety, and one that has now been wrong in both directions.
+     * Phase 18 found this section claiming a CC BY obligation for game-icons.net artwork that
+     * was never vendored, and replaced the claim with a stated absence. The artwork then landed —
+     * 67 of the game's 69 glyphs — so the absence became the false half. CC BY credits the
+     * artist, so what has to be on screen is five names, each marked required.
      */
     await ensureHero(page);
     await page.goto('/settings');
@@ -161,12 +162,18 @@ test.describe('navigation', () => {
     await expect(page.getByTestId('credits-art')).toContainText('Kenney');
     await expect(page.getByTestId('credits-fonts')).toContainText('Alegreya Sans SC');
     await expect(page.getByTestId('credits-fonts')).toContainText('Inter');
-    // The two mandatory attributions are marked as such, and nothing else is.
     await expect(page.getByTestId('credits-fonts')).toContainText('required');
-    await expect(page.getByTestId('credits-art')).not.toContainText('required');
 
+    // The artists, by name — a row reading "game-icons.net" would discharge nothing.
+    for (const artist of ['Lorc', 'Delapouite', 'Skoll', 'Carl Olsen', 'Willdabeast']) {
+      await expect(page.getByTestId('credits-art')).toContainText(artist);
+    }
+    await expect(page.getByTestId('credits-art')).toContainText('CC BY 3.0');
+    await expect(page.getByTestId('credits-art').getByText('required')).toHaveCount(5);
+
+    // And the absences no longer claim the thing that is now on the shelf above them.
     await expect(page.getByTestId('credits-absences')).toContainText('No sampled audio');
-    await expect(page.getByTestId('credits-absences')).toContainText('game-icons.net');
+    await expect(page.getByTestId('credits-absences')).not.toContainText('game-icons');
   });
 
   test('Settings turns the things it offers', async ({ page }) => {

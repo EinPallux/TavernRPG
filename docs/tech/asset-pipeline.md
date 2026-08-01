@@ -13,16 +13,32 @@
 | `UI/Kenney_FantasyUIAssets` | 9-slice panels/borders/dividers (PNG + SVG), 2 weights | selective use: panel textures & dividers where they match the token system (CC0) |
 | `VFX/Kenney_VFXParticles` (96) | fire/flame/light/circle/dirt/slash sprites | battle impact particles, forge sparks, loot bursts (CC0) |
 
-## 2. Icons — game-icons.net (user-specified source)
+## 2. Icons — game-icons.net (as built)
 
-- **Vendored, not hotlinked:** chosen SVGs committed under `public/assets/icons/<category>/<name>.svg`
-  with a generated manifest (`src/data/iconManifest.ts`) — build fails on unknown `iconId`.
-- Recolor via CSS (`currentColor` normalization pass when vendoring) so rarity tinting/theming is
-  free; rendered inside the rarity backplate component.
-- **License: CC BY 3.0 → attribution required:** `CREDITS.md` + in-game Settings → Credits screen
-  list game-icons.net authors (per-icon author tracked in the manifest), Kenney (CC0, credited as
-  courtesy), fonts, and the user's own art. This is a 1.0 release-gate item (Roadmap P18).
-- Estimated need: ~140 icons at 1.0 (item bases ~90, UI/currency/nav ~35, pets/misc ~15).
+The plan below was written for Phase 2 and is recorded here as it shipped, which is not quite what
+was drafted. Phases 1–18 ran on a hand-drawn line family instead; the game-icons artwork landed
+post-1.0 and replaced it wholesale. The differences from the draft are all simplifications.
+
+- **Vendored, not hotlinked:** `game_assets/icons/<author>/<name>.svg`, tracked exactly as the
+  backgrounds and portraits are. **Directory by author, not by category** — that is the licence
+  (§below), and a category is something the game already knows from the id.
+- **Compiled, not manifested:** `npm run icons:sync` (`scripts/vendor-icons.mjs`) reads the
+  mapping in `scripts/icon-map.mjs` and emits `src/components/icons/vendored.ts` — one `d` string
+  per icon, committed. No manifest module, no runtime file lookup, no `public/` copy: the paths
+  are in the bundle and there is nothing to 404. The build does not depend on the script having
+  been run; the generated file is source-controlled and its diff is the review signal.
+- **`currentColor` normalization happens at vendoring time:** the step strips the site's black
+  preview backing (`M0 0h512v512H0z`) and the hard-coded `fill="#fff"`, so rarity tinting and
+  theming are free. Coordinates are **never** touched — see the style guide §6 note on why
+  rewriting path data with a regex destroyed the whole set once.
+- **License: CC BY 3.0 → attribution required, per icon, per artist.** `CREDITS.md` and the
+  in-game Settings → Credits screen name all five (Lorc, Delapouite, Skoll, Carl Olsen,
+  Willdabeast); the upstream notice is vendored verbatim at `game_assets/icons/LICENSE.txt`.
+  `src/components/icons/icons.test.ts` derives the census from the files on disk and fails if the
+  table drifts — a check, not the promise the draft made.
+- **Actual need: 69 ids** (67 vendored + the chevron + the Vigor tankard), against an estimate of
+  ~140. Item *bases* share glyphs by family rather than taking one each — a sword is a sword — and
+  monsters resolve archetype placeholders rather than icons.
 
 ## 3. The art-override system (the user's future art drops in file-by-file)
 
