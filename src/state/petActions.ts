@@ -32,6 +32,7 @@ import {
 } from '@/engine/pets/boost';
 import type { PetContribution } from '@/engine/combat/combatant';
 import { greenhornPayoutBonus, type PayoutBonus } from '@/engine/progression/rewards';
+import { albumBonus } from '@/engine/album/album';
 import { deriveStats, type Equipment } from '@/engine/hero/derived';
 import { pet, type PetId } from '@/data/pets';
 import { guildBonus } from './guildActions';
@@ -103,6 +104,9 @@ export function payoutBonus(save: SaveFile): PayoutBonus {
    */
   return combineBonus(
     greenhornPayoutBonus(hero.level),
+    // The book, on the same terms as everything else here — gold and XP by one factor, so a
+    // completionist's gold *per level* is unchanged and only their clock moves (balancing §20).
+    albumBonus(save.album.foes),
     guildBonus(save),
     rewardBonus(currentBoost(save), { goldFind: derived.goldFind, xpBonus: derived.xpBonus }),
   );

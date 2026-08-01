@@ -85,6 +85,7 @@ Fame** (the "campaign goal") → collection/completion chases (post-1.0: Collect
 | Guilds | Create or join simulated guilds; donations → Treasury/Drillmaster % buffs; chat; weekly Guild Bounty | `systems/guilds.md` |
 | Dungeons | 3 dungeons × 10 floors, key-gated, epic/set loot, boss chase far above player level | `systems/dungeons.md` |
 | The Long Road | 10 chapters × 12 stages out of the gate, 1 Vigor a stage, auto-chained until something stops you; a first clear pays once | `systems/campaign.md` |
+| The Collector's Album | A bestiary of 126 foes over 13 pages — a zone's roster or a dungeon's floors — filled by beating them; a finished page pays a permanent +1% gold and XP, a full book +18% | `systems/album.md` |
 | World simulation | 1,500 persistent simulated heroes + 60 guilds with schedules, personalities, rivalries; Town Crier news feed | `systems/world-simulation.md` |
 | Economy | Gold / Golden Dice (premium, earn-only) / Honor / Materials / Keys; full faucet-sink map | `systems/economy-and-currencies.md` |
 | Daily systems | Notice Board (3 dailies + weekly chest), 28-day login calendar, midnight reset rules | `systems/daily-loop-and-retention.md` |

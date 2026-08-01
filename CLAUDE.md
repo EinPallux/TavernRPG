@@ -161,6 +161,14 @@ feedback, edge cases and tests. Deployed on Vercel.
   the live multiplier while it lasts. It also closed a Phase-5 bug: `MissionCard` had been quoting
   `missionPayout` *without* the bonus it was going to be paid with. Balancing §19.
 
+- **The Collector's Album** — the scrapbook. `data/album.ts` (thirteen pages over 126 foes, all
+  *derived* from `MONSTERS`/`DUNGEONS`/`ZONES`), `engine/album/album.ts` (record, progress, bonus),
+  `state/albumActions.ts#recordVictory` as the one write path — called from missions, delves and
+  the Long Road, with a source audit that fails if a fourth writer appears or one of the three
+  stops calling. A finished page pays +1% gold *and* XP, the full book +18%, folded in
+  `payoutBonus`. A third Character tab, and a page-completion band on the result screen. Save
+  schema **v19**. Balancing §20, `systems/album.md`.
+
 - **Schools of arms** — the combat VFX pass. `data/combatVfx.ts` gives each of the ten
   `CombatantCard.kind` values a school (palette, cast, travel, impact, crit); ranged schools brace
   and throw something that crosses the stage and lands on the damage frame, melee schools lunge.
@@ -170,8 +178,33 @@ feedback, edge cases and tests. Deployed on Vercel.
   `set_proc` (eight effects, Phase 12) and `harden` (Phase 11) both had beats on the timeline and
   no case in `frameAt`. Combat spec §4.1, style guide §7.3.
 
-1,473 unit tests + 298 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
+1,573 unit tests + 303 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
 the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
+
+**A greedy comparison over contiguous content is a latch, not a decision.** The economy sim walked
+the Long Road while the *next* stage beat the mission board and stopped the moment it lost — but
+the road is contiguous, so stopping is permanent: the wall never moves, its level stays put, and
+the hero's board rate only climbs. A guilded player, one level ahead on day two, failed the test at
+stage 2 **by three XP** and never walked another step in ninety days, while the unguilded one
+walked all hundred and twenty. Nothing failed; the sim just quietly modelled two different games.
+It stayed invisible until the Album made stages-walked load-bearing for a *second* number, and then
+it produced a nonsense band. Two lessons: a model whose state is monotone needs its stopping rule
+checked for latching, and **the thing that exposes an old bug is usually the next feature that
+depends on it** — so when a new band reads strangely, suspect the model before the feature.
+
+**"Model the choice" has a second half: model what the player can see.** The fix above is not a
+cleverer threshold, it is the right comparison — a player looking at stage 2 can also see stages 3
+through 12 on the same screen, with their levels printed on the stones, and they eat three cheap
+stages to reach the good ones. `chapterBeatsTheBoard` averages the rest of the chapter. Any
+simulated decision made against a single next step should be checked against what the screen
+actually shows at the moment of deciding.
+
+**A ratio with a fixed numerator is a band that loosens every time income grows.** The economy
+gear-share floor (>2%) failed on the Album, and nothing about the Armory had changed:
+`shopBuysPerWeek` is a fixed *count* while training takes a *share* of what survives, so any new
+faucet raises the denominator and leaves the numerator alone. Re-fitting it was right, but the
+lesson is to notice the shape when writing one — a band over `fixedThing / totalSpend` is measuring
+the rest of the economy, not the fixed thing.
 
 **A `clip-path` clips its descendants — and this codebase has now shipped that bug twice.** Item
 hover cards spent eighteen phases rendered inside their own gear cell, inside a `TavernPanel`,
@@ -578,17 +611,18 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 (arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty),
 `dungeons/` (floors, delve, keys), `forge/` (forgeConfig, craft),
 `gacha/` (schedule, roll, track), `pets/` (ownership, feeding, boost, eggs),
-`board/` (tasks, chest), `calendar/`, `campaign/` (stages, push), `tutorial/`
+`board/` (tasks, chest), `calendar/`, `campaign/` (stages, push), `album/`, `tutorial/`
 (beats, hints, firstMission), `economy/`, `pacing/` (the §0 ladder),
 `reset/` (resetEngine + the one-owner audit) ·
 `src/data/` content — places, townMap, classes, itemBases, icons, zones, monsters, blurbs, barks,
 patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, vesnaBarks, names, guilds, guildChat,
-bounties, dungeons, campaign, gearSets, banners, pets, progress, dailyTasks, calendar, legends,
+bounties, dungeons, campaign, album, gearSets, banners, pets, progress, dailyTasks, calendar,
+legends,
 crierTemplates, tutorial, glossary, sfx ·
 `src/state/` stores + persistence (three save slots + the remembered active one) + the shared
 clock + the audio singletons (`sfx`, `bgm`) + `townSignals` (the badges the rail and the map
 both read) + `tooltipStore` (the one tooltip) ·
-`src/components/{ui,shell,map,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,campaign,forge,gacha,pets,board,tutorial,settings}/` ·
+`src/components/{ui,shell,map,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,campaign,album,forge,gacha,pets,board,tutorial,settings}/` ·
 `src/app/(game)/<place>/` one route per place, `/` redirecting to `/map` · `src/styles/motion.ts`
 springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`

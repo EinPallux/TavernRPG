@@ -37,7 +37,9 @@ import {
   type PushOutcome,
   type PushRefusal,
 } from '@/engine/campaign/push';
+import type { AlbumRecord } from '@/engine/album/album';
 import type { Hero, SaveFile } from '@/engine/save/schema';
+import { recordVictory } from './albumActions';
 import { payoutBonus, petContribution } from './petActions';
 import { credit } from './progressActions';
 import { spendVigor } from './vigorActions';
@@ -167,6 +169,8 @@ export type FightStageResult =
       readonly outcome: PushOutcome;
       /** Set when the win pushed the hero over a level boundary — the HUD's cue. */
       readonly leveledTo: number | null;
+      /** What the book took from the win, if anything. Null on a loss (album spec §3). */
+      readonly album: AlbumRecord | null;
     };
 
 /**
@@ -235,11 +239,26 @@ export function fightStage(save: SaveFile, stage: number, now: number): FightSta
    */
   const newGround = outcome.won && !outcome.practice ? 1 : 0;
   const withHero: SaveFile = { ...spent, hero: next };
+  const credited = credit(withHero, 'campaignStages', newGround);
+
+  /*
+   * The book takes a win on *practice* too, and that is the one place the album disagrees with
+   * `campaignStages` directly above. The metric measures new ground because a farmable stage would
+   * make "clear three stages" mean "press stage one three times"; the album measures whether you
+   * have ever beaten a Sootback Boar, and beating one on a re-run is beating one. It is a set, so
+   * the second time is free.
+   *
+   * A boss stage records nothing — the ten are not in the book on purpose (`data/album.ts`), and
+   * `recordFoe` answers that by returning `added: null` rather than by being asked not to.
+   */
+  const foe = outcome.won ? stageMonster(outcome.stage) : null;
+  const booked = foe ? recordVictory(credited, foe.id) : null;
 
   return {
     ok: true,
-    save: credit(withHero, 'campaignStages', newGround),
+    save: booked?.save ?? credited,
     outcome,
     leveledTo: levelled.level > hero.level ? levelled.level : null,
+    album: booked?.record ?? null,
   };
 }

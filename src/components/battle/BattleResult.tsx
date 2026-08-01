@@ -11,11 +11,13 @@
 import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
 import type { BattleAnalysis, LossHint } from '@/engine/combat/analysis';
+import type { AlbumRecord } from '@/engine/album/album';
+import { ALBUM_PAGE_BONUS } from '@/data/album';
 import type { Item } from '@/engine/items/types';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { ItemCard } from '@/components/items/ItemCard';
 import { Explainer } from '@/components/tutorial/Explainer';
-import { CoinIcon, DiceIcon } from '@/components/icons';
+import { CoinIcon, DiceIcon, Icon } from '@/components/icons';
 import { dramatic, duration } from '@/styles/motion';
 
 export interface BattleRewards {
@@ -35,6 +37,14 @@ export interface BattleResultProps {
   readonly heroName: string;
   readonly opponentName: string;
   readonly rewards?: BattleRewards;
+  /**
+   * What the Collector's Album took from this fight, if anything (album spec §4).
+   *
+   * Passed rather than read from the store because this component is also the `/dev/battle`
+   * harness's, and because the record is a *transition* — by the time a render could look it up,
+   * the foe is simply in the book and the moment has passed.
+   */
+  readonly album?: AlbumRecord | null;
   readonly onContinue?: () => void;
   readonly continueLabel?: string;
   readonly onReplay?: () => void;
@@ -131,12 +141,64 @@ function RewardLine({ label, value, icon, delay, testId }: RewardLineSpec & { de
   );
 }
 
+/**
+ * The book, when this fight put something in it.
+ *
+ * Two states, and the difference between them is the whole reason `recordFoe` returns an outcome
+ * instead of a boolean: a new entry is a line, and the entry that *finishes a page* is a moment.
+ * A page completing is worth a permanent 1% on every payout the player will ever take, and a
+ * feature that pays that quietly is a feature nobody knows they have.
+ */
+function AlbumBand({ record, delay }: { record: AlbumRecord; delay: number }) {
+  const completed = record.pageCompleted;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 14, scale: completed ? 0.92 : 1 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ ...dramatic, delay }}
+      className={`chamfer-sm mb-4 flex items-start gap-2.5 border p-3 ${
+        completed
+          ? 'border-amber-500/60 bg-amber-500/12 shadow-[0_0_30px_-12px_rgb(232_163_61/0.9)]'
+          : 'border-parchment-500/15 bg-wood-900/60'
+      }`}
+      data-testid="album-record"
+      data-page-completed={completed ? completed.id : undefined}
+    >
+      <motion.span
+        // The seal stamping down. Only on a completed page — a single entry gets a quiet line.
+        initial={completed ? { rotate: -22, scale: 1.7, opacity: 0 } : false}
+        animate={completed ? { rotate: 0, scale: 1, opacity: 1 } : {}}
+        transition={{ ...dramatic, delay: delay + 0.12 }}
+        className={completed ? 'text-amber-400' : 'text-parchment-500/72'}
+      >
+        <Icon name={completed ? 'laurel' : 'noticeBoard'} size={18} />
+      </motion.span>
+      <span className="min-w-0 flex-1">
+        <span
+          className={`font-display block text-[11px] tracking-[0.25em] uppercase ${
+            completed ? 'text-amber-400' : 'text-parchment-500/72'
+          }`}
+        >
+          {completed ? 'Page complete' : 'Recorded'}
+        </span>
+        <span className="text-parchment-300/85 mt-0.5 block text-sm leading-snug">
+          {completed
+            ? `${completed.name} is finished — every foe on the page beaten. The book pays another ${Math.round(ALBUM_PAGE_BONUS * 100)}% gold and experience, for good.`
+            : `${record.added?.name} takes a place in the album, under ${record.added?.page}.`}
+        </span>
+      </span>
+    </motion.div>
+  );
+}
+
 export function BattleResult({
   victory,
   analysis,
   heroName,
   opponentName,
   rewards,
+  album,
   onContinue,
   continueLabel = 'Continue',
   onReplay,
@@ -200,6 +262,11 @@ export function BattleResult({
           </p>
           <ItemCard item={rewards.item} />
         </motion.div>
+      )}
+
+      {/* After the spoils: the loot is what they came for, the book is what they are building. */}
+      {victory && album?.added && (
+        <AlbumBand record={album} delay={cascadeDelay(lines.length + (rewards?.item ? 1 : 0))} />
       )}
 
       {!victory && analysis.hints.length > 0 && (

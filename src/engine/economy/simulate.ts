@@ -40,7 +40,16 @@ import { guildMultipliers } from '@/engine/guilds/buffs';
 import { GOLD_CACHE_VIGOR, banner, outcomeOdds, type RollOutcome } from '@/data/banners';
 import { FEEDS_PER_DAY, SCRAPS_PER_DROP, SCRAPS_PER_FEED, SCRAP_DROP_CHANCE } from '@/data/pets';
 import { PET_MAX_LEVEL, feedGoldCost } from '@/engine/pets/feeding';
-import { TOTAL_STAGES, stageLevel } from '@/data/campaign';
+import {
+  STAGES_PER_CHAPTER,
+  TOTAL_STAGES,
+  chapterOf,
+  stageLevel,
+  stageMonster,
+} from '@/data/campaign';
+import { monstersInZone } from '@/data/monsters';
+import { zonesForLevel, type ZoneId } from '@/data/zones';
+import { albumBonus, albumProgress } from '@/engine/album/album';
 import { STAGE_VIGOR_COST, stagePayout } from '@/engine/campaign/stages';
 import { RARITIES, type Rarity } from '@/engine/items/types';
 
@@ -86,6 +95,15 @@ export interface DayLedger {
   readonly petLevel: number;
   /** How far down the Long Road they have got. Monotone, and capped at `TOTAL_STAGES`. */
   readonly stagesCleared: number;
+  /**
+   * Album pages finished by the start of this day, and what the book was therefore paying.
+   *
+   * Recorded rather than left implicit because the album is a *permanent multiplier* on every
+   * other faucet in this ledger — a reader who cannot see it has no way to tell a balance change
+   * from a page landing.
+   */
+  readonly albumPages: number;
+  readonly albumBonus: number;
 }
 
 /**
@@ -124,6 +142,56 @@ function goldPerRoll(level: number): number {
     share('rare') * itemValue(level, 'rare') +
     share('uncommon') * itemValue(level, 'uncommon')
   );
+}
+
+/**
+ * Is the road still worth the Vigor, looking at the *run* rather than the next stone?
+ *
+ * The rule this replaced compared one stage against the mission board and stopped the moment it
+ * lost — and because the road is **contiguous**, stopping is permanent: the wall never moves, so
+ * its level stays put while the hero's board rate keeps climbing. A guilded player, one level
+ * ahead on day two, failed the test at stage 2 by three XP and never walked another step in
+ * ninety days. The unguilded one, a level behind, passed it and walked all hundred and twenty.
+ *
+ * That is not a balance finding, it is the road's own shape misread — the same mistake this file's
+ * first campaign model made from the other direction (CLAUDE.md: a simulated player has to be
+ * modelled making the choice). You cannot skip stage 2 to reach stage 5; you eat the cheap ones to
+ * get to the good ones, and the screen shows you the whole chapter's levels while you decide.
+ *
+ * So the comparison is the average over the rest of the chapter that is at or below the hero's
+ * level — the natural unit, because a chapter ends in a boss and a Golden Die.
+ */
+function chapterBeatsTheBoard(
+  from: number,
+  level: number,
+  bonus: { readonly gold: number; readonly xp: number },
+  atTheBoard: number,
+): boolean {
+  const lastOfChapter = Math.min(chapterOf(from) * STAGES_PER_CHAPTER, TOTAL_STAGES);
+
+  let total = 0;
+  let stages = 0;
+  for (let stage = from; stage <= lastOfChapter; stage += 1) {
+    if (stageLevel(stage) > level) break;
+    total += stagePayout(stage, level, bonus).xp;
+    stages += 1;
+  }
+
+  return stages > 0 && total / stages >= atTheBoard;
+}
+
+/**
+ * Expected draws to see every one of `n` equally likely things — the coupon-collector number,
+ * `n·H(n)`.
+ *
+ * The mission board picks a monster uniformly from the zone's roster (`board.ts`), so this is
+ * exactly how many contracts a player expects to win in a zone before its album page is full:
+ * about 29 for a ten-monster zone, against the ten wins a "one of each" intuition would suggest.
+ */
+function couponDraws(n: number): number {
+  let harmonic = 0;
+  for (let term = 1; term <= n; term += 1) harmonic += 1 / term;
+  return n * harmonic;
 }
 
 export interface PlayStyle {
@@ -172,6 +240,14 @@ export interface PlayStyle {
    * model varies is *whether* they go, and the road's own level curve does the rest.
    */
   readonly walksTheRoad?: boolean;
+  /**
+   * Whether this player's album fills at all. Default true.
+   *
+   * A flag rather than a rate, and it exists for the A/B: the album's whole effect is a
+   * multiplier that compounds through the calendar, and the only honest way to measure it is to
+   * run the same player twice. Nobody plays with it *off* — beating things is not optional.
+   */
+  readonly collectsTheAlbum?: boolean;
   /**
    * Ales this player drinks a day, or `'earned'` to spend exactly what the day's work pays for.
    *
@@ -312,6 +388,45 @@ export function simulateEconomy({
   // The road, which is a hundred and twenty one-time payouts and then nothing forever.
   let stagesCleared = 0;
 
+  /*
+   * ── The Collector's Album ─────────────────────────────────────────────────────────
+   *
+   * A permanent multiplier on gold *and* experience that grows as the player finishes pages
+   * (balancing §20), so it has to be in the model or every band past the first fortnight is
+   * quietly optimistic about how long things take.
+   *
+   * Two fill paths, modelled differently because they *are* different:
+   *
+   * - **The road is exact.** Stage N stands on `stageMonster(N)`, so walking the road records a
+   *   known list of ids and there is nothing to estimate. Chapter one covers the whole Whispering
+   *   Woods roster by stage ten.
+   * - **The board is a coupon-collector problem.** `board.ts` picks a monster uniformly from the
+   *   zone's roster, so the expected number of wins to see all `n` of them is `n·H(n)` — about 29
+   *   for a ten-monster zone. A page therefore completes once the player has won that many
+   *   contracts in the zone, which is the central estimate rather than a bound in either
+   *   direction.
+   *
+   * Dungeon pages are not modelled, for the reason the header gives about every unmodelled
+   * system: the sim does not run delves, and inventing a floor-clear rate to fill three pages
+   * with would be asserting a fiction. The consequence is stated rather than hidden — the album
+   * bonus this sim reports tops out at the ten zone pages, +10% rather than the +18% ceiling.
+   */
+  const zoneWins = new Map<string, number>();
+  const albumFoes = (): readonly string[] => {
+    const foes: string[] = [];
+    for (let stage = 1; stage <= stagesCleared; stage += 1) {
+      const foe = stageMonster(stage);
+      if (foe) foes.push(foe.id);
+    }
+    for (const [zoneId, wins] of zoneWins) {
+      const roster = monstersInZone(zoneId as ZoneId);
+      if (roster.length > 0 && wins >= couponDraws(roster.length)) {
+        for (const foe of roster) foes.push(foe.id);
+      }
+    }
+    return foes;
+  };
+
   for (let day = 1; day <= days; day += 1) {
     /*
      * ── The day's Vigor, including whatever Ale the day's work paid for ───────────────
@@ -341,7 +456,12 @@ export function simulateEconomy({
       drillmasterStep: style.drillmasterStep ?? 0,
     });
     const green = greenhornBonus(level);
-    const bonus = { gold: hall.gold * green, xp: hall.xp * green };
+    // The book, folded the same way and read at the *start* of the day, so a page finished this
+    // afternoon pays from tomorrow rather than retroactively.
+    const recorded = style.collectsTheAlbum === false ? [] : albumFoes();
+    const book = albumBonus(recorded);
+    const pagesComplete = albumProgress(recorded).pagesComplete;
+    const bonus = { gold: hall.gold * green * book.gold, xp: hall.xp * green * book.xp };
 
     /*
      * ── The Long Road, taken off the top of the day's Vigor. ──────────────────────────
@@ -382,9 +502,10 @@ export function simulateEconomy({
           break;
         }
 
-        const payout = stagePayout(next, level, bonus);
         const atTheBoard = xpPerVigor(level, xpNeeded(level)) * bonus.xp * STAGE_VIGOR_COST;
-        if (payout.xp < atTheBoard) break;
+        if (!chapterBeatsTheBoard(next, level, bonus, atTheBoard)) break;
+
+        const payout = stagePayout(next, level, bonus);
 
         roadGold += payout.gold;
         roadXp += payout.xp;
@@ -416,6 +537,22 @@ export function simulateEconomy({
      * road existed.
      */
     const missionsRun = (vigorBudget - roadVigor) / style.duration;
+
+    /*
+     * Where those contracts were taken, for the album's coupon collector above.
+     *
+     * Split evenly across the zones the board would offer at this level: `pickZone` prefers a
+     * zone no other card on the board is using, so over a day of three-card boards the spread is
+     * close to uniform and a model that sent every contract to one zone would finish that page
+     * three times too fast.
+     */
+    const eligible = zonesForLevel(level);
+    for (const eligibleZone of eligible) {
+      zoneWins.set(
+        eligibleZone.id,
+        (zoneWins.get(eligibleZone.id) ?? 0) + missionsRun / eligible.length,
+      );
+    }
 
     let missionGold = 0;
     let xpEarned = roadXp;
@@ -546,6 +683,8 @@ export function simulateEconomy({
       stagesCleared,
       itemsBought: affordableBuys,
       petLevel,
+      albumPages: pagesComplete,
+      albumBonus: book.gold,
     });
   }
 

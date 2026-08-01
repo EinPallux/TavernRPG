@@ -286,3 +286,47 @@ Alternatives considered and not taken, in case this wants revisiting:
    against monsters priced for it. A faster ride into a wall.
 
 → `docs/design/balancing-formulas.md` §0, §19
+
+---
+
+**Q27. What belongs in the Collector's Album, and what is a finished book worth?**
+✅ **Decided: 126 foes over 13 pages (zones + dungeons, no campaign bosses); +1% a page, +5%
+capstone, +18% full.** *(2026-08-01 — flagging rather than asking, because both halves are
+arguable and both are cheap to revisit. Numbers: balancing §20; spec: `systems/album.md`.)*
+
+**What is in it.** Every mission monster (96, on ten zone pages) and every dungeon floor (30, on
+three). The Long Road's ten chapter bosses are **out**, and that is the call worth defending: they
+are the game's most memorable fights, so the instinct is to file them. Two arguments say no.
+
+1. `campaign.stagesCleared` is a single contiguous number, so "have I beaten the Ashen Warden" is
+   `stagesCleared >= 12`. Filing them would put a **derivable** fact into a stored set, which is
+   the antipattern the album is otherwise the honest exception to.
+2. A zone page makes a level band worth revisiting; a dungeon page makes a delve worth finishing.
+   A road page would restate progress the player is already making for its own sake — and it would
+   move the capstone behind stage 120, turning "beaten one of everything" into "finished the entire
+   game", which is a different promise from the one the screen makes.
+
+If this is revisited, the cheapest version is a fourteenth page that pays **no** page bonus and does
+not gate the capstone — a trophy shelf rather than a scoring page. That keeps the memory and avoids
+both objections.
+
+**What it pays.** Thirteen pages at 1% plus 5% for the lot, on gold *and* experience together.
+
+| Shape | Full book | Why not |
+|---|---|---|
+| 1% a page, no capstone | +13% | Finishing the *last* page — every zone and all thirty floors — is a different achievement from finishing the tenth, and reads as nothing |
+| **1% a page + 5%** | **+18%** | **taken** |
+| 2% a page + 10% | +36% | A third of every payout for a collection is a second economy, not a bonus; the 90-day A/B would land near 1.4× |
+| Scaled by page size | 8–10% per page | A player working out which page pays best is doing arithmetic instead of playing, and the pages differ by one entry |
+
+Measured over ninety days the modelled player finishes 9–10 zone pages and earns **1.02–1.20×** an
+identical player whose book stays shut. Every §0 row is unmoved. The gear-share economy floor came
+down from 2% to 1.5%, which is a property of that band rather than of this feature — a fixed count
+of shop buys divided by a growing income falls whatever the income is doing.
+
+**Not asked, deliberately:** whether the bonus should be Golden Dice instead of a multiplier. Dice
+are earn-only and the day's-work track already prints the daily ones; a second dice faucet tied to
+a months-long collection would be either negligible or a reason to farm old zones on a schedule,
+and the multiplier is the version that just pays you for playing where you like.
+
+→ `docs/design/systems/album.md`, `docs/design/balancing-formulas.md` §20

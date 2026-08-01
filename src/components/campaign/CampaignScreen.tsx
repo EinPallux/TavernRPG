@@ -44,6 +44,7 @@ import { BattleResult, type BattleRewards } from '@/components/battle/BattleResu
 import { Icon, LockIcon } from '@/components/icons';
 import { useTooltip } from '@/components/ui/Tooltip';
 import { analyseBattle } from '@/engine/combat/analysis';
+import type { AlbumRecord } from '@/engine/album/album';
 import { CHAPTERS, TOTAL_STAGES } from '@/data/campaign';
 import { PLACES_BY_ID } from '@/data/places';
 import { useGameStore } from '@/state/gameStore';
@@ -72,6 +73,8 @@ const CHAIN_PAUSE_MS = 420;
 interface Push {
   readonly outcome: PushOutcome;
   readonly leveledTo: number | null;
+  /** What the album took from the stage, if anything (album spec §4). */
+  readonly album: AlbumRecord | null;
 }
 
 /** Why a run of the road came to an end — the only thing a summary really has to say. */
@@ -172,7 +175,7 @@ export function CampaignScreen() {
         return false;
       }
 
-      setPush({ outcome: result.outcome, leveledTo: result.leveledTo });
+      setPush({ outcome: result.outcome, leveledTo: result.leveledTo, album: result.album });
       setRun((previous) => ({
         cleared:
           (previous?.cleared ?? 0) + (result.outcome.won && !result.outcome.practice ? 1 : 0),
@@ -678,7 +681,7 @@ function StageFight({
   onSpeedChange: (speed: 1 | 2 | 4) => void;
   onDone: () => void;
 }) {
-  const { outcome, leveledTo } = push;
+  const { outcome, leveledTo, album } = push;
   const analysis = useMemo(() => analyseBattle(outcome.battle.log, 'a'), [outcome.battle.log]);
 
   const opening = outcome.battle.log.find((event) => event.t === 'battle_start');
@@ -721,6 +724,7 @@ function StageFight({
             heroName={heroName}
             opponentName={opponentName}
             {...(rewards ? { rewards } : {})}
+            album={album}
             onContinue={onDone}
             continueLabel={outcome.won ? 'Back to the road' : 'Back to town'}
           />

@@ -32,6 +32,8 @@ import { buildFloorCombatant, floorPayout } from '@/engine/dungeons/floors';
 import { keyInPlay } from '@/engine/dungeons/keys';
 import type { Hero, SaveFile } from '@/engine/save/schema';
 import { payoutBonus, petContribution } from './petActions';
+import { recordVictory } from './albumActions';
+import type { AlbumRecord } from '@/engine/album/album';
 import {
   DUNGEONS,
   FLOORS_PER_DUNGEON,
@@ -127,6 +129,8 @@ export interface DelveTransition {
   /** Generated here rather than in the engine, which deals in slots and rarities. */
   readonly items: readonly Item[];
   readonly leveledTo: number | null;
+  /** What the Album took from the floor, if it was new (album spec §3). */
+  readonly album: AlbumRecord | null;
 }
 
 export type DelveResult = DelveTransition | { readonly ok: false; readonly refusal: DelveRefusal };
@@ -182,7 +186,7 @@ export function descend(save: SaveFile, id: DungeonId, now: number): DelveResult
   if (!outcome.won) {
     // No resource cost on a loss — the only price is the wait (spec §2). The attempt counter and
     // the best-attempt bar have already moved inside `delve`.
-    return { ok: true, save: withProgress, outcome, items: [], leveledTo: null };
+    return { ok: true, save: withProgress, outcome, items: [], leveledTo: null, album: null };
   }
 
   /*
@@ -233,11 +237,22 @@ export function descend(save: SaveFile, id: DungeonId, now: number): DelveResult
   };
   for (const item of items) next = addItemToHero(next, item).hero;
 
+  /*
+   * The floor goes in the book.
+   *
+   * Resolved through `floorDef` rather than carried on the outcome: the delve's job is to say
+   * what happened to the *fight*, and which monster stood on floor seven is content the data
+   * module already owns. One lookup here beats a field every future caller has to thread.
+   */
+  const beaten = floorDef(id, outcome.floor);
+  const booked = beaten ? recordVictory({ ...withProgress, hero: next }, beaten.id) : null;
+
   return {
     ok: true,
-    save: { ...withProgress, hero: next },
+    save: booked?.save ?? { ...withProgress, hero: next },
     outcome,
     items,
     leveledTo: levelled.level > hero.level ? levelled.level : null,
+    album: booked?.record ?? null,
   };
 }

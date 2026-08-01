@@ -26,6 +26,8 @@ import { spendVigor } from './vigorActions';
 import { refreshForgeDay } from './forgeActions';
 import { refreshGachaDay } from './gachaActions';
 import { creditMissionDrops, payoutBonus, petContribution, refreshPetDay } from './petActions';
+import { recordVictory } from './albumActions';
+import type { AlbumRecord } from '@/engine/album/album';
 import { ensureTasks, refreshBoardDay } from './boardActions';
 import { refreshTutorialDay } from './tutorialActions';
 import { quickenedEndsAt, shortensNextMission } from '@/engine/tutorial/firstMission';
@@ -313,6 +315,14 @@ export interface ClaimResult {
   /** The generated drop, if there was one — the result screen shows this exact item. */
   readonly item: Item | null;
   readonly leveledTo: number | null;
+  /**
+   * What the Album took from this fight, if anything (album spec §3).
+   *
+   * Null on a loss, and on a win against a foe already in the book — the result screen shows a
+   * "Recorded" line only when there is genuinely something new, which is what keeps the line a
+   * small event rather than a permanent fixture nobody reads.
+   */
+  readonly album: AlbumRecord | null;
 }
 
 /**
@@ -389,12 +399,24 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
     },
   );
 
+  /*
+   * The book, on a win only.
+   *
+   * `recordVictory` is idempotent, so the hundredth boar returns the same save object and this
+   * costs nothing on the common path — but the guard on `spoils.victory` still has to be here
+   * rather than inside it, because a *loss* is not a record. A bestiary of things that beat you
+   * is a different book.
+   */
+  const booked = spoils.victory
+    ? recordVictory(credited, mission.offer.monsterId)
+    : { save: credited, record: null };
+
   return {
     save: {
-      ...credited,
+      ...booked.save,
       hero: next,
       activity: {
-        ...credited.activity,
+        ...booked.save.activity,
         pendingMission: null,
         missionsCompleted: activity.missionsCompleted + (spoils.victory ? 1 : 0),
         ...(gainedFreeAle
@@ -411,6 +433,7 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
     battle,
     item,
     leveledTo: levelled.level > hero.level ? levelled.level : null,
+    album: booked.record,
   };
 }
 
