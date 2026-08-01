@@ -51,6 +51,24 @@ const WEBP_QUALITY = 78;
  * Never *up*scales: `withoutEnlargement` means a small overlay stays its own size rather than
  * being blown up to the cap and losing to its own interpolation.
  */
+/**
+ * Is `target` already up to date with `source`?
+ *
+ * Plain mtime, the ordinary build-step contract. Added when this script became a `pretest` step:
+ * six seconds is nothing before a production build and a real tax in front of a fifteen-second
+ * unit suite somebody runs forty times a day.
+ *
+ * Safe in the direction that matters. A fresh checkout has no target at all, and git stamps
+ * working-tree files at checkout time — *newer* than any target — so CI always does the full
+ * pass. The only way to get a stale skip is to restore a source file carrying an older mtime than
+ * its output, and `rm -rf public/assets` is the answer to that.
+ */
+async function isFresh(from, to) {
+  if (!existsSync(to)) return false;
+  const [source, target] = await Promise.all([stat(from), stat(to)]);
+  return target.mtimeMs >= source.mtimeMs;
+}
+
 async function transcodeTree(source, target, width) {
   await mkdir(target, { recursive: true });
   let files = 0;
@@ -68,16 +86,19 @@ async function transcodeTree(source, target, width) {
     }
 
     if (!/\.(png|jpe?g|webp)$/i.test(entry.name)) {
-      await cp(from, join(target, entry.name), { force: true });
+      const plain = join(target, entry.name);
+      if (!(await isFresh(from, plain))) await cp(from, plain, { force: true });
       files += 1;
       continue;
     }
 
     const to = join(target, `${basename(entry.name, extname(entry.name))}.webp`);
-    await sharp(from)
-      .resize({ width, withoutEnlargement: true })
-      .webp({ quality: WEBP_QUALITY })
-      .toFile(to);
+    if (!(await isFresh(from, to))) {
+      await sharp(from)
+        .resize({ width, withoutEnlargement: true })
+        .webp({ quality: WEBP_QUALITY })
+        .toFile(to);
+    }
 
     before += (await stat(from)).size;
     after += (await stat(to)).size;
