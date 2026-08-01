@@ -135,6 +135,54 @@ export interface PayoutBonus {
 export const NO_BONUS: PayoutBonus = { gold: 1, xp: 1 };
 
 /**
+ * `[TUNE]` The greenhorn's due — Emberhollow overpays a new hero (balancing §19).
+ *
+ * `vigorPerLevel` already curves: 2.3 levels per hundred Vigor at level 1, 0.98 at forty. That is
+ * a *decay*, but it is far too flat to feel like one. Two contracts bought a level at level one
+ * and a bit over two bought a level at level fifteen, so the first fortnight had no shape at all
+ * — the same forty minutes of waiting per level, over and over, at exactly the point a new player
+ * is deciding whether this game rewards them.
+ *
+ * So the town pays over the odds while you are nobody, and stops by the time you are somebody:
+ * ×1.6 at level 1, sliding to ×1 at level 25.
+ *
+ * **Concentrated rather than spread**, and the pacing sweep is why. Two shapes give the same
+ * level-10 day: ×1.6 fading by 25, or ×1.4 fading by 40. The short one moves level 55 by 8%
+ * against the long one's 10% while giving a *stronger* early kick — because the help is spent
+ * where the player is deciding whether to stay rather than dribbled across a fortnight they had
+ * already committed to. The contrast is the point: fast, then normal, and the change legible.
+ *
+ * **It multiplies gold and XP by the same factor, and that is the whole safety argument.** Gold
+ * per *level* is `goldPerVigor(L) × vigorPerLevel(L)`; scale both sides by B and the player
+ * reaches each level having earned exactly the gold they would have earned before, so their
+ * trained attributes at level 20 are what they always were. The power curve is untouched and only
+ * the clock moves. Boosting XP alone would have levelled players into monsters they could not
+ * afford to fight — a faster ride into a wall, which is the opposite of the ask.
+ */
+export const GREENHORN_PEAK = 1.6;
+export const GREENHORN_UNTIL = 25;
+
+/**
+ * The multiplier a hero of this level earns on everything they spend Vigor on.
+ *
+ * Linear rather than curved on purpose: a player cannot see an exponent, but they can see a
+ * number that shrinks a little every level, and the Tankard prints it. Never below 1 — this is a
+ * gift that runs out, not a penalty that starts.
+ */
+export function greenhornBonus(level: number): number {
+  const safe = Math.max(1, Math.floor(Number.isFinite(level) ? level : 1));
+  if (safe >= GREENHORN_UNTIL) return 1;
+  const remaining = (GREENHORN_UNTIL - safe) / (GREENHORN_UNTIL - 1);
+  return 1 + (GREENHORN_PEAK - 1) * remaining;
+}
+
+/** As a `PayoutBonus`, for the fold. Gold and XP move together — see the note above. */
+export function greenhornPayoutBonus(level: number): PayoutBonus {
+  const factor = greenhornBonus(level);
+  return { gold: factor, xp: factor };
+}
+
+/**
  * What a mission of this length pays a hero of this level, before drops.
  * `vigorCost` and the duration are the same number by design (§6) — the parameter is separate
  * only so a future effect can discount one without silently discounting the other.

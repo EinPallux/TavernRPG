@@ -18,8 +18,9 @@ import { analyseBattle } from '@/engine/combat/analysis';
 import { resolveMission, type MissionOutcome } from '@/engine/missions/lifecycle';
 import type { ActiveMission } from '@/engine/missions/types';
 import { rerollCost } from '@/engine/missions/board';
-import { ALE_DICE_COST, type MissionDuration } from '@/engine/progression/rewards';
+import { ALE_DICE_COST, NO_BONUS, type MissionDuration } from '@/engine/progression/rewards';
 import { activeMount } from '@/engine/stables/mounts';
+import { payoutBonus } from '@/state/petActions';
 import type { StoredActiveMission } from '@/engine/save/schema';
 import { bark, type BarkMoment } from '@/data/barks';
 import { monster as monsterById } from '@/data/monsters';
@@ -92,6 +93,10 @@ export function TavernScreen() {
           : 'tavern-idle';
 
   const line = useMemo(() => bark(moment, barkTick), [moment, barkTick]);
+
+  // One bonus for the whole screen, from the same fold the payout uses — so the card quotes
+  // what the door pays. (`payoutBonus` is cheap but it derives stats; memoised on the save.)
+  const bonus = useMemo(() => (save ? payoutBonus(save) : NO_BONUS), [save]);
 
   const handleAccept = useCallback(
     (offerId: string, duration: MissionDuration) => {
@@ -258,6 +263,7 @@ export function TavernScreen() {
                     offer={offer}
                     heroLevel={hero.level}
                     vigor={activity.vigor}
+                    bonus={bonus}
                     index={index}
                     onAccept={(duration) => handleAccept(offer.id, duration)}
                   />

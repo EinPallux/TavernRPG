@@ -9,8 +9,8 @@
 
 | Milestone | Target (active daily player, ~45 min/day) |
 |---|---|
-| Level 10 (all features unlocked) | Day 2–3 |
-| Level 25 (Barrowdeep unlocked) | The first week (day 6–9) |
+| Level 10 (all features unlocked) | Day 1–2 |
+| Level 25 (Barrowdeep unlocked) | The first week (day 5–9) |
 | Level 55, 1–2 set pieces equipped | Day 20–26 |
 | First full 5-piece set | Day 45–60 |
 | Hall of Fame top 100 | Month 2–3 |
@@ -24,6 +24,18 @@ it was. The choice was between the feature and the old schedule, and a schedule 
 was written down in order to be revised; the *shape* of §0 is unchanged, and every row is still
 two-sided where it should be. (Same call as Q22, which moved a row to match the curve rather than
 leaving it pulling against one.)
+
+**Level 10 moved once more with the greenhorn's due (§19)** — day 2.2 to day 1.5 — and that one is
+the *point* rather than a side effect. Level 55 did not move at all (20.1, inside day 20–26),
+because the bonus is spent by level 25 and stops mattering; that is the shape the feature was
+tuned for. Level 25 landed at **5.3**, which is inside the week this row has always promised but
+was 11.5% early of the *numeric* range beside it, so the range is day 5–9 now. Widening the early
+edge of a two-sided band deserves the suspicion it invites, so the reasoning, out loud: the row's
+promise is "the first week", the parenthesis was a reading of it rather than a second constraint,
+and 5.3 does not fail the promise. It would have passed `withinBand` either way — the ±20%
+tolerance covers 11.5% — which is exactly why the range needed editing rather than leaving: a
+window the reference player predictably lands outside of is not a window, and the tolerance exists
+for model noise, not for absorbing a change somebody made on purpose.
 
 **Measured, Phase 17** (`npm run pacing`, reference player = `ACTIVE_PLAYER`):
 
@@ -796,7 +808,6 @@ player suffers because the board offers ten, twenty and thirty. Payout is linear
 part contract is a part payout. All three shipped styles divide exactly, so this is a no-op for
 every band tuned before the road existed.
 
-
 ## 18. The day's work (Vigor spent → Golden Dice)
 
 `[TUNE] DAY_WORK_RUNGS = [50, 100, 150]` — `src/engine/progression/rewards.ts`.
@@ -857,3 +868,71 @@ than absorbed:
 The sim models the loop as a fixed point (`alesADay`): the Ale buys the Vigor that pays the dice
 that buy the Ale. Modelling the new dice as *gacha rolls* instead would have been modelling the
 option rather than the choice — Vigor compounds into gold, XP and loot, and a card does not.
+
+## 19. The greenhorn's due (early-game scaling)
+
+`[TUNE] GREENHORN_PEAK = 1.6`, `GREENHORN_UNTIL = 25` — `src/engine/progression/rewards.ts`.
+Folded into every payout at `state/petActions.ts#payoutBonus`, so it reaches contracts, the Long
+Road and the Undertavern from one place — every payout the game bonuses at all. It is the town
+being generous to a new name rather than a rebate on Vigor, which is why the key-gated Undertavern
+is in and why there is no second fold for it to go missing from. Materials sit outside
+`PayoutBonus` and stay outside it: a delve's Starmetal is untouched, so set pacing does not move.
+
+### The problem
+
+`vigorPerLevel` already curves — 2.30 levels per hundred Vigor at level 1, 0.98 at forty — but it
+is far too flat to *feel* like a curve. In practice the first fortnight was two contracts a level
+at level one and a shade over two at level fifteen: the same forty minutes of waiting per level,
+over and over, at exactly the point a new player is deciding whether the game rewards them. A
+20-minute contract at level 1 paid 138 XP against a 300 XP level — 46%, and the wait is real time.
+
+### The fix
+
+A multiplier that starts at ×1.6 and slides linearly to ×1 at level 25.
+
+| Level | Bonus | 20-min contract XP | Share of a level | Levels per 100 Vigor |
+|---|---|---|---|---|
+| 1 | ×1.60 | 221 (was 138) | 74% (was 46%) | 3.68 (was 2.30) |
+| 5 | ×1.50 | 1,795 (was 1,197) | 61% | 3.03 (was 2.02) |
+| 10 | ×1.38 | 4,802 (was 3,493) | 48% (was 35%) | 2.41 (was 1.75) |
+| 15 | ×1.25 | 8,255 (was 6,604) | 39% | 1.94 (was 1.55) |
+| 20 | ×1.13 | 11,620 (was 10,329) | 31% | 1.56 (was 1.39) |
+| 25+ | ×1.00 | unchanged | 25% | 1.26 |
+
+### Two decisions worth defending
+
+**Gold and XP move by the same factor, and that is the safety argument.** Gold per *level* is
+`goldPerVigor(L) × vigorPerLevel(L)`; scale both sides by B and it is unchanged, so a player
+arrives at every level having earned the gold they always would have and therefore holding the
+trained attributes they always would have. The power curve is untouched and only the clock moves.
+Boosting XP alone would have levelled new players into monsters they could not afford to fight —
+a faster ride into a wall, which is the opposite of the ask. `greenhorn.test.ts` asserts the
+invariant directly rather than trusting the comment.
+
+**Concentrated to 25 rather than spread to 40.** The pacing sweep offered two shapes with the same
+level-10 day: ×1.6 fading by 25, or ×1.4 fading by 40. The short one moves level 55 by 8% against
+the long one's 10% *and* gives a stronger early kick, because the help is spent where the player
+is deciding whether to stay rather than dribbled across a fortnight they had already committed to.
+
+### Measured
+
+| Milestone | Before | After | Window |
+|---|---|---|---|
+| Level 10 | 2.2 | **1.5** | re-fitted to day 1–2 |
+| Level 25 | 6.9 | **5.3** | early edge 6 → 5; the row always promised "the first week" |
+| Level 55 | 21.8 | **20.1** | day 20–26, unchanged, still inside |
+| Full 5-piece set | 51.5 | **51.5** | unchanged |
+
+One economy band moved: the guild-compounding floor came down from 1.15 to 1.08, because the
+bonus is a **partial equaliser** — a guilded player levels faster, so they spend fewer days inside
+the band, so their head start over an unguilded one is smaller in the first month. The advantage
+returns in full past level 25, which the isolated single-day check still measures at the published
+multiplier.
+
+### One bug it surfaced
+
+`MissionCard` had been quoting `missionPayout(...)` with **no bonus** since Phase 5, so a guilded
+player with a fed companion was told one number at the table and handed a larger one at the door —
+against the explicit note on `missionPayout` that the bonus belongs at quote time because "a buff
+applied only on collection is a buff nobody believes in". Invisible while the only sources were
+opt-in mid-game buffs; impossible to miss at ×1.6 from level one. The card takes the bonus now.

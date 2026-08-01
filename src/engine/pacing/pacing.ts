@@ -60,7 +60,7 @@ export type Milestone = (typeof MILESTONES)[number];
  * row to match the curve rather than leaving it pulling against it.
  */
 export const TARGET_DAYS: Readonly<Record<Milestone, number>> = {
-  'level-10': 3,
+  'level-10': 2,
   'level-25': 9,
   'level-55': 26,
   'first-set-piece': 30,
@@ -87,8 +87,8 @@ export const TARGET_DAYS: Readonly<Record<Milestone, number>> = {
  * lives only in a comment gets rewritten by whoever is in a hurry.
  */
 export const TARGET_EARLIEST: Readonly<Record<Milestone, number>> = {
-  'level-10': 2, // §0: "Day 2–3"
-  'level-25': 6, // §0: "the first week"
+  'level-10': 1, // §0: "Day 1–2"
+  'level-25': 5, // §0: "the first week" — the row's promise is the week, not the sixth day
   'level-55': 20, // §0: "Day 20–26" — three weeks and a bit
   'first-set-piece': 30, // deadline; the early side is never checked
   'full-set': 45, // §0: "Day 45–60"

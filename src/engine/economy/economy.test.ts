@@ -304,8 +304,17 @@ describe('a hall changes the numbers — Phase 10', () => {
     // So the band is deliberately wider than the published cap, and the thing it is actually
     // guarding is that the compounding stays a nudge: an off-by-one in the step maths (0.25%
     // read as 2.5%) would land far outside it.
+    /*
+     * The floor came down from 1.15 to 1.08 with the greenhorn's due (balancing §19), and the
+     * reason is worth reading rather than absorbing: the bonus is a **partial equaliser**.
+     * A guilded player levels faster, so they spend fewer days inside the ×1.6–×1 band, so their
+     * head start is smaller in the first month than it used to be. The advantage is not gone — it
+     * reappears in full the moment both players are past level 25, which is what the isolated
+     * single-day check below measures. What this band still catches is the thing it was written
+     * for: an off-by-one in the step maths lands nowhere near either end.
+     */
     const ratio = totalEarned(guilded.ledger) / totalEarned(unguilded.ledger);
-    expect(ratio).toBeGreaterThan(1.15);
+    expect(ratio).toBeGreaterThan(1.08);
     expect(ratio).toBeLessThan(1.45);
   });
 

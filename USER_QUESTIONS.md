@@ -235,3 +235,54 @@ Alternatives considered and not taken, in case this wants revisiting:
    band's edge — at the cost of a rule players have to be told.
 
 → `docs/design/balancing-formulas.md` §0, §18
+
+## 2026-08-01 — the greenhorn's due (early-game scaling)
+
+**Q26. How far into the game should the early-game bonus reach, and does §0's level-10 row move
+again?** ✅ **Answered 2026-08-01 within the latitude the ask gave: ×1.6 fading to nothing at
+level 25; the level-10 row moves, the other two do not.**
+
+The ask was "add scaling to the Tavern Missions — 20 minutes of waiting is too little XP early on;
+make early game a little bit quicker, up until like level 20 or something or maybe even 40". The
+answer shipped is balancing §19.
+
+The measured problem first, because it was worse than "a little": `vigorPerLevel` curves from 2.30
+levels per hundred Vigor at level 1 to 1.55 at fifteen, which is a decay too flat to be felt. Two
+contracts bought a level at level one and a shade over two bought one at fifteen — the same forty
+minutes of waiting per level, over and over, across the whole of onboarding.
+
+The `(peak, until)` sweep, in days to each milestone:
+
+| Peak | Until | Level 10 | Level 25 | Level 55 | Full set |
+|---|---|---|---|---|---|
+| ×1.0 | — | 2.2 | 6.9 | 21.8 | 51.5 |
+| ×1.4 | 40 | 1.7 | 5.4 | 19.6 | 51.5 |
+| ×1.6 | 40 | 1.5 | 4.9 | 18.8 | 51.5 |
+| **×1.6** | **25** | **1.5** | **5.3** | **20.1** | **51.5** |
+| ×1.9 | 25 | 1.3 | 5.4 | 21.2 | 51.5 |
+
+**Concentrated rather than spread**, which is the one genuinely arguable call. ×1.6-to-25 and
+×1.4-to-40 buy the same level-10 day; the short shape then disturbs level 55 by 8% against the long
+one's 10% *and* gives a stronger kick in the first hour, because the help is spent where the player
+is deciding whether to stay rather than dribbled across a fortnight they had already committed to.
+The contrast is also legible in a way a fortnight-long fade is not: fast, then normal.
+
+§0's level-10 row moved from "day 2–3" to "day 1–2" — the second re-fit in two slices, and unlike
+Q25's this one is the *point* rather than a side effect: the ask was for level 10 to arrive sooner.
+Level 55 did **not** move, which is the property the "until 25" choice was made for. Level 25's
+window had its early edge widened by a day, to 5–9: the row has always promised "the first week"
+and 5.3 is inside it, but the parenthesised range said 6. The ±20% band would have covered the
+difference; the range was edited rather than leaned on, because a window the reference player
+predictably lands outside of is not a window. Every §0 row now sits inside its own window.
+
+Alternatives considered and not taken, in case this wants revisiting:
+
+1. **×1.4 to level 40**, the far end of the range in the ask. A gentler ramp that reaches further,
+   at a slightly weaker start and slightly more disturbance to level 55.
+2. **×1.9 to level 25.** Level 10 on day 1.3, but level 55 drifts *back* to 21.2 as the sharper
+   early lead gets spent on higher-cost levels — more bonus buying less schedule.
+3. **XP only, gold untouched.** Rejected on the merits rather than the numbers: gold per level is
+   `goldPerVigor × vigorPerLevel`, so scaling XP alone lands the player at each level under-trained
+   against monsters priced for it. A faster ride into a wall.
+
+→ `docs/design/balancing-formulas.md` §0, §19

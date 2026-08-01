@@ -13,11 +13,25 @@
  *
  * An unknown term renders as plain text rather than throwing — `glossary.test.ts` is what catches
  * a typo, not a blank screen in front of a player.
+ *
+ * ## The innermost explanation wins
+ *
+ * A term is a *word inside a sentence*, and that sentence often sits on something with a tooltip of
+ * its own — the character screen's stat rows are the worst case, where "Damage reduction" carries
+ * the row hint "Against an opponent of your own level" and the label inside it is the glossary term
+ * *Damage reduction cap*. `pointerenter` fires on an ancestor when the pointer enters any part of
+ * its subtree, so hovering the word opened **both**: the general one stacked over the specific one
+ * the player had actually pointed at.
+ *
+ * So opening a term shuts the shell tooltip and cancels anything it had queued. Nesting is the
+ * normal case rather than the exotic one, and the rule this settles on is the one a reader expects:
+ * the more specific explanation is the one you asked for.
  */
 
 import { useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { glossary } from '@/data/glossary';
+import { dismissTooltips } from '@/components/ui/Tooltip';
 import { duration, standard } from '@/styles/motion';
 
 export function Term({ name, children }: { readonly name: string; readonly children?: ReactNode }) {
@@ -26,15 +40,25 @@ export function Term({ name, children }: { readonly name: string; readonly child
 
   if (!entry) return <>{children ?? name}</>;
 
+  /*
+   * `dismissTooltips` rather than `hideAll`: an ancestor's 340 ms timer may already be counting
+   * down, and clearing only what is *showing* would let it fire a moment later — a tooltip for
+   * something the player pointed past, on top of the one they pointed at.
+   */
+  const claim = () => {
+    dismissTooltips();
+    setOpen(true);
+  };
+
   return (
     <span
       className="relative inline-block"
-      onMouseEnter={() => setOpen(true)}
+      onMouseEnter={claim}
       onMouseLeave={() => setOpen(false)}
     >
       <button
         type="button"
-        onFocus={() => setOpen(true)}
+        onFocus={claim}
         onBlur={() => setOpen(false)}
         aria-describedby={open ? `term-${entry.term}` : undefined}
         className="cursor-help underline decoration-amber-500/50 decoration-dotted underline-offset-[3px] transition-colors hover:decoration-amber-400"
