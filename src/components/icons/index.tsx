@@ -233,6 +233,15 @@ export const DiceIcon = (props: IconProps) => (
   </Glyph>
 );
 
+/** A road running to a vanishing point between two milestones — the campaign. */
+export const RoadIcon = (props: IconProps) => (
+  <Glyph {...props}>
+    <path d="M4 21 10.2 3.5M20 21 13.8 3.5" />
+    <path d="M12 6.2v2.4M12 11.4v2.6M12 16.6v3" opacity={0.8} />
+    <path d="M8.2 9.4h-1.6M17.4 9.4h-1.6" opacity={0.5} />
+  </Glyph>
+);
+
 /** A folded map with a road wandering across it — the town seen from above. */
 export const MapIcon = (props: IconProps) => (
   <Glyph {...props}>
@@ -431,6 +440,7 @@ export const ICONS = {
   stairsDown: StairsDownIcon,
   dice: DiceIcon,
   map: MapIcon,
+  road: RoadIcon,
   gear: GearIcon,
   coin: CoinIcon,
   lock: LockIcon,

@@ -137,7 +137,7 @@ interface BattleResult { winnerId: string; rounds: number; log: BattleEvent[];
 
 // ————— Save envelope —————
 interface SaveFile {
-  schemaVersion: 16; savedAt: Timestamp; slot: 1|2|3;
+  schemaVersion: 17; savedAt: Timestamp; slot: 1|2|3;
   worldSeed: Seed;                  // committed once; seeds the entire simulated world
   clock: { lastSeen: Timestamp; clampCount: number };
   settings: Settings;               // nav, motion, audio, battle playback (v4)
@@ -152,7 +152,29 @@ interface SaveFile {
   tasks: Tasks;                     // v15
   calendar: Calendar;               // v15
   tutorial: TutorialState;          // v16
+  campaign: CampaignProgress;       // v17
 }
+
+// ————— The Long Road (v17) —————
+interface CampaignProgress {
+  stagesCleared: number;            // 0–120, contiguous — you cannot clear 5 without clearing 4
+  bestAttempt: number;              // 0–1, the *wall stage only*; resets the moment the wall falls
+  attempts: number;                 // monotone; what makes each attempt its own fight
+  finishedAt: Timestamp | null;     // when the hundred and twentieth fell
+}
+// Four facts and nothing derivable. `stagesCleared` is one number rather than a set because the
+// set could only ever hold `1..n` — that is a number wearing a costume — and chapter, step, the
+// wall, what is open and what is practice all fall out of it (`state/campaignActions.ts`).
+//
+// The seed is `(worldSeed, stage, attempts + 1)`, **not** `(worldSeed, stage)`. A mission commits
+// its seed at accept because its outcome must survive a timer; a stage is repeatable, so a seed
+// fixed per stage would replay the identical losing fight forever and give a walled player no
+// reason to come back after buying a sword. The attempt counter is what makes the next one
+// different while keeping every one of them reproducible.
+//
+// `bestAttempt` belongs to the wall and nothing else. Practising a cleared stage must not move it:
+// a player who wins stage 3 at 100% while stuck on 47 has made no progress on 47, and a bar that
+// says otherwise is a lie in the shape of encouragement.
 
 // ————— The Undertavern (v11) —————
 interface Dungeons {

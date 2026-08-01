@@ -20,6 +20,7 @@ import {
   DEFAULT_PETS,
   DEFAULT_TASKS,
   DEFAULT_TUTORIAL,
+  DEFAULT_CAMPAIGN,
   DEFAULT_SETTINGS,
   EMPTY_MATERIALS,
   saveFileSchema,
@@ -278,6 +279,28 @@ export const MIGRATIONS: readonly Migration[] = [
         ...data,
         tutorial: { ...DEFAULT_TUTORIAL, optedOut: startedPlaying },
       };
+    },
+  },
+  {
+    from: 16,
+    to: 17,
+    describe: 'The Long Road: a hundred and twenty stages out of Emberhollow',
+    migrate: (data) => {
+      /*
+       * Additive and empty, and the empty part is the decision.
+       *
+       * A returning level-40 player will walk the first three chapters in an afternoon — the
+       * stages are levelled 1 to 20 and they are not — so it is tempting to hand them the stages
+       * their level implies and skip the trivia. Two reasons not to.
+       *
+       * A first clear *pays*, and paying for stages nobody fought is inventing gold. And the road
+       * is a hundred and twenty first-clear rewards that exist exactly once per hero; granting
+       * thirty of them silently is deleting content from somebody who was never asked.
+       *
+       * What they actually get is a fast, free, satisfying afternoon, which is the correct
+       * experience of arriving at a new system with a strong character.
+       */
+      return { ...data, campaign: { ...DEFAULT_CAMPAIGN } };
     },
   },
 ];

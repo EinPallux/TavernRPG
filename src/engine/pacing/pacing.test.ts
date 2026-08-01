@@ -25,9 +25,11 @@ import {
   MILESTONES,
   MILESTONE_KIND,
   TARGET_DAYS,
+  TARGET_EARLIEST,
   drift,
   earlyBy,
   simulatePacing,
+  windowDrift,
   withinBand,
 } from './pacing';
 
@@ -38,14 +40,16 @@ const run = simulatePacing({ days: 220 });
 
 describe('the level curve keeps §0’s promises', () => {
   for (const milestone of ['level-10', 'level-25', 'level-55'] as const) {
-    it(`${milestone} lands within ±20% of day ${TARGET_DAYS[milestone]}`, () => {
+    const window = `day ${TARGET_EARLIEST[milestone]}–${TARGET_DAYS[milestone]}`;
+    it(`${milestone} lands within ±20% of ${window}`, () => {
       const reached = run.reached[milestone];
       expect(reached, `${milestone} never happened`).not.toBeNull();
 
-      const off = drift(run, milestone)!;
+      const off = windowDrift(run, milestone)!;
       expect(
         Math.abs(off),
-        `${milestone}: day ${reached} against a target of ${TARGET_DAYS[milestone]} — ${(off * 100).toFixed(0)}% off`,
+        `${milestone}: day ${reached} against §0's ${window} — ${(off * 100).toFixed(0)}% outside it ` +
+          `(${(drift(run, milestone)! * 100).toFixed(0)}% off the promise)`,
       ).toBeLessThanOrEqual(TOLERANCE);
     });
   }
@@ -95,6 +99,26 @@ describe('every §0 row is inside the band the ROADMAP asks for', () => {
     const late = { ...run, reached: { ...run.reached, 'level-55': 90, 'full-set': 200 } };
     expect(withinBand(late, 'level-55')).toBe(false);
     expect(withinBand(late, 'full-set')).toBe(false);
+  });
+
+  it('measures a schedule row against §0’s window, not against one end of it', () => {
+    /*
+     * The rule the Long Road forced into the open. §0 promises level 25 in *week two*, and the
+     * row had been measured against day 14 alone — so the game delivering on day 10 read as a
+     * 29% miss for arriving four days into the week it promised.
+     *
+     * The band is not looser for it. Day 10 is inside week two and passes; day 5 is not and
+     * still fails, which is the failure two-sidedness exists to catch.
+     */
+    expect(TARGET_EARLIEST['level-25']).toBe(8);
+    const inWeekTwo = { ...run, reached: { ...run.reached, 'level-25': 10 } };
+    expect(withinBand(inWeekTwo, 'level-25')).toBe(true);
+    expect(windowDrift(inWeekTwo, 'level-25')).toBe(0);
+    // ...and the drift off the promise is still reported, because it is still a fact.
+    expect(drift(inWeekTwo, 'level-25')).toBeLessThan(0);
+
+    const wayEarly = { ...run, reached: { ...run.reached, 'level-25': 5 } };
+    expect(withinBand(wayEarly, 'level-25')).toBe(false);
   });
 
   it('never counts a milestone that did not happen as passing', () => {

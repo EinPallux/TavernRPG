@@ -124,15 +124,58 @@ feedback, edge cases and tests. Deployed on Vercel.
 **Shipped since 1.0** (no phase number; each is a self-contained slice on top of the release):
 
 - **Three save slots** — Settings → Characters, plus a remembered active slot beside the saves.
-- **The Town Map** — `data/townMap.ts` (fourteen hotspots as percentages of the painting, with a
+- **The Town Map** — `data/townMap.ts` (hotspots as percentages of the painting, with a
   census test), the `map` place, `components/map/TownMapScreen.tsx`, and `/` redirecting to it.
   The rail keeps its job; both now read badges from `state/townSignals.ts`.
 - **Our own tooltips** — `components/ui/Tooltip.tsx` + `state/tooltipStore.ts`. One element at
   shell level; `useTooltip()` at every trigger; **`title=` on a DOM element is banned** and
   `components/ui/tooltips.test.ts` reads the source to enforce it. Style guide §8.1.
 
-1,343 unit tests + 280 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
+- **The Long Road** — the campaign. `data/campaign.ts` (ten chapters of twelve stages, one per
+  zone, with the boss table *solved* rather than chosen), `engine/campaign/` (`stages`, `push`),
+  `state/campaignActions.ts`, `components/campaign/CampaignScreen.tsx`, the `campaign` place and
+  its map hotspot, an economy faucet, and save schema **v17**. One Vigor a stage; a first clear
+  pays once and everything after it is practice.
+
+1,395 unit tests + 289 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
 the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
+
+**A default is a decision, and `useState(1)` is the easiest place to hide one.** The road's chapter
+board held its chapter in state seeded at 1 and corrected it during render when the *reached*
+chapter changed — the right pattern for following a boss's fall, and no help at all on arriving,
+because on the first render nothing has changed. A player who reloaded twenty stages down the road
+was shown chapter I with no stone on it to press. The fix was to stop storing the answer: the shown
+chapter is `pinned ?? reached`, so the default is *absence* and clicking a numeral is the only
+thing that pins one. When "state that follows a prop" has a meaningful value before any change has
+happened, derive it and let the state hold only the override.
+
+**A range asserted against one end of it is a band nobody wrote.** §0 states three of its six rows
+as ranges — "Day 2–3", "~Week 2", "Day 45–60" — and `TARGET_DAYS` collapses each to its slow end,
+which is right for a deadline and wrong for the early side of a schedule. Level 25 read as a 29%
+miss for arriving on day 10, four days *into* the week §0 promised it in. `TARGET_EARLIEST` +
+`windowDrift` measure the window; day 5 still fails, so nothing was loosened. This is
+`MILESTONE_KIND` one step further in, and the same lesson: the semantics of a target belong in
+data, because a semantic that lives in a comment gets rewritten by whoever is in a hurry.
+
+**A simulated player has to be modelled making the choice, not taking the option.** The road's
+first economy model walked every stage at or below the hero's level. At level 200 that spent the
+whole day's Vigor on level-one stages and reported **zero missions** — not a balance finding, a
+model that had never been asked what a player would do. A stage pays XP at `min(hero, stage)`, so
+once you outrun the road it stops being income; the sim now walks while a stage's XP beats what the
+same Vigor buys at the board, which is the comparison the player actually makes and needs no new
+number. Watch for the same shape wherever a `PlayStyle` flag says *whether* rather than *how much*.
+
+**Never manufacture waste in a model.** Taking two Vigor off the top for the road dropped a
+hundred-Vigor day from five twenty-minute contracts to four and binned the other eighteen, which
+reported the road as costing a fifth of the mission board. No player suffers that — the board
+offers ten, twenty and thirty. Payout is linear in duration, so the day's last contract is
+fractional now, the same convention `itemsBought` has used since Phase 7: the ledger is a rate, not
+a shopping list.
+
+**`Meter` labels and counts by default.** On a 0–1 share that renders "1 / 1" — both ends round to
+one — under a line that has just said 62%. It appeared twice on one screen before anybody looked at
+it, and no test can see it. Pass `showNumbers={false}` for any fractional meter, and *look at the
+screen* (below).
 
 **A dismissal has to cancel what is on its way, not just what is showing.** Clicking a button
 re-renders the panel under a stationary cursor, so `pointerover` fires on whatever moved into that
@@ -405,16 +448,17 @@ Phase 5. When you need a realistic hero, prefer the playthrough-shaped test in
 (arena, duel, raids, payout), `guilds/` (membership, buffs, chat, bounty),
 `dungeons/` (floors, delve, keys), `forge/` (forgeConfig, craft),
 `gacha/` (schedule, roll, track), `pets/` (ownership, feeding, boost, eggs),
-`board/` (tasks, chest), `calendar/`, `tutorial/` (beats, hints, firstMission), `economy/`,
-`pacing/` (the §0 ladder), `reset/` (resetEngine + the one-owner audit) ·
+`board/` (tasks, chest), `calendar/`, `campaign/` (stages, push), `tutorial/`
+(beats, hints, firstMission), `economy/`, `pacing/` (the §0 ladder),
+`reset/` (resetEngine + the one-owner audit) ·
 `src/data/` content — places, townMap, classes, itemBases, icons, zones, monsters, blurbs, barks,
 patrolLog, mounts, shopBarks, arenaBarks, forgeBarks, vesnaBarks, names, guilds, guildChat,
-bounties, dungeons, gearSets, banners, pets, progress, dailyTasks, calendar, legends,
+bounties, dungeons, campaign, gearSets, banners, pets, progress, dailyTasks, calendar, legends,
 crierTemplates, tutorial, glossary, sfx ·
 `src/state/` stores + persistence (three save slots + the remembered active one) + the shared
 clock + the audio singletons (`sfx`, `bgm`) + `townSignals` (the badges the rail and the map
 both read) + `tooltipStore` (the one tooltip) ·
-`src/components/{ui,shell,map,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,forge,gacha,pets,board,tutorial,settings}/` ·
+`src/components/{ui,shell,map,icons,items,hero,battle,tavern,patrol,shops,stables,world,arena,guild,dungeons,campaign,forge,gacha,pets,board,tutorial,settings}/` ·
 `src/app/(game)/<place>/` one route per place, `/` redirecting to `/map` · `src/styles/motion.ts`
 springs.
 Dev harnesses: `/dev/kit` (every component state), `/dev/combat` (every roll), `/dev/battle`

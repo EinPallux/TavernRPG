@@ -7,6 +7,63 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — the Long Road
+
+- **A campaign.** A hundred and twenty fixed stages leaving Emberhollow by the gate, in ten
+  chapters of twelve — one chapter per zone, in the order the road leaves town. Press **Push on**
+  once and it walks: stage after stage, each a full battle scene, until something stops you. Then
+  it tells you which of the four things it was.
+- **One Vigor a stage, win or lose.** A refunded loss makes pushing into a wall free, and a free
+  wall is one you hammer thirty times instead of going and getting stronger — which is the loop
+  the whole feature exists for.
+- **A first clear pays once.** Gold at the stage's level, XP at the lower of yours and the
+  stage's, double plus a Golden Die at a chapter boss. Re-entering a cleared stage costs the Vigor
+  and pays nothing; the screen says so before you spend and again afterwards.
+- **A loss takes nothing but the Vigor** — no lost ground, no cooldown. What it leaves is a best
+  attempt: "you took it to 62% of its health", which is a target where "you lost" is a wall. It
+  belongs to the wall stage alone and resets the moment the wall falls.
+- **Every attempt is a different fight.** The seed is `(worldSeed, stage, attempt)`, so a stage you
+  lost is reproducible but not unloseable-forever — there is a reason to come back with a sword.
+- **Ten chapter bosses with signatures announced in words before the first blow**, cycling swarm,
+  siphon and hardening twice across the first six chapters and then in rising strength, so the
+  mechanic that ends chapter IX is one you met and survived in chapter III.
+- Reachable from both the rail and the town map (the road running out through the gate, at the
+  bottom of the painting). Unlocks at level 2 — deliberately early: it is the one system a hero can
+  push into on the day they arrive.
+- Save schema **v17**, additive and empty. A returning player walks the first chapters themselves,
+  quickly: paying for stages nobody fought would be inventing gold, and granting thirty of the
+  hundred and twenty one-time rewards is deleting content from somebody who was never asked.
+
+### Changed — what the road forced
+
+- **The economy sim models the road as a faucet, and models the *choice*.** A player walks a stage
+  while its XP beats what the same Vigor buys at the mission board, and stops at the first stage
+  above their level. Measured: 11% of income in week one, 2% by month three, never more than the
+  mission board on any single day, and the whole road walked by about day 86 at level 101.
+- **A §0 schedule row is now measured against §0's window, not one end of it.** Three of the six
+  rows are ranges ("Day 2–3", "~Week 2", "Day 45–60") and `TARGET_DAYS` collapses each to its slow
+  end — right for a deadline, wrong for the early side of a schedule. Level 25 was reading as a
+  29% miss for arriving on day 10, four days into the week §0 promised it in. `TARGET_EARLIEST`
+  and `windowDrift` fix that without loosening anything: day 5 still fails.
+- **The mission board's last contract of the day is fractional in the model.** Taking Vigor off the
+  top for the road dropped a hundred-Vigor day from five twenty-minute contracts to four and binned
+  the other eighteen — waste no player suffers, since the board offers ten, twenty and thirty. All
+  three shipped play styles divide exactly, so no band tuned before the road moved.
+
+### Fixed — while building it
+
+- **The road opened on chapter I however far down it you were.** The board held its chapter in
+  state seeded at 1 and corrected it when the reached chapter *changed* — right for following a
+  boss's fall, and no help at all on arriving, because on the first render nothing has changed. A
+  player who reloaded twenty stages in was shown a chapter with no stone to press. The shown
+  chapter is derived by default and pinned only when a numeral is clicked.
+- **An auto-runner you cannot interrupt is a cutscene.** The battle scene mounts over the road
+  panel, so its Stop button was behind the fight for the whole run. Stop now rides in a chip above
+  the scene with the run's readout beside it.
+- **`Meter` labels and counts by default**, which on a 0–1 share renders "1 / 1" — both ends round
+  to one — directly under a line that has just said 62%. Twice on this screen: the road-walked bar
+  printed the count the header had already given.
+
 ### Added — tooltips that belong to this game
 
 - **Every explanation in Emberhollow is now drawn by the game**, not by the browser. Chamfered

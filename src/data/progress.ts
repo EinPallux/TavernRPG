@@ -53,6 +53,16 @@ export const PROGRESS_METRICS = [
   'petsFed',
   /** Dungeon floors cleared, first time or not. */
   'dungeonFloors',
+  /**
+   * Campaign stages cleared for the **first time** — new ground on the Long Road.
+   *
+   * The unit differs from `dungeonFloors` on purpose, which is the sort of thing that needs
+   * saying out loud (CLAUDE.md). A floor cannot be farmed: there is a key and a half-hour
+   * cooldown in the way. A stage can — stage one is always there, always winnable, and costs a
+   * single Vigor — so a metric that counted practice would make "clear three stages" mean
+   * "click the first stage three times".
+   */
+  'campaignStages',
   /** Cards drawn at Fortune's Table, free ones included. */
   'gachaRolls',
   /** Strikes taken at the Emberforge's anvil, including recipe crafts. */

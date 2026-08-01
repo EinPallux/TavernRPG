@@ -24,6 +24,7 @@ export const ICON_IDS = [
   'stairsDown',
   'dice',
   'map',
+  'road',
   'gear',
   // currencies & status
   'coin',

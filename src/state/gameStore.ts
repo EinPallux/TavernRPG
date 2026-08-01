@@ -88,6 +88,7 @@ import {
   type GuildRefusal,
 } from './guildActions';
 import { descend as descendOn, type DelveResult } from './dungeonActions';
+import { fightStage as fightStageOn, type FightStageResult } from './campaignActions';
 import {
   craft as craftOn,
   craftFromRecipe as craftFromRecipeOn,
@@ -316,6 +317,15 @@ export interface GameStoreState {
    * "claim": a delve has no timer to wait on and nothing to collect later.
    */
   descendInto: (id: DungeonId) => DelveResult;
+  /**
+   * Fight one stage of the Long Road (campaign spec §3).
+   *
+   * Takes `now` from the caller rather than reading the clock here, because the screen chains
+   * these — a run of twenty stages is twenty calls in a few seconds, and they should all agree
+   * about which day it is even if one lands across midnight. The Vigor, the payout, the wall and
+   * the progress metric all move inside `campaignActions`; this only persists the result.
+   */
+  fightCampaignStage: (stage: number, now: number) => FightStageResult;
 
   // ── The Emberforge (Phase 12) ────────────────────────────────────────────────────
   /** Into the crucible. Returns what it paid, or why it would not take the piece. */
@@ -1128,6 +1138,18 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       set({
         save: credit(result.save, 'dungeonFloors', result.outcome.cleared ? 1 : 0),
       });
+      void persistNow();
+      return result;
+    },
+
+    fightCampaignStage(stage, now) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = fightStageOn(save, stage, now);
+      if (!result.ok) return result;
+
+      set({ save: result.save });
       void persistNow();
       return result;
     },

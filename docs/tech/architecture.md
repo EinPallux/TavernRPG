@@ -98,10 +98,15 @@ walking-skeleton screen that Phase 1 replaces with the real app shell.
   loading any historical save from 1.0-beta onward must succeed (CI keeps fixture saves).
   Shipped so far: **v1** walking skeleton · **v2** settings · **v3** hero · **v4** battle playback
   preferences · **v5** activity (Vigor, mission) · **v6** patrol shift · **v7** shop shelves and
-  the mount stall · **v8** the simulated world. Every one ships a captured
-  fixture of the *previous* version, and a fixture is captured in the least convenient state the
-  version can be in rather than at rest — v5's carries a mission mid-timer, because a migration
-  that only handles the idle save is a migration that has not been tested.
+  the mount stall · **v8** the simulated world · **v9** the arena · **v10** the guild ·
+  **v11** dungeons · **v12** materials and the forge · **v13** the gacha · **v14** pets ·
+  **v15** tasks and the calendar · **v16** the tutorial · **v17** the Long Road. Every one ships a
+  captured fixture of the *previous* version, and a fixture is captured in the least convenient
+  state the version can be in rather than at rest — v5's carries a mission mid-timer, because a
+  migration that only handles the idle save is a migration that has not been tested, and v17's was
+  captured mid-road: seven stages cleared, the eighth lost at 85% of the monster's health.
+  `fixtures.test.ts` is a **census**, not a list: it asserts one fixture per shipped version with
+  no gaps, because a fixture you failed to add cannot fail a test.
 - **Export/import:** deflate-compressed base64 `.tavernsave` file; import validates via Zod and
   reports version/corruption in human language. Tampering is the player's right (Q15) — import
   never crashes, worst case rejects politely.

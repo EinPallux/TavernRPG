@@ -13,6 +13,7 @@ import type { IconId } from './icons';
 export type PlaceId =
   | 'map'
   | 'tavern'
+  | 'campaign'
   | 'character'
   | 'board'
   | 'patrol'
@@ -235,6 +236,20 @@ export const PLACES: readonly PlaceDef[] = [
     effects: ['lantern'],
     buildPhase: 'Phase 6',
     constructionBark: "Rota's not drawn up. Enjoy the quiet while it lasts.",
+  },
+  {
+    id: 'campaign',
+    name: 'The Long Road',
+    route: '/campaign',
+    icon: 'road',
+    group: 'beyond',
+    gateLevel: 2,
+    blurb: 'A hundred and twenty stages out of town. Get as far as you can.',
+    backdrop: `${BG}/mission_background_3.webp`,
+    tint: 'from-wood-900 via-wood-900/78 to-wood-900/45',
+    effects: ['motes', 'lantern'],
+    buildPhase: 'Phase 19',
+    constructionBark: 'The road is there. Nobody has cleared it in a while.',
   },
   {
     id: 'arena',
