@@ -187,9 +187,22 @@ export function BannerCard({
       {pity && <PityMeter count={pity.count} of={pity.of} />}
       {definition.id === 'monthly' && <TrackMeter rolls={monthlyRolls} />}
 
-      {/* The tease: a name and a date, not a mystery box. */}
+      {/*
+       * The tease: a name and a date, not a mystery box.
+       *
+       * `/80` rather than the `/72` floor, and it is the only caption in the game that needs it.
+       * A banner card's timber is the lightest surface any muted 10px text sits on — the contrast
+       * harness sampled `#55412e` behind this line — which puts `/72` at **4.43:1** against AA's
+       * 4.5. That is a real miss, not a rounding one, and it went unseen because it passes on a
+       * renderer whose anti-aliasing samples a slightly darker backing: green here, red on
+       * GitHub's runner, from identical source. `/80` reads 5.06 and has margin on both.
+       *
+       * Style guide §10 calls `/72` a *floor*, so this is inside the rule rather than an exception
+       * to it. The general finding — 37 captions across 23 files use this pairing, and their
+       * margin is whatever their panel happens to be — is worth a pass of its own.
+       */}
       <p
-        className="text-parchment-500/72 mt-3 text-[10px] leading-relaxed"
+        className="text-parchment-500/80 mt-3 text-[10px] leading-relaxed"
         data-testid="next-tease"
       >
         Being shuffled: <span className="text-parchment-300">{active.next.featuring}</span>
