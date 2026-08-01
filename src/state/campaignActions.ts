@@ -40,6 +40,7 @@ import {
 import type { Hero, SaveFile } from '@/engine/save/schema';
 import { payoutBonus, petContribution } from './petActions';
 import { credit } from './progressActions';
+import { spendVigor } from './vigorActions';
 
 export type { PushRefusal, PushOutcome, CampaignProgress };
 export { STAGE_VIGOR_COST, TOTAL_STAGES, STAGES_PER_CHAPTER };
@@ -199,14 +200,15 @@ export function fightStage(save: SaveFile, stage: number, now: number): FightSta
   if (!outcome)
     return { ok: false, refusal: { kind: 'not-reached', wall: roadOf(save).stagesCleared + 1 } };
 
-  const spent: SaveFile = {
-    ...save,
-    campaign: outcome.progress,
-    activity: {
-      ...save.activity,
-      vigor: Math.max(0, save.activity.vigor - outcome.vigorSpent),
-    },
-  };
+  /*
+   * The Vigor goes through the one spender, which is what makes the road pay on a day it clears
+   * no chapter (balancing §18). A stage is one Vigor, so the road fills the day's-work track at
+   * exactly the rate the mission board does — a hundred and fifty stages and a hundred and fifty
+   * minutes of contracts are the same day's work, priced the same, which is the property that
+   * kept this from needing a number of its own.
+   */
+  const paid = spendVigor({ ...save, campaign: outcome.progress }, outcome.vigorSpent);
+  const spent: SaveFile = paid.save;
 
   const levelled = applyXp(hero.level, hero.xp, outcome.spoils.xp);
   const next: Hero = {
@@ -214,7 +216,8 @@ export function fightStage(save: SaveFile, stage: number, now: number): FightSta
     level: levelled.level,
     xp: levelled.xp,
     gold: hero.gold + outcome.spoils.gold,
-    dice: hero.dice + outcome.spoils.dice,
+    // A chapter's die and the day's-work die can land on the same stage, and both are owed.
+    dice: hero.dice + outcome.spoils.dice + paid.dice,
   };
 
   /*

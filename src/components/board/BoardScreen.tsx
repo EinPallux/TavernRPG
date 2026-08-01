@@ -26,6 +26,7 @@ import { AmbientStage } from '@/components/ui/AmbientStage';
 import { TavernPanel } from '@/components/ui/TavernPanel';
 import { listItemIn, snappy, staggerChildren, standard } from '@/styles/motion';
 import { ChestPanel } from './ChestPanel';
+import { DayWorkTrack } from '@/components/ui/DayWorkTrack';
 import { Ledger } from './Ledger';
 import { TaskRow } from './TaskRow';
 
@@ -194,14 +195,27 @@ export function BoardScreen() {
                     )}
                   </motion.ul>
 
-                  <ChestPanel
-                    view={view}
-                    opened={opened}
-                    openedWeekly={openedWeekly}
-                    onClaimDaily={handleDaily}
-                    onClaimWeekly={handleWeekly}
-                    onBurstDone={clearBurst}
-                  />
+                  <div className="space-y-5">
+                    <ChestPanel
+                      view={view}
+                      opened={opened}
+                      openedWeekly={openedWeekly}
+                      onClaimDaily={handleDaily}
+                      onClaimWeekly={handleWeekly}
+                      onBurstDone={clearBurst}
+                    />
+
+                    {/* The board is the daily-loop screen, so the other daily dice belong on it —
+                        the chest pays for finishing the notices, the track pays for the Vigor the
+                        finishing took (balancing §18). */}
+                    <TavernPanel title="The day’s work" data-testid="board-day-work">
+                      <DayWorkTrack spent={save.activity.vigorSpentToday} />
+                      <p className="text-parchment-500/72 mt-3 text-[11px] leading-relaxed">
+                        Contracts and the Long Road both spend Vigor, and both fill this. Three dice
+                        is the whole of it — the day cannot hold more, however long you play.
+                      </p>
+                    </TavernPanel>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div

@@ -303,6 +303,27 @@ export const MIGRATIONS: readonly Migration[] = [
       return { ...data, campaign: { ...DEFAULT_CAMPAIGN } };
     },
   },
+  {
+    from: 17,
+    to: 18,
+    describe: "The day's work: Vigor spent today, and the dice it pays",
+    migrate: (data) => {
+      /*
+       * One field, and it starts at zero rather than at "whatever they have already spent".
+       *
+       * The honest reconstruction is `VIGOR_PER_DAY - vigor`, and it is wrong in the one direction
+       * that matters: a returning player who is mid-day with 30 Vigor left would be handed two
+       * dice for a day the track did not exist for. Paying for work the game never counted is
+       * inventing currency, which is the same objection the Long Road's migration made to granting
+       * stages nobody fought.
+       *
+       * The cost of starting at zero is at most one day of a track that resets at midnight
+       * anyway, and only for a save caught mid-session. Tomorrow it is simply on.
+       */
+      const activity = (data['activity'] ?? {}) as Record<string, unknown>;
+      return { ...data, activity: { ...activity, vigorSpentToday: 0 } };
+    },
+  },
 ];
 
 export type MigrationFailure =

@@ -143,6 +143,10 @@ interface SaveFile {
   settings: Settings;               // nav, motion, audio, battle playback (v4)
   hero: Hero | null;                // null routes the player to creation
   activity: ActivityState;          // v5–v7: missions, patrol, shops, mount, arena
+                                    // v18 adds `vigorSpentToday`: the day's-work track
+                                    // (balancing §18). Stored rather than derived from
+                                    // `100 - vigor`, because Ale grants Vigor and the two
+                                    // stopped being complements the moment it did.
   world: WorldState | null;         // v8: raised on first entry, null until then
   guild: Guild;                     // v10
   dungeons: Dungeons;               // v11

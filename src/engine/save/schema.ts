@@ -35,7 +35,7 @@ import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 z.config({ jitless: true });
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 17;
+export const CURRENT_SCHEMA_VERSION = 18;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -264,6 +264,16 @@ export const activitySchema = z.object({
   freeAlesToday: z.number().int().min(0),
   /** Unopened Ales the player is holding. */
   alesHeld: z.number().int().min(0),
+  /**
+   * Vigor spent today, across everything that spends it (schema v18).
+   *
+   * The day's-work track reads this and pays a Golden Die at each rung
+   * (`engine/progression/dayWork.ts`). Stored rather than derived from `vigor`, deliberately:
+   * `100 - vigor` looks like the same number and stops being it the moment anything else grants
+   * Vigor — Ale does, the weekly chest hands out Ale, and a future refund would too. A total the
+   * spenders write is a total that cannot drift away from what they did.
+   */
+  vigorSpentToday: z.number().min(0),
   /** The day's board, and the day it was drawn for. */
   board: z.array(missionOfferSchema),
   boardDay: dayKeySchema.nullable(),
@@ -307,6 +317,7 @@ export const DEFAULT_ACTIVITY: Activity = {
   alesToday: 0,
   freeAlesToday: 0,
   alesHeld: 0,
+  vigorSpentToday: 0,
   board: [],
   boardDay: null,
   boardRerollsToday: 0,

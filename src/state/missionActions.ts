@@ -22,6 +22,7 @@ import type { BountyChest } from '@/engine/guilds/bounty';
 import { refreshArenaDay } from './arenaActions';
 import { refreshGuildDay } from './guildActions';
 import { credit, creditAll } from './progressActions';
+import { spendVigor } from './vigorActions';
 import { refreshForgeDay } from './forgeActions';
 import { refreshGachaDay } from './gachaActions';
 import { creditMissionDrops, payoutBonus, petContribution, refreshPetDay } from './petActions';
@@ -209,10 +210,20 @@ export function accept(
     ? { ...result.mission, endsAt: quickenedEndsAt(now) }
     : result.mission;
 
+  // Signing is a Vigor spend, so it goes through the one spender and may hand back a die
+  // (balancing §18). Marla pays the day's work at the bar, on the way out.
+  const paid = spendVigor(signed, result.vigorSpent);
+
+  // `paid.save.hero`, not the `hero` captured at the top: `credit()` sits between them, and a
+  // spread from a stale capture is how a later change to that path quietly loses whatever it did.
+  const banked =
+    paid.dice > 0
+      ? { ...paid.save, hero: { ...paid.save.hero!, dice: paid.save.hero!.dice + paid.dice } }
+      : paid.save;
+
   return {
     ok: true,
-    save: withActivity(signed, {
-      vigor: activity.vigor - result.vigorSpent,
+    save: withActivity(banked, {
       mission,
       // The taken job leaves the board; the other two stay for tomorrow's comparison.
       board: activity.board.filter((entry) => entry.id !== offerId),

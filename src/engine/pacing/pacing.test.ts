@@ -110,14 +110,16 @@ describe('every §0 row is inside the band the ROADMAP asks for', () => {
      * The band is not looser for it. Day 10 is inside week two and passes; day 5 is not and
      * still fails, which is the failure two-sidedness exists to catch.
      */
-    expect(TARGET_EARLIEST['level-25']).toBe(8);
-    const inWeekTwo = { ...run, reached: { ...run.reached, 'level-25': 10 } };
-    expect(withinBand(inWeekTwo, 'level-25')).toBe(true);
-    expect(windowDrift(inWeekTwo, 'level-25')).toBe(0);
+    // The row moved when the day's work shipped — §0 now promises level 25 inside the first
+    // week — but the property under test is the *window*, not the days in it.
+    expect(TARGET_EARLIEST['level-25']).toBe(6);
+    const inTheWindow = { ...run, reached: { ...run.reached, 'level-25': 7 } };
+    expect(withinBand(inTheWindow, 'level-25')).toBe(true);
+    expect(windowDrift(inTheWindow, 'level-25')).toBe(0);
     // ...and the drift off the promise is still reported, because it is still a fact.
-    expect(drift(inWeekTwo, 'level-25')).toBeLessThan(0);
+    expect(drift(inTheWindow, 'level-25')).toBeLessThan(0);
 
-    const wayEarly = { ...run, reached: { ...run.reached, 'level-25': 5 } };
+    const wayEarly = { ...run, reached: { ...run.reached, 'level-25': 3 } };
     expect(withinBand(wayEarly, 'level-25')).toBe(false);
   });
 
@@ -167,7 +169,26 @@ describe('generosity is reported, not hidden', () => {
   });
 
   it('returns null for a row that did not beat its target', () => {
-    expect(earlyBy(run, 'level-55')).toBeNull();
+    /*
+     * Asserted against a constructed result rather than whichever row happens to be running late.
+     *
+     * This used to pin `level-55`, which landed a day or two *past* day 30 and so reported no
+     * generosity. Re-fitting §0's level rows for the day's work put every row ahead of its
+     * target, and the test failed — not because `earlyBy` broke, but because the row it was
+     * borrowing had moved. A property of a function should not be hostage to a tuning pass; the
+     * milestone rows have their own bands two describes above.
+     */
+    const late = { ...run, reached: { ...run.reached, 'level-55': TARGET_DAYS['level-55'] + 4 } };
+    expect(earlyBy(late, 'level-55')).toBeNull();
+
+    // Exactly on the target is not "early" either — the boundary belongs to the promise.
+    const onTime = { ...run, reached: { ...run.reached, 'level-55': TARGET_DAYS['level-55'] } };
+    expect(earlyBy(onTime, 'level-55')).toBeNull();
+
+    // A row that never happened cannot have beaten anything.
+    expect(
+      earlyBy({ ...run, reached: { ...run.reached, 'full-set': null } }, 'full-set'),
+    ).toBeNull();
   });
 });
 

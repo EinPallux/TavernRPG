@@ -31,7 +31,10 @@ import v13Phase13 from './fixtures/v13-phase13.json';
 import v14Phase14 from './fixtures/v14-phase14.json';
 import v15Phase15 from './fixtures/v15-phase15.json';
 import v16Phase16 from './fixtures/v16-phase16.json';
+import { diceFor } from '@/engine/progression/dayWork';
+import { DAY_WORK_RUNGS, VIGOR_PER_DAY } from '@/engine/progression/rewards';
 import v17Campaign from './fixtures/v17-campaign.json';
+import v18DayWork from './fixtures/v18-day-work.json';
 import { BOT_COUNT } from '@/engine/world/identity';
 import { PLAYER_LADDER_ID } from '@/engine/world/ladder';
 import { ownedPets } from '@/engine/pets/ownership';
@@ -685,6 +688,7 @@ describe('the fixture set itself', () => {
     { version: 15, save: v15Phase15 },
     { version: 16, save: v16Phase16 },
     { version: 17, save: v17Campaign },
+    { version: 18, save: v18DayWork },
   ];
 
   it('has one fixture per shipped schema version, with no gaps', () => {
@@ -768,13 +772,25 @@ describe('the fixture set itself', () => {
 });
 
 describe('a real v17 save', () => {
-  it('opens with nothing to migrate', () => {
+  it('upgrades to the current version and starts the day\u2019s work at zero', () => {
     const result = migrateSave(structuredClone(v17Campaign));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
-    expect(result.migratedFrom).toBeNull();
+    expect(result.migratedFrom).toBe(17);
     expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+
+    /*
+     * Zero, and not `100 - vigor`.
+     *
+     * This save was caught mid-day with 92 Vigor left, so the tempting reconstruction would hand
+     * it eight points of credit toward a track that did not exist while it was being played.
+     * Paying for work the game never counted is inventing currency \u2014 the same objection the Long
+     * Road's own migration made to granting stages nobody fought. The cost is one day of a track
+     * that resets at midnight anyway.
+     */
+    expect(result.save.activity.vigorSpentToday).toBe(0);
+    expect(result.save.activity.vigor).toBeGreaterThan(0);
   });
 
   it('is a played save rather than a hand-written one', () => {
@@ -815,5 +831,39 @@ describe('a real v17 save', () => {
     expect(result.save.activity.vigor).toBe(100 - road.attempts);
     // And the credit went through the one path, in the units the road counts in: new ground.
     expect(result.save.tasks.lifetime['campaignStages']).toBe(road.stagesCleared);
+  });
+});
+
+describe('a real v18 save', () => {
+  it('opens with nothing to migrate', () => {
+    const result = migrateSave(structuredClone(v18DayWork));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.migratedFrom).toBeNull();
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+  });
+
+  it('carries a day\u2019s work that was actually done', () => {
+    /*
+     * Captured out of a browser, not written by hand: a level-65 hero who walked the Long Road
+     * until the wall stopped them, pushed at it until the day's Vigor was nearly gone, and was
+     * paid a Golden Die on the way past the first rung.
+     *
+     * The shape that matters is the *pair*. `vigorSpentToday` is what the track measures and
+     * `vigor` is what is left, and they are not each other's complement \u2014 which is exactly why
+     * the field is stored rather than derived from `100 - vigor`.
+     */
+    const result = migrateSave(structuredClone(v18DayWork));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const { activity, hero } = result.save;
+    expect(activity.vigorSpentToday).toBeGreaterThanOrEqual(DAY_WORK_RUNGS[0]!);
+    expect(hero!.dice).toBe(diceFor(activity.vigorSpentToday));
+    // Every point spent came off the day, and the day started at a hundred.
+    expect(activity.vigorSpentToday + activity.vigor).toBe(VIGOR_PER_DAY);
+    // A real world came along for the ride \u2014 the part most likely to break a future migration.
+    expect(result.save.world?.bots.length).toBe(BOT_COUNT);
   });
 });

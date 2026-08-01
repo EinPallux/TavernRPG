@@ -37,9 +37,23 @@
  * Pass `null`/`undefined` and it returns nothing to spread — a conditional tooltip needs no
  * conditional hook. The trigger keeps its own `onFocus`/`onPointerEnter` if it has them: spread
  * first, then declare yours and call `tip.onFocus?.(event)`.
+ *
+ * ## The rich variant
+ *
+ * `useHoverCard(node)` is the same machinery with a whole element as the payload — the gear cells
+ * use it to float an `ItemCard`, stat deltas and all, which is far more than a title and a line.
+ * It opens on hover *without* the delay, because a paperdoll is read by sweeping across it and a
+ * third of a second per cell turns comparing two pieces into a chore.
+ *
+ * It exists because the alternative did not work. Item cards spent eighteen phases rendered
+ * `absolute bottom-full` inside their own cell — inside a panel, which wears a `chamfer`, which is
+ * a `clip-path`, which clips descendants. Every card was sliced off at the panel's edge, and no
+ * test could see it: `toBeVisible` knows `display`, `visibility`, `opacity` and box size, and
+ * nothing whatsoever about clipping. Anything that overhangs its parent belongs in the layer.
  */
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useTooltipStore, type TooltipAnchor, type TooltipContent } from '@/state/tooltipStore';
 import { snappy } from '@/styles/motion';
@@ -232,6 +246,57 @@ export function useTooltip(input: TooltipInput): TooltipTriggerProps {
 }
 
 /**
+ * The rich variant: float a whole element beside the trigger, in the layer.
+ *
+ * Same store, same owner, same exits as `useTooltip` — so a card and a tooltip can never both be
+ * open, and Escape, scroll, resize and unmount already close it. Two deliberate differences:
+ *
+ * - **No open delay.** A paperdoll is read by sweeping across it. 340 ms per cell turns comparing
+ *   two pieces into a chore, and unlike a HUD chip the card *is* the content, not a footnote.
+ * - **No `aria-describedby`.** The card is a visual convenience over information the trigger
+ *   already carries in its `aria-label`; pointing a screen reader at a slab of stat rows that
+ *   exists for one second is worse than not.
+ *
+ * Memoise the node at the call site — an element built inline is a new identity every render, and
+ * this hook re-publishes when its payload changes.
+ */
+export function useHoverCard(card: ReactNode | null): TooltipTriggerProps {
+  const owner = useId();
+  const showCard = useTooltipStore((state) => state.showCard);
+  const hide = useTooltipStore((state) => state.hide);
+
+  const close = useCallback(() => {
+    if (useTooltipStore.getState().owner === owner) lastClosedAt = performance.now();
+    hide(owner);
+  }, [hide, owner]);
+
+  useEffect(() => close, [close]);
+
+  return useMemo<TooltipTriggerProps>(() => {
+    if (!card) return {};
+    const open = (element: Element) => {
+      const box = element.getBoundingClientRect();
+      showCard(owner, card, {
+        left: box.left,
+        top: box.top,
+        width: box.width,
+        height: box.height,
+      });
+    };
+    return {
+      onPointerEnter: (event) => {
+        if (event.pointerType === 'touch') return;
+        open(event.currentTarget);
+      },
+      onPointerLeave: close,
+      onPointerDown: close,
+      onFocus: (event) => open(event.currentTarget),
+      onBlur: close,
+    };
+  }, [card, close, owner, showCard]);
+}
+
+/**
  * Where the tooltip ends up, once it knows how big it is.
  *
  * Exported for its test: this is pure arithmetic about rectangles, and the failure modes — a
@@ -268,6 +333,7 @@ export function place(
  */
 export function TooltipLayer() {
   const content = useTooltipStore((state) => state.content);
+  const card = useTooltipStore((state) => state.card);
   const anchor = useTooltipStore((state) => state.anchor);
   const hideAll = useTooltipStore((state) => state.hideAll);
   const reduceMotion = useReducedMotion();
@@ -305,7 +371,51 @@ export function TooltipLayer() {
           reduceMotion={reduceMotion ?? false}
         />
       )}
+      {card && anchor && (
+        <FloatingCard key="tavern-hover-card" anchor={anchor} reduceMotion={reduceMotion ?? false}>
+          {card}
+        </FloatingCard>
+      )}
     </AnimatePresence>
+  );
+}
+
+/**
+ * The card variant — the same placement, none of the chrome.
+ *
+ * An `ItemCard` is already a panel with its own chamfer, border and shadow; wrapping it in the
+ * tooltip's bubble would be a frame around a frame. This contributes position and nothing else.
+ */
+function FloatingCard({
+  anchor,
+  reduceMotion,
+  children,
+}: {
+  anchor: TooltipAnchor;
+  reduceMotion: boolean;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const spot = useMeasuredPlacement(ref, anchor);
+
+  return (
+    <motion.div
+      ref={ref}
+      data-testid="hover-card"
+      data-side={spot?.below === false ? 'above' : 'below'}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: spot?.below === false ? 4 : -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={reduceMotion ? { duration: 0 } : snappy}
+      style={{
+        left: spot?.left ?? 0,
+        top: spot?.top ?? 0,
+        visibility: spot ? 'visible' : 'hidden',
+      }}
+      className="pointer-events-none fixed z-[70]"
+    >
+      {children}
+    </motion.div>
   );
 }
 

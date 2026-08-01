@@ -26,6 +26,7 @@ import { monster as monsterById } from '@/data/monsters';
 import { ZONES_BY_ID, backdropFor, type ZoneId } from '@/data/zones';
 import { BattleScene } from '@/components/battle/BattleScene';
 import { BattleResult, type BattleRewards } from '@/components/battle/BattleResult';
+import { DayWorkTrack } from '@/components/ui/DayWorkTrack';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { KeeperBark } from '@/components/ui/KeeperBark';
 import { TavernPanel } from '@/components/ui/TavernPanel';
@@ -181,21 +182,32 @@ export function TavernScreen() {
               </h1>
             </div>
 
-            <div className="flex items-center gap-2">
-              <ActionButton
-                size="sm"
-                variant="secondary"
-                onClick={() => handleAle('buy')}
-                cost={{ dice: ALE_DICE_COST }}
-                data-testid="buy-ale"
-              >
-                Buy Ale
-              </ActionButton>
-              {activity.alesHeld > 0 && (
-                <ActionButton size="sm" onClick={() => handleAle('drink')} data-testid="drink-ale">
-                  Drink Ale ({activity.alesHeld})
+            <div className="flex items-end gap-4">
+              {/* The track sits beside the thing it pays for. A player looking at a die-priced
+                  Ale is exactly the player who needs to know the day's work earns dice. */}
+              <div className="chamfer-sm bg-wood-900/70 border border-amber-500/20 px-3 py-2">
+                <DayWorkTrack spent={activity.vigorSpentToday} variant="compact" />
+              </div>
+              <div className="flex items-center gap-2 pb-1">
+                <ActionButton
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleAle('buy')}
+                  cost={{ dice: ALE_DICE_COST }}
+                  data-testid="buy-ale"
+                >
+                  Buy Ale
                 </ActionButton>
-              )}
+                {activity.alesHeld > 0 && (
+                  <ActionButton
+                    size="sm"
+                    onClick={() => handleAle('drink')}
+                    data-testid="drink-ale"
+                  >
+                    Drink Ale ({activity.alesHeld})
+                  </ActionButton>
+                )}
+              </div>
             </div>
           </header>
 

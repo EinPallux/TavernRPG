@@ -31,11 +31,20 @@ points *after* mount upkeep and one shop splurge — asserts the "always slightl
 
 ## 3. Golden Dice — the F2P premium promise
 
-- **Income ≈ 1.6/day active** (tasks 1, calendar ~0.35, drops ~0.15, milestones ~0.1) — §9 table.
+- **Income ≈ 4.9/day active**: the day's work up to 3 (balancing §18), plus tasks 1, calendar
+  ~0.35, weekly chest ~0.43, guild bounty ~0.14 — §9 table.
+- **The day's work is the earner, and it is a *loop*, not a faucet.** A die at 50, 100 and 150
+  Vigor spent; three Ale costs three dice and the finished track pays three, and the third rung is
+  only reachable *with* the Ale. So Ale pays for itself for a player who genuinely spends the
+  Vigor, and cannot do better than that. Bounded by the game rather than by a written-down cap:
+  100 Vigor plus at most three Ale is 160, and 160 is three rungs. It is also the only dice source
+  the Long Road feeds, which matters — a stage is a Vigor sink that pays nothing once its chapter
+  is cleared.
 - **Sinks (each a distinct desire):** Fortune's Table roll 1 · Ale (+20 Vigor) 1, ≤3/day ·
   shop reroll 1 · mission skip 1 · arena cooldown skip 1, ≤3/day · **Royal Griffin 6/7 days** ·
   backpack rows 10/20/40 one-time · guild flex-donation.
-- Weekly F2P budget ≈ 11 dice vs ~25 dice of wants → permanent, honest scarcity with zero paywall.
+- Weekly F2P budget ≈ 34 dice vs ~46 of wants (21 of them Ale) → still honest scarcity with zero
+  paywall, and now a *choice* rather than a foregone one: every Ale is a card not drawn.
   The Griffin (exactly 6 dice/week) is the "subscription" decision anchoring the economy: riding
   it costs ~55% of the weekly dice income, every week.
 - Never: dice→gold conversion (would collapse both loops); gold→dice (would trivialize premium).
@@ -47,7 +56,7 @@ make *loot disposal* and *mission grinding* respectively feel purposeful beyond 
 
 ## 5. Reset ledger (what midnight does)
 
-Vigor → 100 · Ale count → 0 · shop stocks reroll · mission board reroll (free) + free-reroll flag ·
+Vigor → 100 · Ale count → 0 · **Vigor spent today → 0** (the day's-work track) · shop stocks reroll · mission board reroll (free) + free-reroll flag ·
 arena rewarded-wins & skips → 0 · scrap count → 0 · pet feeds → 0 · daily tasks reroll · Daily Draw
 free roll → 1 · login calendar tick. Weekly (Mon): banner rotation, guild bounty; (Sun): ladder
 payout. Monthly (1st): grand banner. One reset engine owns this table (`daily-loop-and-retention.md`).

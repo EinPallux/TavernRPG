@@ -47,11 +47,22 @@ export const MILESTONES = [
 ] as const;
 export type Milestone = (typeof MILESTONES)[number];
 
-/** `[TUNE]` The §0 table, as days. A range collapses to its slower end — the promise, not the best case. */
+/**
+ * `[TUNE]` The §0 table, as days. A range collapses to its slower end — the promise, not the
+ * best case.
+ *
+ * **The three level rows were re-fitted when the day's work shipped** (balancing §18). A track
+ * that pays Golden Dice for Vigor spent makes three Ale a day self-funding, which is +60% Vigor,
+ * and Vigor is XP — so level 55 moved from day 32 to day 22 and the old row read as a 27% miss
+ * while describing a game that is simply faster now. There is no version of "more Vigor" that
+ * leaves the ladder where it was; the choice was between the feature and the old schedule, and
+ * the schedule is the thing that was written down to be revised. Same call as Q22, which moved a
+ * row to match the curve rather than leaving it pulling against it.
+ */
 export const TARGET_DAYS: Readonly<Record<Milestone, number>> = {
   'level-10': 3,
-  'level-25': 14,
-  'level-55': 30,
+  'level-25': 9,
+  'level-55': 26,
   'first-set-piece': 30,
   'full-set': 52,
   'top-100': 75,
@@ -77,8 +88,8 @@ export const TARGET_DAYS: Readonly<Record<Milestone, number>> = {
  */
 export const TARGET_EARLIEST: Readonly<Record<Milestone, number>> = {
   'level-10': 2, // §0: "Day 2–3"
-  'level-25': 8, // §0: "~Week 2" — the week starts on day 8
-  'level-55': 30, // §0: "~Day 30"
+  'level-25': 6, // §0: "the first week"
+  'level-55': 20, // §0: "Day 20–26" — three weeks and a bit
   'first-set-piece': 30, // deadline; the early side is never checked
   'full-set': 45, // §0: "Day 45–60"
   'top-100': 75, // deadline
