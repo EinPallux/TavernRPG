@@ -281,6 +281,24 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
       'A one-time unlock for one of the three Undertavern doors; once found, the door stays open forever.',
     topic: 'rooms',
   },
+  {
+    term: 'Stage',
+    definition:
+      'One fight on the Long Road, costing a single Vigor whether you win it or not, and there are a hundred and twenty of them.',
+    topic: 'rooms',
+  },
+  {
+    term: 'Wall',
+    definition:
+      'The first stage you have not cleared — the only one the road will let you push at, and the reason to go and get stronger.',
+    topic: 'rooms',
+  },
+  {
+    term: 'Practice',
+    definition:
+      'Re-fighting a stage you already cleared: it still costs one Vigor, and it pays nothing at all.',
+    topic: 'rooms',
+  },
 ];
 
 const BY_TERM: Readonly<Record<string, GlossaryEntry>> = Object.fromEntries(

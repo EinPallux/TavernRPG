@@ -127,6 +127,9 @@ week one**, under **5% by month three**, and never more than the mission board o
   content rather than income. `engine/economy/simulate.ts` models exactly that comparison.
 - **`campaignStages`** is a `ProgressMetric` counted in **new ground** — a practice win does not
   credit it, or "clear three stages" on the Notice Board would mean clicking stage one three times.
+  Two daily tasks read it, at two and four stages: small on purpose, because a walled player cannot
+  clear *any* new stage today and a big target would be impossible on the hardest day.
+  It is deliberately **not** a guild bounty metric — see the note in `data/bounties.ts`.
 - **Nothing is stored but the four facts** (`stagesCleared`, `bestAttempt`, `attempts`,
   `finishedAt`). Save schema v17; the migration is additive and empty, because paying a returning
   player for stages nobody fought would be inventing gold *and* spending thirty of the hundred and

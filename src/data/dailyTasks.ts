@@ -220,6 +220,36 @@ export const DAILY_TASKS: readonly DailyTaskDef[] = [
     place: 'forge',
   },
 
+  /*
+   * ── The Long Road (level 2). ──
+   *
+   * Targets deliberately small, because `campaignStages` counts **new ground** — a player sitting
+   * at their wall cannot clear a stage today however long they play, and a five-stage task would
+   * be an impossible one on exactly the day the road is hardest.
+   *
+   * Two is right for the ordinary day: the economy sim has an active player taking one to ten new
+   * stages a day for the first three months, and a walled player gets the same out that
+   * `level-1` already gives a level-90 hero — reroll it, or take the other two.
+   */
+  {
+    id: 'road-2',
+    metric: 'campaignStages',
+    target: 2,
+    title: 'Walk {n} new stages of the road',
+    blurb: 'It goes all the way to Frostfell. Not today, obviously.',
+    iconId: 'road',
+    place: 'campaign',
+  },
+  {
+    id: 'road-4',
+    metric: 'campaignStages',
+    target: 4,
+    title: 'Push {n} stages further out of the gate',
+    blurb: 'Four milestones. Nobody is counting but you.',
+    iconId: 'road',
+    place: 'campaign',
+  },
+
   // ── The Guild Hall (level 10). Only meaningful in a hall; the draw checks that too. ──
   {
     id: 'donate-1000',

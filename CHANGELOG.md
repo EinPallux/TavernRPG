@@ -34,6 +34,23 @@ see `ROADMAP.md` phase gates).
   quickly: paying for stages nobody fought would be inventing gold, and granting thirty of the
   hundred and twenty one-time rewards is deleting content from somebody who was never asked.
 
+### Added — the road on the Notice Board
+
+- **Two daily tasks** ("walk 2 new stages", "push 4 stages further"), so the board can send you
+  down the road like it sends you anywhere else. Targets are deliberately small: the metric counts
+  *new ground*, so a player sitting at their wall cannot clear a stage today however long they
+  play, and a five-stage task would be impossible on exactly the day the road is hardest.
+- **Three glossary entries** — *stage*, *wall*, *practice* — because the road introduces three
+  words the rest of the game does not use.
+- **No guild bounty, on purpose**, and `bounties.ts` now says why: a bounty is a weekly total
+  across a roster, and the road is a finite once-per-hero resource. Asking a hall for two hundred
+  stages is asking its members to spend content they can never get back — and a bot has no
+  campaign for `simulateBotContribution` to model.
+- **`data/progress.test.ts`** audits the vocabulary from both ends: every metric must be credited
+  by something in `src/state/` *and* read by a daily task, a bounty or a tutorial beat. Both halves
+  have failed here before — Phase 15 found two bounty metrics nothing credited, and the road
+  shipped the mirror image. Neither is visible from behaviour.
+
 ### Changed — what the road forced
 
 - **The economy sim models the road as a faucet, and models the *choice*.** A player walks a stage

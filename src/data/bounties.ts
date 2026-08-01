@@ -20,6 +20,14 @@ import type { ProgressMetric } from './progress';
  * Typed as a subset so a bounty cannot name something the credit path has never heard of. The
  * Notice Board narrows the same union from the other end; neither owns the vocabulary
  * (`data/progress.ts` does), which is what stops the two drifting.
+ *
+ * **`campaignStages` is deliberately not here**, and the reason generalises. A bounty is a weekly
+ * total summed across a roster, and the Long Road is a *finite, once-per-hero* resource: asking a
+ * hall for two hundred stages a week is asking its members to spend content they can never get
+ * back, on a schedule somebody else set. The mechanical half is just as bad — `simulateBotContribution`
+ * would need a model of how far down the road the other twenty-four are, and a bot has no campaign
+ * at all. Before adding a metric here, check it is both *repeatable* and something a simulated
+ * member can plausibly be said to do.
  */
 export const BOUNTY_METRICS = [
   'missions',
