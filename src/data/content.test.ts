@@ -95,6 +95,28 @@ describe('zones', () => {
     }
   });
 
+  it('never shows one painting twice on the same board', () => {
+    /*
+     * Fourteen paintings serve fourteen zones, so sharing is the system rather than a shortcut —
+     * but two zones that share art must not be offerable at the same time, or a board draws the
+     * identical picture under two different names. Level bands are the thing that keeps them
+     * apart, and they are the thing a content pass edits without thinking about the art.
+     *
+     * This cannot check that a painting *suits* its zone. Nothing can; the far country shipped
+     * "Sand, fused smooth" over a flower meadow and every gate stayed green. Look at the screen.
+     */
+    for (let level = 1; level <= 260; level += 1) {
+      const offered = zonesForLevel(level);
+      for (const a of offered) {
+        for (const b of offered) {
+          if (a.id >= b.id) continue;
+          const shared = a.backdrops.filter((path) => b.backdrops.includes(path));
+          expect(shared, `level ${level}: ${a.id} and ${b.id}`).toEqual([]);
+        }
+      }
+    }
+  });
+
   it('picks a stable backdrop for a given index, and wraps', () => {
     const road = ZONES_BY_ID['old-kings-road'];
     expect(backdropFor(road, 0)).toBe(road.backdrops[0]);
@@ -105,10 +127,47 @@ describe('zones', () => {
   });
 
   it('keeps working past the end of the ladder — there is no level cap', () => {
-    // The last band is open-ended, so a level-999 hero is still in it, with the chapel next door.
+    /*
+     * Exactly one zone carries the open end, and a hero past every other band lands in it.
+     *
+     * Asserted against `ZONES` rather than against a name — this test named Frostfell Ridge until
+     * far country arrived and moved the open end four zones along, which is a rename the property
+     * did not care about. One `maxLevel` at the ceiling, and level 999 is in it.
+     */
+    const openEnded = ZONES.filter((zone) => zone.maxLevel === Number.MAX_SAFE_INTEGER);
+    expect(openEnded).toHaveLength(1);
+
     const ids = zonesForLevel(999).map((zone) => zone.id);
-    expect(ids).toContain('frostfell-ridge');
-    expect(ids).toContain('sunken-chapel');
+    expect(ids).toContain(openEnded[0]!.id);
+    expect(ids.length).toBeGreaterThanOrEqual(MIN_ZONE_CHOICES);
+  });
+
+  it('never leaves a hero of any level with one place to go', () => {
+    /*
+     * The far country's real acceptance test, and it runs past where the old one stopped.
+     *
+     * Coverage to 120 was checked before; the wall this content removed was *past* that, so the
+     * sweep runs to 250. `zonesForLevel` always returns something, so a plain "is it empty" would
+     * have passed the whole time Frostfell Ridge was carrying levels 84 to infinity on its own —
+     * what has to hold is that the hero is genuinely *in* a band rather than being topped up with
+     * a neighbour they outgrew.
+     */
+    for (let level = 1; level <= 250; level += 1) {
+      const inBand = ZONES.filter((zone) => level >= zone.minLevel && level <= zone.maxLevel);
+      expect(inBand.length, `level ${level} is in no band`).toBeGreaterThan(0);
+    }
+  });
+
+  it('covers the far country as well as the near one', () => {
+    // The hole this content answered: an active player reached the last zone on day 40 and met
+    // no new monster for the following eleven weeks. Every level to 200 now has a band of its
+    // own rather than the open-ended one carrying all of them.
+    for (let level = 1; level <= 200; level += 1) {
+      const inBand = ZONES.filter(
+        (zone) => level >= zone.minLevel && level <= zone.maxLevel,
+      ).length;
+      expect(inBand, `level ${level}`).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -130,8 +189,17 @@ describe('monsters', () => {
     }
   });
 
-  it('carries the plan volume — 96 across ten zones (content-plan §2)', () => {
-    expect(MONSTERS.length).toBe(96);
+  it('carries the plan volume — ten a zone, every zone (content-plan §2)', () => {
+    /*
+     * Was a flat `toBe(96)` for ten zones. That is the wrong shape for a game that grows: the
+     * far country added four zones and the assertion failed for being *right*, which teaches
+     * whoever hits it to edit the number rather than to check the content.
+     *
+     * The claim worth keeping is the ratio — nine or ten a zone, asserted below — plus a floor
+     * here so a zone list that grew without a roster behind it still fails.
+     */
+    expect(MONSTERS.length).toBeGreaterThanOrEqual(ZONES.length * 9);
+    expect(MONSTERS.length).toBeLessThanOrEqual(ZONES.length * 10);
   });
 
   it('gives every zone nine or ten, so no band is thinner than another', () => {
@@ -568,5 +636,53 @@ describe('the keepers have enough to say (content-plan §6)', () => {
         }
       }
     }
+  });
+});
+
+describe('the far country', () => {
+  /**
+   * The content wall, as a regression test.
+   *
+   * Frostfell Ridge was levelled `84 → MAX_SAFE_INTEGER`, so from level 84 a player fought the
+   * same ten monsters forever — day 40 for an active one. What stops that happening again is not
+   * "we added zones", it is the shape below: no band may be so wide that it is the only work on
+   * offer across a huge stretch of the ladder.
+   */
+  it('never asks one zone to carry more than a slice of the ladder', () => {
+    const finite = ZONES.filter((zone) => zone.maxLevel !== Number.MAX_SAFE_INTEGER);
+    for (const zone of finite) {
+      // The widest shipped band is The Hollow Crown's predecessors at ~38 levels. Fifty is the
+      // line between "a place you live in for a while" and "the game stopped".
+      expect(zone.maxLevel - zone.minLevel, zone.id).toBeLessThanOrEqual(50);
+    }
+    // Exactly one open-ended zone, and it starts high enough that reaching it is an achievement
+    // rather than the fortieth day of play.
+    const open = ZONES.filter((zone) => zone.maxLevel === Number.MAX_SAFE_INTEGER);
+    expect(open).toHaveLength(1);
+    expect(open[0]!.minLevel).toBeGreaterThanOrEqual(150);
+  });
+
+  it('keeps every band overlapping its neighbour, all the way out', () => {
+    // Overlap is what gives the board two zones to choose between without leaning on the
+    // neighbour top-up. It held for the first ten and has to hold for the last four.
+    for (let index = 1; index < ZONES.length; index += 1) {
+      const previous = ZONES[index - 1]!;
+      const zone = ZONES[index]!;
+      expect(zone.minLevel, `${zone.id} does not overlap ${previous.id}`).toBeLessThan(
+        previous.maxLevel,
+      );
+    }
+  });
+
+  it('gives the dungeons a gate for every stretch of the climb', () => {
+    // Three dungeons topping out at gate 55 left everything past it un-delved. Gates should keep
+    // arriving as the zones do — no gap wider than the widest zone band.
+    const gates = DUNGEONS.map((den) => den.gateLevel).sort((a, b) => a - b);
+    for (let index = 1; index < gates.length; index += 1) {
+      expect(gates[index]! - gates[index - 1]!, `gap after gate ${gates[index - 1]}`).toBeLessThan(
+        60,
+      );
+    }
+    expect(gates.at(-1)).toBeGreaterThanOrEqual(100);
   });
 });

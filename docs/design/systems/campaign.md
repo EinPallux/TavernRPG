@@ -1,8 +1,9 @@
 # System Spec — The Long Road (Campaign)
 
-> A hundred and twenty fixed stages leaving Emberhollow by the gate: press once, walk as far as
-> your hero can get, then come back stronger. One Vigor a stage; a first clear pays once and never
-> again. Numbers: `../balancing-formulas.md` §17.
+> A hundred and sixty-eight fixed stages leaving Emberhollow by the gate: press once, walk as far
+> as your hero can get, then come back stronger. One Vigor a stage; a first clear pays once and
+> never again. Numbers: `../balancing-formulas.md` §17, and §21 for the four chapters the far
+> country added.
 
 Backdrop: `mission_background_3.png` (the road out of town). Unlocks level 2 — early on purpose:
 this is the one system a brand-new hero can push into on the day they arrive.
@@ -21,7 +22,8 @@ a **wall that moves**, not a payout. Three things make it that and none of them 
 | Meant to | be won | stop you once | stop you where you are |
 
 A mission is drawn at your level and is meant to lose. A floor is a single hard gate behind a key.
-A stage is neither: it is cheap, small, and one of a hundred and twenty in a line, so its value is
+A stage is neither: it is cheap, small, and one of a hundred and sixty-eight in a line, so its
+value is
 spread along its length rather than banked in any one fight.
 
 ## 1. The road

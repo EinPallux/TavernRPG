@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { PLACES_BY_ID } from '@/data/places';
-import { FLOORS_PER_DUNGEON, dungeon, type DungeonId } from '@/data/dungeons';
+import { DUNGEONS, FLOORS_PER_DUNGEON, dungeon, type DungeonId } from '@/data/dungeons';
 import { doorViews, type DelveTransition, type DelveRefusal } from '@/state/dungeonActions';
 import { useGameStore } from '@/state/gameStore';
 import { gameNow } from '@/state/clock';
@@ -190,14 +190,14 @@ export function UndertavernScreen() {
                 data-testid="key-count"
               >
                 <KeyIcon size={13} />
-                {save.dungeons.keys.length}/3 keys
+                {save.dungeons.keys.length}/{DUNGEONS.length} keys
               </span>
               <span
                 className="chamfer-sm border-parchment-500/15 bg-wood-900/70 flex items-center gap-2 border px-3 py-1.5 text-xs text-amber-500"
                 data-testid="trophy-count"
               >
                 <TrophyIcon size={13} />
-                {trophies}/3 sealed
+                {trophies}/{DUNGEONS.length} sealed
               </span>
             </div>
           </header>

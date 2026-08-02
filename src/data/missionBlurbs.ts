@@ -662,6 +662,214 @@ const BLURB_LIST = [
     text: 'The last waystation on {zone} has stopped sending word. It has never stopped sending word.',
     zones: ['frostfell-ridge'],
   },
+
+  // ── saltmere-wrecks ────────────────────────────────────────────────────────────────
+  {
+    id: 'wreck-forty-miles',
+    text: 'A three-master is sitting in the dunes at {zone}, upright, forty miles from open water.',
+    zones: ['saltmere-wrecks'],
+  },
+  {
+    id: 'wreck-salvage-crew',
+    text: 'A salvage crew went into {zone} with eight and came back as a rumour.',
+    zones: ['saltmere-wrecks'],
+  },
+  {
+    id: 'wreck-wrong-tide',
+    text: 'The tide at {zone} came in from the east this week. There is no east sea.',
+    zones: ['saltmere-wrecks'],
+  },
+  {
+    id: 'wreck-cargo-manifest',
+    text: 'A manifest washed up naming cargo that has not been made in two hundred years. A {monster} was using it as bedding.',
+    zones: ['saltmere-wrecks'],
+  },
+  {
+    id: 'wreck-bell-at-night',
+    text: 'The bell on the furthest hull rings at night. Nobody at {zone} will admit to ringing it.',
+    zones: ['saltmere-wrecks'],
+  },
+  {
+    id: 'wreck-salt-in-the-well',
+    text: 'Emberhollow’s eastern wells have gone salt. Something at {zone} is the reason.',
+    zones: ['saltmere-wrecks'],
+  },
+  {
+    id: 'wreck-lantern-line',
+    text: 'A line of ship lanterns was lit along {zone} last night, in order, from the sea inland.',
+    zones: ['saltmere-wrecks'],
+  },
+  {
+    id: 'wreck-figurehead',
+    text: 'A figurehead has been prised off every wreck in {zone}. Only the figureheads.',
+    zones: ['saltmere-wrecks'],
+  },
+  {
+    id: 'wreck-rope-fresh',
+    text: 'Every rope on a wreck at {zone} is eighty years old except one, and that one is new.',
+    zones: ['saltmere-wrecks'],
+  },
+  {
+    id: 'wreck-drowned-crew',
+    text: 'The crew of the Marigold were buried at sea. A {monster} is wearing their coats.',
+    zones: ['saltmere-wrecks'],
+  },
+
+  // ── glass-waste ────────────────────────────────────────────────────────────────
+  {
+    id: 'glass-cartographer',
+    text: 'A cartographer walked into {zone} to settle an argument about its edge. Send back the argument, at least.',
+    zones: ['glass-waste'],
+  },
+  {
+    id: 'glass-noon-shadow',
+    text: 'At noon in {zone} everything casts two shadows, and one of them is a {monster}.',
+    zones: ['glass-waste'],
+  },
+  {
+    id: 'glass-caravan',
+    text: 'A caravan crossed {zone} at night to be safe from the heat. The heat was not the problem.',
+    zones: ['glass-waste'],
+  },
+  {
+    id: 'glass-signal-mirror',
+    text: 'Somebody in {zone} is signalling with a mirror. In a language, and not to us.',
+    zones: ['glass-waste'],
+  },
+  {
+    id: 'glass-footprints-out',
+    text: 'Footprints go out into {zone} and none come back, which is normal. This week some come back and none go out.',
+    zones: ['glass-waste'],
+  },
+  {
+    id: 'glass-fused-road',
+    text: 'The old road across {zone} is fused smooth for a mile, and warm to stand on.',
+    zones: ['glass-waste'],
+  },
+  {
+    id: 'glass-water-cache',
+    text: 'Three water caches out in {zone} have been emptied and stacked neatly. That is the part that worries Marla.',
+    zones: ['glass-waste'],
+  },
+  {
+    id: 'glass-singing-sand',
+    text: 'The sand at {zone} sings before a {monster} moves under it. Learn the note.',
+    zones: ['glass-waste'],
+  },
+  {
+    id: 'glass-prospector',
+    text: 'A prospector came out of {zone} with a full pack and no memory of the last four days.',
+    zones: ['glass-waste'],
+  },
+  {
+    id: 'glass-what-fused-it',
+    text: 'Somebody is finally paying to know what fused {zone}. Bring back anything that was there when it happened.',
+    zones: ['glass-waste'],
+  },
+
+  // ── starfall-barrens ────────────────────────────────────────────────────────────────
+  {
+    id: 'starfall-claim-jumped',
+    text: 'A Starmetal claim in {zone} has been jumped, and not by anyone with hands.',
+    zones: ['starfall-barrens'],
+  },
+  {
+    id: 'starfall-warm-rock',
+    text: 'The rock in {zone} is still warm a century on. Torvald wants to know what a {monster} does about that.',
+    zones: ['starfall-barrens'],
+  },
+  {
+    id: 'starfall-compass',
+    text: 'Every compass in {zone} points down. The survey is late and the surveyor is later.',
+    zones: ['starfall-barrens'],
+  },
+  {
+    id: 'starfall-ore-run',
+    text: 'An ore run out of {zone} is four days overdue. The forge is idle and Torvald is not being pleasant about it.',
+    zones: ['starfall-barrens'],
+  },
+  {
+    id: 'starfall-lights',
+    text: 'Lights over {zone} again, low and slow. They were not stars the last time either.',
+    zones: ['starfall-barrens'],
+  },
+  {
+    id: 'starfall-second-crater',
+    text: 'There is a second crater in {zone} that was not on last season’s map.',
+    zones: ['starfall-barrens'],
+  },
+  {
+    id: 'starfall-iron-taste',
+    text: 'Everything drunk within a mile of {zone} tastes of iron. Something is in the water and it is not ore.',
+    zones: ['starfall-barrens'],
+  },
+  {
+    id: 'starfall-quiet-ring',
+    text: 'A ring of {zone} half a mile across has no insects, no birds and no wind. A {monster} keeps it that way.',
+    zones: ['starfall-barrens'],
+  },
+  {
+    id: 'starfall-fell-again',
+    text: 'Something fell on {zone} again on Tuesday. Smaller. Still walking.',
+    zones: ['starfall-barrens'],
+  },
+  {
+    id: 'starfall-vein-guarded',
+    text: 'The richest vein in {zone} has a {monster} sitting on it, and it was not there in spring.',
+    zones: ['starfall-barrens'],
+  },
+
+  // ── hollow-crown ────────────────────────────────────────────────────────────────
+  {
+    id: 'crown-court-in-session',
+    text: 'The court at {zone} is in session. It has been in session for six hundred years.',
+    zones: ['hollow-crown'],
+  },
+  {
+    id: 'crown-tax-collector',
+    text: 'A {monster} came out of {zone} to collect a tax owed to a kingdom nobody remembers.',
+    zones: ['hollow-crown'],
+  },
+  {
+    id: 'crown-archive-open',
+    text: 'The archive doors at {zone} are open for the first time in living memory. Somebody should look.',
+    zones: ['hollow-crown'],
+  },
+  {
+    id: 'crown-heir-claim',
+    text: 'A man in Emberhollow claims the throne at {zone}. Something out there has heard him.',
+    zones: ['hollow-crown'],
+  },
+  {
+    id: 'crown-coin-spending',
+    text: 'Coin from {zone} is turning up in the market. It spends. That is the disturbing part.',
+    zones: ['hollow-crown'],
+  },
+  {
+    id: 'crown-procession',
+    text: 'A procession left {zone} at dusk, went nowhere, and arrived.',
+    zones: ['hollow-crown'],
+  },
+  {
+    id: 'crown-names-carved',
+    text: 'Every name on the memorial at {zone} has been recut this year, in the same hand.',
+    zones: ['hollow-crown'],
+  },
+  {
+    id: 'crown-bell-tower',
+    text: 'The bell tower at {zone} tolled the hour. It has no bell and no hour to keep.',
+    zones: ['hollow-crown'],
+  },
+  {
+    id: 'crown-oath-still-held',
+    text: 'An oath sworn at {zone} is still being kept by a {monster} who was never told it ended.',
+    zones: ['hollow-crown'],
+  },
+  {
+    id: 'crown-last-map',
+    text: 'This is the last thing on the map. Marla says that is exactly why somebody has to go.',
+    zones: ['hollow-crown'],
+  },
 ] as const satisfies readonly BlurbDef[];
 
 /** Widened for consumers; the literal above is what gets typo-checked. */

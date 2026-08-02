@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { TOTAL_STAGES } from '../src/data/campaign';
 
 /**
  * The Long Road, from the player's side.
@@ -250,12 +251,17 @@ test.describe('the Long Road', () => {
   });
 
   test('closes the road when the last stage falls', async ({ page }) => {
-    await setRoad(page, { stagesCleared: 120, finishedAt: 1_785_000_000_000 });
+    /*
+     * `TOTAL_STAGES`, not 120. This test pinned the literal and broke the moment the far country
+     * added four chapters — for being right, which is the failure mode a pinned count always has.
+     * What it is actually about is the *end* of the road, wherever that is.
+     */
+    await setRoad(page, { stagesCleared: TOTAL_STAGES, finishedAt: 1_785_000_000_000 });
     await openRoad(page);
 
     await expect(page.getByTestId('road-finished')).toBeVisible();
     await expect(page.getByTestId('road-push')).toBeHidden();
-    await expect(page.getByTestId('road-progress')).toContainText('120');
+    await expect(page.getByTestId('road-progress')).toContainText(String(TOTAL_STAGES));
   });
 
   test('opens chapters one at a time, and lets the player look back', async ({ page }) => {

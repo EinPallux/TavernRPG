@@ -520,6 +520,18 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
   pixels of teal, a Caster 459 of red, and two melee schools read **zero**. It also found and fixed
   two features that had been invisible in the shipped game since Phase 11 and Phase 12: `harden`
   and all eight `set_proc` effects had beats on the timeline and no case in `frameAt`.
+- _The far country._ Four zones, two dungeons and four chapters of the Long Road, for levels 84 to
+  200 and past it. It exists because of one measurement: Frostfell Ridge was levelled 84 to
+  infinity with nothing above it, so an **active player met their last new monster on day 40** and
+  fought the same ten for the eleven weeks after while gaining another fifty levels. Saltmere
+  Wrecks, The Glass Waste, Starfall Barrens and The Hollow Crown carry 40 monsters and 40 blurbs;
+  The Drowned Vault and The Sunless Court open at gates 85 and 130; the road runs to 168 stages and
+  ends at level 183 on day 124 rather than 100 on day 59. The Album grew to 19 pages and 186 foes
+  **without being edited**, because its pages are derived. `balancing-formulas.md` §21. Its
+  acceptance measurements were the wall harness and the dungeon ramp, and both refused the first
+  draft: chapter spans cannot keep widening past level 100 (+14 wall), boss `damageShare`s written
+  by feel were half again too strong, and a siphon at chapter XIII measured the same +3 wall at
+  every value because by then the hero out-damages the heal.
 - _The Collector's Album._ The scrapbook, and the first post-1.0 item off this very list. Thirteen
   pages over 126 foes — a zone's mission roster or a dungeon's ten floors — filled by **beating**
   things rather than seeing them, because a bestiary of what you ran away from is a list rather

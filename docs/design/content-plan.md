@@ -5,7 +5,7 @@
 > `docs/tech/data-models.md`). Every entity carries `iconId` (game-icons.net) and optional
 > `artOverride` (user-supplied art later) per `docs/tech/asset-pipeline.md`.
 
-## 1. Zones & mission theaters (10 zones → 14 backgrounds)
+## 1. Zones & mission theaters (14 zones → 14 backgrounds)
 
 | Zone | Level band | Backdrop file(s) | Monster families |
 |---|---|---|---|
@@ -17,8 +17,26 @@
 | Silverpine Pass | 32–46 | mission_background_9 | Mountain clans, harpies, ice wolves |
 | Ember Caves | 42–58 | mission_background_6 | Kobolds, magma beasts, salamanders |
 | Gloomhollow | 54–72 | mission_background_8 | Shades, night hags, spiders |
-| Sunken Chapel | 68–88 | mission_background_1, _14 | Drowned dead, deep cult, reliquary guardians |
-| Frostfell Ridge | 84–110+ | mission_background_7 | Frost giants' kin, wraiths, rocs |
+| Sunken Chapel | 68–88 | mission_background_14, _1 | Drowned dead, deep cult, reliquary guardians |
+| Frostfell Ridge | 84–108 | mission_background_7 | Frost giants' kin, wraiths, rocs |
+| Saltmere Wrecks | 100–130 | mission_background_1, _14 | Salt-cured drowned, wreck-things |
+| The Glass Waste | 122–156 | mission_background_5, _8 | Mirages, heat, fused glass |
+| Starfall Barrens | 148–186 | mission_background_6 | Starmetal constructs, things that fell |
+| The Hollow Crown | 178+ | mission_background_4, _3 | A dead court, still in session |
+
+> **The far country** (the last four) was added post-1.0 because the tenth zone was levelled
+> `84 → ∞` and an active player met their last new monster on day 40. It re-uses backdrops
+> with distinct tints — fourteen paintings, fourteen zones — which is what the `tint` field
+> was added for. Real art drops in through the override manifest. `balancing-formulas.md` §21.
+
+> **Corrected again, immediately.** The far country's first draft picked its backdrops by which
+> files looked least spoken for — the same mistake as the Phase 5 note below, four rows further
+> down the same table — and shipped "Sand, fused smooth" over a flower meadow with a castle in
+> it. A `tint` is a mood and will not repaint a picture. Every pairing above is now against what
+> the file depicts, Starfall Barrens runs on one painting because the pack holds only one crater,
+> and Sunken Chapel's two are ordered so the wreck belongs to the zone named for wrecks.
+> `zonesForLevel` never offers two zones that share a painting, and `content.test.ts` asserts it —
+> which is the only part of this a test can see.
 
 > **Corrected in Phase 5.** The original table numbered the backdrops sequentially, sight
 > unseen, which put a tropical shipwreck behind "Whispering Woods" and a flower meadow behind
@@ -33,7 +51,7 @@ backdrop; rewards depend only on level & duration (`balancing-formulas.md` §1�
 
 ## 2. Monsters
 
-- **Target: 96 mission monsters** (≈9–10 per zone), each: name, zone, archetype (bruiser /
+- **Target: 136 mission monsters** (≈9–10 per zone), each: name, zone, archetype (bruiser /
   skirmisher / caster / tank / swarm), `iconId`, `artOverride?`, flavor line.
   Names lean cozy-grim ("Sootback Boar", "Toll-Keeper's Ghost", "Marsh Widow").
 - **30 dungeon monsters** (10 per dungeon), individually named with signature procs on floors 5/10

@@ -244,7 +244,7 @@ export const PLACES: readonly PlaceDef[] = [
     icon: 'road',
     group: 'beyond',
     gateLevel: 2,
-    blurb: 'A hundred and twenty stages out of town. Get as far as you can.',
+    blurb: 'A long road out of town, one stage at a time. Get as far as you can.',
     backdrop: `${BG}/mission_background_3.webp`,
     tint: 'from-wood-900 via-wood-900/78 to-wood-900/45',
     effects: ['motes', 'lantern'],

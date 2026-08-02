@@ -21,6 +21,16 @@ import { expect, test, type Page } from '@playwright/test';
 const SETUP_TIMEOUT = 20_000;
 const FIGHT_TIMEOUT = 25_000;
 
+/*
+ * Every test here pays for `readyHero` — creation, ten conjures, ten equips — before it starts,
+ * and then walks between the Tankard, the character screen and the road. That is comfortably past
+ * Playwright's 30-second default once two workers are competing, and the failure it produces is a
+ * timeout mid-assertion that reads like a missing element rather than a slow one.
+ *
+ * Same figure and same reason as `slots.spec.ts` and `regression.spec.ts`.
+ */
+test.setTimeout(90_000);
+
 interface Save {
   hero: { level: number; name: string } | null;
   activity: { vigor: number };
@@ -152,13 +162,25 @@ test.describe('the Collector’s Album', () => {
       .poll(async () => (await recorded(page)).length, { timeout: FIGHT_TIMEOUT })
       .toBeGreaterThan(0);
 
-    const foes = await recorded(page);
+    /*
+     * Leave the road *before* reading the book.
+     *
+     * "Push on" auto-chains: it keeps fighting stages until something stops it. A count read on
+     * the campaign screen and asserted against the album a second later is racing the next stage,
+     * and it loses under a full-suite load — this read 1 and the screen had already drawn 2.
+     * Navigating unmounts the chain, so the number and the page it is checked against are taken
+     * from the same moment.
+     */
     await flush(page);
     await openAlbum(page);
+    const foes = await recorded(page);
+    expect(foes.length).toBeGreaterThan(0);
 
-    // The cell for the foe that was just beaten is lit, and the rest of the page is not.
-    const first = page.getByTestId(`album-entry-${foes[0]}`);
-    await expect(first).toHaveAttribute('data-recorded', 'true');
+    // The cell for a foe that was just beaten is lit, and the total agrees with the book.
+    await expect(page.getByTestId(`album-entry-${foes[0]}`)).toHaveAttribute(
+      'data-recorded',
+      'true',
+    );
     await expect(page.getByTestId('album-total')).toContainText(`${foes.length}/`);
   });
 

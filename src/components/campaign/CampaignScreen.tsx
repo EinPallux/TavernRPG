@@ -347,7 +347,7 @@ function Header({ cleared, vigor }: { cleared: number; vigor: number }) {
         </p>
         <h1 className="font-display text-parchment-300 text-3xl font-extrabold">The Long Road</h1>
         <p className="text-parchment-500/72 mt-1 max-w-xl text-sm leading-relaxed">
-          A hundred and twenty stages between here and Frostfell Ridge. One Vigor a stage, and
+          {TOTAL_STAGES} stages between here and {CHAPTERS.at(-1)!.name}. One Vigor a stage, and
           nothing between you and the end of it but whatever is standing in the way.
         </p>
       </div>
@@ -545,8 +545,8 @@ function WallPanel({
     return (
       <TavernPanel title="The end of the road" data-testid="road-finished">
         <p className="text-parchment-300/90 text-sm leading-relaxed">
-          A hundred and twenty stages, and the last of them behind you. Frostfell Ridge does not
-          have anything else to throw.
+          All {TOTAL_STAGES} stages, and the last of them behind you. {CHAPTERS.at(-1)!.name} does
+          not have anything else to throw.
         </p>
       </TavernPanel>
     );

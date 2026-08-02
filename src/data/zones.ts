@@ -22,7 +22,12 @@ export type ZoneId =
   | 'ember-caves'
   | 'gloomhollow'
   | 'sunken-chapel'
-  | 'frostfell-ridge';
+  | 'frostfell-ridge'
+  // ── The far country: past the Ridge, past the edge of anybody's map ──────────────
+  | 'saltmere-wrecks'
+  | 'glass-waste'
+  | 'starfall-barrens'
+  | 'hollow-crown';
 
 export interface ZoneDef {
   readonly id: ZoneId;
@@ -128,7 +133,10 @@ const ZONE_LIST = [
     tagline: 'The choir never stopped. It only got wetter.',
     minLevel: 68,
     maxLevel: 88,
-    backdrops: [BG('mission_background_1'), BG('mission_background_14')],
+    // Ordered when Saltmere arrived: the drowned parish leads on the waterlogged town and the
+    // wreck on the beach belongs to the zone with "Wrecks" in its name. The two share both
+    // paintings and are twelve levels apart, so no board ever offers them together.
+    backdrops: [BG('mission_background_14'), BG('mission_background_1')],
     tint: 'from-wood-900 via-moss-600/28 to-wood-900/60',
   },
   {
@@ -136,10 +144,82 @@ const ZONE_LIST = [
     name: 'Frostfell Ridge',
     tagline: 'Where the map stops apologising and just says "no".',
     minLevel: 84,
-    // The last zone has no upper bound in practice — there is no level cap.
-    maxLevel: Number.MAX_SAFE_INTEGER,
+    // Capped when the far country arrived. It was open-ended for one reason — it was the last
+    // zone, and a hero past it needed *somewhere* — and the cost was that an active player met
+    // their final new monster on day 40 and fought the same ten for the next eleven weeks.
+    maxLevel: 108,
     backdrops: [BG('mission_background_7')],
     tint: 'from-wood-900 via-parchment-300/15 to-wood-900/55',
+  },
+
+  /* ── The far country ────────────────────────────────────────────────────────────
+   *
+   * Four places past the Ridge, for levels 100 to wherever the player stops.
+   *
+   * They go *outward and stranger* rather than simply colder: a coast that has no business being
+   * this far inland, a desert of fused glass, the crater the Starmetal came out of, and the
+   * drowned capital of whatever Aldenvale was before Emberhollow. The escalation is meant to be
+   * legible from the names alone — by the last one the player is not in the countryside any more.
+   *
+   * **They re-use backdrops, and that is the system working rather than a shortcut.** Fourteen
+   * paintings serve fourteen zones; `tint` is the field that exists so re-used art reads as a
+   * different place. Real art drops in through the override manifest with no code change
+   * (asset-pipeline §3).
+   *
+   * A tint is a *mood*, though, and it will not repaint a picture. The first draft of these four
+   * chose backdrops by which ones felt least spoken for, and put "Sand, fused smooth" over a
+   * flower meadow with a castle in it — plain on the board to anybody who looked, and invisible
+   * to every gate in the repo. Each pairing below is matched against what the painting actually
+   * depicts: the wreck on the beach, the dry flats, the crater, the ruined gate.
+   */
+  {
+    id: 'saltmere-wrecks',
+    name: 'Saltmere Wrecks',
+    tagline: 'Ships, forty miles from any sea that would admit to them.',
+    minLevel: 100,
+    maxLevel: 130,
+    // A hull broken up on the sand, then the harbour that still has one afloat.
+    backdrops: [BG('mission_background_1'), BG('mission_background_14')],
+    tint: 'from-wood-900 via-parchment-300/22 to-arcane-500/25',
+  },
+  {
+    id: 'glass-waste',
+    name: 'The Glass Waste',
+    tagline: 'Sand, fused smooth. Nobody agrees on by what.',
+    minLevel: 122,
+    maxLevel: 156,
+    // Stony flats under a pale spire, then dry ochre badlands. Both are places nothing grows.
+    backdrops: [BG('mission_background_5'), BG('mission_background_8')],
+    tint: 'from-wood-900 via-amber-400/30 to-parchment-300/20',
+  },
+  {
+    id: 'starfall-barrens',
+    name: 'Starfall Barrens',
+    tagline: 'The hole the Starmetal came out of, and whatever came with it.',
+    minLevel: 148,
+    maxLevel: 186,
+    // One painting, because there is only one crater in the set. The second draft paired the
+    // cone with the crystal glade — Starmetal, in theory — and on the board it was a sunlit
+    // forest with a waterfall under the words "the hole the Starmetal came out of". Six of the
+    // ten older zones run on a single backdrop; a repeated right picture beats a second wrong one.
+    backdrops: [BG('mission_background_6')],
+    tint: 'from-wood-900 via-arcane-500/35 to-ember-600/20',
+  },
+  {
+    id: 'hollow-crown',
+    name: 'The Hollow Crown',
+    tagline: 'A capital, before there was an Emberhollow. It is still holding court.',
+    minLevel: 178,
+    // The last zone carries the open end, for the reason Frostfell used to: there is no level
+    // cap, so somebody has to have work for a hero who keeps going.
+    maxLevel: Number.MAX_SAFE_INTEGER,
+    // The gate of somewhere that had spires, then the keep on the hill — the same keep the Old
+    // King's Road shows a level-ten hero, a hundred and seventy levels earlier.
+    //
+    // Thornhill Ruins leads on that gate too, so the wash carries the difference here: gold over
+    // blood for a court still sitting, against Thornhill's flat dark red.
+    backdrops: [BG('mission_background_4'), BG('mission_background_3')],
+    tint: 'from-wood-900 via-amber-500/28 to-blood-600/28',
   },
 ] as const satisfies readonly ZoneDef[];
 
