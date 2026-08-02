@@ -86,7 +86,25 @@ const CHAPTER_LEVELS: readonly (readonly [first: number, last: number])[] = [
   [47, 58], // VII  Ember Caves
   [59, 72], // VIII Gloomhollow
   [73, 88], // IX   Sunken Chapel
-  [89, 100], // X    Frostfell Ridge — the end of the road
+  [89, 100], // X    Frostfell Ridge
+  /*
+   * ── The far country. This was the end of the road; the road went on. ─────────────
+   *
+   * Sixteen levels each, flat, where the first draft widened them 18/22/26/34 and the second
+   * 16/18/20/22. The wall test refused both: a chapter's span is how far its boss ends up above
+   * the hero who walks into it, and past level 100 the XP curve is steep enough that eighteen
+   * levels of span is a +14 wall — not a target, but the place people stop playing. The widening
+   * that worked from chapter I to IX has to stop, and this is where.
+   *
+   * Their bosses are all **bruisers**, which is also the road's own rule rather than a choice:
+   * chapters I–VI are tanks and VII onward are bruisers, because a tank stops being a wall worth
+   * climbing once the player has the damage to matter. The first draft made XI a tank and its
+   * wall came out at +13 with the span already fixed.
+   */
+  [101, 116], // XI   Saltmere Wrecks
+  [117, 132], // XII  The Glass Waste
+  [133, 148], // XIII Starfall Barrens
+  [149, 164], // XIV  The Hollow Crown — the end of the road, for now
 ];
 
 /**
@@ -322,6 +340,82 @@ export const CHAPTERS: readonly CampaignChapterDef[] = [
       },
     },
   },
+  {
+    chapter: 11,
+    numeral: 'XI',
+    name: 'Saltmere Wrecks',
+    tagline: 'The road runs out at a coast that should not be here.',
+    zoneId: 'saltmere-wrecks',
+    boss: {
+      id: 'the-harbourmaster',
+      name: 'The Harbourmaster',
+      archetypeId: 'bruiser',
+      flavor: 'Still logging arrivals at a harbour forty miles from any sea.',
+      signature: {
+        label: 'Make Fast',
+        explainer:
+          'Every round he is kept standing he lashes another plank to himself. There is no long game against a man building a hull out of the fight.',
+        proc: { kind: 'hardening', perRound: 0.021, cap: 0.18 },
+      },
+    },
+  },
+  {
+    chapter: 12,
+    numeral: 'XII',
+    name: 'The Glass Waste',
+    tagline: 'Nothing has grown here since whatever happened, happened.',
+    zoneId: 'glass-waste',
+    boss: {
+      id: 'the-noon-devil',
+      name: 'The Noon Devil',
+      archetypeId: 'bruiser',
+      flavor: 'It only exists between eleven and one, and out here it is always about noon.',
+      signature: {
+        label: 'Second Shadow',
+        explainer:
+          'Every third round your own shadow strikes alongside it. You cannot out-position this one — you can only end it.',
+        proc: { kind: 'swarm-call', everyRounds: 3, damageShare: 0.35 },
+      },
+    },
+  },
+  {
+    chapter: 13,
+    numeral: 'XIII',
+    name: 'Starfall Barrens',
+    tagline: 'Where the sky came down, and some of it is still moving.',
+    zoneId: 'starfall-barrens',
+    boss: {
+      id: 'the-passenger',
+      name: 'The Passenger',
+      archetypeId: 'bruiser',
+      flavor: 'It did not fall. It arrived.',
+      signature: {
+        label: 'Accretion',
+        explainer:
+          'Every round it takes on more of whatever it fell through, and every round it is harder to hurt. Do not let this one run long.',
+        proc: { kind: 'hardening', perRound: 0.013, cap: 0.16 },
+      },
+    },
+  },
+  {
+    chapter: 14,
+    numeral: 'XIV',
+    name: 'The Hollow Crown',
+    tagline: 'The last thing on the map, holding court at the end of it.',
+    zoneId: 'hollow-crown',
+    boss: {
+      id: 'the-first-king',
+      name: 'The First King',
+      archetypeId: 'bruiser',
+      flavor: 'Aldenvale had a king before it had a name. Nobody has told him otherwise.',
+      signature: {
+        label: 'The Realm Answers',
+        explainer:
+          'Every third round the whole dead kingdom swings with him. This is the last wall on the road and it hits like one.',
+        proc: { kind: 'swarm-call', everyRounds: 3, damageShare: 0.24 },
+      },
+    },
+  },
 ];
 
 export const CHAPTERS_BY_NUMBER: Readonly<Record<number, CampaignChapterDef>> = Object.fromEntries(
@@ -330,7 +424,7 @@ export const CHAPTERS_BY_NUMBER: Readonly<Record<number, CampaignChapterDef>> = 
 
 /* ── Reading a stage number ───────────────────────────────────────────────────────── */
 
-/** Stages are numbered 1…120 across the whole road; the chapter is derived, never stored. */
+/** Stages are numbered 1…168 across the whole road; the chapter is derived, never stored. */
 export function chapterOf(stage: number): number {
   return Math.floor((stage - 1) / STAGES_PER_CHAPTER) + 1;
 }

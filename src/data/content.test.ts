@@ -120,6 +120,22 @@ describe('zones', () => {
     expect(ids.length).toBeGreaterThanOrEqual(MIN_ZONE_CHOICES);
   });
 
+  it('never leaves a hero of any level with one place to go', () => {
+    /*
+     * The far country's real acceptance test, and it runs past where the old one stopped.
+     *
+     * Coverage to 120 was checked before; the wall this content removed was *past* that, so the
+     * sweep runs to 250. `zonesForLevel` always returns something, so a plain "is it empty" would
+     * have passed the whole time Frostfell Ridge was carrying levels 84 to infinity on its own —
+     * what has to hold is that the hero is genuinely *in* a band rather than being topped up with
+     * a neighbour they outgrew.
+     */
+    for (let level = 1; level <= 250; level += 1) {
+      const inBand = ZONES.filter((zone) => level >= zone.minLevel && level <= zone.maxLevel);
+      expect(inBand.length, `level ${level} is in no band`).toBeGreaterThan(0);
+    }
+  });
+
   it('covers the far country as well as the near one', () => {
     // The hole this content answered: an active player reached the last zone on day 40 and met
     // no new monster for the following eleven weeks. Every level to 200 now has a band of its
@@ -598,5 +614,53 @@ describe('the keepers have enough to say (content-plan §6)', () => {
         }
       }
     }
+  });
+});
+
+describe('the far country', () => {
+  /**
+   * The content wall, as a regression test.
+   *
+   * Frostfell Ridge was levelled `84 → MAX_SAFE_INTEGER`, so from level 84 a player fought the
+   * same ten monsters forever — day 40 for an active one. What stops that happening again is not
+   * "we added zones", it is the shape below: no band may be so wide that it is the only work on
+   * offer across a huge stretch of the ladder.
+   */
+  it('never asks one zone to carry more than a slice of the ladder', () => {
+    const finite = ZONES.filter((zone) => zone.maxLevel !== Number.MAX_SAFE_INTEGER);
+    for (const zone of finite) {
+      // The widest shipped band is The Hollow Crown's predecessors at ~38 levels. Fifty is the
+      // line between "a place you live in for a while" and "the game stopped".
+      expect(zone.maxLevel - zone.minLevel, zone.id).toBeLessThanOrEqual(50);
+    }
+    // Exactly one open-ended zone, and it starts high enough that reaching it is an achievement
+    // rather than the fortieth day of play.
+    const open = ZONES.filter((zone) => zone.maxLevel === Number.MAX_SAFE_INTEGER);
+    expect(open).toHaveLength(1);
+    expect(open[0]!.minLevel).toBeGreaterThanOrEqual(150);
+  });
+
+  it('keeps every band overlapping its neighbour, all the way out', () => {
+    // Overlap is what gives the board two zones to choose between without leaning on the
+    // neighbour top-up. It held for the first ten and has to hold for the last four.
+    for (let index = 1; index < ZONES.length; index += 1) {
+      const previous = ZONES[index - 1]!;
+      const zone = ZONES[index]!;
+      expect(zone.minLevel, `${zone.id} does not overlap ${previous.id}`).toBeLessThan(
+        previous.maxLevel,
+      );
+    }
+  });
+
+  it('gives the dungeons a gate for every stretch of the climb', () => {
+    // Three dungeons topping out at gate 55 left everything past it un-delved. Gates should keep
+    // arriving as the zones do — no gap wider than the widest zone band.
+    const gates = DUNGEONS.map((den) => den.gateLevel).sort((a, b) => a - b);
+    for (let index = 1; index < gates.length; index += 1) {
+      expect(gates[index]! - gates[index - 1]!, `gap after gate ${gates[index - 1]}`).toBeLessThan(
+        60,
+      );
+    }
+    expect(gates.at(-1)).toBeGreaterThanOrEqual(100);
   });
 });

@@ -7,6 +7,40 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — the far country
+
+- **The game ran out of foes on day 40.** Frostfell Ridge was levelled 84 to infinity with nothing
+  above it, so an active player met their last new monster six weeks in and fought the same ten for
+  the eleven weeks after — while gaining another fifty levels. Measured, not guessed: balancing §21
+  has the table.
+- **Four zones** — Saltmere Wrecks, The Glass Waste, Starfall Barrens and The Hollow Crown — for
+  levels 100 to 200 and past it, ten monsters and ten of their own blurbs each. They go outward and
+  stranger rather than merely colder, and Starfall Barrens is finally where the Starmetal comes
+  from, which the Emberforge has consumed since Phase 12 without anywhere to have got it.
+- **Two dungeons below the Foundry:** The Drowned Vault at gate 85 and The Sunless Court at gate
+  130, floors to level 202. The Court's finale is the hardest swarm-call in the game — the first
+  mechanic anybody meets, back on floor five of the Rat Cellars, turned as far up as it goes.
+- **Four more chapters of the Long Road**, one per new zone, because `CHAPTER_COUNT` is
+  `ZONES.length` and a census test says so. 168 stages, four named bosses, and the road is a
+  four-month walk finishing at level 183 instead of a two-month one finishing at 100.
+- **The Album grew itself.** Six new pages, 186 foes, +24% for a full book — with no edit to
+  `data/album.ts`, because its pages are derived from the content modules. The argument its spec
+  makes for deriving rather than listing, paying for itself the first time it could.
+- Backdrops are re-used with new tints. That is the `tint` field doing the job it was added for;
+  real art drops in through the override manifest with no code change.
+
+### Fixed — three balance numbers the harnesses refused
+
+- **Chapter spans cannot keep widening.** Chapters I–IX widen 8→16 levels; the first draft of the
+  far country continued to 18/22/26/34. A chapter's span *is* how far its boss ends up above the
+  hero walking into it, and past level 100 eighteen levels is a +14 wall — where people stop
+  playing, not a target. Sixteen, flat.
+- **A boss `damageShare` means less the deeper it is used.** The shipped road peaks at 0.8 at level
+  58; the far country's bosses sit at 0.35 and 0.24 and hit *harder* for it. Written at 0.88 and
+  0.95, the last two chapters measured +14 and +15.
+- **Siphon stops mattering at depth** — chapter XIII measured a +3 wall at every share from 0.075
+  to 0.17, because by level 148 the hero's damage outruns the heal. It is a hardening now.
+
 ### Added — the Collector's Album
 
 - **A bestiary you fill by beating things.** Thirteen pages, 126 entries: one page per zone (its

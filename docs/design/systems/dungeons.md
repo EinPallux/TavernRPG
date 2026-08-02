@@ -6,16 +6,33 @@
 
 Backdrop: `dungeons_background.png` (hub) + per-dungeon tint/vignette. Unlocks level 10.
 
-## 1. The three dungeons (1.0)
+## 1. The five dungeons
 
 | Dungeon | Gate | Monster levels (F1→F10) | Identity |
 |---|---|---|---|
 | **The Rat Cellars** | level 10 + Rusty Key | 14 → 32 | Vermin kingdom under the tavern; comedic-grim; boss: Cellar King Riddletail |
 | **Barrowdeep Crypt** | level 25 + Bone Key | 31 → 58 | Restless nobility, pale rites; boss: The Pale Margrave |
 | **Emberdeep Foundry** | level 55 + Brand Key | 59 → 95 | Abandoned dwarf-works, living forges; boss: Foundry Tyrant Vulkarr |
+| **The Drowned Vault** | level 85 + Sluice Key | 97 → 142 | Below the Foundry, where the water table wins; both bosses **siphon** |
+| **The Sunless Court** | level 130 + Seal of Court | 148 → 202 | The thing The Hollow Crown remembers; both bosses **swarm-call**, the throne's the hardest in the game |
 
 Keys drop from missions (6%/mission once level-gated, until owned); each key is a one-time unlock
-(the door stays open). Later dungeons ship per patch (S&F's 18-dungeon cadence — reference §9).
+(the door stays open), and `keyInPlay` offers the **lowest** unowned one so the dungeons are walked
+in order. The last two arrived with the far country (`balancing-formulas.md` §21) and needed no
+engine change at all — the key rule, the gates and the album's pages are all derived from this
+table.
+
+### The floor ladder is not decoration
+
+Every dungeon runs swarm → caster → caster → skirmisher → **caster (boss)** → skirmisher → bruiser
+→ bruiser → tank → **tank (boss)**. Archetype is worth more difficulty than six floors of the level
+curve, so a floor order picked on flavour produces a dungeon that gets *easier* in the middle —
+which is invisible in the data and obvious in play. `dungeons.test.ts` walks the whole ramp and
+fails on a dip; it caught exactly that in the Drowned Vault's first draft, at floor four.
+
+The Sunless Court climbs a rung earlier (two skirmishers before the mid-boss, bruisers straight
+after it, three tanks to close). A boss is worth about two levels of ordinary floor, and at level
+177 two levels is more than a level step can absorb.
 
 ## 2. Floor rules
 
@@ -53,7 +70,7 @@ context seeds (`combat.md` §5).
 
 ## 6. As built (Phase 11)
 
-`src/data/dungeons.ts` (three dungeons, thirty named floors, six boss signatures),
+`src/data/dungeons.ts` (five dungeons, fifty named floors, ten boss signatures),
 `src/engine/dungeons/` — `floors` (combatant construction, budgets, payouts, best-attempt share),
 `delve` (the lifecycle), `keys`. Three new `CombatProc` kinds and their events live in
 `src/engine/combat/`; the store transitions in `src/state/dungeonActions.ts`; the room in

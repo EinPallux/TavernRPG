@@ -8,9 +8,13 @@
 
 ## 1. What it is, and the problem it solves
 
-A bestiary the player fills by **beating** things. Thirteen pages, 126 entries: one page per zone
+A bestiary the player fills by **beating** things. Nineteen pages, 186 entries: one page per zone
 (its mission roster, nine or ten deep) and one per dungeon (its ten floors). Finishing a page pays
 a small, permanent multiplier on gold *and* experience, for good.
+
+It was thirteen pages over 126 at 1.0. The far country grew it to nineteen without this feature
+being touched, because the pages are *derived* from the content modules — which is the argument in
+§2 paying for itself on the first occasion it could.
 
 It exists because a game with 96 mission monsters across ten level-banded zones throws almost all
 of them away. You outlevel the Whispering Woods in the first week and never see a Sootback Boar
@@ -26,7 +30,7 @@ Three secondary jobs it does:
 
 - it makes the Long Road's early chapters worth walking twice over, because a chapter's stages are
   its zone's roster;
-- it gives the Undertavern's thirty floors a record that survives the trophy;
+- it gives the Undertavern's fifty floors a record that survives the trophy;
 - it gives a very long-tail player something to finish that is not a stat.
 
 **Not** a battle pass, not timed, not purchasable, and it cannot be missed: everything in it is
@@ -36,7 +40,9 @@ something the player was going to fight anyway.
 
 ## 2. The pages, and why almost nothing is stored
 
-`data/album.ts` derives every page from `MONSTERS`, `DUNGEONS` and `ZONES`. There is no second
+`data/album.ts` derives every page from `MONSTERS`, `DUNGEONS` and `ZONES` — which is why the far
+country's four zones and two dungeons arrived as six new pages without this module being edited at
+all. There is no second
 list of who exists — a second list is a second place for a monster to go missing, and adding a zone
 or a dungeon adds a page for free. `album.test.ts` counts rather than lists, so "every monster is
 filed exactly once" is asserted as a property.
@@ -62,16 +68,16 @@ It is a set rather than a tally because the album asks one thing of each foe —
 it stores one bit, spelled as membership. A kill count would be a bigger save, a bigger migration
 and a harder question to answer on screen.
 
-### Why the Long Road's ten bosses are not a fourteenth page
+### Why the Long Road's bosses are not a page of their own
 
 They are foes, they are named, and they are the game's most memorable fights. They still do not
-belong here, for the storage rule read backwards: a boss stands on stage 12, 24, … 120, and
+belong here, for the storage rule read backwards: a boss stands on stage 12, 24, … 168, and
 `campaign.stagesCleared` is a single contiguous number, so "have I beaten the Ashen Warden" is
 `stagesCleared >= 12`. Filing them would put a derivable fact in a stored set.
 
 The design reason agrees. A zone page makes a level band worth revisiting and a dungeon page makes
 a delve worth finishing; a road page would restate progress the player is already making, and it
-would move the capstone behind stage 120 — turning "beaten one of everything" into "finished the
+would move the capstone behind the last stage — turning "beaten one of everything" into "finished the
 entire game", which is a different promise. The road still *fills* the album: its ordinary stages
 are the chapter zone's roster, so pushing records foes exactly as a contract does.
 
@@ -92,7 +98,7 @@ Sootback Boar returns the identical array, so the caller's spread is a no-op and
 nothing to write.
 
 `albumProgress` counts against the pages rather than `foes.length`, so an id left behind by a
-deleted monster cannot inflate the total into "127/126".
+deleted monster cannot inflate the total into "187/186".
 
 ---
 
@@ -139,9 +145,9 @@ A third tab on the character screen, beside *Gear & training* and *Set collectio
 the town map is one painting with fourteen artist-drawn nameplates and a census test, and the album
 is a ledger you keep rather than a place you walk to.
 
-Layout is Set Collections turned ninety degrees — thirteen pages down the left, one page's foes on
+Layout is Set Collections turned ninety degrees — nineteen pages down the left, one page's foes on
 the right — because this is a page you *visit* rather than glance at, and a deliberate selection
-beats scrolling 126 cells.
+beats scrolling 186 cells.
 
 **The open page is derived, not stored.** State holds only a pinned override; with nothing pinned
 the shown page is the first unfinished one — where the work is. Storing a default of page one would

@@ -451,6 +451,17 @@ describe('the Menagerie is a habit, not a bill — Phase 14', () => {
 describe('the Long Road is a head start, not an income', () => {
   const run = simulateEconomy({ days: 90 });
   const roadless = simulateEconomy({ days: 90, style: { ...ACTIVE_PLAYER, walksTheRoad: false } });
+  /*
+   * A second, longer run for the three claims that are about the road's *whole life* rather than
+   * about a given day.
+   *
+   * Ninety days used to cover it — the road was a hundred and twenty stages and was walked out by
+   * day 59. The far country took it to a hundred and sixty-eight and the finish moved to day 124,
+   * which is the feature working: a road that ends inside the first quarter of a player's time
+   * with the game is the wall this content was added to remove. The per-day bands below still
+   * sample the ninety-day run, because "never out-earns the board" is a claim about days.
+   */
+  const whole = simulateEconomy({ days: 150 });
   const roadGold = (days: typeof run.ledger) =>
     days.reduce((sum, day) => sum + day.earned.campaign, 0);
 
@@ -481,9 +492,9 @@ describe('the Long Road is a head start, not an income', () => {
      * by day 59. Sampling the tail *of the road* rather than a fixed calendar week is what the
      * claim was always about: it never becomes the game while it lasts, and then it ends.
      */
-    const lastDay = run.ledger.findIndex((day) => day.stagesCleared === TOTAL_STAGES);
+    const lastDay = whole.ledger.findIndex((day) => day.stagesCleared === TOTAL_STAGES);
     expect(lastDay, 'the road never finished').toBeGreaterThan(7);
-    const finalWeek = run.ledger.slice(Math.max(0, lastDay - 7), lastDay);
+    const finalWeek = whole.ledger.slice(Math.max(0, lastDay - 7), lastDay);
     expect(share(finalWeek)).toBeGreaterThan(0);
     expect(share(finalWeek)).toBeLessThan(0.05);
   });
@@ -501,18 +512,18 @@ describe('the Long Road is a head start, not an income', () => {
     }
   });
 
-  it('runs out — a hundred and twenty stages and not one more', () => {
-    expect(run.finalStagesCleared).toBe(TOTAL_STAGES);
+  it('runs out — every stage the road has and not one more', () => {
+    expect(whole.finalStagesCleared).toBe(TOTAL_STAGES);
     // Monotone: a cleared stage is cleared forever.
-    for (let index = 1; index < run.ledger.length; index += 1) {
-      expect(run.ledger[index]!.stagesCleared).toBeGreaterThanOrEqual(
-        run.ledger[index - 1]!.stagesCleared,
+    for (let index = 1; index < whole.ledger.length; index += 1) {
+      expect(whole.ledger[index]!.stagesCleared).toBeGreaterThanOrEqual(
+        whole.ledger[index - 1]!.stagesCleared,
       );
     }
     // And once it is walked it is over: no further income, ever.
-    const finished = run.ledger.findIndex((day) => day.stagesCleared === TOTAL_STAGES);
+    const finished = whole.ledger.findIndex((day) => day.stagesCleared === TOTAL_STAGES);
     expect(finished).toBeGreaterThan(0);
-    for (const day of run.ledger.slice(finished + 1)) {
+    for (const day of whole.ledger.slice(finished + 1)) {
       expect(day.earned.campaign, `day ${day.day}`).toBe(0);
     }
   });
@@ -534,9 +545,12 @@ describe('the Long Road is a head start, not an income', () => {
      * and pinning the calendar here would fail on the game getting more generous while the thing
      * the check is named after held perfectly.
      */
-    const finished = run.ledger.find((day) => day.stagesCleared === TOTAL_STAGES)!;
+    const finished = whole.ledger.find((day) => day.stagesCleared === TOTAL_STAGES)!;
     expect(finished.day).toBeGreaterThan(40);
-    expect(finished.level).toBeGreaterThan(90);
+    // The far country moved the last chapter's band from 89–100 to 149–164, and the finish with
+    // it: day 124 at level 183, which is where The Hollow Crown's own mission band starts. The
+    // road still hands the player over to the last zone rather than stopping short of it.
+    expect(finished.level).toBeGreaterThan(150);
   });
 
   it('is worth walking — a level or two ahead, not a different game', () => {

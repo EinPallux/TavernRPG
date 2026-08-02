@@ -132,7 +132,7 @@ feedback, edge cases and tests. Deployed on Vercel.
   shell level; `useTooltip()` at every trigger; **`title=` on a DOM element is banned** and
   `components/ui/tooltips.test.ts` reads the source to enforce it. Style guide §8.1.
 
-- **The Long Road** — the campaign. `data/campaign.ts` (ten chapters of twelve stages, one per
+- **The Long Road** — the campaign. `data/campaign.ts` (fourteen chapters of twelve stages, one per
   zone, with the boss table *solved* rather than chosen), `engine/campaign/` (`stages`, `push`),
   `state/campaignActions.ts`, `components/campaign/CampaignScreen.tsx`, the `campaign` place and
   its map hotspot, an economy faucet, and save schema **v17**. One Vigor a stage; a first clear
@@ -161,13 +161,22 @@ feedback, edge cases and tests. Deployed on Vercel.
   the live multiplier while it lasts. It also closed a Phase-5 bug: `MissionCard` had been quoting
   `missionPayout` *without* the bonus it was going to be paid with. Balancing §19.
 
-- **The Collector's Album** — the scrapbook. `data/album.ts` (thirteen pages over 126 foes, all
+- **The Collector's Album** — the scrapbook. `data/album.ts` (nineteen pages over 186 foes, all
   *derived* from `MONSTERS`/`DUNGEONS`/`ZONES`), `engine/album/album.ts` (record, progress, bonus),
   `state/albumActions.ts#recordVictory` as the one write path — called from missions, delves and
   the Long Road, with a source audit that fails if a fourth writer appears or one of the three
   stops calling. A finished page pays +1% gold *and* XP, the full book +18%, folded in
-  `payoutBonus`. A third Character tab, and a page-completion band on the result screen. Save
+  `payoutBonus` (+24% for the whole book since the far country). A third Character tab, and a
+  page-completion band on the result screen. Save
   schema **v19**. Balancing §20, `systems/album.md`.
+
+- **The far country** — the content wall, removed. Frostfell Ridge was levelled 84→∞ with nothing
+  above it, so an active player met their last new monster on **day 40** and fought the same ten
+  for eleven weeks. Four zones (Saltmere Wrecks, The Glass Waste, Starfall Barrens, The Hollow
+  Crown) with 40 monsters and 40 blurbs, two dungeons below the Foundry (gates 85 and 130), and
+  four more chapters of the Long Road — 168 stages, ending at level 183 on day 124 instead of 100
+  on day 59. The Album grew to 19 pages / 186 foes / +24% **without an edit**, because its pages
+  are derived. Balancing §21.
 
 - **Schools of arms** — the combat VFX pass. `data/combatVfx.ts` gives each of the ten
   `CombatantCard.kind` values a school (palette, cast, travel, impact, crit); ranged schools brace
@@ -197,6 +206,22 @@ is one build, then one server, then the run — and when a whole suite fails at 
 harness before reading a single trace. (Related, and it has now cost time twice: killing the server
 by matching `next start` in `/proc/*/cmdline` matches *the shell running the kill loop*. Match
 argv[0] — `next-server` — or nothing.)
+
+**Content has a shape, and the harnesses know it better than you do.** Writing the far country
+took three rejected drafts, each one a plausible-looking choice the balance tests refused: chapter
+spans that kept widening past level 100 (a +14 wall — a chapter's *span* is how far its boss ends
+up above the hero walking into it), boss `damageShare`s written by feel at 0.88 and 0.95 (a share
+of a level-164 blow is not a share of a level-58 one; the far country's bosses hit hardest at
+**0.24**), and a siphon at chapter XIII that measured a +3 wall at every value from 0.075 to 0.17
+because by level 148 the hero's damage outruns the heal. Same for the dungeons: archetypes picked
+on flavour made one that got easier in the middle. **None of it is guessable — write the content,
+then let `npm run balance` and the wall harness tell you the numbers.**
+
+**A test that pins a count fails for being right the moment the game grows.** `MONSTERS.length`
+was `toBe(96)` and the no-level-cap test named Frostfell Ridge; both broke on four new zones, and
+both taught whoever hit them to edit the number rather than check the content. They are
+nine-or-ten-a-zone against `ZONES.length`, and "exactly one zone carries the open end", now. Pin
+the *property*, and a census still catches the omission it was written for.
 
 **A greedy comparison over contiguous content is a latch, not a decision.** The economy sim walked
 the Long Road while the *next* stage beat the mission board and stopped the moment it lost — but

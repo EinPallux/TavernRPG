@@ -65,11 +65,18 @@ describe('the Long Road', () => {
     }
   });
 
-  it('starts at level 1 and ends at 100', () => {
-    // Stage 1 has to be beatable by the hero who has just been handed a starter kit; the last
-    // stage sits above the ordinary bot ceiling, so the road outlasts the ladder.
+  it('starts at level 1 and ends past the bot ceiling', () => {
+    /*
+     * Stage 1 has to be beatable by the hero who has just been handed a starter kit; the last
+     * stage sits above the ordinary bot ceiling, so the road outlasts the ladder.
+     *
+     * The end was pinned at exactly 100 until the far country added four chapters and took it to
+     * 164. Pinning it again would only mean re-editing the number next time — what the road
+     * actually promises is that it starts where a new hero is and finishes past where the world
+     * does, and both ends of that are asserted here.
+     */
     expect(stageLevel(1)).toBe(1);
-    expect(stageLevel(TOTAL_STAGES)).toBe(100);
+    expect(stageLevel(TOTAL_STAGES)).toBeGreaterThan(100);
   });
 
   it('puts a named boss at the end of every chapter, and nowhere else', () => {

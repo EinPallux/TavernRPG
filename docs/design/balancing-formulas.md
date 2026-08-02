@@ -1025,3 +1025,78 @@ ones to get to the good ones, and the screen shows you the whole chapter's level
 hero's level, which is the natural unit because a chapter ends in a boss and a Golden Die. With it
 the guilded player walks 98 stages by day 30 instead of 1, and the guild band holds at its
 published floor without being touched.
+
+---
+
+## 21. The far country (levels 84–200)
+
+Four zones, two dungeons and four chapters of the Long Road, added because the game ran out of
+foes six weeks in. Spec: `systems/album.md` §2 for the pages it grew, `systems/dungeons.md` §1,
+`systems/campaign.md`.
+
+### The measurement that asked for it
+
+Frostfell Ridge was levelled `84 → MAX_SAFE_INTEGER` and nothing lived above it, so the last zone
+carried every hero from level 84 to forever.
+
+| Player | Reaches the last zone | Finishes the road | Level at day 120 |
+|---|---|---|---|
+| Active | **day 40** | day 54 | 160 |
+| Casual | **day 75** | day 102 | 110 |
+
+An active player therefore met their final new monster on day 40 and fought the same ten for the
+eleven weeks after it, while continuing to gain fifty levels. That is not a balance number, it is
+the content simply stopping — and no system on the roadmap fixes it.
+
+### What was added
+
+| | Before | After |
+|---|---|---|
+| Zones | 10 (last open-ended at 84) | **14** (Frostfell capped at 108; The Hollow Crown carries the open end) |
+| Mission monsters | 96 | **136** |
+| Zone blurbs | 124 defs | **164** |
+| Dungeons | 3 (top gate 55) | **5** (gates 85, 130; floors to 202) |
+| Road | 10 chapters, 120 stages, ends L100 | **14 chapters, 168 stages, ends L164** |
+| Album | 13 pages / 126 foes / +18% | **19 pages / 186 foes / +24%** |
+
+Zone bands continue the widening pattern: 100–130, 122–156, 148–186, 178–∞.
+
+### Three numbers the tests refused, and why
+
+**Chapter spans stop widening at 16.** Chapters I–IX widen 8, 6, 6, 8, 8, 10, 12, 14, 16. The first
+draft continued to 18/22/26/34 and the second to 16/18/20/22; the wall test rejected both, because
+a chapter's span *is* how far its boss ends up above the hero who walks into it, and past level 100
+the XP curve is steep enough that eighteen levels of span is a **+14 wall**. Sixteen, flat, holds
+every chapter's wall inside the published band.
+
+**Boss signature shares fall as the road climbs.** A `damageShare` is a share of a much larger blow
+at level 164 than at level 58, and hero survivability does not scale with it. The shipped chapters
+peak at 0.8 (chapter VII, level 58); the far country's sit at 0.35 and **0.24** for the final boss —
+lower shares that produce a *harder* fight. The first draft used 0.88 and 0.95 and put +14 and +15
+walls at the end of the road.
+
+**Siphon stops mattering at depth.** Chapter XIII was written as a siphon and measured +3 at every
+share from 0.075 to 0.17 — by level 148 the hero's damage simply outruns the heal. It is a
+hardening now. The three shapes are not interchangeable at every level, and the wall harness is the
+only thing that says so.
+
+### The dungeon ladder, stated
+
+Every dungeon walks swarm → caster → caster → skirmisher → **caster (boss)** → skirmisher → bruiser
+→ bruiser → tank → **tank (boss)**, because archetype is worth more difficulty than six floors of
+the level curve. The Sunless Court climbs a rung earlier (two skirmishers before the boss, bruisers
+straight after, three tanks to close) for the same reason the road's shares came down: a boss is
+worth about two levels of ordinary floor, and at level 177 two levels is more than a level step can
+absorb.
+
+### The album's new ceiling
+
+Nineteen pages at 1% plus the 5% capstone is **+24%**, up from +18%, for a book that is now 186
+foes deep and needs all fifty dungeon floors. `album.test.ts` bands the ceiling at ≤25% and it
+sits inside; the economy A/B is unchanged in shape because the sim only models zone pages.
+
+### The road is a four-month walk now
+
+It finished on day 59 and ended at level 100; it finishes on **day 124 at level 183**, which is
+where The Hollow Crown's own mission band begins. Three economy bands moved from a 90-day run to a
+150-day one — the claims are about the road's whole life, and its life got longer.

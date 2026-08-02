@@ -63,14 +63,14 @@ describe('the album covers the game and nothing else', () => {
     expect(albumEntry('')).toBeUndefined();
   });
 
-  it('leaves the Long Road’s ten bosses out, because the save already answers them', () => {
+  it('leaves the Long Road’s bosses out, because the save already answers them', () => {
     /*
      * The decision recorded at the top of `album.ts`, asserted against the real roster rather
      * than a remembered list. `campaign.stagesCleared` is one contiguous number, so "have I
      * beaten the chapter-three boss" is arithmetic — filing them would put a derivable fact in a
      * stored set, which is the antipattern the album is otherwise the honest exception to.
      */
-    expect(CHAPTERS).toHaveLength(10);
+    expect(CHAPTERS.length).toBeGreaterThan(0);
     for (const chapter of CHAPTERS) {
       expect(albumEntry(chapter.boss.id), chapter.boss.id).toBeUndefined();
     }
