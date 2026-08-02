@@ -1,4 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { DUNGEONS } from '../src/data/dungeons';
 
 /**
  * One save, played from the door to the day after (ROADMAP Phase 18 — "full regression matrix").
@@ -362,7 +363,7 @@ test.describe('one save, played end to end', () => {
     await page.goto('/undertavern');
     await expect(page.getByTestId('place-undertavern')).toBeVisible({ timeout: SETUP_TIMEOUT });
     // A key is a standing unlock, not a toll: it opens the door and stays in the ring.
-    await expect(page.getByTestId('key-count')).toContainText('1/3');
+    await expect(page.getByTestId('key-count')).toContainText(`1/${DUNGEONS.length}`);
 
     await page.getByTestId('descend-rat-cellars').click();
     await expect(page.getByTestId('descent')).toBeVisible({ timeout: SETUP_TIMEOUT });
