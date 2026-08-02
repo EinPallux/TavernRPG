@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { DUNGEONS } from '../src/data/dungeons';
 
 /**
  * Phase 11 acceptance: the Undertavern, from the player's side.
@@ -157,22 +158,27 @@ async function goDown(page: Page) {
   await page.getByTestId('battle-skip').click();
 }
 
-test.describe('three shut doors', () => {
+test.describe('every shut door', () => {
   test('each one says exactly why it will not open', async ({ page }) => {
     await readyHero(page, 12);
     await page.goto('/undertavern');
     await expect(page.getByTestId('place-undertavern')).toBeVisible({ timeout: SETUP_TIMEOUT });
 
-    // All three are there, with their progress plaques, from the first visit.
-    for (const id of ['rat-cellars', 'barrowdeep', 'emberdeep']) {
+    // All of them are there, with their progress plaques, from the first visit.
+    for (const id of DUNGEONS.map((den) => den.id)) {
       await expect(page.getByTestId(`door-${id}`)).toBeVisible();
       await expect(page.getByTestId(`rungs-${id}`)).toBeVisible();
     }
 
-    // A level-12 hero with no keys: the first wants a key, the other two want levels. Three
-    // different sentences, because "the door will not open" is not an answer.
+    /*
+     * A level-12 hero with no keys: the first wants a key, the rest want levels. Different
+     * sentences, because "the door will not open" is not an answer.
+     *
+     * Counted against `DUNGEONS` rather than pinned at three — the far country added two doors
+     * and this failed for being right, which is what a pinned count does.
+     */
     const locked = page.getByTestId('dungeon-locked');
-    await expect(locked).toHaveCount(3);
+    await expect(locked).toHaveCount(DUNGEONS.length);
     await expect(page.getByTestId('door-rat-cellars')).toContainText('Rusty Key');
     await expect(page.getByTestId('door-barrowdeep')).toContainText('level 25');
     await expect(page.getByTestId('door-emberdeep')).toContainText('level 55');
@@ -190,7 +196,7 @@ test.describe('three shut doors', () => {
 
     await expect(page.getByTestId('descend-rat-cellars')).toBeVisible();
     await expect(page.locator('[data-testid^="descend-"]')).toHaveCount(1);
-    await expect(page.getByTestId('key-count')).toContainText('1/3');
+    await expect(page.getByTestId('key-count')).toContainText(`1/${DUNGEONS.length}`);
   });
 });
 
