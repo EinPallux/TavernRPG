@@ -105,10 +105,31 @@ describe('zones', () => {
   });
 
   it('keeps working past the end of the ladder — there is no level cap', () => {
-    // The last band is open-ended, so a level-999 hero is still in it, with the chapel next door.
+    /*
+     * Exactly one zone carries the open end, and a hero past every other band lands in it.
+     *
+     * Asserted against `ZONES` rather than against a name — this test named Frostfell Ridge until
+     * far country arrived and moved the open end four zones along, which is a rename the property
+     * did not care about. One `maxLevel` at the ceiling, and level 999 is in it.
+     */
+    const openEnded = ZONES.filter((zone) => zone.maxLevel === Number.MAX_SAFE_INTEGER);
+    expect(openEnded).toHaveLength(1);
+
     const ids = zonesForLevel(999).map((zone) => zone.id);
-    expect(ids).toContain('frostfell-ridge');
-    expect(ids).toContain('sunken-chapel');
+    expect(ids).toContain(openEnded[0]!.id);
+    expect(ids.length).toBeGreaterThanOrEqual(MIN_ZONE_CHOICES);
+  });
+
+  it('covers the far country as well as the near one', () => {
+    // The hole this content answered: an active player reached the last zone on day 40 and met
+    // no new monster for the following eleven weeks. Every level to 200 now has a band of its
+    // own rather than the open-ended one carrying all of them.
+    for (let level = 1; level <= 200; level += 1) {
+      const inBand = ZONES.filter(
+        (zone) => level >= zone.minLevel && level <= zone.maxLevel,
+      ).length;
+      expect(inBand, `level ${level}`).toBeGreaterThan(0);
+    }
   });
 });
 
@@ -130,8 +151,17 @@ describe('monsters', () => {
     }
   });
 
-  it('carries the plan volume — 96 across ten zones (content-plan §2)', () => {
-    expect(MONSTERS.length).toBe(96);
+  it('carries the plan volume — ten a zone, every zone (content-plan §2)', () => {
+    /*
+     * Was a flat `toBe(96)` for ten zones. That is the wrong shape for a game that grows: the
+     * far country added four zones and the assertion failed for being *right*, which teaches
+     * whoever hits it to edit the number rather than to check the content.
+     *
+     * The claim worth keeping is the ratio — nine or ten a zone, asserted below — plus a floor
+     * here so a zone list that grew without a roster behind it still fails.
+     */
+    expect(MONSTERS.length).toBeGreaterThanOrEqual(ZONES.length * 9);
+    expect(MONSTERS.length).toBeLessThanOrEqual(ZONES.length * 10);
   });
 
   it('gives every zone nine or ten, so no band is thinner than another', () => {

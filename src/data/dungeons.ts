@@ -23,7 +23,13 @@
 import type { CombatProc } from '@/engine/combat/types';
 import type { ArchetypeId } from './monsterArchetypes';
 
-export type DungeonId = 'rat-cellars' | 'barrowdeep' | 'emberdeep';
+export type DungeonId =
+  | 'rat-cellars'
+  | 'barrowdeep'
+  | 'emberdeep'
+  // ── Below the Foundry: the two the far country opened ──────────────────────────
+  | 'drowned-vault'
+  | 'sunless-court';
 
 /** Ten floors, always. The type says so, so a short dungeon is a compile error. */
 export const FLOORS_PER_DUNGEON = 10;
@@ -76,7 +82,7 @@ export interface DungeonDef {
   readonly floors: readonly DungeonFloorDef[];
 }
 
-export type DungeonKeyId = 'rusty-key' | 'bone-key' | 'brand-key';
+export type DungeonKeyId = 'rusty-key' | 'bone-key' | 'brand-key' | 'sluice-key' | 'seal-of-court';
 
 const BG = '/assets/backgrounds/dungeons_background.webp';
 
@@ -366,6 +372,205 @@ const EMBERDEEP: readonly DungeonFloorDef[] = [
   },
 ];
 
+/**
+ * The Drowned Vault — below the Foundry, where the water table finally wins.
+ *
+ * Floors 97 to 142, for a hero past 85. Both bosses **siphon**, which is the rule rather than a
+ * choice: floor five teaches a dungeon's mechanic and floor ten tests it, so a player who walls at
+ * the bottom can name what beat them (`dungeons.test.ts` asserts the pair).
+ *
+ * The archetype order is the same ladder all five dungeons walk — swarm, caster, caster,
+ * skirmisher, caster, skirmisher, bruiser, bruiser, tank, tank. That is not decoration either:
+ * archetype is worth more difficulty than six floors of the level curve, so an order picked on
+ * flavour makes a dungeon that gets easier in the middle. The first draft of this one did, and
+ * the ramp test caught it at floor four.
+ */
+const DROWNED_VAULT: readonly DungeonFloorDef[] = [
+  {
+    floor: 1,
+    id: 'sluicegate-shoal',
+    name: 'Sluicegate Shoal',
+    archetypeId: 'swarm',
+    flavor: 'Something got in when the sluice failed. Several somethings.',
+  },
+  {
+    floor: 2,
+    id: 'the-ledgerkeeper',
+    name: 'The Ledgerkeeper',
+    archetypeId: 'caster',
+    flavor: 'Still counting what was stored here. It does not care for a discrepancy.',
+  },
+  {
+    floor: 3,
+    id: 'the-tidewright',
+    name: 'The Tidewright',
+    archetypeId: 'caster',
+    flavor: 'Built the sluices, regrets the sluices, is doing something about the sluices.',
+  },
+  {
+    floor: 4,
+    id: 'vaultline-eel',
+    name: 'Vaultline Eel',
+    archetypeId: 'skirmisher',
+    flavor: 'Uses the flooded corridors as a run. You are standing in the run.',
+  },
+  {
+    floor: 5,
+    id: 'the-drowned-assessor',
+    name: 'The Drowned Assessor',
+    archetypeId: 'caster',
+    flavor: 'Came to value the contents four hundred years ago and has not filed yet.',
+    signature: {
+      label: 'The Assessment',
+      explainer:
+        'He keeps what he takes off you — every blow he lands puts him back on his feet. The door at the bottom does this harder.',
+      proc: { kind: 'siphon', healShare: 0.09 },
+    },
+  },
+  {
+    floor: 6,
+    id: 'deadlight-lantern',
+    name: 'Deadlight Lantern',
+    archetypeId: 'skirmisher',
+    flavor: 'A lamp bobbing ahead of you at exactly your walking pace.',
+  },
+  {
+    floor: 7,
+    id: 'brackwater-brute',
+    name: 'Brackwater Brute',
+    archetypeId: 'bruiser',
+    flavor: 'Grew up down here, in the dark, on whatever came down the pipe.',
+  },
+  {
+    floor: 8,
+    id: 'coffer-mimic',
+    name: 'Coffer Mimic',
+    archetypeId: 'bruiser',
+    flavor: 'A strongbox with opinions, most of them about being opened.',
+  },
+  {
+    floor: 9,
+    id: 'the-bulkhead',
+    name: 'The Bulkhead',
+    archetypeId: 'tank',
+    flavor:
+      'It has been holding the sea back since the Foundry was warm. It resents the interruption.',
+  },
+  {
+    floor: 10,
+    id: 'the-vault-itself',
+    name: 'The Vault Itself',
+    archetypeId: 'tank',
+    flavor: 'The door was the guardian all along, and it has decided to stop being a door.',
+    signature: {
+      label: 'Deep Draw',
+      explainer:
+        'It drinks what it takes and stands taller for it. Burst it down — every round you spend, it spends better.',
+      proc: { kind: 'siphon', healShare: 0.12 },
+    },
+  },
+];
+
+/**
+ * The Sunless Court — deeper again, and the thing The Hollow Crown is only the memory of.
+ *
+ * Floors 148 to 202: the bottom of the game as it currently stands.
+ *
+ * Its ladder climbs a rung earlier than the shallower dungeons — two skirmishers before the
+ * mid-boss, bruisers straight after it, three tanks to close. That is not flavour: a boss is
+ * worth roughly two levels of ordinary floor, and at level 177 two levels is more than a level
+ * step can absorb, so the floor after a boss has to step *up* in archetype rather than sideways.
+ * The Rat Cellars get away with the flat ladder because two levels at level 22 is a lot.
+ *
+ * Both bosses **swarm-call**,
+ * and the throne's is the hardest in the game at a full share — the first mechanic a player ever
+ * met, back on floor five of the Rat Cellars, turned up as far as it goes.
+ */
+const SUNLESS_COURT: readonly DungeonFloorDef[] = [
+  {
+    floor: 1,
+    id: 'the-antechamber-host',
+    name: 'The Antechamber Host',
+    archetypeId: 'swarm',
+    flavor: 'Somebody is always waiting to be seen. Nine hundred somebodies.',
+  },
+  {
+    floor: 2,
+    id: 'protocol-adept',
+    name: 'Protocol Adept',
+    archetypeId: 'caster',
+    flavor: 'You have entered incorrectly. It intends to correct you.',
+  },
+  {
+    floor: 3,
+    id: 'gallery-stalker',
+    name: 'Gallery Stalker',
+    archetypeId: 'skirmisher',
+    flavor: 'Runs the long gallery, and knows which portraits are hung wrong.',
+  },
+  {
+    floor: 4,
+    id: 'the-understair-thing',
+    name: 'The Understair Thing',
+    archetypeId: 'skirmisher',
+    flavor: 'Lives below the last stair. There is not supposed to be a below.',
+  },
+  {
+    floor: 5,
+    id: 'lord-chamberlain-vess',
+    name: 'Lord Chamberlain Vess',
+    archetypeId: 'caster',
+    flavor: 'He announces the name of everyone who enters. He has just announced yours.',
+    signature: {
+      label: 'Announced',
+      explainer:
+        'Every third round he says your name and the room agrees — a share of his blow lands again from behind you. The throne below does this harder.',
+      proc: { kind: 'swarm-call', everyRounds: 3, damageShare: 0.55 },
+    },
+  },
+  {
+    floor: 6,
+    id: 'regalia-animate',
+    name: 'Regalia Animate',
+    archetypeId: 'bruiser',
+    flavor: 'Crown, sceptre and orb, and nobody at all wearing them.',
+  },
+  {
+    floor: 7,
+    id: 'the-lord-marshal',
+    name: 'The Lord Marshal',
+    archetypeId: 'bruiser',
+    flavor: 'Commanded the last army this place ever fielded. Has not been relieved.',
+  },
+  {
+    floor: 8,
+    id: 'the-perpetual-mourner',
+    name: 'The Perpetual Mourner',
+    archetypeId: 'tank',
+    flavor: 'Weeping for a king who is arguably still in the room, and not to be moved from it.',
+  },
+  {
+    floor: 9,
+    id: 'the-standing-guard',
+    name: 'The Standing Guard',
+    archetypeId: 'tank',
+    flavor: 'Has not moved in six centuries. Is about to.',
+  },
+  {
+    floor: 10,
+    id: 'the-sunless-throne',
+    name: 'The Sunless Throne',
+    archetypeId: 'tank',
+    flavor: 'Nobody sits here. That is not at all the same as it being empty.',
+    signature: {
+      label: 'The Court Rises',
+      explainer:
+        'Every third round the whole court stands with it and the answering blow is nearly a second attack — the hardest call in the game. Do not still be there at round nine.',
+      proc: { kind: 'swarm-call', everyRounds: 3, damageShare: 1.0 },
+    },
+  },
+];
+
 const DUNGEON_LIST = [
   {
     id: 'rat-cellars',
@@ -408,6 +613,34 @@ const DUNGEON_LIST = [
     backdrop: BG,
     tint: 'from-wood-900 via-ember-500/30 to-wood-900/65',
     floors: EMBERDEEP,
+  },
+  {
+    id: 'drowned-vault',
+    name: 'The Drowned Vault',
+    tagline: 'The Foundry had a cellar. The cellar has a tide.',
+    gateLevel: 85,
+    keyId: 'sluice-key',
+    keyName: 'Sluice Key',
+    levelBase: 92,
+    levelStep: 5,
+    trophy: { id: 'assessors-seal', name: 'The Assessor’s Seal' },
+    backdrop: BG,
+    tint: 'from-wood-900 via-arcane-500/32 to-wood-900/70',
+    floors: DROWNED_VAULT,
+  },
+  {
+    id: 'sunless-court',
+    name: 'The Sunless Court',
+    tagline: 'Still in session, and you have just been announced.',
+    gateLevel: 130,
+    keyId: 'seal-of-court',
+    keyName: 'Seal of Court',
+    levelBase: 142,
+    levelStep: 6,
+    trophy: { id: 'sunless-diadem', name: 'The Sunless Diadem' },
+    backdrop: BG,
+    tint: 'from-wood-900 via-blood-600/26 to-amber-500/12',
+    floors: SUNLESS_COURT,
   },
 ] as const satisfies readonly DungeonDef[];
 
