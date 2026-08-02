@@ -254,6 +254,57 @@ export function rollSetInstead(floor: number, rng: RngStream): boolean {
   return rng.bool(floor >= 10 ? CLEAR_SET_CHANCE : SET_REPLACES_EPIC);
 }
 
+/* ── Legendaries (balancing §22.3, legendaries spec §4) ──────────────────────────── */
+
+/**
+ * `[TUNE]` Where the sixth tier comes from.
+ *
+ * Rates only. Which legendary, and whether the hero can wear it, is `rollLegendary()`'s business
+ * — a rarity table knows nothing about what is already on the paperdoll, which is the same reason
+ * set pieces are not on one either.
+ *
+ * Deliberately not single-source. A tier behind exactly one door is a tier most players never
+ * see, and the far-country contract rate is what makes a legendary something that can happen on
+ * an ordinary evening rather than only at the bottom of the deepest dungeon in the game.
+ */
+export const ANVIL_LEGENDARY_CHANCE = 0.08;
+/** The two dungeons above the Anvil pay one occasionally, on the clear only. */
+export const DEEP_CLEAR_LEGENDARY_CHANCE = 0.06;
+/** Per contract, in the far country. Small on purpose: this is the trickle, not the tap. */
+export const FAR_LEGENDARY_CHANCE = 0.004;
+/** The band the trickle starts in — the far country's first zone (`zones.ts`). */
+export const FAR_LEGENDARY_MIN_LEVEL = 100;
+
+export interface LegendaryFloorContext {
+  /** The Sundered Anvil, whose whole purpose is this tier. */
+  readonly isAnvil: boolean;
+  /** The Drowned Vault and the Sunless Court — deep, but not the forge. */
+  readonly isDeep: boolean;
+  readonly floor: number;
+}
+
+/**
+ * The published chance a floor hands over a legendary.
+ *
+ * The Anvil's clear is **certain**: ten floors at levels 185–241 is the price, and a bottom floor
+ * that pays a maybe is a bottom floor players stop running.
+ */
+export function legendaryFloorChance({ isAnvil, isDeep, floor }: LegendaryFloorContext): number {
+  if (isAnvil) return floor >= 10 ? 1 : ANVIL_LEGENDARY_CHANCE;
+  if (isDeep && floor >= 10) return DEEP_CLEAR_LEGENDARY_CHANCE;
+  return 0;
+}
+
+/** The published chance a contract does, given the level band of the zone it was taken in. */
+export function legendaryMissionChance(zoneMinLevel: number): number {
+  return zoneMinLevel >= FAR_LEGENDARY_MIN_LEVEL ? FAR_LEGENDARY_CHANCE : 0;
+}
+
+/** One roll against a published chance, on its own stream so adding it shifted nothing. */
+export function rollLegendaryDrop(chance: number, rng: RngStream): boolean {
+  return chance > 0 && rng.bool(chance);
+}
+
 /** Published-adjacent: the chance a drop lands in a given slot, for the dev tools. */
 export function slotOdds(slot: SlotId): number {
   const total = SLOT_WEIGHTS.reduce((sum, entry) => sum + entry.weight, 0);

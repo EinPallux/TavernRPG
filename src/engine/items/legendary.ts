@@ -10,6 +10,7 @@
  */
 
 import type { RngStream } from '@/engine/rng';
+import type { SetEffect } from '@/data/gearSets';
 import type { AttributeId, Attributes } from '@/engine/progression/stats';
 import {
   LEGENDARIES,
@@ -49,7 +50,7 @@ export function rollAffixes(definition: LegendaryDef, rng: RngStream): readonly 
   const pool = rng.shuffle(definition.affixPool).slice(0, LEGENDARY_AFFIX_COUNT);
   return pool.map((affixId, index) => ({
     id: affixId,
-    effect: legendaryAffix(affixId)!.effect(rollMagnitude(affixId, rng.fork(`m${index}`))),
+    magnitude: rollMagnitude(affixId, rng.fork(`m${index}`)),
   }));
 }
 
@@ -181,6 +182,24 @@ export function rollSpaceOf(definition: LegendaryDef): number {
     }
   }
   return total;
+}
+
+/**
+ * The lever a stored affix becomes.
+ *
+ * The one place `(id, magnitude)` turns back into a `SetEffect`. Null for an affix the data module
+ * no longer knows — a save from a build whose pool has since been edited loses that line rather
+ * than failing to load, which is the right trade for a cosmetic-plus-numbers field.
+ */
+export function affixEffect(affix: LegendaryAffix): SetEffect | null {
+  return legendaryAffix(affix.id)?.effect(affix.magnitude) ?? null;
+}
+
+/** Every lever a legendary is currently granting. */
+export function affixEffectsOf(item: Item): readonly SetEffect[] {
+  return (item.legendary?.affixes ?? [])
+    .map(affixEffect)
+    .filter((effect): effect is SetEffect => effect !== null);
 }
 
 /** Whether a hero of this class could ever be handed this legendary. */

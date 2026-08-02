@@ -10,10 +10,6 @@
 
 import type { AttributeId, Attributes } from '@/engine/progression/stats';
 import type { IconId } from '@/data/icons';
-// Type-only, and `gearSets.ts` imports only types from here in return, so nothing circular
-// survives compilation. `SetEffect` is the shared lever vocabulary rather than a set-only idea —
-// legendaries roll from it (`legendaries.md` §1).
-import type { SetEffect } from '@/data/gearSets';
 
 export const SLOT_IDS = [
   'weapon',
@@ -125,17 +121,15 @@ export interface ItemSpecials {
 /**
  * One rolled affix on a legendary.
  *
- * `effect` is a `SetEffect` — the same flat union of named levers the ten gear sets speak, with
- * this instance's rolled magnitude already in it. That is the entire reason the tier costs the
- * resolver nothing: `modifiersFor()` folds these into the same `CombatModifiers` bag it folds set
- * bonuses into, and `fight()` never learns that legendaries exist. `legendaries.md` §1.
- *
- * `id` names which entry of the affix pool produced it, so a card can print the authored line
- * rather than reverse-engineering prose from a discriminated union.
+ * **Stored as its id and its rolled magnitude, not as a built lever.** The `SetEffect` it becomes
+ * is a pure function of the two (`affixEffect()`), so keeping it out of the save is the same
+ * "don't store what the save can already answer" rule the pet roster follows — and it means a
+ * re-tuned affix reaches legendaries a player already owns instead of leaving them frozen at the
+ * shape they dropped with.
  */
 export interface LegendaryAffix {
   readonly id: string;
-  readonly effect: SetEffect;
+  readonly magnitude: number;
 }
 
 export interface LegendaryPayload {

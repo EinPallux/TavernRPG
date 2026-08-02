@@ -29,7 +29,9 @@ export type DungeonId =
   | 'emberdeep'
   // ── Below the Foundry: the two the far country opened ──────────────────────────
   | 'drowned-vault'
-  | 'sunless-court';
+  | 'sunless-court'
+  // ── Below everything: where the named arms were made ───────────────────────────
+  | 'sundered-anvil';
 
 /** Ten floors, always. The type says so, so a short dungeon is a compile error. */
 export const FLOORS_PER_DUNGEON = 10;
@@ -82,7 +84,8 @@ export interface DungeonDef {
   readonly floors: readonly DungeonFloorDef[];
 }
 
-export type DungeonKeyId = 'rusty-key' | 'bone-key' | 'brand-key' | 'sluice-key' | 'seal-of-court';
+export type DungeonKeyId =
+  'rusty-key' | 'bone-key' | 'brand-key' | 'sluice-key' | 'seal-of-court' | 'anvil-shard';
 
 const BG = '/assets/backgrounds/dungeons_background.webp';
 
@@ -571,6 +574,106 @@ const SUNLESS_COURT: readonly DungeonFloorDef[] = [
   },
 ];
 
+/* ── The Sundered Anvil ───────────────────────────────────────────────────────────
+ *
+ * The sixth door, and the one the Legendary tier comes out of (`legendaries.md` §5). Where
+ * Aldenvale's named arms were made, and unmade — which is also why Torvald can re-roll one at the
+ * Emberforge: he is working from what this place gives up.
+ *
+ * Ten floors and two bosses, on the same ladder as the other five. A Legendary Dungeon of a
+ * *different shape* — an endless descent, say — would be fighting the delve engine, the album's
+ * derived pages and this file's ramp test all at once, and the novelty of the tier belongs in the
+ * tier.
+ *
+ * Its signature is `harden`: the anvil's work does not hit harder, it becomes harder to hurt.
+ * Floor 5 teaches it and floor 10 tests it, the rule every dungeon here keeps.
+ */
+
+const SUNDERED_ANVIL: readonly DungeonFloorDef[] = [
+  {
+    floor: 1,
+    id: 'slag-swarm',
+    name: 'Slag Swarm',
+    archetypeId: 'swarm',
+    flavor: 'What ran off the moulds, and kept running.',
+  },
+  {
+    floor: 2,
+    id: 'the-quench-warden',
+    name: 'The Quench Warden',
+    archetypeId: 'caster',
+    flavor: 'Tends a trough that has not been filled in four hundred years, very carefully.',
+  },
+  {
+    floor: 3,
+    id: 'pattern-wraith',
+    name: 'Pattern Wraith',
+    archetypeId: 'caster',
+    flavor: 'The shape a blade is drawn as, before anybody makes it.',
+  },
+  {
+    floor: 4,
+    id: 'the-half-struck',
+    name: 'The Half-Struck',
+    archetypeId: 'skirmisher',
+    flavor: 'Finished on one side. Extremely aware of the other.',
+  },
+  {
+    floor: 5,
+    id: 'the-tempering-master',
+    name: 'The Tempering Master',
+    archetypeId: 'caster',
+    flavor: 'Every blow you land, he counts, and writes down, and learns.',
+    signature: {
+      label: 'Tempering',
+      explainer:
+        'Every round he takes, his armour thickens a little more, and it does not come back off. The anvil below does this twice as fast — bring the fight to an end.',
+      proc: { kind: 'hardening', perRound: 0.01, cap: 0.09 },
+    },
+  },
+  {
+    floor: 6,
+    id: 'the-billet',
+    name: 'The Billet',
+    archetypeId: 'skirmisher',
+    flavor: 'A bar of something the Foundry could not cut. It has opinions about being cut.',
+  },
+  {
+    floor: 7,
+    id: 'the-owners-mark',
+    name: "The Owner's Mark",
+    archetypeId: 'bruiser',
+    flavor: 'Every named blade was stamped. The stamp resents having been left behind.',
+  },
+  {
+    floor: 8,
+    id: 'kingsmourn-unfinished',
+    name: 'Kingsmourn, Unfinished',
+    archetypeId: 'bruiser',
+    flavor: 'The blade they were making when the news arrived. It never got a hilt.',
+  },
+  {
+    floor: 9,
+    id: 'the-last-apprentice',
+    name: 'The Last Apprentice',
+    archetypeId: 'tank',
+    flavor: 'Told to hold the door while the masters finished. Did.',
+  },
+  {
+    floor: 10,
+    id: 'the-sundered-anvil',
+    name: 'The Sundered Anvil',
+    archetypeId: 'tank',
+    flavor: 'It broke making the last one. It has been getting harder ever since.',
+    signature: {
+      label: 'The Anvil Sets',
+      explainer:
+        'Every round it survives, it sets a little further, and nothing you do takes that back. This is a race, and the anvil is patient.',
+      proc: { kind: 'hardening', perRound: 0.018, cap: 0.16 },
+    },
+  },
+];
+
 const DUNGEON_LIST = [
   {
     id: 'rat-cellars',
@@ -641,6 +744,20 @@ const DUNGEON_LIST = [
     backdrop: BG,
     tint: 'from-wood-900 via-blood-600/26 to-amber-500/12',
     floors: SUNLESS_COURT,
+  },
+  {
+    id: 'sundered-anvil',
+    name: 'The Sundered Anvil',
+    tagline: 'Where the named blades were made. Some of them are still angry.',
+    gateLevel: 165,
+    keyId: 'anvil-shard',
+    keyName: 'Anvil Shard',
+    levelBase: 178,
+    levelStep: 7,
+    trophy: { id: 'the-cold-hammer', name: 'The Cold Hammer' },
+    backdrop: BG,
+    tint: 'from-wood-900 via-ember-600/34 to-blood-600/20',
+    floors: SUNDERED_ANVIL,
   },
 ] as const satisfies readonly DungeonDef[];
 

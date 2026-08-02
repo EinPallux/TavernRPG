@@ -25,6 +25,8 @@ import {
 import type { RngStream } from '@/engine/rng';
 import type { CombatModifiers, VerseId } from '@/engine/combat/types';
 import type { Item, SlotId } from './types';
+// No cycle: `legendary.ts` does not import this module.
+import { affixEffectsOf } from './legendary';
 
 /**
  * A fighter wearing nothing. Every lever off, so the resolver's common path costs nothing and
@@ -163,7 +165,8 @@ export function modifiersFor(equipment: Partial<Record<SlotId, Item>>): CombatMo
     }
   }
   for (const item of Object.values(equipment)) {
-    for (const affix of item?.legendary?.affixes ?? []) bag = fold(bag, affix.effect);
+    if (!item?.legendary) continue;
+    for (const effect of affixEffectsOf(item)) bag = fold(bag, effect);
   }
   return bag;
 }

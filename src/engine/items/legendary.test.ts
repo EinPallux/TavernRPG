@@ -107,7 +107,7 @@ describe('rolling a legendary', () => {
   it('never rolls the same lever twice on one item', () => {
     for (let i = 0; i < 300; i += 1) {
       const item = rollLegendary({ classId: 'bard', level: 160, rng: rng(`dupe:${i}`) });
-      const kinds = (item?.legendary?.affixes ?? []).map((affix) => affix.effect.kind);
+      const kinds = (item?.legendary?.affixes ?? []).map((affix) => affix.id);
       expect(new Set(kinds).size, `roll ${i}`).toBe(kinds.length);
     }
   });
@@ -147,7 +147,7 @@ describe('the fold into CombatModifiers', () => {
         ...item,
         legendary: {
           ...item.legendary!,
-          affixes: [{ id: affix.id, effect: affix.effect(affix.band.max) }],
+          affixes: [{ id: affix.id, magnitude: affix.band.max }],
         },
       };
       const bag = modifiersFor({ [forced.slot]: forced });
@@ -163,7 +163,7 @@ describe('the fold into CombatModifiers', () => {
       ...item,
       legendary: {
         ...item.legendary!,
-        affixes: [{ id: 'heavy', effect: { kind: 'damage', share: 0.09 } }],
+        affixes: [{ id: 'heavy', magnitude: 0.09 }],
       },
     };
 

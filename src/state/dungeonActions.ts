@@ -14,7 +14,8 @@
 import { createRng, deriveSeed } from '@/engine/rng';
 import { addItem as addItemToHero } from '@/engine/hero/actions';
 import { generateItem, generateSetPiece } from '@/engine/items/generate';
-import { rollSetInstead } from '@/engine/items/drops';
+import { legendaryFloorChance, rollLegendaryDrop, rollSetInstead } from '@/engine/items/drops';
+import { rollLegendary } from '@/engine/items/legendary';
 import { drawMissingPiece, ownedSetPieces } from '@/engine/items/sets';
 import type { Item } from '@/engine/items/types';
 import { applyXp } from '@/engine/progression/xp';
@@ -199,7 +200,7 @@ export function descend(save: SaveFile, id: DungeonId, now: number): DelveResult
    * which is the honest outcome — there is nothing left in that set to want.
    */
   const owned = ownedSetPieces(hero);
-  const items = outcome.spoils.items.map((drop, index) => {
+  const items: Item[] = outcome.spoils.items.map((drop, index) => {
     const rng = createRng(
       deriveSeed(save.worldSeed, 'delve-item', id, outcome.floor, outcome.progress.attempts, index),
       `delve-item/${id}/${outcome.floor}/${index}`,
@@ -226,6 +227,36 @@ export function descend(save: SaveFile, id: DungeonId, now: number): DelveResult
       rng,
     });
   });
+
+  /*
+   * The legendary, on its own stream and on top.
+   *
+   * On top rather than replacing a roll, so the published floor table still says exactly what a
+   * floor drops — the same discipline the bonus Epic keeps. `avoidSlots` is fed the paperdoll so
+   * a second Anvil clear is unlikely to hand over the helm you are already wearing, and it is a
+   * courtesy rather than a rule (see `rollLegendary`).
+   */
+  const legendaryChance = legendaryFloorChance({
+    isAnvil: id === 'sundered-anvil',
+    isDeep: id === 'drowned-vault' || id === 'sunless-court',
+    floor: outcome.floor,
+  });
+  const legendaryRng = createRng(
+    deriveSeed(save.worldSeed, 'delve-legendary', id, outcome.floor, outcome.progress.attempts),
+    `delve-legendary/${id}/${outcome.floor}`,
+  );
+  if (rollLegendaryDrop(legendaryChance, legendaryRng.fork('roll'))) {
+    const worn = Object.values(hero.equipment)
+      .filter((entry): entry is Item => entry !== undefined && entry.rarity === 'legendary')
+      .map((entry) => entry.slot);
+    const named = rollLegendary({
+      classId: hero.classId,
+      level: Math.max(1, outcome.floorLevel),
+      rng: legendaryRng.fork('mint'),
+      avoidSlots: worn,
+    });
+    if (named) items.push(named);
+  }
 
   const levelled = applyXp(hero.level, hero.xp, outcome.spoils.xp);
   let next: Hero = {

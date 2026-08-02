@@ -35,7 +35,7 @@ import { RARITIES, SLOT_IDS } from '@/engine/items/types';
 z.config({ jitless: true });
 
 /** Bump whenever a persisted shape changes, and add the matching migration. */
-export const CURRENT_SCHEMA_VERSION = 19;
+export const CURRENT_SCHEMA_VERSION = 20;
 
 export const SAVE_SLOTS = [1, 2, 3] as const;
 export type SaveSlot = (typeof SAVE_SLOTS)[number];
@@ -79,6 +79,21 @@ export const itemSchema = z.object({
     .object({ goldFind: z.number().optional(), xpBonus: z.number().optional() })
     .optional(),
   setId: z.string().optional(),
+  /**
+   * Legendaries only (v20). The affix's *lever* is not stored — `(id, magnitude)` is all the save
+   * needs, and `affixEffect()` rebuilds the rest from `data/legendaries.ts`, so a re-tuned affix
+   * reaches an item a player already owns.
+   */
+  legendary: z
+    .object({
+      defId: z.string().min(1),
+      // `.readonly()` so the inferred type matches `Item.legendary.affixes` exactly — the
+      // engine deals in readonly arrays, and a mutable one here makes `Item` unassignable to the
+      // schema's own type in every direction that matters.
+      affixes: z.array(z.object({ id: z.string().min(1), magnitude: z.number() })).readonly(),
+      reforges: z.number().int().min(0),
+    })
+    .optional(),
   value: z.number().min(0),
   scrapYield: z.object({
     scrap: z.number().int().min(0),
