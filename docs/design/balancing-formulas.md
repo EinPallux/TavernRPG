@@ -1147,7 +1147,28 @@ cost.
 
 ### 22.4 What the harnesses chose
 
-> Filled in once `npm run balance`, the dungeon ramp and `npm run economy` have run against the
-> shipped data. The starting values above are drafts; the far country needed three attempts before
-> the wall harness accepted a chapter span, and there is no reason to expect affix bands to be
-> guessable either.
+**The Sundered Anvil's signature, twice too strong.** Written by feel at `hardening` 0.024/round
+capped 0.18 for the mid-boss and 0.048/0.34 for the anvil, and the ramp harness reported floor 10
+as **unclearable at any level it searches** — literally `-1`, not "hard". It sits at 0.010/0.09 and
+0.018/0.16, a shade under Vulkarr, which is the deepest hardening the game had shipped. The far
+country's lesson, third occasion: write the content, then read the number off the harness.
+
+**The affix bands are unchanged, and that is a measurement rather than an omission.** Two bounds
+are asserted (`legendary.test.ts`): a best-rolled **mirror** inside 42–58%, and the **floor** that a
+legendary beats the Epic it displaces. The floor is one-sided on purpose — against an otherwise
+identical hero a strictly-better item wins 240 of 240, which is what a persistent edge does in a
+near-deterministic duel and says nothing about the tier.
+
+**The ceiling is still open.** The natural statement — *one legendary must not outweigh nine other
+slots* — measured a **cliff**: a hero in commons with a best-rolled legendary weapon beats a
+fully-epic hero **0%** of the time for four classes and **66%** for the Bard, and halving the top of
+the four strongest affix bands (`keen` 6→4, `cruel` 0.22→0.14, `relentless` 0.30→0.16, `steadfast`
+0.30→0.14) moved that 66% **by nothing at all, to the decimal**. So the affixes are not what carries
+it; the weapon budget step is — epic 1.35 to legendary 1.5, an 11% change that flips 0% to 66%
+because the two heroes sit either side of a threshold. The control confirms the slot is not
+already dominant: an *epic* weapon over commons wins 0/0/0/31/0%.
+
+A band pinned to a cliff edge flaps on unrelated tuning and measures nothing, so none is asserted
+and the nerfs were reverted rather than shipped for a number they did not move. What the next pass
+needs is a comparison **with slack in it** — a spread of gear levels rather than commons-versus-
+epics — and the Bard is where to start looking.

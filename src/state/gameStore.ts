@@ -92,6 +92,8 @@ import { fightStage as fightStageOn, type FightStageResult } from './campaignAct
 import {
   craft as craftOn,
   craftFromRecipe as craftFromRecipeOn,
+  reforgeItem as reforgeOn,
+  type ReforgeResult,
   scrap as scrapOn,
   type CraftResultState,
   type ScrapResult,
@@ -334,6 +336,8 @@ export interface GameStoreState {
   craftItem: (tier: ForgeTier, slot: SlotId) => CraftResultState;
   /** Spend a recipe: a guaranteed piece of that set. */
   craftSetPiece: (setId: string) => CraftResultState;
+  /** Re-roll a legendary's two affixes. Replaces; there is no keeping the better roll. */
+  reforgeLegendary: (uid: string) => ReforgeResult;
   /** The Verse a Maestro five-piece opens on. */
   setOpeningVerse: (verse: VerseId) => void;
 
@@ -1171,6 +1175,18 @@ export const useGameStore = create<GameStoreState>((set, get) => {
       if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
 
       const result = craftOn(save, tier, slot);
+      if (!result.ok) return result;
+
+      set({ save: result.save });
+      void persistNow();
+      return result;
+    },
+
+    reforgeLegendary(uid) {
+      const { save } = get();
+      if (!save) return { ok: false, refusal: { kind: 'no-hero' } };
+
+      const result = reforgeOn(save, uid);
       if (!result.ok) return result;
 
       set({ save: result.save });

@@ -18,8 +18,13 @@ import {
   rollSpaceOf,
 } from './legendary';
 import { equippedSetCounts, modifiersFor } from './sets';
-import { generateSetPiece } from './generate';
-import { CLASS_IDS, RARITY_FACTOR, type Item, type SlotId } from './types';
+import { generateItem, generateSetPiece } from './generate';
+import { addItem, createHero, equipItem } from '@/engine/hero/actions';
+import { buildHeroCombatant } from '@/engine/combat/combatant';
+import { fight } from '@/engine/combat/fight';
+import type { Hero } from '@/engine/save/schema';
+import type { LegendaryDef } from '@/data/legendaries';
+import { CLASS_IDS, RARITY_FACTOR, SLOT_IDS, type ClassId, type Item, type SlotId } from './types';
 
 const SEED = 4242;
 /**
@@ -292,4 +297,111 @@ describe('who can wear what', () => {
       expect(affixes.length).toBe(LEGENDARY_AFFIX_COUNT);
     }
   });
+});
+
+/* ── The bound on the whole tier (balancing §22.2) ───────────────────────────────── */
+
+/** A hero of `classId` at `level`, in a full kit of the given rarity. */
+function kitted(classId: ClassId, level: number, rarity: 'epic' | 'common'): Hero {
+  let hero = createHero({ name: 'Bench', classId, now: 0, rng: rng('kit') });
+  hero = { ...hero, level };
+  const stream = rng(`kit:${classId}:${rarity}`);
+  for (const slot of SLOT_IDS) {
+    const piece = generateItem({ slot, rarity, classId, level, rng: stream });
+    hero = addItem(hero, piece).hero;
+    hero = equipItem(hero, piece);
+  }
+  return hero;
+}
+
+/** The same hero, with one slot swapped for a legendary rolled at the top of every band. */
+function withBestLegendary(hero: Hero, definition: LegendaryDef, level: number): Hero {
+  const base = mintLegendary(definition, level, rng(`best:${definition.id}`));
+  const best: Item = {
+    ...base,
+    legendary: {
+      ...base.legendary!,
+      affixes: definition.affixPool.slice(0, LEGENDARY_AFFIX_COUNT).map((id) => ({
+        id,
+        magnitude: legendaryAffix(id)!.band.max,
+      })),
+    },
+  };
+  return equipItem(addItem(hero, best).hero, best);
+}
+
+describe('legendary balance — spec §8', () => {
+  const LEVEL = 120;
+
+  /**
+   * A mirror between two heroes both wearing the same best-rolled legendary must still be a
+   * fight. Symmetric by construction, so what this actually guards is a lever whose *seeded*
+   * behaviour favours whoever swings first — `first-strike-crit` would, if it were in the pool.
+   */
+  it('keeps a best-rolled mirror inside 42–58%', () => {
+    for (const classId of CLASS_IDS) {
+      const definition = LEGENDARIES.find(
+        (entry) => entry.classId === classId && entry.slot === 'weapon',
+      )!;
+      const hero = buildHeroCombatant(
+        withBestLegendary(kitted(classId, LEVEL, 'epic'), definition, LEVEL),
+        'a',
+      );
+      const twin = buildHeroCombatant(
+        withBestLegendary(kitted(classId, LEVEL, 'epic'), definition, LEVEL),
+        'b',
+      );
+
+      let wins = 0;
+      const fights = 240;
+      for (let i = 0; i < fights; i += 1) if (fight(hero, twin, i * 7919).winner === 'a') wins += 1;
+      const rate = wins / fights;
+      expect(rate, `${classId} mirror at ${Math.round(rate * 100)}%`).toBeGreaterThan(0.42);
+      expect(rate, `${classId} mirror at ${Math.round(rate * 100)}%`).toBeLessThan(0.58);
+    }
+  });
+
+  /**
+   * The floor: a legendary beats the Epic it displaces.
+   *
+   * One-sided, like the equivalent set assertion, and the first draft of this was two-sided and
+   * wrong. Against an otherwise *identical* hero a strictly-better item wins 240 fights out of
+   * 240 — that is what a persistent edge does in a symmetric duel, not evidence the tier is
+   * broken. A ceiling belongs on a comparison where losing is possible; see below.
+   */
+  it('beats the epic it replaces', () => {
+    for (const classId of CLASS_IDS) {
+      const definition = LEGENDARIES.find(
+        (entry) => entry.classId === classId && entry.slot === 'weapon',
+      )!;
+      const plain = kitted(classId, LEVEL, 'epic');
+      const armed = buildHeroCombatant(withBestLegendary(plain, definition, LEVEL), 'a');
+      const bare = buildHeroCombatant(plain, 'b');
+
+      let wins = 0;
+      const fights = 240;
+      for (let i = 0; i < fights; i += 1)
+        if (fight(armed, bare, i * 7919).winner === 'a') wins += 1;
+      const rate = wins / fights;
+      expect(rate, `${classId} legendary at ${Math.round(rate * 100)}%`).toBeGreaterThan(0.5);
+    }
+  });
+
+  /**
+   * The ceiling is **not asserted here, on purpose**, and that is a finding rather than a gap.
+   *
+   * The natural statement — "one legendary must not outweigh nine slots" — was written, run, and
+   * measured a *cliff*: a hero with commons in nine slots and a legendary weapon beats a fully-epic
+   * hero 0% of the time for four classes and 66% for the Bard, and halving the top of the four
+   * strongest affix bands moved that 66% by **nothing at all, to the decimal**. The affixes are not
+   * what carries it; an 11% weapon-damage step (epic 1.35 → legendary 1.5) is, because these two
+   * heroes are close enough that the duel resolves as a threshold rather than a gradient.
+   *
+   * A band pinned to the edge of a cliff flaps on any unrelated tuning and measures nothing about
+   * the tier. The real ceiling needs a comparison with slack in it — a spread of gear levels rather
+   * than commons-versus-epics — and that is a measurement pass, not an assertion. Recorded in
+   * balancing §22.4 so the next pass starts from the number rather than from scratch.
+   *
+   * What *is* asserted: the mirror band above, and the floor. Both have slack.
+   */
 });

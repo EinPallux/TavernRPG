@@ -117,3 +117,14 @@ export const MATERIAL_LABELS: Readonly<Record<keyof MaterialBundle, string>> = {
   essence: 'Essence',
   starmetal: 'Starmetal',
 };
+
+/**
+ * `[TUNE]` What a reforge costs (legendaries spec §6, balancing §22.3).
+ *
+ * Starmetal, because it is the scarcest material and had exactly one sink — a set recipe — so a
+ * player who has finished their recipes has had nothing to spend it on since Phase 12. Three is
+ * a *starting* value: the constraint is supply, not price. The Menagerie once advertised "3/3
+ * feeds left" against a drop rate that funded 0.8 a day, and the economy sim is what caught it;
+ * the band here is on **days per reforge**, not on the number below.
+ */
+export const REFORGE_COST: MaterialBundle = { scrap: 0, essence: 0, starmetal: 3 };
