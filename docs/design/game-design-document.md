@@ -85,6 +85,7 @@ Fame** (the "campaign goal") → collection/completion chases (post-1.0: Collect
 | Guilds | Create or join simulated guilds; donations → Treasury/Drillmaster % buffs; chat; weekly Guild Bounty | `systems/guilds.md` |
 | Dungeons | 5 dungeons × 10 floors, key-gated, epic/set loot, boss chase far above player level | `systems/dungeons.md` |
 | The Long Road | 14 chapters × 12 stages out of the gate, 1 Vigor a stage, auto-chained until something stops you; a first clear pays once | `systems/campaign.md` |
+| Legendaries | The tier above Set: a set bonus on one item, rolled instead of authored — two affixes from a pool of sixteen, never a set piece, out of the Sundered Anvil and re-rolled at the Emberforge | `systems/legendaries.md` |
 | The Collector's Album | A bestiary of 186 foes over 19 pages — a zone's roster or a dungeon's floors — filled by beating them; a finished page pays a permanent +1% gold and XP, a full book +24% | `systems/album.md` |
 | World simulation | 1,500 persistent simulated heroes + 60 guilds with schedules, personalities, rivalries; Town Crier news feed | `systems/world-simulation.md` |
 | Economy | Gold / Golden Dice (premium, earn-only) / Honor / Materials / Keys; full faucet-sink map | `systems/economy-and-currencies.md` |

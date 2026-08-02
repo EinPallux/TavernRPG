@@ -1172,3 +1172,21 @@ A band pinned to a cliff edge flaps on unrelated tuning and measures nothing, so
 and the nerfs were reverted rather than shipped for a number they did not move. What the next pass
 needs is a comparison **with slack in it** — a spread of gear levels rather than commons-versus-
 epics — and the Bard is where to start looking.
+
+### 22.5 Can the bench be afforded?
+
+The Menagerie once advertised "3/3 feeds left" against a drop rate funding 0.8 a day, so
+`REFORGE_COST` is measured against supply rather than asserted as a price (`economy.test.ts`).
+
+| Route | Starmetal | Per reforge |
+|---|---|---|
+| One ten-floor Anvil clear | **4.67** — floors 1–9 at 0.29 epics each, plus floor 10's Epic half | **0.64 clears** |
+| Contracts only, active player | 0.18/day — 7.9 missions at a 1.52% Epic rate | **16.7 days** |
+
+Floor 10's *Set* half is counted as zero, because a set piece refuses to scrap; counting it would
+be the cap-that-cannot-be-supplied mistake in miniature.
+
+The gap between the two rows is the design, not a problem. The only reliable legendary source is the
+Anvil's tenth floor and the contract trickle is 0.4%, so essentially everyone holding a named piece
+is someone who goes down stairs. Both rows are banded anyway — if a future drop-rate change quietly
+made contracts the main Starmetal source, the second row fails and somebody looks at it.
