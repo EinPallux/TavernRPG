@@ -21,6 +21,16 @@ import { expect, test, type Page } from '@playwright/test';
 const SETUP_TIMEOUT = 20_000;
 const FIGHT_TIMEOUT = 25_000;
 
+/*
+ * Every test here pays for `readyHero` — creation, ten conjures, ten equips — before it starts,
+ * and then walks between the Tankard, the character screen and the road. That is comfortably past
+ * Playwright's 30-second default once two workers are competing, and the failure it produces is a
+ * timeout mid-assertion that reads like a missing element rather than a slow one.
+ *
+ * Same figure and same reason as `slots.spec.ts` and `regression.spec.ts`.
+ */
+test.setTimeout(90_000);
+
 interface Save {
   hero: { level: number; name: string } | null;
   activity: { vigor: number };

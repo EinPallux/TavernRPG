@@ -181,6 +181,23 @@ feedback, edge cases and tests. Deployed on Vercel.
 1,573 unit tests + 303 e2e green. **The game is feature-complete at 1.0.** Next work: whatever
 the user picks from `ROADMAP.md` §Post-1.0, or the deploy, which is theirs to make.
 
+**An e2e timeout mid-assertion reads exactly like a missing element.** An album test failed on
+`toContainText` with `Received string: ""` and a `session closed` protocol error — which looks like
+a render bug and is not one: the *previous* assertion on the same panel had just passed. The test
+had simply spent its 30 seconds, and Playwright's teardown closed the page under the retry loop.
+Every test in that file pays for a hero creation, ten conjures and ten equips before it starts, and
+then walks between three rooms. `test.setTimeout(90_000)`, the same figure and the same reason as
+`slots.spec.ts` and `regression.spec.ts`. Before believing a locator failure, check whether the
+assertion *above* it passed — if it did, the element exists and the clock is the problem.
+
+**Never rebuild underneath a running `next start`.** A full e2e run produced 264 failure
+directories and looked like a catastrophe; the cause was `npm run verify` overwriting `.next` while
+the server from the previous build was still serving, so every page 404'd its JS chunks. The rule
+is one build, then one server, then the run — and when a whole suite fails at once, suspect the
+harness before reading a single trace. (Related, and it has now cost time twice: killing the server
+by matching `next start` in `/proc/*/cmdline` matches *the shell running the kill loop*. Match
+argv[0] — `next-server` — or nothing.)
+
 **A greedy comparison over contiguous content is a latch, not a decision.** The economy sim walked
 the Long Road while the *next* stage beat the mission board and stopped the moment it lost — but
 the road is contiguous, so stopping is permanent: the wall never moves, its level stays put, and
