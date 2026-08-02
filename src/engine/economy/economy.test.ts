@@ -28,6 +28,15 @@ import {
   totalSpent,
 } from './simulate';
 import { PET_MAX_LEVEL } from '@/data/pets';
+import {
+  CLEAR_SET_CHANCE,
+  DUNGEON_EPIC_CHANCE,
+  DUNGEON_FLOOR_DROPS,
+  missionDropTable,
+  rarityOdds,
+} from '@/engine/items/drops';
+import { meanYield } from '@/engine/items/generate';
+import { REFORGE_COST } from '@/engine/forge/forgeConfig';
 import { ALBUM_PAGES, ALBUM_PAGE_BONUS } from '@/data/album';
 import { TOTAL_STAGES } from '@/data/campaign';
 import { MOUNT_TERM_DAYS, mountPrice } from '@/engine/stables/mounts';
@@ -710,5 +719,55 @@ describe('the Collector’s Album is a slow, permanent raise', () => {
     // and this is the cheap check that the album is nowhere near moving it.
     expect(collector.finalLevel).toBeGreaterThanOrEqual(blind.finalLevel);
     expect(collector.finalLevel).toBeLessThan(blind.finalLevel * 1.15);
+  });
+});
+
+describe('the reforge bench can be afforded — legendaries §6', () => {
+  /**
+   * "A cap the game cannot supply is a lie on the screen." The Menagerie once advertised 3/3 feeds
+   * against a drop rate funding 0.8 a day, and the sim is what caught it. `REFORGE_COST` gets the
+   * same treatment, and the band is on **supply**, not on the price.
+   *
+   * The denominator is a *delve*, not a day of contracts, and that is the honest choice: the only
+   * reliable legendary source is the Sundered Anvil's tenth floor, and the far-country contract
+   * trickle is 0.4%. Essentially everyone holding a named piece is someone who goes down stairs.
+   * A contract-only player is measured too, below, as the floor.
+   */
+  const STARMETAL_PER_EPIC = meanYield('epic', 'starmetal');
+
+  /** Scrappable Starmetal out of one full ten-floor clear, off the published tables. */
+  function starmetalPerClear(): number {
+    const floor = DUNGEON_FLOOR_DROPS;
+    const epicWeight =
+      floor.rarityWeights.epic /
+      Object.values(floor.rarityWeights).reduce((sum, weight) => sum + weight, 0);
+    // Floors 1–9: the normal roll's epic share, plus the separate additive epic roll.
+    const perFloor = floor.itemChance * epicWeight + DUNGEON_EPIC_CHANCE;
+    // Floor 10 is a coin flip between Epic and Set, and a set piece refuses to scrap — so only
+    // the Epic half is Starmetal. Counting the Set half would be the cap-that-cannot-be-supplied
+    // mistake in miniature.
+    return (perFloor * 9 + (1 - CLEAR_SET_CHANCE)) * STARMETAL_PER_EPIC;
+  }
+
+  it('funds a strike inside one or two clears of the Anvil', () => {
+    const clears = REFORGE_COST.starmetal / starmetalPerClear();
+    // Under a third and the bench is free; over two and it is decoration nobody presses.
+    expect(clears, `${clears.toFixed(2)} clears per reforge`).toBeGreaterThan(0.3);
+    expect(clears, `${clears.toFixed(2)} clears per reforge`).toBeLessThan(2);
+  });
+
+  it('is not affordable on contracts alone, and that is the design', () => {
+    /*
+     * A 20-minute contract drops an Epic 1.52% of the time, so an active player scrapping every
+     * one of them earns well under a Starmetal a day. The bench sits behind the stairs on purpose;
+     * this asserts the shape rather than lamenting it, so that a future drop-rate change which
+     * quietly made contracts the main Starmetal source would fail here and be looked at.
+     */
+    const run = simulateEconomy({ days: 90 });
+    const missions = run.ledger.slice(-30).reduce((sum, day) => sum + day.missionsRun, 0) / 30;
+    const epicsPerDay = missions * (rarityOdds(missionDropTable(20), 'epic') / 100);
+    const perDay = epicsPerDay * STARMETAL_PER_EPIC;
+    const days = REFORGE_COST.starmetal / perDay;
+    expect(days, `${days.toFixed(1)} days per reforge on contracts alone`).toBeGreaterThan(5);
   });
 });

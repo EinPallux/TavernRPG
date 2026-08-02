@@ -19,7 +19,7 @@ import { torvaldSays, type ForgeMoment } from '@/data/forgeBarks';
 import { SCRAPS_PER_DAY, type ForgeTier } from '@/engine/forge/forgeConfig';
 import { msUntilNextReset } from '@/engine/reset/resetEngine';
 import type { Item, MaterialBundle, SlotId } from '@/engine/items/types';
-import { quoteScrap, type ForgeRefusal } from '@/state/forgeActions';
+import { quoteScrap, reforgeable, type ForgeRefusal } from '@/state/forgeActions';
 import { useGameStore } from '@/state/gameStore';
 import { play } from '@/state/sfx';
 import { gameNow } from '@/state/clock';
@@ -31,18 +31,20 @@ import { HourglassIcon } from '@/components/icons';
 import { snappy, standard } from '@/styles/motion';
 import { MaterialCost, MaterialWallet } from './MaterialWallet';
 import { Crucible } from './Crucible';
+import { ReforgeBench } from './ReforgeBench';
 import { ForgeBench } from './ForgeBench';
 import { RecipeShelf } from './RecipeShelf';
 import { AnvilStrike } from './AnvilStrike';
 
 const PLACE = PLACES_BY_ID.forge;
 
-type Bench = 'crucible' | 'bench' | 'recipes';
+type Bench = 'crucible' | 'bench' | 'recipes' | 'reforge';
 
 const BENCHES: readonly { readonly id: Bench; readonly label: string }[] = [
   { id: 'crucible', label: 'The crucible' },
   { id: 'bench', label: 'The anvil' },
   { id: 'recipes', label: 'Set recipes' },
+  { id: 'reforge', label: 'Named arms' },
 ];
 
 /** Refusals become sentences here, so a copy edit never touches a transition. */
@@ -54,6 +56,8 @@ function phrase(refusal: ForgeRefusal): string {
       return 'Not enough in the bucket for that one.';
     case 'no-recipe':
       return 'Torvald has no pattern for that.';
+    case 'not-legendary':
+      return 'The bench only takes named arms.';
     case 'locked':
       return 'That one is locked. Unlock it first if you mean it.';
     case 'bags-full':
@@ -77,6 +81,7 @@ export function ForgeScreen() {
   const scrapItem = useGameStore((state) => state.scrapItem);
   const craftItem = useGameStore((state) => state.craftItem);
   const craftSetPiece = useGameStore((state) => state.craftSetPiece);
+  const reforgeLegendary = useGameStore((state) => state.reforgeLegendary);
   const refreshDay = useGameStore((state) => state.refreshDay);
 
   const [bench, setBench] = useState<Bench>('crucible');
@@ -85,6 +90,9 @@ export function ForgeScreen() {
   const [moment, setMoment] = useState<ForgeMoment>('browse');
   const [barkIndex, setBarkIndex] = useState(0);
   const [reveal, setReveal] = useState<Reveal | null>(null);
+  /** Which legendary is on the bench, and the roll the last strike replaced. */
+  const [reforgePick, setReforgePick] = useState<string | null>(null);
+  const [reforgePrevious, setReforgePrevious] = useState<Item | null>(null);
   /**
    * The last smelt's yield, shown as chips flying to the wallet.
    *
@@ -182,6 +190,26 @@ export function ForgeScreen() {
     },
     [craftItem, say, slot],
   );
+
+  const handleReforge = useCallback(() => {
+    const shelf = reforgeable(save!);
+    const target = shelf.find((entry) => entry.uid === reforgePick) ?? shelf[0];
+    if (!target) return;
+
+    const result = reforgeLegendary(target.uid);
+    if (!result.ok) {
+      setMessage(phrase(result.refusal));
+      say(result.refusal.kind === 'insufficient-materials' ? 'broke' : 'browse');
+      return;
+    }
+
+    setMessage(null);
+    // Keep the *previous* roll on screen beside the new one: the whole bench is the trade.
+    setReforgePrevious(result.before);
+    setReforgePick(result.after.uid);
+    setReveal({ item: result.after, pitied: false, refresh: false });
+    say('set');
+  }, [reforgeLegendary, reforgePick, save, say]);
 
   const handleRecipe = useCallback(
     (setId: string) => {
@@ -394,6 +422,35 @@ export function ForgeScreen() {
                     onCraft={handleCraft}
                   />
                 </TavernPanel>
+              )}
+
+              {bench === 'reforge' && (
+                <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+                  <TavernPanel title="Strike it again" data-testid="reforge-panel">
+                    <ReforgeBench
+                      items={reforgeable(save)}
+                      selected={reforgePick}
+                      onSelect={setReforgePick}
+                      wallet={hero.materials}
+                      previous={reforgePrevious}
+                      onReforge={handleReforge}
+                    />
+                  </TavernPanel>
+
+                  <TavernPanel title="What a named piece is">
+                    <p className="text-parchment-500/72 text-xs leading-relaxed">
+                      A legendary carries a set piece&rsquo;s statline and two rolled affixes. The
+                      statline never changes; the affixes are the chase, and Torvald will draw them
+                      again for as long as you can find the Starmetal.
+                    </p>
+                    <div className="facet-rule my-3" />
+                    <p className="text-parchment-500/72 text-xs leading-relaxed">
+                      It is never a set piece. Worn in a helmet, chest, gloves, boots or belt slot
+                      it costs you a piece of whatever set lives there — two rolled affixes against
+                      a five-piece capstone, and neither answer is right for every class.
+                    </p>
+                  </TavernPanel>
+                </div>
               )}
 
               {bench === 'recipes' && (

@@ -25,6 +25,8 @@ import {
 import type { RngStream } from '@/engine/rng';
 import type { CombatModifiers, VerseId } from '@/engine/combat/types';
 import type { Item, SlotId } from './types';
+// No cycle: `legendary.ts` does not import this module.
+import { affixEffectsOf } from './legendary';
 
 /**
  * A fighter wearing nothing. Every lever off, so the resolver's common path costs nothing and
@@ -58,13 +60,21 @@ export const NO_MODIFIERS: CombatModifiers = {
   execute: 0,
 };
 
-/** How many pieces of each set are equipped. Only sets with at least one piece appear. */
+/**
+ * How many pieces of each set are equipped. Only sets with at least one piece appear.
+ *
+ * **A legendary never counts toward a set**, and that is the whole shape of the decision the tier
+ * adds (`legendaries.md` §2): wearing one in a set slot costs a piece of progress, and possibly a
+ * threshold. It falls out of the `setId` check for free today — a legendary has none — and it is
+ * spelled out anyway, because it is a *negative* and a later refactor that starts stamping a
+ * `setId` on something would reverse it in silence. `sets.test.ts` asserts it directly.
+ */
 export function equippedSetCounts(
   equipment: Partial<Record<SlotId, Item>>,
 ): ReadonlyMap<string, number> {
   const counts = new Map<string, number>();
   for (const item of Object.values(equipment)) {
-    if (!item?.setId) continue;
+    if (!item?.setId || item.rarity === 'legendary') continue;
     counts.set(item.setId, (counts.get(item.setId) ?? 0) + 1);
   }
   return counts;
@@ -73,10 +83,10 @@ export function equippedSetCounts(
 /**
  * Fold one effect into the bag.
  *
- * Shares **add** rather than multiply: two sources of "+8% damage" make +16%, not ×1.08². Nothing
- * in the game grants the same lever twice today — a hero wears one set at a time by construction,
- * since five slots cover a whole set — but the rule matters the moment pets and jewellery start
- * granting the same levers in Phase 14, and additive is the one a player can do in their head.
+ * Shares **add** rather than multiply: two sources of "+8% damage" make +16%, not ×1.08². This was
+ * a rule waiting for a second source when it was written; legendaries are it. A hero can now wear
+ * a four-piece set and a legendary that both push `damage`, and additive is the one a player can
+ * do in their head.
  */
 function fold(bag: CombatModifiers, effect: SetEffect): CombatModifiers {
   switch (effect.kind) {
@@ -134,6 +144,17 @@ function fold(bag: CombatModifiers, effect: SetEffect): CombatModifiers {
 }
 
 /** What the pieces a hero is wearing add up to. */
+/**
+ * The one place gear becomes combat.
+ *
+ * Two sources, one bag. Set bonuses fold in at their thresholds; a legendary's two rolled affixes
+ * fold in beside them, through the same `fold()` and into the same `CombatModifiers`. That is the
+ * entire cost of the Legendary tier to the resolver — `fight()` reads the bag and never learns
+ * legendaries exist, and the balance harness and the economy sim inherit the tier for free.
+ *
+ * Adding a *new lever* still costs engine work: a fold case, a read in `fight()`, and a test that
+ * proves it fires. Adding a nineteenth legendary costs a line of data.
+ */
 export function modifiersFor(equipment: Partial<Record<SlotId, Item>>): CombatModifiers {
   let bag = NO_MODIFIERS;
   for (const [setId, pieces] of equippedSetCounts(equipment)) {
@@ -142,6 +163,10 @@ export function modifiersFor(equipment: Partial<Record<SlotId, Item>>): CombatMo
     for (const bonus of activeBonuses(definition, pieces)) {
       for (const effect of bonus.effects) bag = fold(bag, effect);
     }
+  }
+  for (const item of Object.values(equipment)) {
+    if (!item?.legendary) continue;
+    for (const effect of affixEffectsOf(item)) bag = fold(bag, effect);
   }
   return bag;
 }

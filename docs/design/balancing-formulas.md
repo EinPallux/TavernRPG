@@ -1100,3 +1100,93 @@ sits inside; the economy A/B is unchanged in shape because the sim only models z
 It finished on day 59 and ended at level 100; it finishes on **day 124 at level 183**, which is
 where The Hollow Crown's own mission band begins. Three economy bands moved from a 90-day run to a
 150-day one — the claims are about the road's whole life, and its life got longer.
+
+## 22. Legendaries (the tier above Set)
+
+Spec: `systems/legendaries.md`. Every figure below carries `[TUNE]` and is a *starting* value —
+the affix bands and the supply rates are fitted by `npm run balance` and `npm run economy`, in the
+same order the far country's were, and the fitted numbers are recorded in §22.4.
+
+### 22.1 What the measurement was
+
+A class has two sets of five pieces and `drawMissingPiece()` never returns a piece already owned,
+so **ten set drops finishes the entire gear chase** — asserted, not estimated, in `forge.test.ts`
+*acquisition converges*. §0 puts the first full set at day 45–60 against a content runway that now
+reaches day 124. From roughly the halfway mark no drop can be an upgrade in kind.
+
+### 22.2 The item
+
+| Figure | Value | Why |
+|---|---|---|
+| `rarityFactor.legendary` | **1.5** | identical to Set. The affixes are the tier; the statline is not, and a flat budget keeps the §2 trade a real comparison and the combat curve untouched. |
+| `LINES_BY_RARITY.legendary` | 3 | as Epic and Set. |
+| `RARITY_VALUE_MULT.legendary` | 40 | display only — a legendary refuses sale and scrap at the same choke point a set piece does. |
+| `LEGENDARY_AFFIX_COUNT` | 2 | drawn without replacement from the item's own pool. |
+
+Affix magnitudes roll inside a published band per lever. The bands are the balance surface of the
+whole tier: two affixes at their **maximum** roll must keep mirror win-rates inside **42–58%**, the
+same band a full five-piece set is held to (`gear-sets.md` §3). Two at minimum must still be worth
+the set piece they displace, or the tier is a trap.
+
+### 22.3 Supply
+
+| Source | Rate |
+|---|---|
+| The Sundered Anvil, floor-10 clear | 1.0 — the reliable source, behind ten floors at levels 185–248 |
+| The Sundered Anvil, floors 5–9 | `ANVIL_LEGENDARY_CHANCE = 0.08` per floor |
+| Drowned Vault / Sunless Court, floor-10 clear | `DEEP_CLEAR_LEGENDARY = 0.06` |
+| Contracts in the far country (level 100+) | `FAR_LEGENDARY_CHANCE = 0.004` per contract |
+| Fortune's Table | 0, permanently — §4 of the spec |
+
+`REFORGE_COST = 3 Starmetal` `[TUNE]`. Starmetal income is the constraint the sim has to answer:
+before the Anvil it ran near half a unit a day and had one sink (set recipes, 2 Starmetal), which
+is what made the forge route to a set piece a ~210-day proposition until it was re-fitted. A
+reforge bench priced above supply is a cap the game cannot supply — the Menagerie's "3/3 feeds"
+lie, in a different room. The sim reports **days per reforge** and the band is on that, not on the
+cost.
+
+### 22.4 What the harnesses chose
+
+**The Sundered Anvil's signature, twice too strong.** Written by feel at `hardening` 0.024/round
+capped 0.18 for the mid-boss and 0.048/0.34 for the anvil, and the ramp harness reported floor 10
+as **unclearable at any level it searches** — literally `-1`, not "hard". It sits at 0.010/0.09 and
+0.018/0.16, a shade under Vulkarr, which is the deepest hardening the game had shipped. The far
+country's lesson, third occasion: write the content, then read the number off the harness.
+
+**The affix bands are unchanged, and that is a measurement rather than an omission.** Two bounds
+are asserted (`legendary.test.ts`): a best-rolled **mirror** inside 42–58%, and the **floor** that a
+legendary beats the Epic it displaces. The floor is one-sided on purpose — against an otherwise
+identical hero a strictly-better item wins 240 of 240, which is what a persistent edge does in a
+near-deterministic duel and says nothing about the tier.
+
+**The ceiling is still open.** The natural statement — *one legendary must not outweigh nine other
+slots* — measured a **cliff**: a hero in commons with a best-rolled legendary weapon beats a
+fully-epic hero **0%** of the time for four classes and **66%** for the Bard, and halving the top of
+the four strongest affix bands (`keen` 6→4, `cruel` 0.22→0.14, `relentless` 0.30→0.16, `steadfast`
+0.30→0.14) moved that 66% **by nothing at all, to the decimal**. So the affixes are not what carries
+it; the weapon budget step is — epic 1.35 to legendary 1.5, an 11% change that flips 0% to 66%
+because the two heroes sit either side of a threshold. The control confirms the slot is not
+already dominant: an *epic* weapon over commons wins 0/0/0/31/0%.
+
+A band pinned to a cliff edge flaps on unrelated tuning and measures nothing, so none is asserted
+and the nerfs were reverted rather than shipped for a number they did not move. What the next pass
+needs is a comparison **with slack in it** — a spread of gear levels rather than commons-versus-
+epics — and the Bard is where to start looking.
+
+### 22.5 Can the bench be afforded?
+
+The Menagerie once advertised "3/3 feeds left" against a drop rate funding 0.8 a day, so
+`REFORGE_COST` is measured against supply rather than asserted as a price (`economy.test.ts`).
+
+| Route | Starmetal | Per reforge |
+|---|---|---|
+| One ten-floor Anvil clear | **4.67** — floors 1–9 at 0.29 epics each, plus floor 10's Epic half | **0.64 clears** |
+| Contracts only, active player | 0.18/day — 7.9 missions at a 1.52% Epic rate | **16.7 days** |
+
+Floor 10's *Set* half is counted as zero, because a set piece refuses to scrap; counting it would
+be the cap-that-cannot-be-supplied mistake in miniature.
+
+The gap between the two rows is the design, not a problem. The only reliable legendary source is the
+Anvil's tenth floor and the contract trickle is 0.4%, so essentially everyone holding a named piece
+is someone who goes down stairs. Both rows are banded anyway — if a future drop-rate change quietly
+made contracts the main Starmetal source, the second row fails and somebody looks at it.

@@ -26,7 +26,9 @@ import {
 } from '@/engine/forge/forgeConfig';
 import { gearSet } from '@/data/gearSets';
 import { credit } from './progressActions';
-import type { SaveFile } from '@/engine/save/schema';
+import type { Hero, SaveFile } from '@/engine/save/schema';
+import { reforge } from '@/engine/items/legendary';
+import { REFORGE_COST } from '@/engine/forge/forgeConfig';
 
 export type ForgeRefusal =
   | { readonly kind: 'no-hero' }
@@ -39,6 +41,7 @@ export type ForgeRefusal =
       readonly held: MaterialBundle;
     }
   | { readonly kind: 'no-recipe' }
+  | { readonly kind: 'not-legendary' }
   | { readonly kind: 'bags-full' };
 
 const refuse = (refusal: ForgeRefusal) => ({ ok: false as const, refusal });
@@ -225,3 +228,97 @@ export function refreshForgeDay(save: SaveFile): SaveFile {
 }
 
 export { SCRAPS_PER_DAY };
+
+/* ── The reforge bench (legendaries spec §6) ─────────────────────────────────────── */
+
+/** Every legendary the hero holds anywhere — the bench's shelf. */
+export function reforgeable(save: SaveFile): readonly Item[] {
+  const { hero } = save;
+  if (!hero) return [];
+  return [...Object.values(hero.equipment), ...hero.backpack, ...hero.satchel].filter(
+    (item): item is Item => !!item && item.rarity === 'legendary' && !!item.legendary,
+  );
+}
+
+export interface ReforgeTransition {
+  readonly ok: true;
+  readonly save: SaveFile;
+  /** What it was, so the room can show the trade rather than only the result. */
+  readonly before: Item;
+  readonly after: Item;
+}
+
+export type ReforgeResult =
+  ReforgeTransition | { readonly ok: false; readonly refusal: ForgeRefusal };
+
+/**
+ * Re-roll a legendary's two affixes.
+ *
+ * It **replaces**, and the card shows what you have before the press — a re-roll you cannot lose
+ * is not a decision (spec §6). The uid does not change, so an item being worn stays worn and one
+ * in the bags stays where it was; only the payload moves.
+ *
+ * Deterministic in `(worldSeed, uid, reforges)`. The counter is the item's own, which means two
+ * legendaries reforged the same number of times still roll differently, and replaying a reforge
+ * cannot produce a second outcome — the same shape `craft` gets from `forge.crafted`.
+ */
+export function reforgeItem(save: SaveFile, uid: string): ReforgeResult {
+  const { hero } = save;
+  if (!hero) return refuse({ kind: 'no-hero' });
+
+  const before = reforgeable(save).find((item) => item.uid === uid);
+  if (!before) {
+    // Told apart on purpose: "there is no such item" and "that is not a legendary" are different
+    // things to say to a player, and a bench that says the wrong one reads as broken.
+    const exists = [...Object.values(hero.equipment), ...hero.backpack, ...hero.satchel].some(
+      (item) => item?.uid === uid,
+    );
+    return refuse(exists ? { kind: 'not-legendary' } : { kind: 'no-such-item' });
+  }
+
+  if (!canAfford(hero.materials, REFORGE_COST)) {
+    return refuse({ kind: 'insufficient-materials', needed: REFORGE_COST, held: hero.materials });
+  }
+
+  const after = reforge(
+    before,
+    createRng(
+      deriveSeed(save.worldSeed, 'reforge', uid, before.legendary!.reforges),
+      `reforge/${uid}/${before.legendary!.reforges}`,
+    ),
+  );
+  if (!after) return refuse({ kind: 'not-legendary' });
+
+  return {
+    ok: true,
+    save: {
+      ...save,
+      hero: {
+        ...replaceItem(hero, after),
+        materials: spend(hero.materials, REFORGE_COST),
+      },
+    },
+    before,
+    after,
+  };
+}
+
+/**
+ * Put an item back wherever it already was, by uid.
+ *
+ * A legendary can be worn, bagged or in the satchel, and the bench must not care which — an
+ * "unequip, re-add" round trip would drop a worn piece into the bags, and a full backpack would
+ * then lose it. Three places, one pass, no movement.
+ */
+function replaceItem(hero: Hero, item: Item): Hero {
+  const equipment = { ...hero.equipment };
+  for (const [slot, worn] of Object.entries(equipment)) {
+    if (worn?.uid === item.uid) equipment[slot as SlotId] = item;
+  }
+  return {
+    ...hero,
+    equipment,
+    backpack: hero.backpack.map((entry) => (entry?.uid === item.uid ? item : entry)),
+    satchel: hero.satchel.map((entry) => (entry.uid === item.uid ? item : entry)),
+  };
+}

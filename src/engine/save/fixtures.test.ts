@@ -36,6 +36,10 @@ import { DAY_WORK_RUNGS, VIGOR_PER_DAY } from '@/engine/progression/rewards';
 import v17Campaign from './fixtures/v17-campaign.json';
 import v18DayWork from './fixtures/v18-day-work.json';
 import v19Album from './fixtures/v19-album.json';
+import v20Legendaries from './fixtures/v20-legendaries.json';
+import { LEGENDARY_AFFIX_COUNT, legendaryDef } from '@/data/legendaries';
+import { affixEffect } from '@/engine/items/legendary';
+import { NO_MODIFIERS, equippedSetCounts, modifiersFor } from '@/engine/items/sets';
 import { albumBonus, albumProgress } from '@/engine/album/album';
 import { ALBUM_PAGE_BONUS, albumEntry } from '@/data/album';
 import { BOT_COUNT } from '@/engine/world/identity';
@@ -693,6 +697,7 @@ describe('the fixture set itself', () => {
     { version: 17, save: v17Campaign },
     { version: 18, save: v18DayWork },
     { version: 19, save: v19Album },
+    { version: 20, save: v20Legendaries },
   ];
 
   it('has one fixture per shipped schema version, with no gaps', () => {
@@ -881,13 +886,15 @@ describe('a real v18 save', () => {
 });
 
 describe('a real v19 save', () => {
-  it('is already current, and says so', () => {
+  it('walks forward to current without losing its book', () => {
     const result = migrateSave(structuredClone(v19Album));
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
     expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
-    expect(result.migratedFrom).toBeNull();
+    expect(result.migratedFrom).toBe(19);
+    // v19 → v20 adds an optional field and nothing else; the album has to arrive intact.
+    expect(result.save.album.foes).toEqual(v19Album.album.foes);
   });
 
   it('carries a book somebody actually filled', () => {
@@ -950,5 +957,74 @@ describe('a real v19 save', () => {
     expect(tasks.lifetime['campaignStages']).toBe(campaign.stagesCleared);
     // And the world came with it.
     expect(result.save.world?.bots.length).toBe(BOT_COUNT);
+  });
+});
+
+describe('a real v20 save', () => {
+  it('is already current, and says so', () => {
+    const result = migrateSave(structuredClone(v20Legendaries));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.save.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+    expect(result.migratedFrom).toBeNull();
+  });
+
+  it('carries legendaries through the round trip, worn and bagged', () => {
+    /*
+     * Captured out of a browser: a level-170 warrior with five legendaries on the paperdoll and a
+     * sixth loose in the bags. Both places matter — an item lives in `equipment` or in `backpack`,
+     * and a payload that survived one and not the other is exactly the bug a fixture exists for.
+     */
+    const result = migrateSave(structuredClone(v20Legendaries));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const worn = Object.values(result.save.hero!.equipment).filter(
+      (item) => item?.rarity === 'legendary',
+    );
+    const bagged = result.save.hero!.backpack.filter((item) => item?.rarity === 'legendary');
+    expect(worn.length).toBeGreaterThanOrEqual(4);
+    expect(bagged.length).toBeGreaterThanOrEqual(1);
+
+    for (const item of [...worn, ...bagged]) {
+      expect(item?.legendary, item?.name).toBeDefined();
+      expect(legendaryDef(item!.legendary!.defId), item?.name).toBeDefined();
+      expect(item!.legendary!.affixes.length, item?.name).toBe(LEGENDARY_AFFIX_COUNT);
+      // Every stored affix must still resolve to a lever. A stored id can rot; this is the check.
+      for (const affix of item!.legendary!.affixes) {
+        expect(affixEffect(affix), `${item?.name} → ${affix.id}`).not.toBeNull();
+      }
+    }
+  });
+
+  it('is actually paying for them in combat', () => {
+    /*
+     * The fixture's real job: the fold. Five legendaries on the paperdoll must produce a
+     * `CombatModifiers` bag that is not the empty one — this is the assertion that would have
+     * caught `set_proc` and `harden`, which sat on the timeline for a phase doing nothing.
+     */
+    const result = migrateSave(structuredClone(v20Legendaries));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const bag = modifiersFor(result.save.hero!.equipment);
+    expect(bag).not.toEqual(NO_MODIFIERS);
+  });
+
+  it('does not count a single legendary toward a set', () => {
+    const result = migrateSave(structuredClone(v20Legendaries));
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    for (const [setId] of equippedSetCounts(result.save.hero!.equipment)) {
+      const wearing = Object.values(result.save.hero!.equipment).filter(
+        (item) => item?.setId === setId,
+      );
+      expect(
+        wearing.every((item) => item?.rarity !== 'legendary'),
+        setId,
+      ).toBe(true);
+    }
   });
 });

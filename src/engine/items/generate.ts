@@ -106,6 +106,9 @@ export const SCRAP_YIELDS: Readonly<
    */
   epic: { scrap: [0, 0], essence: [9, 14], starmetal: [1, 2] },
   set: { scrap: [0, 0], essence: [10, 10], starmetal: [3, 3] },
+  // Unreachable in play — both chase tiers refuse to scrap (`dispose.ts`) — but the sims cost a
+  // scrap through `meanYield` and a zero here would read as "a legendary is worth nothing".
+  legendary: { scrap: [0, 0], essence: [16, 16], starmetal: [5, 5] },
 };
 
 /** Mean of a yield range — what the sims cost a scrap at. */

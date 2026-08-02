@@ -11,10 +11,19 @@
 import { motion } from 'motion/react';
 import { Icon } from '@/components/icons';
 import { ATTRIBUTE_LABELS, statLines } from '@/engine/progression/stats';
-import { RARITY_LABELS, SLOT_LABELS, type Item, type Rarity } from '@/engine/items/types';
+import {
+  RARITY_LABELS,
+  SLOT_LABELS,
+  isKeepsake,
+  type Item,
+  type LegendaryPayload,
+  type Rarity,
+  type SlotId,
+} from '@/engine/items/types';
 import type { ComparisonDelta } from '@/engine/hero/derived';
 import { classDef } from '@/data/classes';
-import { gearSet } from '@/data/gearSets';
+import { SET_SLOTS, gearSet } from '@/data/gearSets';
+import { affixLine, legendaryDef } from '@/data/legendaries';
 import { snappy } from '@/styles/motion';
 
 const RARITY_STYLES: Record<Rarity, { text: string; border: string; glow: string }> = {
@@ -43,6 +52,11 @@ const RARITY_STYLES: Record<Rarity, { text: string; border: string; glow: string
     border: 'border-rarity-set/65',
     glow: 'shadow-[0_0_26px_-8px_rgb(232_163_61/0.95)]',
   },
+  legendary: {
+    text: 'text-rarity-legendary',
+    border: 'border-rarity-legendary/70',
+    glow: 'shadow-[0_0_34px_-6px_rgb(255_90_31/1)]',
+  },
 };
 
 export function rarityStyles(rarity: Rarity) {
@@ -59,6 +73,54 @@ function Delta({ value, suffix = '' }: { value: number; suffix?: string }) {
       {suffix === '%' ? (value * 100).toFixed(1) : Math.round(value)}
       {suffix}
     </span>
+  );
+}
+
+/**
+ * The legendary band: the two rolled affixes, and what wearing it costs.
+ *
+ * The second half is the point. A legendary is never a set piece (`legendaries.md` §2), so in one
+ * of the five set slots it drops your piece count — and a player deciding whether to put it on has
+ * to be told that *here*, on the card they are looking at, not discover it on the collections tab
+ * afterwards.
+ */
+function LegendaryBand({ payload, slot }: { payload: LegendaryPayload; slot: SlotId }) {
+  const definition = legendaryDef(payload.defId);
+  const costsSetProgress = (SET_SLOTS as readonly SlotId[]).includes(slot);
+
+  return (
+    <div
+      className="border-rarity-legendary/25 mt-3 border-t pt-2.5"
+      data-testid={`legendary-band-${payload.defId}`}
+    >
+      <p className="text-rarity-legendary flex items-center gap-1.5 text-[11px] font-semibold">
+        <Icon name="spark" size={13} />
+        Legendary
+        {payload.reforges > 0 && (
+          <span className="text-parchment-500/72 ml-auto tabular-nums">
+            reforged ×{payload.reforges}
+          </span>
+        )}
+      </p>
+
+      <ul className="mt-1.5 space-y-1">
+        {payload.affixes.map((affix) => (
+          <li key={affix.id} className="text-parchment-300 text-xs">
+            {affixLine(affix.id, affix.magnitude)}
+          </li>
+        ))}
+      </ul>
+
+      {definition && (
+        <p className="text-parchment-500/72 mt-2 text-[11px] italic">{definition.flavor}</p>
+      )}
+
+      {costsSetProgress && (
+        <p className="mt-2 text-[11px] text-amber-300/80">
+          Not a set piece — wearing this drops a piece from any set in this slot.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -214,10 +276,11 @@ export function ItemCard({ item, comparison, setWorn, className = '', ...rest }:
       )}
 
       {item.setId && <SetBand setId={item.setId} worn={setWorn ?? 0} />}
+      {item.legendary && <LegendaryBand payload={item.legendary} slot={item.slot} />}
 
       <footer className="border-parchment-500/15 text-parchment-500/72 mt-3 flex items-center justify-between border-t pt-2 text-[11px]">
         <span>
-          {item.rarity === 'set' ? 'Not for sale' : `Worth ${item.value.toLocaleString()} gold`}
+          {isKeepsake(item.rarity) ? 'Not for sale' : `Worth ${item.value.toLocaleString()} gold`}
         </span>
         {item.locked && <span className="text-amber-500/70">Locked</span>}
       </footer>

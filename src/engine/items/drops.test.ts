@@ -132,7 +132,7 @@ describe('determinism', () => {
 
 describe('rollRarity', () => {
   it('respects a degenerate table rather than throwing', () => {
-    const onlyRare = { common: 0, uncommon: 0, rare: 1, epic: 0, set: 0 };
+    const onlyRare = { common: 0, uncommon: 0, rare: 1, epic: 0, set: 0, legendary: 0 };
     expect(rollRarity(onlyRare, createRng(7, 'degenerate'))).toBe('rare');
   });
 });

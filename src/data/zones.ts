@@ -237,6 +237,11 @@ export function zone(id: ZoneId): ZoneDef {
   return ZONES_BY_ID[id];
 }
 
+/** Same lookup for a caller holding a plain string — a stored offer's `zoneId`, say. */
+export function zoneById(id: string): ZoneDef | null {
+  return ZONES.find((entry) => entry.id === id) ?? null;
+}
+
 /**
  * How many zones a board should be able to choose between. The tavern guarantees a board spans
  * at least two zones (tavern spec §6), which it can only honour if the level offers two.

@@ -9,7 +9,7 @@
  * Pure data module.
  */
 
-import type { MaterialBundle, Rarity } from '@/engine/items/types';
+import type { MaterialBundle, RolledRarity } from '@/engine/items/types';
 
 export const FORGE_TIERS = ['rough', 'fine', 'master'] as const;
 export type ForgeTier = (typeof FORGE_TIERS)[number];
@@ -20,8 +20,8 @@ export interface ForgeTierDef {
   /** One line from Torvald, on the tile. */
   readonly blurb: string;
   readonly cost: MaterialBundle;
-  /** Relative weights over the four attainable rarities. Set never comes from a plain forge. */
-  readonly odds: Readonly<Record<Exclude<Rarity, 'set'>, number>>;
+  /** Relative weights over the four rolled rarities. Neither chase tier comes from a plain forge. */
+  readonly odds: Readonly<Record<RolledRarity, number>>;
   /** Only the Master forge feeds the pity meter — it is the tier you are gambling on. */
   readonly feedsPity: boolean;
 }
@@ -82,7 +82,7 @@ export const SCRAPS_PER_DAY = 10;
 export const RECIPE_COST: MaterialBundle = { scrap: 0, essence: 20, starmetal: 2 };
 
 /** Published odds for one rarity at one tier, as a percentage — what the tile prints. */
-export function forgeOdds(tier: ForgeTierDef, rarity: Exclude<Rarity, 'set'>): number {
+export function forgeOdds(tier: ForgeTierDef, rarity: RolledRarity): number {
   const total = Object.values(tier.odds).reduce((sum, weight) => sum + weight, 0);
   return total === 0 ? 0 : (tier.odds[rarity] * 100) / total;
 }
@@ -117,3 +117,14 @@ export const MATERIAL_LABELS: Readonly<Record<keyof MaterialBundle, string>> = {
   essence: 'Essence',
   starmetal: 'Starmetal',
 };
+
+/**
+ * `[TUNE]` What a reforge costs (legendaries spec §6, balancing §22.3).
+ *
+ * Starmetal, because it is the scarcest material and had exactly one sink — a set recipe — so a
+ * player who has finished their recipes has had nothing to spend it on since Phase 12. Three is
+ * a *starting* value: the constraint is supply, not price. The Menagerie once advertised "3/3
+ * feeds left" against a drop rate that funded 0.8 a day, and the economy sim is what caught it;
+ * the band here is on **days per reforge**, not on the number below.
+ */
+export const REFORGE_COST: MaterialBundle = { scrap: 0, essence: 0, starmetal: 3 };

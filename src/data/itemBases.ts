@@ -145,6 +145,10 @@ export const RARITY_PREFIXES: Readonly<Record<Rarity, readonly string[]>> = {
   rare: ['Runed', 'Gilded', 'Emberforged', 'Silverpine', 'Storm-touched'],
   epic: ['Ancient', 'Wyrmbound', 'Starmetal', 'Duskwoven', 'Thornfell'],
   set: ['Oathsworn', 'Wolfblood', 'Maestro’s', 'Dawnchorus', 'Emberweave'],
+  // Never used to build a name: a legendary's name is authored in `data/legendaries.ts`, because
+  // the whole of a named blade is that it is named. Present so the record stays exhaustive, and
+  // so a future caller that does reach for it gets something in the right register.
+  legendary: ['Unbroken', 'Sundered', 'Kingsmourn', 'Last', 'Undying'],
 };
 
 /** Suffixes keyed to the item's dominant attribute — flavour that also reads as information. */

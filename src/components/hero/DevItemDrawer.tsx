@@ -14,6 +14,8 @@ import { TavernPanel } from '@/components/ui/TavernPanel';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { createRng, deriveSeed } from '@/engine/rng';
 import { generateItem } from '@/engine/items/generate';
+import { rollLegendary } from '@/engine/items/legendary';
+import { legendariesFor } from '@/data/legendaries';
 import { xpNeeded } from '@/engine/progression/xp';
 import { RARITIES, SLOT_IDS, type Rarity, type SlotId } from '@/engine/items/types';
 import type { Hero } from '@/engine/save/schema';
@@ -36,13 +38,24 @@ export function DevItemDrawer({ hero }: { hero: Hero }) {
       deriveSeed(hero.createdAt, 'dev-conjure', conjureCount.current),
       'dev:conjure',
     );
-    const item = generateItem({
-      level: hero.level,
-      slot,
-      rarity,
-      classId: hero.classId,
-      rng,
-    });
+    /*
+     * Legendaries do not come out of `generateItem` — a legendary without its rolled affixes is
+     * an item wearing the tier's colour and nothing else. The named draw is filtered to the slot
+     * the button asked for, and comes back null when this class has nothing for it.
+     */
+    const item =
+      rarity === 'legendary'
+        ? (rollLegendary({
+            classId: hero.classId,
+            level: hero.level,
+            rng,
+            defId: legendariesFor(hero.classId).find((entry) => entry.slot === slot)?.id,
+          }) ?? null)
+        : generateItem({ level: hero.level, slot, rarity, classId: hero.classId, rng });
+    if (!item) {
+      pushToast({ title: 'Nothing to conjure', detail: `No legendary for ${slot}.`, tone: 'info' });
+      return;
+    }
     grantItem(item);
     pushToast({ title: item.name, detail: 'Conjured into your backpack.', tone: 'reward' });
   };

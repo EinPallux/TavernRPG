@@ -227,6 +227,20 @@ export const RELEASE_CHECKLIST: readonly FeatureEvidence[] = [
       'The page-completion seal on the result screen: a laurel stamping down over the foe that finished the page, and the permanent 1% it just bought.',
   },
   {
+    feature: 'Legendaries',
+    spec: 'docs/design/systems/legendaries.md',
+    engine: [
+      'src/engine/items/legendary.ts',
+      'src/data/legendaries.ts',
+      'src/state/forgeActions.ts',
+    ],
+    screens: ['src/components/forge/ReforgeBench.tsx', 'src/components/items/ItemCard.tsx'],
+    unit: ['src/engine/items/legendary.test.ts', 'src/data/legendaries.test.ts'],
+    e2e: ['e2e/legendaries.spec.ts'],
+    ceremony:
+      'The strike: the anvil\u2019s reveal turns over the re-rolled piece with its new affixes and the count of how many times it has been through, beside the roll it just replaced.',
+  },
+  {
     feature: 'World simulation',
     spec: 'docs/design/systems/world-simulation.md',
     engine: [

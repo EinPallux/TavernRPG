@@ -550,7 +550,8 @@ Five things the phase forced, and four of them were bugs the hardening itself cr
 1. **Guild Wars & Raid Bosses** — scheduled guild-vs-guild battles + co-op PvE chains (sim ready).
 2. **Seasonal Events** — 2-week themed events (new banners, event currency shop, decorated tavern).
 3. **The Witch's Hut** — potions (attribute %, S&F-style), gear enchanting, respec service.
-4. **Legendary tier + Legendary Dungeon** — above-Set chase for veterans.
+4. *(shipped — Legendaries; see below)* Remaining: the reforge cost against Starmetal supply in the
+   economy sim, e2e coverage, and the GDD §4 / release-checklist rows.
 5. **Pet Habitats & Pet Duels** — expand Menagerie toward S&F's metagame, right-sized.
 6. **3rd gear set per class** (named in `gear-sets.md`), new dungeons (4–6), zone expansion.
 7. **6th class** (community-teased via Town Crier lore first).

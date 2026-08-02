@@ -12,6 +12,9 @@
 
 import { createRng, deriveSeed } from '@/engine/rng';
 import { generateItem } from '@/engine/items/generate';
+import { legendaryMissionChance, rollLegendaryDrop } from '@/engine/items/drops';
+import { rollLegendary } from '@/engine/items/legendary';
+import { zoneById } from '@/data/zones';
 import { drawBoard, rerollCost, SKIP_DICE_COST } from '@/engine/missions/board';
 import { acceptMission, resolveMission, skipMissionTimer } from '@/engine/missions/lifecycle';
 import { missionPhase, type MissionSpoils } from '@/engine/missions/types';
@@ -369,6 +372,29 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
       })
     : null;
 
+  /*
+   * The far country's trickle (`legendaries.md` §4, balancing §22.3).
+   *
+   * Its own stream, on top of the item roll rather than replacing it, so the contract's published
+   * drop chance and rarity weights are exactly what the card promised. Gated on the *zone's* band
+   * rather than the hero's level: a level-200 hero farming Whispering Woods is not owed the
+   * rarest thing in the game for it.
+   */
+  const zoneBand = zoneById(mission.offer.zoneId)?.minLevel ?? 1;
+  const legendary = rollLegendaryDrop(
+    legendaryMissionChance(zoneBand),
+    createRng(deriveSeed(mission.offer.seed, 'legendary'), `legendary/${mission.offer.id}`),
+  )
+    ? rollLegendary({
+        classId: hero.classId,
+        level: Math.max(1, mission.offer.monsterLevel),
+        rng: createRng(deriveSeed(mission.offer.seed, 'legendary-mint'), `lgd/${mission.offer.id}`),
+        avoidSlots: Object.values(hero.equipment)
+          .filter((entry) => entry?.rarity === 'legendary')
+          .map((entry) => entry!.slot),
+      })
+    : null;
+
   const levelled = applyXp(hero.level, hero.xp, spoils.xp);
   let next: Hero = {
     ...hero,
@@ -378,6 +404,7 @@ export function claimMission(save: SaveFile, mission: StoredActiveMission): Clai
     dice: hero.dice + spoils.dice,
   };
   if (item) next = addItemToHero(next, item).hero;
+  if (legendary) next = addItemToHero(next, legendary).hero;
 
   const activity = save.activity;
   const gainedFreeAle = spoils.ale && activity.freeAlesToday < 1;

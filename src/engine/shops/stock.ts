@@ -36,8 +36,9 @@ export type ShopId = (typeof SHOP_IDS)[number];
 /**
  * Shop rarity weights (balancing §7, "Shops stock" row).
  *
- * Better than a mission drop on average, and **never Set** — set pieces are earned, not bought,
- * which is the line that keeps the gear chase meaningful (gear-sets spec §1).
+ * Better than a mission drop on average, and **never Set or Legendary** — both chase tiers are
+ * earned, not bought, which is the line that keeps the gear chase meaningful (gear-sets spec §1,
+ * legendaries spec §4).
  */
 export const SHOP_RARITY_WEIGHTS: RarityWeights = {
   common: 30,
@@ -45,6 +46,7 @@ export const SHOP_RARITY_WEIGHTS: RarityWeights = {
   rare: 24,
   epic: 8,
   set: 0,
+  legendary: 0,
 };
 
 /** Buying is a splurge; selling is income (balancing §2). */

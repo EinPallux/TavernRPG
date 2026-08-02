@@ -178,6 +178,16 @@ feedback, edge cases and tests. Deployed on Vercel.
   on day 59. The Album grew to 19 pages / 186 foes / +24% **without an edit**, because its pages
   are derived. Balancing §21.
 
+- **Legendaries** — the tier above Set, and the answer to a measurement: a class's whole gear chase
+  is **ten set drops long** (`drawMissingPiece` never repeats), finished near day 45–60 against
+  content running to day 124. A legendary is *a set bonus on one item, rolled instead of authored* —
+  its affixes are `SetEffect`s, so `modifiersFor()` folds them into the same `CombatModifiers` bag
+  and `fight()` never learns the tier exists. `rarityFactor` is 1.5, **identical to Set**, and a
+  legendary is **never a set piece**: worn in a set slot it costs a piece, which is the game's first
+  real build decision. 16 affixes, 18 named arms, The Sundered Anvil as the sixth dungeon, a reforge
+  bench at the Emberforge, and save schema **v20**. Never on the gacha, permanently.
+  `systems/legendaries.md`, balancing §22.
+
 - **Schools of arms** — the combat VFX pass. `data/combatVfx.ts` gives each of the ten
   `CombatantCard.kind` values a school (palette, cast, travel, impact, crit); ranged schools brace
   and throw something that crosses the stage and lands on the damage frame, melee schools lunge.
@@ -401,6 +411,23 @@ Anything that deliberately overhangs its parent — a tooltip, a plaque, a badge
 box — belongs in a *layer*, not inside the thing it describes. And when the invariant is one the
 framework cannot see, assert it directly: the spec now walks the plaque's ancestors and fails on a
 `clip-path`.
+
+**`createRng(seed, name)` ignores the name.** It is a *label* — for logs and test failures — and
+the stream's state comes from the seed alone; only `fork(child)` derives a new sequence. A test
+helper written as `createRng(SEED, label)` therefore hands every caller the identical stream, and
+two of the legendary tests passed while asserting nothing: sixty reforges "all matched" because
+they were one roll, and every affix magnitude "was in band" because only one was ever drawn. If a
+loop needs to vary, it forks.
+
+**A ceiling pinned to a cliff is not a band.** "One legendary must not outweigh nine slots" is the
+right question and measured a threshold, not a gradient: commons-plus-legendary beats full epics 0%
+for four classes and 66% for the Bard, and halving the top of the four strongest affix bands moved
+that 66% *by nothing at all, to the decimal*. The affixes were not carrying it — an 11% weapon
+budget step was, because the two heroes sat either side of a cliff. Two lessons. **Take the control
+first** (an *epic* weapon over commons wins 0/0/0/31/0%, so the slot is not already dominant) — the
+canvas pixel-probe lesson, in balance form. And when a proposed band turns out to sit on a cliff,
+**do not invent one and do not nerf numbers that did not move it**: record the measurement, say
+where the next pass should start, and leave the shipped values alone. Balancing §22.4.
 
 **Look at the screen.** Both of the above were found by taking a screenshot and reading it, after
 the whole suite was green. A visual feature is not done when its tests pass; it is done when

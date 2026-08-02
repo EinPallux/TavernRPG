@@ -27,7 +27,7 @@ import {
   SLOT_IDS,
   SLOT_LABELS,
   type MaterialBundle,
-  type Rarity,
+  type RolledRarity,
   type SlotId,
 } from '@/engine/items/types';
 import { rarityStyles } from '@/components/items/ItemCard';
@@ -51,7 +51,7 @@ const SLOT_GLYPH: Readonly<Record<SlotId, IconId>> = {
   trinket: 'trinket',
 };
 
-const ODDS_ORDER: readonly Exclude<Rarity, 'set'>[] = ['common', 'uncommon', 'rare', 'epic'];
+const ODDS_ORDER: readonly RolledRarity[] = ['common', 'uncommon', 'rare', 'epic'];
 
 /**
  * Written out rather than derived from `rarityStyles().text`.
@@ -60,7 +60,7 @@ const ODDS_ORDER: readonly Exclude<Rarity, 'set'>[] = ['common', 'uncommon', 'ra
  * class at runtime that was never compiled, and the bar renders transparent. Cost an afternoon
  * elsewhere once already.
  */
-const ODDS_FILL: Readonly<Record<Exclude<Rarity, 'set'>, string>> = {
+const ODDS_FILL: Readonly<Record<RolledRarity, string>> = {
   common: 'bg-rarity-common',
   uncommon: 'bg-rarity-uncommon',
   rare: 'bg-rarity-rare',

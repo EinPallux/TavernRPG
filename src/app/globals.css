@@ -55,6 +55,15 @@
   --color-rarity-rare: #62a5e4;
   --color-rarity-epic: #b47ee0;
   --color-rarity-set: #e8a33d;
+  /*
+   * Above Set, and it has to say so at a glance in a list that already contains gold.
+   *
+   * The genre answer to "above gold" is orange, and the hue is only twenty degrees off amber — so
+   * the separation is carried by *saturation and value*, not hue: set is a soft muted gold, this
+   * is the most saturated colour in the palette. It is also the right colour for the tier's own
+   * story, which starts at a forge. Legendaries additionally carry a glow the set tier does not.
+   */
+  --color-rarity-legendary: #ff5a1f;
 
   --font-display: var(--font-alegreya-sans-sc), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;

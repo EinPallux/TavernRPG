@@ -348,6 +348,26 @@ export const MIGRATIONS: readonly Migration[] = [
       return { ...data, album: { foes: [] } };
     },
   },
+  {
+    from: 19,
+    to: 20,
+    describe: 'Legendaries: the tier above Set',
+    migrate: (data) => {
+      /*
+       * Nothing to do, and nothing to add — the rarest kind of migration and worth saying why.
+       *
+       * The persisted *shape* changed: `Item` gained an optional `legendary` payload. But it is
+       * optional, no existing item has one, and there is nothing in a v19 save to reconstruct one
+       * from. The version still has to move, because a v20 build writing a legendary into a save
+       * an older build would try to read is exactly what the envelope's version number is for.
+       *
+       * Note the payload deliberately stores `(id, magnitude)` rather than the built `SetEffect`,
+       * so a future affix re-tune needs no migration either: the lever is rebuilt on read from
+       * `data/legendaries.ts`.
+       */
+      return data;
+    },
+  },
 ];
 
 export type MigrationFailure =
