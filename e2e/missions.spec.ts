@@ -94,7 +94,11 @@ async function fastForward(page: Page) {
 }
 
 interface TavernStoreHandle {
-  getState: () => { save: SaveShape | null; flush: () => Promise<void> };
+  getState: () => {
+    save: SaveShape | null;
+    flush: () => Promise<void>;
+    grantXp: (amount: number) => void;
+  };
   setState: (partial: { save: SaveShape }) => void;
 }
 interface SaveShape {
@@ -102,6 +106,9 @@ interface SaveShape {
     mission: { endsAt: number } | null;
     pendingMission: unknown;
     vigor: number;
+    /** Today's three offers, and the day they were drawn for. */
+    board: { zoneId: string }[];
+    boardDay: string | null;
   };
   hero: { dice: number; level: number } | null;
 }
@@ -406,5 +413,53 @@ test.describe('house style', () => {
     );
 
     expect(offenders).toEqual([]);
+  });
+});
+
+test.describe('the far country', () => {
+  /**
+   * The wall this content removed, asserted from the player's side.
+   *
+   * `zonesForLevel` is unit-tested and says the right thing; what only a browser can prove is
+   * that a high-level hero's board is *actually drawn* from those zones — the draw, the day key
+   * and the screen all have to agree. Before the far country a level-140 hero saw Frostfell
+   * Ridge and nothing else, forever, and every unit test passed the whole time.
+   */
+  test('puts the board somewhere new for a hero past the old last zone', async ({ page }) => {
+    await ensureHero(page, 'Wynn');
+
+    // Level the hero, then force a fresh draw: the board is cached per day and was drawn at 1.
+    await page.evaluate(async (target) => {
+      const handle = (window as unknown as { __tavernStore: TavernStoreHandle }).__tavernStore;
+      while ((handle.getState().save?.hero?.level ?? 1) < target) {
+        handle.getState().grantXp(3_000_000);
+      }
+      const { save } = handle.getState();
+      if (!save) throw new Error('no save');
+      handle.setState({ save: { ...save, activity: { ...save.activity, boardDay: null } } });
+      await handle.getState().flush();
+    }, 140);
+
+    await page.reload();
+    await expect(page.getByTestId('place-tavern')).toBeVisible({ timeout: SETUP_TIMEOUT });
+    await expect(page.locator('[data-testid^="mission-card-"]').first()).toBeVisible({
+      timeout: SETUP_TIMEOUT,
+    });
+
+    // Whatever the seed drew, none of it is the starter woods and all of it is far-country work.
+    const zones = await page.evaluate(() => {
+      const handle = (window as unknown as { __tavernStore: TavernStoreHandle }).__tavernStore;
+      return (handle.getState().save?.activity.board ?? []).map((offer) => offer.zoneId);
+    });
+
+    expect(zones.length).toBeGreaterThan(0);
+    expect(zones).not.toContain('whispering-woods');
+    expect(zones).not.toContain('frostfell-ridge');
+    for (const zoneId of zones) {
+      expect(
+        ['saltmere-wrecks', 'glass-waste', 'starfall-barrens', 'hollow-crown'],
+        `level 140 was sent to ${zoneId}`,
+      ).toContain(zoneId);
+    }
   });
 });
