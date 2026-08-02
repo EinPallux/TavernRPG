@@ -27,7 +27,28 @@ see `ROADMAP.md` phase gates).
   `data/album.ts`, because its pages are derived from the content modules. The argument its spec
   makes for deriving rather than listing, paying for itself the first time it could.
 - Backdrops are re-used with new tints. That is the `tint` field doing the job it was added for;
-  real art drops in through the override manifest with no code change.
+  real art drops in through the override manifest with no code change. Each pairing is matched
+  against what the painting depicts — see *Fixed* below for what the first draft did instead.
+
+### Fixed — a flower meadow captioned "Sand, fused smooth"
+
+- **A tint is a mood; it does not repaint a picture.** The far country's first draft chose its
+  backdrops by which files looked least spoken for, so The Glass Waste led on a green valley with a
+  castle and flowerbeds, Starfall Barrens on a sunlit crystal glade. Both were plainly wrong on the
+  board and invisible to every gate in the repo — 1,548 unit tests, 303 e2e, contrast, release.
+  A screenshot found them.
+- **The same mistake, four table rows below the note recording it the first time.** `content-plan.md`
+  §1 has carried a *"Corrected in Phase 5"* paragraph since the original zone table numbered its
+  backdrops sequentially, sight unseen. Grepping for the shape is the rule; reading the paragraph
+  directly above the rows you are adding is the cheap version of it.
+- Every pairing is now matched against what the painting depicts. Starfall Barrens runs on **one**
+  backdrop, because the pack holds exactly one crater and a repeated right picture beats a second
+  wrong one — six of the ten older zones already do the same. Sunken Chapel's two are reordered so
+  the wreck on the beach leads for the zone with "Wrecks" in its name, and The Hollow Crown's wash
+  went to gold-over-blood so it cannot be mistaken for Thornhill Ruins, which leads on the same gate.
+- **The part a test can see, asserted:** `zonesForLevel` never offers two zones that share a
+  painting, walked over every level from 1 to 260. It cannot check that a picture *suits* its zone —
+  nothing can — so it says so, in the test, next to the assertion.
 
 ### Fixed — three balance numbers the harnesses refused
 

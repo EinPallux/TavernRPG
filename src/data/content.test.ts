@@ -95,6 +95,28 @@ describe('zones', () => {
     }
   });
 
+  it('never shows one painting twice on the same board', () => {
+    /*
+     * Fourteen paintings serve fourteen zones, so sharing is the system rather than a shortcut —
+     * but two zones that share art must not be offerable at the same time, or a board draws the
+     * identical picture under two different names. Level bands are the thing that keeps them
+     * apart, and they are the thing a content pass edits without thinking about the art.
+     *
+     * This cannot check that a painting *suits* its zone. Nothing can; the far country shipped
+     * "Sand, fused smooth" over a flower meadow and every gate stayed green. Look at the screen.
+     */
+    for (let level = 1; level <= 260; level += 1) {
+      const offered = zonesForLevel(level);
+      for (const a of offered) {
+        for (const b of offered) {
+          if (a.id >= b.id) continue;
+          const shared = a.backdrops.filter((path) => b.backdrops.includes(path));
+          expect(shared, `level ${level}: ${a.id} and ${b.id}`).toEqual([]);
+        }
+      }
+    }
+  });
+
   it('picks a stable backdrop for a given index, and wraps', () => {
     const road = ZONES_BY_ID['old-kings-road'];
     expect(backdropFor(road, 0)).toBe(road.backdrops[0]);

@@ -133,7 +133,10 @@ const ZONE_LIST = [
     tagline: 'The choir never stopped. It only got wetter.',
     minLevel: 68,
     maxLevel: 88,
-    backdrops: [BG('mission_background_1'), BG('mission_background_14')],
+    // Ordered when Saltmere arrived: the drowned parish leads on the waterlogged town and the
+    // wreck on the beach belongs to the zone with "Wrecks" in its name. The two share both
+    // paintings and are twelve levels apart, so no board ever offers them together.
+    backdrops: [BG('mission_background_14'), BG('mission_background_1')],
     tint: 'from-wood-900 via-moss-600/28 to-wood-900/60',
   },
   {
@@ -160,8 +163,14 @@ const ZONE_LIST = [
    *
    * **They re-use backdrops, and that is the system working rather than a shortcut.** Fourteen
    * paintings serve fourteen zones; `tint` is the field that exists so re-used art reads as a
-   * different place, and each of the four below is washed a colour no earlier zone uses. Real art
-   * drops in through the override manifest with no code change (asset-pipeline §3).
+   * different place. Real art drops in through the override manifest with no code change
+   * (asset-pipeline §3).
+   *
+   * A tint is a *mood*, though, and it will not repaint a picture. The first draft of these four
+   * chose backdrops by which ones felt least spoken for, and put "Sand, fused smooth" over a
+   * flower meadow with a castle in it — plain on the board to anybody who looked, and invisible
+   * to every gate in the repo. Each pairing below is matched against what the painting actually
+   * depicts: the wreck on the beach, the dry flats, the crater, the ruined gate.
    */
   {
     id: 'saltmere-wrecks',
@@ -169,7 +178,8 @@ const ZONE_LIST = [
     tagline: 'Ships, forty miles from any sea that would admit to them.',
     minLevel: 100,
     maxLevel: 130,
-    backdrops: [BG('mission_background_14'), BG('mission_background_1')],
+    // A hull broken up on the sand, then the harbour that still has one afloat.
+    backdrops: [BG('mission_background_1'), BG('mission_background_14')],
     tint: 'from-wood-900 via-parchment-300/22 to-arcane-500/25',
   },
   {
@@ -178,7 +188,8 @@ const ZONE_LIST = [
     tagline: 'Sand, fused smooth. Nobody agrees on by what.',
     minLevel: 122,
     maxLevel: 156,
-    backdrops: [BG('mission_background_12'), BG('mission_background_11')],
+    // Stony flats under a pale spire, then dry ochre badlands. Both are places nothing grows.
+    backdrops: [BG('mission_background_5'), BG('mission_background_8')],
     tint: 'from-wood-900 via-amber-400/30 to-parchment-300/20',
   },
   {
@@ -187,7 +198,11 @@ const ZONE_LIST = [
     tagline: 'The hole the Starmetal came out of, and whatever came with it.',
     minLevel: 148,
     maxLevel: 186,
-    backdrops: [BG('mission_background_6'), BG('mission_background_9')],
+    // One painting, because there is only one crater in the set. The second draft paired the
+    // cone with the crystal glade — Starmetal, in theory — and on the board it was a sunlit
+    // forest with a waterfall under the words "the hole the Starmetal came out of". Six of the
+    // ten older zones run on a single backdrop; a repeated right picture beats a second wrong one.
+    backdrops: [BG('mission_background_6')],
     tint: 'from-wood-900 via-arcane-500/35 to-ember-600/20',
   },
   {
@@ -198,8 +213,13 @@ const ZONE_LIST = [
     // The last zone carries the open end, for the reason Frostfell used to: there is no level
     // cap, so somebody has to have work for a hero who keeps going.
     maxLevel: Number.MAX_SAFE_INTEGER,
-    backdrops: [BG('mission_background_4'), BG('mission_background_8')],
-    tint: 'from-wood-900 via-blood-600/28 to-amber-500/15',
+    // The gate of somewhere that had spires, then the keep on the hill — the same keep the Old
+    // King's Road shows a level-ten hero, a hundred and seventy levels earlier.
+    //
+    // Thornhill Ruins leads on that gate too, so the wash carries the difference here: gold over
+    // blood for a court still sitting, against Thornhill's flat dark red.
+    backdrops: [BG('mission_background_4'), BG('mission_background_3')],
+    tint: 'from-wood-900 via-amber-500/28 to-blood-600/28',
   },
 ] as const satisfies readonly ZoneDef[];
 

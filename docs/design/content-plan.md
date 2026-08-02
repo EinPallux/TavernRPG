@@ -17,17 +17,26 @@
 | Silverpine Pass | 32–46 | mission_background_9 | Mountain clans, harpies, ice wolves |
 | Ember Caves | 42–58 | mission_background_6 | Kobolds, magma beasts, salamanders |
 | Gloomhollow | 54–72 | mission_background_8 | Shades, night hags, spiders |
-| Sunken Chapel | 68–88 | mission_background_1, _14 | Drowned dead, deep cult, reliquary guardians |
-| Frostfell Ridge | 84–110+ | mission_background_7 | Frost giants' kin, wraiths, rocs |
-| Saltmere Wrecks | 100–130 | mission_background_14, _1 | Salt-cured drowned, wreck-things |
-| The Glass Waste | 122–156 | mission_background_12, _11 | Mirages, heat, fused glass |
-| Starfall Barrens | 148–186 | mission_background_6, _9 | Starmetal constructs, things that fell |
-| The Hollow Crown | 178+ | mission_background_4, _8 | A dead court, still in session |
+| Sunken Chapel | 68–88 | mission_background_14, _1 | Drowned dead, deep cult, reliquary guardians |
+| Frostfell Ridge | 84–108 | mission_background_7 | Frost giants' kin, wraiths, rocs |
+| Saltmere Wrecks | 100–130 | mission_background_1, _14 | Salt-cured drowned, wreck-things |
+| The Glass Waste | 122–156 | mission_background_5, _8 | Mirages, heat, fused glass |
+| Starfall Barrens | 148–186 | mission_background_6 | Starmetal constructs, things that fell |
+| The Hollow Crown | 178+ | mission_background_4, _3 | A dead court, still in session |
 
 > **The far country** (the last four) was added post-1.0 because the tenth zone was levelled
 > `84 → ∞` and an active player met their last new monster on day 40. It re-uses backdrops
 > with distinct tints — fourteen paintings, fourteen zones — which is what the `tint` field
 > was added for. Real art drops in through the override manifest. `balancing-formulas.md` §21.
+
+> **Corrected again, immediately.** The far country's first draft picked its backdrops by which
+> files looked least spoken for — the same mistake as the Phase 5 note below, four rows further
+> down the same table — and shipped "Sand, fused smooth" over a flower meadow with a castle in
+> it. A `tint` is a mood and will not repaint a picture. Every pairing above is now against what
+> the file depicts, Starfall Barrens runs on one painting because the pack holds only one crater,
+> and Sunken Chapel's two are ordered so the wreck belongs to the zone named for wrecks.
+> `zonesForLevel` never offers two zones that share a painting, and `content.test.ts` asserts it —
+> which is the only part of this a test can see.
 
 > **Corrected in Phase 5.** The original table numbered the backdrops sequentially, sight
 > unseen, which put a tropical shipwreck behind "Whispering Woods" and a flower meadow behind

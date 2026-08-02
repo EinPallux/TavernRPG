@@ -406,6 +406,20 @@ framework cannot see, assert it directly: the spec now walks the plaque's ancest
 the whole suite was green. A visual feature is not done when its tests pass; it is done when
 somebody has looked at it.
 
+**A tint is a mood; it will not repaint a picture.** The far country shipped "The Glass Waste —
+sand, fused smooth" over a green valley with a castle and flowerbeds in it, and Starfall Barrens
+over a sunlit crystal glade, because the four new zones picked their backdrops by which of the
+fourteen files looked least spoken for. Every gate was green throughout. The correction is not
+"tint harder" — it is to open the images and pair each zone against what its painting *depicts*,
+and to accept a **single** backdrop when the pack holds only one crater; six of the ten older
+zones already run on one, and a repeated right picture beats a second wrong one. Two further
+notes. `content-plan.md` §1 has carried a *"Corrected in Phase 5"* paragraph about this exact
+mistake since the original table numbered its backdrops sight unseen — and the new rows went in
+four lines below it, so **grep for the shape** has a cheaper cousin: read the paragraph directly
+above the thing you are adding. And the one mechanical invariant here *is* worth asserting:
+`zonesForLevel` must never offer two zones that share a painting (`content.test.ts`, every level
+1–260). It cannot check that a picture suits its zone, and it says so beside the assertion.
+
 **And count how many times the component is on screen.** The greenhorn's due first shipped as a
 sentence under the payout — correct, legible, well-written, and drawn *three times*, because three
 contracts are on the board at once. Three copies of one sentence stop being a note and become a
