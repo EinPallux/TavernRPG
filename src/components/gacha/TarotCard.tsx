@@ -45,6 +45,10 @@ const AURA: Readonly<Record<CardTone, string>> = {
   rare: 'shadow-[0_0_26px_-8px_rgb(74_143_212/0.95)]',
   epic: 'shadow-[0_0_32px_-8px_rgb(155_95_208/1)]',
   set: 'shadow-[0_0_40px_-6px_rgb(232_163_61/1)]',
+  // Unreachable: Fortune's Table never deals a legendary, permanently and by design
+  // (`legendaries.md` §4). Present because `CardTone` is `Rarity` and an exhaustive record is
+  // how that stays true — if the banner ever could, this is the aura it would wear.
+  legendary: 'shadow-[0_0_44px_-6px_rgb(255_90_31/1)]',
 };
 
 /** The face of a card, once it has turned over. */

@@ -43,6 +43,11 @@ const RARITY_STYLES: Record<Rarity, { text: string; border: string; glow: string
     border: 'border-rarity-set/65',
     glow: 'shadow-[0_0_26px_-8px_rgb(232_163_61/0.95)]',
   },
+  legendary: {
+    text: 'text-rarity-legendary',
+    border: 'border-rarity-legendary/70',
+    glow: 'shadow-[0_0_34px_-6px_rgb(255_90_31/1)]',
+  },
 };
 
 export function rarityStyles(rarity: Rarity) {

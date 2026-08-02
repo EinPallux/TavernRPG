@@ -9,7 +9,7 @@
  * Pure data module.
  */
 
-import type { MaterialBundle, Rarity } from '@/engine/items/types';
+import type { MaterialBundle, RolledRarity } from '@/engine/items/types';
 
 export const FORGE_TIERS = ['rough', 'fine', 'master'] as const;
 export type ForgeTier = (typeof FORGE_TIERS)[number];
@@ -20,8 +20,8 @@ export interface ForgeTierDef {
   /** One line from Torvald, on the tile. */
   readonly blurb: string;
   readonly cost: MaterialBundle;
-  /** Relative weights over the four attainable rarities. Set never comes from a plain forge. */
-  readonly odds: Readonly<Record<Exclude<Rarity, 'set'>, number>>;
+  /** Relative weights over the four rolled rarities. Neither chase tier comes from a plain forge. */
+  readonly odds: Readonly<Record<RolledRarity, number>>;
   /** Only the Master forge feeds the pity meter — it is the tier you are gambling on. */
   readonly feedsPity: boolean;
 }
@@ -82,7 +82,7 @@ export const SCRAPS_PER_DAY = 10;
 export const RECIPE_COST: MaterialBundle = { scrap: 0, essence: 20, starmetal: 2 };
 
 /** Published odds for one rarity at one tier, as a percentage — what the tile prints. */
-export function forgeOdds(tier: ForgeTierDef, rarity: Exclude<Rarity, 'set'>): number {
+export function forgeOdds(tier: ForgeTierDef, rarity: RolledRarity): number {
   const total = Object.values(tier.odds).reduce((sum, weight) => sum + weight, 0);
   return total === 0 ? 0 : (tier.odds[rarity] * 100) / total;
 }

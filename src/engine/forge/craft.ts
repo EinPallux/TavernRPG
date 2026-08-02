@@ -12,17 +12,21 @@
 
 import type { RngStream } from '@/engine/rng';
 import { generateItem, generateSetPiece } from '@/engine/items/generate';
-import { RARITIES, type ClassId, type Item, type Rarity, type SlotId } from '@/engine/items/types';
+import {
+  ROLLED_RARITIES,
+  type ClassId,
+  type Item,
+  type Rarity,
+  type SlotId,
+} from '@/engine/items/types';
 import { gearSet, setsForClass, type SetSlot } from '@/data/gearSets';
 import { EMBER_PITY, forgeTier, type ForgeTier } from './forgeConfig';
 
-/** Roll a rarity off a tier's published weights. Set never comes out of a plain forge. */
+/** Roll a rarity off a tier's published weights. Neither chase tier comes out of a plain forge. */
 export function rollForgeRarity(tier: ForgeTier, rng: RngStream): Rarity {
   const { odds } = forgeTier(tier);
   return rng.weighted(
-    RARITIES.filter((rarity): rarity is Exclude<Rarity, 'set'> => rarity !== 'set').map(
-      (rarity) => ({ value: rarity as Rarity, weight: odds[rarity] }),
-    ),
+    ROLLED_RARITIES.map((rarity) => ({ value: rarity as Rarity, weight: odds[rarity] })),
   );
 }
 

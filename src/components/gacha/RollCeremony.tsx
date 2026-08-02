@@ -30,7 +30,7 @@ const DEAL_MS = 420;
 /** Gap between flips in a spread. Slow enough to read, quick enough not to be a queue. */
 const FLIP_STEP_MS = 260;
 
-const TONE_ORDER = ['common', 'uncommon', 'rare', 'epic', 'set'] as const;
+const TONE_ORDER = ['common', 'uncommon', 'rare', 'epic', 'set', 'legendary'] as const;
 
 export interface RollCeremonyProps {
   readonly results: readonly GachaResult[];

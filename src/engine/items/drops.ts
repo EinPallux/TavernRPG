@@ -16,7 +16,7 @@
 import type { RngStream } from '@/engine/rng';
 import { RARITIES, type Rarity, type SlotId } from './types';
 
-/** Relative weights over the five rarities, in `RARITIES` order. */
+/** Relative weights over the six rarities, in `RARITIES` order. */
 export type RarityWeights = Readonly<Record<Rarity, number>>;
 
 export interface DropTable {
@@ -29,7 +29,16 @@ export interface DropTable {
   readonly aleChance: number;
 }
 
-const NO_SET: Pick<RarityWeights, 'set'> = { set: 0 };
+/**
+ * The two chase tiers are never on a weights table, and cannot be.
+ *
+ * Both need to know what the hero already owns — a set piece to avoid handing back a duplicate,
+ * a legendary to pick an identity — and a rarity roll knows nothing but weights. They are drawn
+ * by `drawMissingPiece()` and `rollLegendary()`, *after* the roll decides a hit happened, which
+ * is also what keeps the published item chance honest. Spelled as a spread on every table so a
+ * new table cannot quietly open a seventh door.
+ */
+const NO_CHASE: Pick<RarityWeights, 'set' | 'legendary'> = { set: 0, legendary: 0 };
 
 /**
  * Mission drops by duration. The 20-minute run does not pay more gold or XP per Vigor — it pays
@@ -39,25 +48,25 @@ const NO_SET: Pick<RarityWeights, 'set'> = { set: 0 };
 export const MISSION_DROPS: Readonly<Record<number, DropTable>> = {
   5: {
     itemChance: 0.25,
-    rarityWeights: { common: 62, uncommon: 26, rare: 9.5, epic: 2.5, ...NO_SET },
+    rarityWeights: { common: 62, uncommon: 26, rare: 9.5, epic: 2.5, ...NO_CHASE },
     diceChance: 0.006,
     aleChance: 0.02,
   },
   10: {
     itemChance: 0.25,
-    rarityWeights: { common: 62, uncommon: 26, rare: 9.5, epic: 2.5, ...NO_SET },
+    rarityWeights: { common: 62, uncommon: 26, rare: 9.5, epic: 2.5, ...NO_CHASE },
     diceChance: 0.006,
     aleChance: 0.02,
   },
   15: {
     itemChance: 0.25,
-    rarityWeights: { common: 62, uncommon: 26, rare: 9.5, epic: 2.5, ...NO_SET },
+    rarityWeights: { common: 62, uncommon: 26, rare: 9.5, epic: 2.5, ...NO_CHASE },
     diceChance: 0.006,
     aleChance: 0.02,
   },
   20: {
     itemChance: 0.38,
-    rarityWeights: { common: 55, uncommon: 28, rare: 13, epic: 4, ...NO_SET },
+    rarityWeights: { common: 55, uncommon: 28, rare: 13, epic: 4, ...NO_CHASE },
     diceChance: 0.015,
     aleChance: 0.02,
   },
@@ -171,7 +180,7 @@ export function rollMissionDrops(
  */
 export const DUNGEON_FLOOR_DROPS: DropTable = {
   itemChance: 0.5,
-  rarityWeights: { common: 40, uncommon: 32, rare: 20, epic: 8, ...NO_SET },
+  rarityWeights: { common: 40, uncommon: 32, rare: 20, epic: 8, ...NO_CHASE },
   // Dungeons are not a Golden Dice faucet — floor 10 pays them, in a lump, for finishing.
   diceChance: 0,
   aleChance: 0,
@@ -200,7 +209,7 @@ export const CLEAR_SET_CHANCE = 0.5;
  */
 export const DUNGEON_CLEAR_DROPS: DropTable = {
   itemChance: 1,
-  rarityWeights: { common: 0, uncommon: 0, rare: 0, epic: 100, ...NO_SET },
+  rarityWeights: { common: 0, uncommon: 0, rare: 0, epic: 100, ...NO_CHASE },
   diceChance: 0,
   aleChance: 0,
 };

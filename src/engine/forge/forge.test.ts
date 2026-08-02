@@ -22,7 +22,13 @@ import type { BattleEvent, Combatant } from '@/engine/combat/types';
 import { addItem, createHero, equipItem } from '@/engine/hero/actions';
 import { generateItem, generateSetPiece } from '@/engine/items/generate';
 import { modifiersFor, ownedSetPieces, setProgress, drawMissingPiece } from '@/engine/items/sets';
-import { RARITIES, type ClassId, type Rarity, type SlotId } from '@/engine/items/types';
+import {
+  RARITIES,
+  isKeepsake,
+  type ClassId,
+  type RolledRarity,
+  type SlotId,
+} from '@/engine/items/types';
 import { disposeItem } from '@/engine/items/dispose';
 import { GEAR_SETS, SET_SLOTS, gearSet, setsForClass } from '@/data/gearSets';
 import { createNewSave, type Hero } from '@/engine/save/schema';
@@ -348,12 +354,13 @@ describe('the forge — ROADMAP acceptance', () => {
       }
 
       for (const rarity of RARITIES) {
-        if (rarity === 'set') {
-          // A plain forge never produces a set piece — that is what recipes are for.
-          expect(seen['set'] ?? 0, tier.id).toBe(0);
+        if (isKeepsake(rarity)) {
+          // A plain forge produces neither chase tier — that is what recipes and the Sundered
+          // Anvil are for. Asserted for both, so a sixth rarity cannot leak in through the odds.
+          expect(seen[rarity] ?? 0, `${tier.id} ${rarity}`).toBe(0);
           continue;
         }
-        const published = forgeOdds(tier, rarity as Exclude<Rarity, 'set'>);
+        const published = forgeOdds(tier, rarity as RolledRarity);
         const measured = ((seen[rarity] ?? 0) * 100) / rolls;
         expect(measured, `${tier.id} ${rarity}`).toBeCloseTo(published, 0);
       }

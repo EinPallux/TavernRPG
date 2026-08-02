@@ -1100,3 +1100,54 @@ sits inside; the economy A/B is unchanged in shape because the sim only models z
 It finished on day 59 and ended at level 100; it finishes on **day 124 at level 183**, which is
 where The Hollow Crown's own mission band begins. Three economy bands moved from a 90-day run to a
 150-day one — the claims are about the road's whole life, and its life got longer.
+
+## 22. Legendaries (the tier above Set)
+
+Spec: `systems/legendaries.md`. Every figure below carries `[TUNE]` and is a *starting* value —
+the affix bands and the supply rates are fitted by `npm run balance` and `npm run economy`, in the
+same order the far country's were, and the fitted numbers are recorded in §22.4.
+
+### 22.1 What the measurement was
+
+A class has two sets of five pieces and `drawMissingPiece()` never returns a piece already owned,
+so **ten set drops finishes the entire gear chase** — asserted, not estimated, in `forge.test.ts`
+*acquisition converges*. §0 puts the first full set at day 45–60 against a content runway that now
+reaches day 124. From roughly the halfway mark no drop can be an upgrade in kind.
+
+### 22.2 The item
+
+| Figure | Value | Why |
+|---|---|---|
+| `rarityFactor.legendary` | **1.5** | identical to Set. The affixes are the tier; the statline is not, and a flat budget keeps the §2 trade a real comparison and the combat curve untouched. |
+| `LINES_BY_RARITY.legendary` | 3 | as Epic and Set. |
+| `RARITY_VALUE_MULT.legendary` | 40 | display only — a legendary refuses sale and scrap at the same choke point a set piece does. |
+| `LEGENDARY_AFFIX_COUNT` | 2 | drawn without replacement from the item's own pool. |
+
+Affix magnitudes roll inside a published band per lever. The bands are the balance surface of the
+whole tier: two affixes at their **maximum** roll must keep mirror win-rates inside **42–58%**, the
+same band a full five-piece set is held to (`gear-sets.md` §3). Two at minimum must still be worth
+the set piece they displace, or the tier is a trap.
+
+### 22.3 Supply
+
+| Source | Rate |
+|---|---|
+| The Sundered Anvil, floor-10 clear | 1.0 — the reliable source, behind ten floors at levels 185–248 |
+| The Sundered Anvil, floors 5–9 | `ANVIL_LEGENDARY_CHANCE = 0.08` per floor |
+| Drowned Vault / Sunless Court, floor-10 clear | `DEEP_CLEAR_LEGENDARY = 0.06` |
+| Contracts in the far country (level 100+) | `FAR_LEGENDARY_CHANCE = 0.004` per contract |
+| Fortune's Table | 0, permanently — §4 of the spec |
+
+`REFORGE_COST = 3 Starmetal` `[TUNE]`. Starmetal income is the constraint the sim has to answer:
+before the Anvil it ran near half a unit a day and had one sink (set recipes, 2 Starmetal), which
+is what made the forge route to a set piece a ~210-day proposition until it was re-fitted. A
+reforge bench priced above supply is a cap the game cannot supply — the Menagerie's "3/3 feeds"
+lie, in a different room. The sim reports **days per reforge** and the band is on that, not on the
+cost.
+
+### 22.4 What the harnesses chose
+
+> Filled in once `npm run balance`, the dungeon ramp and `npm run economy` have run against the
+> shipped data. The starting values above are drafts; the far country needed three attempts before
+> the wall harness accepted a chapter span, and there is no reason to expect affix bands to be
+> guessable either.
