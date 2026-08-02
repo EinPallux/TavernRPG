@@ -7,6 +7,60 @@ see `ROADMAP.md` phase gates).
 
 ## [Unreleased]
 
+### Added — Legendaries, the tier above Set
+
+- **A class's whole gear chase was ten drops long.** Two sets of five, and `drawMissingPiece()`
+  never returns a piece already owned, so exactly ten set drops finishes every piece the class will
+  ever see — asserted, not estimated, in `forge.test.ts`. §0 puts the first full set at day 45–60
+  against content that now runs to day 124, so from the halfway mark no drop could be an upgrade in
+  kind and a contract's loot line stopped being a reason to take it.
+- **A Legendary is a set bonus on one item, rolled instead of authored.** Its affixes are
+  `SetEffect`s — the same flat union of named levers the ten gear sets speak — so `modifiersFor()`
+  folds them into the same `CombatModifiers` bag at the one place that fold happens. `fight()` never
+  learns legendaries exist, and the balance harness and economy sim inherited the tier for free.
+  Because the affixes and their magnitudes roll, the chase does not terminate.
+- **The statline is not the reward.** `rarityFactor` is **1.5, identical to Set** — deliberately, so
+  the trade below is a comparison rather than arithmetic, and so the tier adds nothing to a stat
+  curve the combat harness is solved against.
+- **A legendary is never a set piece**, and that is the point. Worn in one of the five set slots it
+  costs a piece of progress and possibly a threshold: two rolled affixes against a five-piece
+  capstone. The first genuine build decision in the game, stated on the item card at the moment of
+  equipping, and what keeps the ten sets alive instead of vestigial.
+- **Sixteen affixes and eighteen named arms** — one for each of the eight unrestricted slots, and a
+  weapon and an offhand for each of the five classes. Bard's verse levers are excluded and asserted
+  excluded: a legendary that rolls dead weight on a Mage is a bad roll the player cannot read as one.
+- **The Sundered Anvil**, the sixth dungeon, ten floors at levels 185–241 below the Sunless Court.
+  Where Aldenvale's named arms were made and unmade — which is why Torvald can re-roll one.
+- **Where they come from:** the Anvil's clear certainly, its floors 5–9 at 8%, the two dungeons above
+  it at 6% on the clear, and far-country contracts at 0.4% — gated on the *zone's* band, not the
+  hero's level. **Never Fortune's Table**, permanently: Golden Dice are earn-only, and keeping the
+  top tier off the banner means the best gear cannot be reached through the premium currency by any
+  route at all.
+- **The reforge bench**, the Emberforge's fourth. Starmetal re-rolls both affixes and it *replaces* —
+  a re-roll you cannot lose is not a decision — so the panel shows what you have beside what the last
+  strike took away. The size of the roll space is printed, because "odds always visible" has to mean
+  something at a bench whose output is not a rarity.
+- **Save schema v20.** The payload stores `(defId, affixes[{id, magnitude}], reforges)` rather than
+  the built lever, so a future affix re-tune reaches legendaries a player already owns. Fixture
+  `v20-legendaries.json` captured out of a browser: five worn, one bagged, because an item lives in
+  `equipment` or `backpack` and a payload that survives one and not the other is what a fixture is for.
+
+### Fixed — two numbers the harnesses picked, and one they refused to let me fake
+
+- **The Anvil's signature was 2.5× too strong.** Written by feel at `hardening` 0.024/0.18 and
+  0.048/0.34, the ramp harness reported floor 10 as **unclearable at any level it searches** — `-1`,
+  not "hard". It ships at 0.010/0.09 and 0.018/0.16.
+- **A legendary ceiling is not asserted, and that is a finding.** "One legendary must not outweigh
+  nine slots" measured a *cliff*: commons plus a best-rolled legendary weapon beats a fully-epic hero
+  0% for four classes and 66% for the Bard — and halving the top of the four strongest affix bands
+  moved that 66% **by nothing at all, to the decimal**. The affixes are not what carries it; an 11%
+  weapon-budget step is. A band pinned to a cliff edge measures noise, so none was invented and the
+  speculative nerfs were reverted. Balancing §22.4 has the figures, the control and where to start.
+- Two of my own tests were asserting nothing: `createRng(seed, name)` uses the name as a *label* and
+  derives state from the seed alone — only `fork()` makes a new sequence — so sixty reforges shared
+  one stream; and an equipment map is keyed by slot, so writing a set piece into the slot a legendary
+  occupies measures an empty paperdoll.
+
 ### Added — the far country
 
 - **The game ran out of foes on day 40.** Frostfell Ridge was levelled 84 to infinity with nothing
